@@ -1,0 +1,504 @@
+/* Wallet Methods Panel */
+.wallet-methods-panel {
+    padding: var(--spacing-large);
+    background-color: var(--background-color);
+}
+
+.wallet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-medium);
+}
+
+.wallet-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+}
+
+.add-wallet-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-small);
+    padding: var(--spacing-medium) var(--spacing-large);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: background-color var(--transition-speed) ease;
+}
+
+.add-wallet-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.wallets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-medium);
+}
+
+/* Wallet Card */
+.wallet-card {
+    background-color: white;
+    border-radius: var(--border-radius-large);
+    padding: var(--spacing-large);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.wallet-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-medium);
+}
+
+.wallet-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.options-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-small);
+}
+
+.options-menu {
+    position: absolute;
+    top: 3rem;
+    right: 1rem;
+    background-color: white;
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.options-menu button {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-medium) var(--spacing-large);
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.options-menu button:hover {
+    background-color: var(--background-color);
+}
+
+.wallet-card-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-small);
+    font-family: var(--font-family);
+}
+
+.balance {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.balance.positive {
+    color: #10b981;
+}
+
+.balance.negative {
+    color: #ef4444;
+}
+
+.wallet-card-footer {
+    margin-top: var(--spacing-medium);
+}
+
+.transaction-btn {
+    width: 100%;
+    padding: var(--spacing-medium);
+    background-color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius-small);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color var(--transition-speed) ease;
+}
+
+.transaction-btn:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Create Wallet Modal */
+.create-wallet-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: var(--border-radius-large);
+    padding: var(--spacing-large);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-medium);
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: var(--spacing-medium);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-small);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-family: var(--font-family);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: var(--spacing-medium);
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius-small);
+    font-size: 1rem;
+    font-family: var(--font-family);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.error {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: var(--spacing-small);
+}
+
+/* Icon Options */
+.icon-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--spacing-medium);
+    margin-top: var(--spacing-small);
+}
+
+.icon-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-small);
+    padding: var(--spacing-medium);
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius-small);
+    background: none;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.icon-option:hover {
+    border-color: var(--primary-color);
+    background-color: var(--background-color);
+}
+
+.icon-option.selected {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.icon-name {
+    font-size: 0.75rem;
+    text-align: center;
+    font-family: var(--font-family);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-medium);
+    margin-top: var(--spacing-large);
+}
+
+.cancel-btn {
+    padding: var(--spacing-medium) var(--spacing-large);
+    background-color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius-small);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.create-btn {
+    padding: var(--spacing-medium) var(--spacing-large);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: var(--border-radius-small);
+    color: white;
+    cursor: pointer;
+}
+
+.create-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .wallet-methods-panel {
+        padding: var(--spacing-medium);
+    }
+
+    .wallets-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: var(--spacing-medium);
+    }
+
+    .icon-options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    }
+}
+
+:root {
+    /* Enhanced Design System Variables */
+    --primary-color: #3498db;
+    --primary-dark: #2980b9;
+    --secondary-color: #2ecc71;
+    --accent-color: #e74c3c;
+    --background-color: #f4f6f7;
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    
+    /* Spacing */
+    --spacing-small: 0.5rem;
+    --spacing-medium: 1rem;
+    --spacing-large: 1.5rem;
+    
+    /* Transitions */
+    --transition-speed: 0.3s;
+    
+    /* Border Radius */
+    --border-radius-small: 0.5rem;
+    --border-radius-large: 1rem;
+}
+
+/* components/Wallet/cstyles/walletStyles.css */
+.wallet-methods-container {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.wallet-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.wallet-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.wallet-card.selected {
+    border: 2px solid #3b82f6;
+    transform: translateY(-2px);
+}
+
+.wallet-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.balance-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.balance-input,
+.withdraw-input {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+}
+
+.edit-btn,
+.save-btn,
+.cancel-btn,
+.withdraw-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    margin: 0.25rem;
+    font-weight: 500;
+}
+
+.edit-btn {
+    background: #3b82f6;
+    color: white;
+}
+
+.save-btn {
+    background: #10b981;
+    color: white;
+}
+
+.cancel-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.withdraw-btn {
+    background: #6366f1;
+    color: white;
+    width: 100%;
+}
+
+.withdraw-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.wallet-type {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.wallet-details {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Add to components/Wallet/cstyles/walletStyles.css */
+.create-wallet-btn {
+    background: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.create-wallet-btn:hover {
+    background: #2563eb;
+}
+
+.wallet-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.wallet-modal {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 500px;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.error-message {
+    color: #ef4444;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #fee2e2;
+    border-radius: 0.25rem;
+}
+
+.create-btn {
+    background: #10b981;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+}

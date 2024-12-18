@@ -1,0 +1,133 @@
+/* src/components/Budget/styles/budgetStyles.css */
+
+:root {
+    --primary-color: #3b82f6; /* Primary color for buttons, accents */
+    --primary-dark: #2563eb; /* Darker shade of primary color */
+    --secondary-color: #6366f1; /* Secondary color for hover effects */
+    --accent-color: #e74c3c; /* Accent color for errors and warnings */
+    --background-color: #f4f6f7; /* Light background color */
+    --text-primary: #2c3e50; /* Primary text color */
+    --text-secondary: #7f8c8d; /* Secondary text color */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; /* Default font */
+    --spacing-small: 0.5rem; /* Small spacing */
+    --spacing-medium: 1rem; /* Medium spacing */
+    --spacing-large: 1.5rem; /* Large spacing */
+    --transition-speed: 0.3s; /* Transition speed for hover effects */
+    --border-radius-small: 0.5rem; /* Small border radius */
+    --border-radius-large: 1rem; /* Large border radius */
+  }
+  
+  .budget-manager {
+    padding: var(--spacing-large); /* Add padding around the container */
+    background-color: var(--background-color); /* Set the light background */
+  }
+  
+  .budget-manager h2 {
+    font-size: 1.5rem; /* Large heading size */
+    font-weight: 600; /* Bold heading weight */
+    color: var(--text-primary); /* Primary text color for heading */
+    font-family: var(--font-family); /* Apply the default font */
+    margin-bottom: var(--spacing-medium); /* Space between heading and next element */
+  }
+  
+  .create-budget-btn {
+    display: flex; /* Align items horizontally */
+    align-items: center; /* Center items vertically */
+    gap: var(--spacing-small); /* Space between icon and text */
+    padding: var(--spacing-medium) var(--spacing-large); /* Add padding to the button */
+    background-color: var(--primary-color); /* Set the primary button background */
+    color: white; /* White text color for contrast */
+    border: none; /* Remove default button border */
+    border-radius: var(--border-radius-small); /* Rounded corners */
+    cursor: pointer; /* Indicate clickable button */
+    transition: background-color var(--transition-speed) ease; /* Smooth transition for hover */
+  }
+  
+  .create-budget-btn:hover {
+    background-color: var(--primary-dark); /* Darken the background on hover */
+  }
+  
+  .error-message {
+    color: var(--accent-color); /* Red color for errors */
+    font-size: 0.875rem; /* Smaller font size for errors */
+    margin-top: var(--spacing-small); /* Add space above the error message */
+  }
+  
+  .budget-list {
+    margin-top: var(--spacing-medium); /* Add space above the list */
+  }
+  
+  .budget-card {
+    border: 1px solid #e5e7eb; /* Light grey border */
+    border-radius: var(--border-radius-small); /* Rounded corners */
+    padding: 15px; /* Add padding inside the card */
+    margin-bottom: 10px; /* Add space below the card */
+    background-color: white; /* White background */
+  }
+  
+  .budget-card h3 {
+    font-size: 1.125rem; /* Larger font size for the budget name */
+    font-weight: 600; /* Bold font weight */
+    margin-bottom: var(--spacing-small); /* Add space below the heading */
+  }
+  
+  .budget-card p {
+    font-size: 0.875rem; /* Smaller font size for details */
+    color: var(--text-secondary); /* Use secondary text color for details */
+    margin-bottom: var(--spacing-small); /* Add space below each detail */
+  }
+  
+  .budget-card button {
+    padding: var(--spacing-small) var(--spacing-large); /* Add padding to buttons */
+    background-color: var(--background-color); /* Set the light background for buttons */ color: var(--text-primary); /* Primary text color for buttons */
+    border: none; /* Remove default button border */
+    border-radius: var(--border-radius-small); /* Rounded corners */
+    cursor: pointer; /* Indicate clickable button */
+    transition: background-color var(--transition-speed) ease; /* Smooth transition for hover */
+  }
+  
+  .budget-card button:hover {
+    background-color: var(--secondary-color); /* Change background on hover */
+  }
+  
+  .budget-summary {
+    background-color: var(--background-color); /* Light background for summary */
+    padding: var(--spacing-large); /* Add padding */
+    border-radius: var(--border-radius-large); /* Rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    margin-top: var(--spacing-medium); /* Space above the summary */
+  }
+  
+  .budget-summary h4 {
+    font-size: 1.125rem; /* Font size for summary heading */
+    font-weight: 600; /* Bold font weight */
+    color: var(--text-primary); /* Primary text color */
+    margin-bottom: var(--spacing-small); /* Space below heading */
+  }
+  
+  .budget-summary p {
+    font-size: 0.875rem; /* Smaller font size for summary details */
+    color: var(--text-secondary); /* Use secondary text color */
+  }
+  
+  .budget-footer {
+    display: flex; /* Flexbox for layout */
+    justify-content: space-between; /* Space between items */
+    padding: var(--spacing-medium); /* Add padding */
+    background-color: var(--background-color); /* Light background */
+    border-top: 1px solid var(--text-secondary); /* Top border for separation */
+  }
+  
+  .budget-footer button {
+    padding: var(--spacing-small) var(--spacing-large); /* Add padding to buttons */
+    background-color: var(--secondary-color); /* Set secondary color for buttons */
+    color: white; /* White text color */
+    border: none; /* Remove default button border */
+    border-radius: var(--border-radius-small); /* Rounded corners */
+    cursor: pointer; /* Indicate clickable button */
+    transition: background-color var(--transition-speed) ease; /* Smooth transition for hover */
+  }
+  
+  .budget-footer button:hover {
+    background-color: darken(var(--secondary-color), 10%); /* Darken on hover */
+  } 
