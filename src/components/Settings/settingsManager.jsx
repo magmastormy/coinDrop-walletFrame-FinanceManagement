@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import settingsService from '../../services/settingsService';
-import { setSettings, setLoading, setError } from '../../slices/settingsSlice';
+import { setSettings, setLoading, setError } from '../../slices/settingSlice';
 import Notifications from './notificationSettings';
 import ChangePassword from './changePasswordSettings';
-import SystemThemes from './systemThemes';
+import SystemThemes from './systemThemesSettings';
 import PersonalInformation from './personalSettings';
-import DeleteAccount from './deleteAccount';
+import DeleteAccount from './deleteAccountSettings';
 import './styles/settingsStyles.css';
 
 const Settings = () => {

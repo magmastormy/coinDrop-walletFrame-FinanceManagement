@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import settingsService from '../../services/settingsService';
-import { setLoading, setError } from '../../slices/settingsSlice';
+import { setLoading, setError } from '../../slices/settingSlice';
 
 const PersonalInformation = ({ userInfo }) => {
     const dispatch = useDispatch();

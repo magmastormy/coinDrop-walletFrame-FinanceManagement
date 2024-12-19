@@ -3,7 +3,7 @@ import authReducer from './authSlice';
 import walletReducer from './walletSlice';
 import budgetReducer from './budgetSlice';
 import transactionReducer from './transactionSlice';
-import settingsReducer from './settingsSlice';
+import settingsReducer from './settingSlice';
 
 export const store = configureStore({
     reducer: {

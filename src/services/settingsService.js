@@ -1,9 +1,9 @@
-import axiosInstance from './axiosInstance';
+import axiosInstance from "../api/userAxios";
 
 const API_URL = '/settings';
 
 const settingsService = {
-    getSettings: async (userId) =>{
+    getUserSettings: async (userId) =>{
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
         console.log("User Settings: ", response);
         return response;
