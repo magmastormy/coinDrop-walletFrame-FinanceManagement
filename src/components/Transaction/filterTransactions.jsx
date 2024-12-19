@@ -1,6 +1,9 @@
 import React from 'react';
+import WalletCard from './transactionWalletCard';
 import './styles/transactionStyles.css';
-const FilterTransactions = ({ filters, setFilters }) => {
+
+
+const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFilters(prevFilters => ({
@@ -12,61 +15,52 @@ const FilterTransactions = ({ filters, setFilters }) => {
     return (
         <div className="filter-transactions">
             <h3>Filter Transactions</h3>
-            <div className="form-group">
-                <label htmlFor="walletId">Wallet ID</label>
+            <div className="horizontal-filters">
                 <input
-                    id="walletId"
-                    name="walletId"
-                    type="text"
-                    value={filters.walletId}
-                    onChange={handleChange}
-                />
-            </div>
-            <div className="form-group">
-                <label htmlFor="amount">Amount</label>
-                <input
-                    id="amount"
-                    name="amount"
                     type="number"
-                    value={filters.amount}
+                    name="minAmount"
+                    placeholder="Min Amount"
+                    value={filters.minAmount}
                     onChange={handleChange}
                 />
-            </div>
-            <div className="form-group">
-                <label htmlFor="type">Type</label>
+                <input
+                    type="number"
+                    name="maxAmount"
+                    placeholder="Max Amount"
+                    value={filters.maxAmount}
+                    onChange={handleChange}
+                />
                 <select
-                    id="type"
-                    name="type"
-                    value={filters.type}
+                    name="category"
+                    value={filters.category}
                     onChange={handleChange}
                 >
-                    <option value="">All</option>
+                    <option value="">All Categories</option>
                     <option value="income">Income</option>
                     <option value="expense">Expense</option>
                     <option value="transfer">Transfer</option>
                 </select>
-            </div>
-            <div className="form-group">
-                <label htmlFor="startDate">Start Date</label>
                 <input
-                    id="startDate"
-                    name="startDate"
                     type="date"
+                    name="startDate"
                     value={filters.startDate}
                     onChange={handleChange}
                 />
-            </div>
-            <div className="form-group">
-                <label htmlFor="endDate">End Date</label>
                 <input
-                    id="endDate"
-                    name="endDate"
                     type="date"
+                    name="endDate"
                     value={filters.endDate}
                     onChange={handleChange}
                 />
             </div>
-            <button onClick={() => setFilters({ walletId: '', amount: '', type: '', startDate: '', endDate: '' })}>Clear Filters</button>
+            <div className="wallet-cards-container">
+                {wallets.map(wallet => (
+                    <WalletCard key={wallet._id} wallet={wallet} onSelect={onWalletSelect} />
+                ))}
+            </div>
+            <button onClick={() => setFilters({ minAmount: '', maxAmount: '', category: '', startDate: '', endDate: '' })}>
+                Clear Filters
+            </button>
         </div>
     );
 };

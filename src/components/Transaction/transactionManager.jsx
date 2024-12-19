@@ -6,16 +6,20 @@ import CreateTransactionModal from './createTransactionModal';
 import TransactionList from './transactionList';
 import FilterTransactions from './filterTransactions';
 import './styles/transactionStyles.css';
+
+
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions, loading, error } = useSelector(state => state.transaction);
+    const { wallets } = useSelector(state => state.wallet);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filters, setFilters] = useState({
-        walletId: '',
-        amount: '',
-        type: '',
+        minAmount: '',
+        maxAmount: '',
+        category: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        walletId: ''
     });
 
     useEffect(() => {
@@ -34,8 +38,15 @@ const TransactionManager = () => {
         }
     };
 
+    const handleWalletSelect = (walletId) => {
+        setFilters(prevFilters => ({
+            ...prevFilters,
+            walletId
+        }));
+    };
+
     const handleTransactionCreated = () => {
-        fetchTransactions(); // Refresh the transaction list after creating a new transaction
+        fetchTransactions();
         setIsModalOpen(false);
     };
 
@@ -43,7 +54,7 @@ const TransactionManager = () => {
         <div className="transaction-manager">
             <h2>My Transactions</h2>
             <button onClick={() => setIsModalOpen(true)} className="create-transaction-btn">+ Create Transaction</button>
-            <FilterTransactions filters={filters} setFilters={setFilters} />
+            <FilterTransactions filters={filters} setFilters={setFilters} wallets={wallets} onWalletSelect={handleWalletSelect} />
             {loading && <p>Loading transactions...</p>}
             {error && <p className="error-message">{error}</p>}
             <TransactionList transactions={transactions} />

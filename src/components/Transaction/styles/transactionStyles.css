@@ -40,6 +40,33 @@
     padding: 1.5rem;
     margin-bottom: 1.5rem;
   }
+
+  /* Horizontal Filters */
+.horizontal-filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Wallet Cards Container */
+.wallet-cards-container {
+  display: flex;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  padding: 1rem 0;
+}
+
+.wallet-card {
+  background-color: var(--background, #ffffff);
+  border-radius: var(--radius-lg, 1rem);
+  padding: 1rem;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.wallet-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
   
   /* Create Transaction Button */
   .create-transaction-btn {

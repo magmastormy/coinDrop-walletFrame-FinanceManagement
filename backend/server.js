@@ -10,6 +10,7 @@ const transactionRoutes = require('./routes/transactionRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
 const communityRoutes = require('./routes/communityRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {

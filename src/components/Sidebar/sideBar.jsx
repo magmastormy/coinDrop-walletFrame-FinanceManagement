@@ -10,11 +10,11 @@ const Sidebar = ({ isAuthenticated }) => {
     const menuItems = [
         { name: 'Home', link: '/', icon: faHome },
         { name: 'Dashboard', link: '/dashboard', icon: faDashboard },
-        { name: 'Settings', link: '/settings', icon: faTools },
         {name: 'Wallet', link: '/wallet', icon: faWallet},
         {name: 'Budget', link: '/budget', icon: faSackDollar},
         { name: 'Logout', link: '/logout', icon: faDoorClosed },
-        {name: 'Transaction', link: '/transaction', icon: faSackDollar},    
+        {name: 'Transaction', link: '/transaction', icon: faSackDollar}, 
+        {name: 'Settings', link: '/settings', icon: faTools}
     ];
 
     return (

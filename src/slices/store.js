@@ -3,12 +3,15 @@ import authReducer from './authSlice';
 import walletReducer from './walletSlice';
 import budgetReducer from './budgetSlice';
 import transactionReducer from './transactionSlice';
+import settingsReducer from './settingsSlice';
+
 export const store = configureStore({
     reducer: {
         auth: authReducer,
         wallet: walletReducer,
         budget: budgetReducer,
         transaction: transactionReducer,
+        setting: settingsReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {
