@@ -17,8 +17,6 @@
     display: flex;
     flex-direction: column;
     background-color: var(--bg-primary);
-    margin-left: var(--sidebar-width); /* Add margin for sidebar */
-    width: calc(100% - var(--sidebar-width)); /* Adjust width to account for sidebar */
     transition: margin-left var(--transition-speed) ease, width var(--transition-speed) ease;
 }
 

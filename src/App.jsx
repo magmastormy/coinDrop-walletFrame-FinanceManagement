@@ -9,7 +9,9 @@ function App() {
     <Provider store={store}>
       <Router>
         <div className="app">
-          <AppRoutes />
+          <div className="content-wrapper">
+            <AppRoutes />
+          </div>
         </div>
       </Router>
     </Provider>
