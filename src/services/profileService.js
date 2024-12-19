@@ -5,7 +5,7 @@ const API_URL ='/profile';
 // Function to get user profile
 export const getUserProfile = async (userId) => {
     try {
-        const response = await axiosInstance.get(`/profile/${userId}`);
+        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
         return response.data; // Return the profile data
     } catch (error) {
         throw new Error(error.response?.data?.error || 'Failed to fetch user profile');
@@ -13,9 +13,9 @@ export const getUserProfile = async (userId) => {
 };
 
 // Function to update user profile
-export const updateUserProfile = async (profileData) => {
+export const updateUserProfile = async (id, profileData) => {
     try {
-        const response = await axiosInstance.put('/profile', profileData);
+        const response = await axiosInstance.put(`${API_URL}/${id}`, profileData);
         return response.data; // Return the updated profile data
     } catch (error) {
         throw new Error(error.response?.data?.error || 'Failed to update user profile');
