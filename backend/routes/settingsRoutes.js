@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const SettingsController = require('../controllers/settingsController');
+const AuthController = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Validation middleware
@@ -43,5 +44,12 @@ router.put('/notifications', notificationValidation, SettingsController.updateNo
 router.put('/preferences', preferencesValidation, SettingsController.updatePreferences);
 router.put('/security', securityValidation, SettingsController.updateSecuritySettings);
 router.post('/verify-pin', SettingsController.verifyTransactionPin);
+
+
+//Profile-related routes
+router.get('/profile', AuthController.getProfile);
+router.put('/profile', AuthController.updateProfile);
+router.delete('/account', AuthController.deleteAccount);
+
 
 module.exports = router;

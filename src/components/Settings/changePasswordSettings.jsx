@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import settingsService from '../../services/settingsService';
+import { changePassword } from '../../services/authService'; // Use named import
 import { setLoading, setError } from '../../slices/settingSlice';
 
 const ChangePassword = () => {
@@ -18,7 +18,7 @@ const ChangePassword = () => {
         }
         dispatch(setLoading(true));
         try {
-            await settingsService.updateSecuritySettings({ currentPassword, newPassword });
+            await changePassword({ currentPassword, newPassword }); // Call the named import
             setSuccess('Password changed successfully!');
             setCurrentPassword('');
             setNewPassword('');

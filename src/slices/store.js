@@ -4,6 +4,7 @@ import walletReducer from './walletSlice';
 import budgetReducer from './budgetSlice';
 import transactionReducer from './transactionSlice';
 import settingsReducer from './settingSlice';
+import profileReducer from './profileSlice';
 
 export const store = configureStore({
     reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
         budget: budgetReducer,
         transaction: transactionReducer,
         setting: settingsReducer,
+        profile: profileReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {

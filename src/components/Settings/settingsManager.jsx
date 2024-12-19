@@ -12,12 +12,13 @@ import './styles/settingsStyles.css';
 const Settings = () => {
     const dispatch = useDispatch();
     const { settings, loading, error } = useSelector(state => state.settings);
+    const {user} = useSelector(state => state.auth);
 
     useEffect(() => {
         const fetchSettings = async () => {
             dispatch(setLoading(true));
             try {
-                const userSettings = await settingsService.getUserSettings();
+                const userSettings = await settingsService.getUserSettings(user.id);
                 dispatch(setSettings(userSettings));
             } catch (err) {
                 dispatch(setError(err.message));
@@ -29,15 +30,17 @@ const Settings = () => {
         fetchSettings();
     }, [dispatch]);
 
+    if (loading) return <p>Loading settings...</p>;
+    if (error) return <p className="error-message">{error}</p>;
+    if (!settings) return null;
+
     return (
         <div className="settings-container">
             <h1>Settings</h1>
-            {loading && <p>Loading settings...</p>}
-            {error && <p className="error-message">{error}</p>}
+            <PersonalInformation />
             <Notifications settings={settings.notifications} />
             <ChangePassword />
-            <SystemThemes currentTheme={settings.theme} />
-            <PersonalInformation userInfo={settings.personalInfo} />
+            <SystemThemes currentTheme={settings.preferences.theme} />
             <DeleteAccount />
         </div>
     );

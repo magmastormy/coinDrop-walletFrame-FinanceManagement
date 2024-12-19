@@ -125,3 +125,17 @@ export const getStoredUser = () => {
         return null;
     }
 };
+
+export const changePassword = async(oldPassword, newPassword) => {
+    try {
+        const response = await axiosInstance.put('/auth/change-password', {
+            oldPassword,
+            newPassword
+        });
+
+        return response.data; // Return the response data (e.g., success message)
+    } catch (error) {
+        // Handle errors (e.g., incorrect current password)
+        throw new Error(error.response?.data?.message || 'Failed to change password.');
+    }
+};

@@ -1,15 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const settingsSlice = createSlice({
-    name: 'setting',
+const profileSlice = createSlice({
+    name: 'profile',
     initialState: {
-        settings: [],
+        profile: null,
         loading: false,
         error: null
     },
     reducers: {
-        setSettings: (state, action) => {
-            state.settings = action.payload;
+        setProfile: (state, action) => {
+            state.profile = action.payload;
         },
         setLoading: (state, action) => {
             state.loading = action.payload;
@@ -17,18 +17,14 @@ const settingsSlice = createSlice({
         setError: (state, action) => {
             state.error = action.payload;
         },
-        clearSettings: (state) => {
-            state.settings = null;
+        clearProfile: (state) => {
+            state.profile = null;
             state.loading = false;
             state.error = null;
         }
     }
 });
 
-export const { 
-    setSettings, 
-    setLoading, 
-    setError, 
-    clearSettings } = settingsSlice.actions;
+export const { setProfile, setLoading, setError, clearProfile } = profileSlice.actions;
 
-export default settingsSlice.reducer;
+export default profileSlice.reducer;

@@ -81,7 +81,7 @@ class SettingsController {
     // Update security settings
     static async updateSecuritySettings(req, res) {
         try {
-            const { twoFactorAuth, biometricLogin, transactionPinEnabled, currentPin, newPin } = req.body;
+            const { twoFactorAuth, biometricLogin } = req.body;
             const settings = await UserSettings.findOne({ userId: req.user._id });
 
             if (!settings) {
@@ -90,39 +90,8 @@ class SettingsController {
                 });
             }
 
-            // If enabling transaction PIN
-            if (transactionPinEnabled && !settings.security.transactionPinEnabled) {
-                if (!newPin) {
-                    return res.status(400).json({
-                        error: 'New PIN is required'
-                    });
-                }
-                const hashedPin = await bcrypt.hash(newPin, 10);
-                settings.security.transactionPin = hashedPin;
-            }
-
-            // If changing existing PIN
-            if (transactionPinEnabled && settings.security.transactionPinEnabled && newPin) {
-                if (!currentPin) {
-                    return res.status(400).json({
-                        error: 'Current PIN is required'
-                    });
-                }
-                
-                const isValidPin = await bcrypt.compare(currentPin, settings.security.transactionPin);
-                if (!isValidPin) {
-                    return res.status(400).json({
-                        error: 'Invalid current PIN'
-                    });
-                }
-
-                const hashedPin = await bcrypt.hash(newPin, 10);
-                settings.security.transactionPin = hashedPin;
-            }
-
             settings.security.twoFactorAuth = twoFactorAuth;
             settings.security.biometricLogin = biometricLogin;
-            settings.security.transactionPinEnabled = transactionPinEnabled;
 
             await settings.save();
 

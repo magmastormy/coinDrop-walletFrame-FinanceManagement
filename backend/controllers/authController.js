@@ -346,6 +346,27 @@ class AuthController {
             });
         }
     }
+
+    static async deleteAccount(req, res) {
+        try {
+            const user = await User.findByIdAndDelete(req.user.userId);
+            if (!user) {
+                return res.status(404).json({
+                    error: 'Not found',
+                    details: 'User not found'
+                });
+            }
+            res.json({
+                message: 'Account deleted successfully'
+            });
+        } catch (error) {
+            console.error('Delete account error:', error);
+            res.status(500).json({
+                error: 'Server error',
+                details: 'Could not delete account'
+            });
+        }
+    }
 }
 
 module.exports = AuthController;
