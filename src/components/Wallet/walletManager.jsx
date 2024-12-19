@@ -8,7 +8,6 @@ import { faWallet } from '@fortawesome/free-solid-svg-icons';
 import CreateNewWallet from './newWallet';
 import EmptyState from '../../pages/emptyState';
 import WalletCard from './WalletCard';
-c
 
 
 const WalletManager = () => {

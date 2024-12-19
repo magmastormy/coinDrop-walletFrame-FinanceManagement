@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
 import walletService from '../../services/walletService';
 import { deleteWallet, updateWallet } from '../../slices/walletSlice';
-import './styles/transactionStyles.css';
+import './styles/walletStyles.css';
 const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
     const [showOptions, setShowOptions] = useState(false);
     const dispatch = useDispatch();
