@@ -45,11 +45,4 @@ router.put('/preferences', preferencesValidation, SettingsController.updatePrefe
 router.put('/security', securityValidation, SettingsController.updateSecuritySettings);
 router.post('/verify-pin', SettingsController.verifyTransactionPin);
 
-
-//Profile-related routes
-router.get('/profile', AuthController.getProfile);
-router.put('/profile', AuthController.updateProfile);
-router.delete('/account', AuthController.deleteAccount);
-
-
 module.exports = router;

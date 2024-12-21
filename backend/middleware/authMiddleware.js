@@ -11,13 +11,6 @@ const authMiddleware = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
 
-        // Attach user profile for community features
-        const userProfile = await UserProfile.findOne({ user: decoded._id });
-        if (userProfile) {
-            req.userProfile = userProfile;
-            await userProfile.updateActivity(); // Update last active timestamp
-        }
-
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {

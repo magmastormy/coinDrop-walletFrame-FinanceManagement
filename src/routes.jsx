@@ -8,7 +8,6 @@ import Budget from './components/Budget/budgetManager';
 import Transaction from './components/Transaction/transactionManager';
 import Home from './pages/Home';
 import Sidebar from './components/Sidebar/sideBar';
-import Settings from './components/Settings/settingsManager';
 import Profile from './components/Profile/profileManager';
 
 // Protected Route Component
@@ -52,11 +51,6 @@ const AppRoutes = () => {
                 <Route path="/transaction" element={
                     <ProtectedRoute>
                         <Transaction />
-                    </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                    <ProtectedRoute>
-                        <Settings />
                     </ProtectedRoute>
                 } />
 
