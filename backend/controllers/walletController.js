@@ -225,6 +225,21 @@ class WalletController {
             });
         }
     }
+
+    // backend/controllers/walletController.js
+    static async getWalletBudgets (req, res) {
+        try {
+            const { walletId } = req.params;
+            const budgets = await Budget.find({ 
+                walletId,
+                userId: req.user._id 
+            });
+            
+            res.json({ budgets });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    };
 }
 
 module.exports = WalletController;

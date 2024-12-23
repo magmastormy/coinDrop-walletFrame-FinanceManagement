@@ -1,0 +1,3 @@
+1. if user profile is not found, meaning it has never been created, then user can create a profile. the "save changes" button is switched to "create profile". then the logic is change between save and create profile.
+2. force user to upload a profile picture when "Edit Profile" is clicked. ONLY THERE. if user does not click "Edit Profile", then hide the "upload box" for the profile picture.
+3. user can edit his profile.

@@ -7,8 +7,8 @@ import walletService from '../../services/walletService';
 import { setWallets, setLoading, setError } from '../../slices/walletSlice';
 import CreateNewWallet from './newWallet';
 import WalletCard from './WalletCard';
-import EmptyState from '../common/EmptyState';
-import './styles/transactionStyles.css';
+import EmptyState from '../../pages/emptyState'
+import '../Transaction/styles/transactionStyles.css';
 
 const WalletList = () => {
     const dispatch = useDispatch();

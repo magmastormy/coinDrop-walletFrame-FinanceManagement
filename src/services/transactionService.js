@@ -40,4 +40,36 @@ const transactionService = {
     }
 };
 
+const getBudgetTransactions = async (budgetId) => {
+    try {
+        const response = await fetch(`/api/transactions/budget/${budgetId}`, {
+            headers: getAuthHeader()
+        });
+        return handleResponse(response);
+    } catch (error) {
+        throw error;
+    }
+};
+
+const createBudgetTransaction = async (budgetId, transactionData) => {
+    try {
+        const response = await fetch(`/api/transactions/budget/${budgetId}`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeader(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(transactionData)
+        });
+        return handleResponse(response);
+    } catch (error) {
+        throw error;
+    }
+};
+
+export {
+    getBudgetTransactions,
+    createBudgetTransaction
+};
+
 export default transactionService;

@@ -26,29 +26,14 @@ class BudgetController {
         }
     }
 
-    // Get all budgets for a user
+        // Get all budgets for a user withtional filters
     static async getUserBudgets(req, res) {
         try {
-            const { status, category } = req.query;
-
-            console.log("Budget Controller - getUserBudgets - req.user.id: ", req.user. userId);
-            console.log("Budget Controller - getUserBudgets - req.query.userId: ", req.query.userId);
-
-
-            const filter = { 
-                userId: req.query.userId || req.user.userId,
-            };
-
-            if (status) filter.status = status;
+            const { category, status } = req.query;
+            const filter = { userId: req.user._id };
             if (category) filter.category = category;
-
-            const budgets = await Budget.find(filter)
-                .sort({ amount: -1 })
-                .populate({
-                    path: 'totalSpent',
-                    select: 'total'
-                });
-
+            if (status) filter.status = status;
+            const budgets = await Budget.find(filter).sort({ amount: -1 });
             res.json({
                 budgets,
                 totalBudgets: budgets.length,
@@ -61,6 +46,7 @@ class BudgetController {
             });
         }
     }
+
 
     // Update a budget
     static async updateBudget(req, res) {

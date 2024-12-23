@@ -6,109 +6,87 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWallet } from '@fortawesome/free-solid-svg-icons';
 import CreateNewWallet from './newWallet';
-import EmptyState from '../../pages/emptyState';
-import WalletCard from './WalletCard';
-
+import WalletList from './walletList';
+import WalletBudgetList from './walletBudgetList';
+import TransactionList from '../Transaction/transactionList';
 
 const WalletManager = () => {
     const dispatch = useDispatch();
     const { wallets, loading, error } = useSelector(state => state.wallet);
-    const {user} = useSelector(state => state.auth);
-    const [showTransferModal, setShowTransferModal] = useState(false);
+    const { user } = useSelector(state => state.auth);
+    const [activeView, setActiveView] = useState('wallets');
+    const [selectedWallet, setSelectedWallet] = useState(null);
+    const [walletBudgets, setWalletBudgets] = useState([]);
 
     useEffect(() => {
         fetchWallets();
     }, [dispatch]);
 
-    const fetchWallets = async () => {   
+    const fetchWallets = async () => {
         dispatch(setLoading(true));
         try {
             if (!user || !user.id) {
                 throw new Error('User not authenticated');
             }
-
             const data = await walletService.getAllWallets(user.id);
-            console.log('Wallet Manager - Fetched data:', data);
-            console.log('Wallet Manager - Fetched data.wallets:', data.wallets);
-
-            if (data && Array.isArray(data.wallets)) 
-                {
-                dispatch(setWallets(data.wallets));
-            } 
-            else {
-                dispatch(setWallets([]));
-            }
+            dispatch(setWallets(data.wallets || []));
         } catch (error) {
-            console.log('Wallet Manager - Error fetching wallet:', error.message);
             dispatch(setError(error.message));
-        }finally{
+        } finally {
             dispatch(setLoading(false));
         }
     };
 
-    if (!wallets || !Array.isArray(wallets) || wallets.length === 0) {
-        return <div>No wallets available.</div>; // Handle undefined wallets
-    }
+    const handleWalletSelect = async (wallet) => {
+        try {
+            const data = await walletService.getWalletBudgets(wallet._id);
+            setWalletBudgets(data.budgets);
+            setSelectedWallet(wallet);
+            setActiveView('budgets');
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleDeleteWallet = async (walletId) => {
+        try {
+            await walletService.deleteWallet(walletId);
+            fetchWallets();
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
 
     if (loading) {
-        return (
-            <div className="loading-container">
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                    <FontAwesomeIcon icon={faWallet} size="3x" />
-                </motion.div>
-                <p>Loading your wallets...</p>
-            </div>
-        );
+        return <div>Loading your wallets...</div>;
     }
 
     if (error) {
-        return (
-            <div className="error-container">
-                <FontAwesomeIcon icon={faWallet} size="3x" />
-                <p className="error-message">{error}</p>
-                <button onClick={()=>fetchWallets(user.id.toString())} className="retry-btn">
-                    Retry
-                </button>
-            </div>
-        );
+        return <div className="error-message">{error}</div>;
     }
 
     return (
         <div className="wallet-manager">
-            <div className="wallet-header">
-                <h2>My Wallets</h2>
-                <CreateNewWallet onWalletCreated={()=>fetchWallets(user.id.toString())} />
-            </div>
-
-            <AnimatePresence>
-                {wallets.length === 0 ? (
-                    <EmptyState
-                        icon={<FontAwesomeIcon icon={faWallet} size="3x" />}
-                        title="No Wallets Yet"
-                        description="Create your first wallet to start managing your finances"
-                        action={<CreateNewWallet onWalletCreated={()=>fetchWallets(user.id.toString())} />}
+            <h2>My Wallets</h2>
+            {!selectedWallet ? (
+                <div>
+                    <CreateNewWallet onWalletCreated={fetchWallets} />
+                    <WalletList 
+                        wallets={wallets}
+                        onWalletSelect={handleWalletSelect}
+                        onDelete={handleDeleteWallet}
                     />
-                ) : (
-                    <motion.div 
-                        className="wallets-grid"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        {wallets.map(wallet => (
-                            <WalletCard
-                                key={wallet._id}
-                                wallet={wallet}
-                                onUpdate={()=>fetchWallets(user.id.toString())}
-                                onTransfer={() => setShowTransferModal(true)}
-                            />
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            ) : (
+                <div>
+                    <button onClick={() => setSelectedWallet(null)}>Back to Wallets</button>
+                    <div>
+                        <h3>{selectedWallet.name}</h3>
+                        <WalletBudgetList budgets={walletBudgets} />
+                        <TransactionList walletId={selectedWallet._id} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

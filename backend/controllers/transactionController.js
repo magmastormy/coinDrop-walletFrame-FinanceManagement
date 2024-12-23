@@ -5,14 +5,37 @@ class TransactionController {
     // Create a new transaction
     static async createTransaction(req, res) {
         try {
-            const transactionData = {
-                ...req.body,
-                userId: req.user._id // Automatically set user ID from authenticated user
-            };
-
-            const transaction = new Transaction(transactionData);
-            await transaction.save();
-
+            const { budgetId, walletId, ...transactionData } = req.body;
+            
+            // Verify walletId and budgetId are valid and belong to the user
+            const budget = await Budget.findById(budgetId).session(session);
+            const wallet = await Wallet.findById(walletId).session(session);
+    
+            if (!budget || !wallet || budget.userId.toString() !== req.user._id.toString() || wallet.userId.toString() !== req.user._id.toString()) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).json({ error: 'Invalid budgetId or walletId' });
+            }
+    
+            // Ensure walletId matches the wallet associated with the budget
+            if (budget.walletId.toString() !== walletId) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).json({ error: 'Wallet does not match the budget' });
+            }
+    
+            // Create the transaction
+            const transaction = new Transaction({
+                ...transactionData,
+                budgetId,
+                walletId,
+                userId: req.user._id
+            });
+            await transaction.save({ session });
+    
+            await session.commitTransaction();
+            session.endSession();
+    
             res.status(201).json({
                 message: 'Transaction created successfully',
                 transaction
@@ -152,6 +175,107 @@ class TransactionController {
             });
         }
     }
-}
+
+    static async getTransactionsByBudget(req, res) {
+        try {
+            const { budgetId } = req.params;
+            const budget = await Budget.findOne({ 
+                _id: budgetId,
+                userId: req.user._id
+            });
+
+            if (!budget) {
+                return res.status(404).json({ error: 'Budget not found' });
+            }
+
+            const transactions = await Transaction.find({
+                budgetId,
+                userId: req.user._id
+            }).populate('walletId');
+
+            // Calculate budget progress
+            const totalSpent = transactions.reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : 0), 0);
+            const remainingAmount = budget.amount - totalSpent;
+            const progressPercentage = (totalSpent / budget.amount) * 100;
+
+            res.json({
+                budget,
+                transactions,
+                progress: {
+                    total: budget.amount,
+                    spent: totalSpent,
+                    remaining: remainingAmount,
+                    percentage: progressPercentage
+                }
+            });
+
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    static async createTransactionForBudget(req, res) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const { budgetId } = req.params;
+            const { amount, type, category, description } = req.body;
+
+            const budget = await Budget.findOne({
+                _id: budgetId,
+                userId: req.user._id
+            }).session(session);
+
+            if (!budget) {
+                throw new Error('Budget not found');
+            }
+
+            // Get wallet from budget
+            const wallet = await Wallet.findById(budget.walletId).session(session);
+            
+            if (!wallet) {
+                throw new Error('Associated wallet not found');
+            }
+
+            // Create transaction
+            const transaction = new Transaction({
+                userId: req.user._id,
+                budgetId,
+                walletId: wallet._id,
+                amount,
+                type,
+                category,
+                description,
+                date: new Date()
+            });
+
+            await transaction.save({ session });
+
+            // Update wallet balance
+            if (type === 'expense') {
+                wallet.balance -= amount;
+            } else if (type === 'income') {
+                wallet.balance += amount;
+            }
+            
+            await wallet.save({ session });
+
+            // Update budget spent amount
+            await budget.updateTotalSpent(amount);
+
+            await session.commitTransaction();
+
+            res.json({ transaction, wallet, budget });
+
+        } catch (error) {
+            await session.abortTransaction();
+            res.status(500).json({ error: error.message });
+        } finally {
+            session.endSession();
+        }
+    }
+};
+
 
 module.exports = TransactionController;

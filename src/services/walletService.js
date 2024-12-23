@@ -13,9 +13,18 @@ const walletService = {
             throw error; // Propagate the error for handling in the frontend
         }
     },
+    getWalletBudgets: async (walletId) => {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/${walletId}/budgets`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching wallet budgets:', error);
+            throw error;
+        }
+    },
 
     createWallet: async (walletData) => {
-        const response = await axiosInstance.post(API_URL, walletData);
+        const response = await axiosInstance.post(`${API_URL}`, walletData);
         return response.data;
     },
 
@@ -38,6 +47,7 @@ const walletService = {
         const response = await axiosInstance.post(`${API_URL}/transfer`, transferData);
         return response.data;
     }
+
 };
 
 export default walletService;

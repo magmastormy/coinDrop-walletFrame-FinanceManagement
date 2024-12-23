@@ -59,30 +59,15 @@ const BudgetSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    frequency: {
-        type: String,
-        enum: {
-            values: ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'],
-            message: '{VALUE} is not a valid frequency'
-        }
+    walletId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wallet',
+        required: true
     },
-    status: {
-        type: String,
-        enum: {
-            values: ['active', 'completed', 'exceeded', 'archived'],
-            message: '{VALUE} is not a valid status'
-        },
-        default: 'active'
-    },
-    metadata: {
-        icon: {
-            type: String,
-            default: 'budget'
-        },
-        color: {
-            type: String,
-            default: '#007bff'
-        }
+    totalSpent: {
+        type: Number,
+        default: 0,
+        min: [0, 'Total spent must be a positive number']
     }
 }, {
     timestamps: true,
@@ -114,28 +99,37 @@ BudgetSchema.virtual('totalSpent', {
     }
 });
 
-// Method to check budget status
-BudgetSchema.methods.checkStatus = function() {
-    const now = new Date();
-    const isExpired = now > this.endDate;
-    const isExceeded = this.totalSpent > this.amount;
-
-    if (isExpired) {
-        this.status = 'completed';
-    } else if (isExceeded) {
-        this.status = 'exceeded';
-    }
-
-    return this.status;
+// Method to update total spent
+BudgetSchema.methods.updateTotalSpent = async function(amount) {
+    this.totalSpent += amount;
+    await this.save();
+    return this.totalSpent;
 };
 
-// Static method to get user's active budgets
-BudgetSchema.statics.getActiveBudgets = async function(userId) {
-    return this.find({ 
-        userId, 
-        status: 'active',
-        endDate: { $gte: new Date() }
-    }).sort({ amount: -1 });
+// Static method to get user's budgets
+BudgetSchema.statics.getUserBudgets = async function(userId) {
+    return this.find({ userId })
+        .populate('walletId')
+        .sort({ startDate: 1 });
+};
+
+// Static method to get user's budgets with total spent
+BudgetSchema.statics.getUserBudgetsWithTotalSpent = async function(userId) {
+    return this.aggregate([
+        { $match: { userId: mongoose.Types.ObjectId(userId) } },
+        {
+            $lookup: {
+                from: 'transactions',
+                let: { budgetId: '$_id' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$budgetId', '$$budgetId'] } } },
+                    { $group: { _id: null, total: { $sum: '$amount' } } }
+                ],
+                as: 'totalSpent'
+            }
+        },
+        { $project: { name: 1, type: 1, category: 1, amount: 1, startDate: 1, endDate: 1, currency: 1, isRecurring: 1, walletId: 1, totalSpent: { $arrayElemAt: ['$totalSpent.total', 0] } } }
+    ]);
 };
 
 const Budget = mongoose.model('Budget', BudgetSchema);

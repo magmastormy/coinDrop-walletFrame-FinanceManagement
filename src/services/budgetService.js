@@ -8,9 +8,8 @@ const budgetService = {
         return response.data;
     },
 
-    getUserBudgets: async (userId) => {
-        console.log("Budget Service- getUserBudgets for userId:", userId);
-        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
+    getUserBudgets: async (userId, filters = {}) => {
+        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
         return response;
     },
 
