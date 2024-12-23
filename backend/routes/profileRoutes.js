@@ -25,11 +25,10 @@ const profileValidation = [
 router.use(authMiddleware);
 
 // Profile routes
-router.get('/profile/:userId', ProfileController.getProfile);
-router.put('/profile/:userId', profileValidation, ProfileController.updateProfile);
-router.post('/profile/:userId', profileValidation, ProfileController.createProfile);
-router.get('/profile/:userId/followers', ProfileController.getFollowers);
-router.get('/profile/:userId/following', ProfileController.getFollowing);
-//delete profile
-router.delete('/profile/:userId', ProfileController.deleteProfile);
+router.get('/:userId', ProfileController.getProfile);
+router.put('/:userId', profileValidation, ProfileController.updateProfile);
+router.post('/:userId', profileValidation, ProfileController.createProfile);
+router.get('/:userId/followers', ProfileController.getFollowers);
+router.get('/:userId/following', ProfileController.getFollowing);
+router.delete('/:userId', ProfileController.deleteProfile);
 module.exports = router;

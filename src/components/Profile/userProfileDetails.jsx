@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import ProfileModal from './profileModal';
 import ViewProfileDetailsOnly from './userProfileDetailsViewMode';
+import ImageUpload from './imageUpload';
 import profileService from '../../services/profileService';
 import {
     fetchProfileStart,
@@ -17,7 +17,6 @@ import {
 import './styles/profileStyles.css';
 
 const UserProfileDetails = () => {
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const dispatch = useDispatch();
     
@@ -25,38 +24,65 @@ const UserProfileDetails = () => {
     const { profile, loading, error } = useSelector(state => state.profile);
 
     const [formData, setFormData] = useState({
-        bio: profile?.bio || '',
-        interests: Array.isArray(profile?.interests) ? profile?.interests : [],
-        phone: profile?.phone || '',
-        profilePicture: profile?.profilePicture || '',
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
-        email: user?.email || '',
+        bio: '',
+        interests: [],
+        phone: '',
+        profilePicture: '',
+        firstName: '',
+        lastName: '',
+        email: '',
     });
 
     useEffect(() => {
+        // Update form data when profile or user data changes
+        if (profile || user) {
+            setFormData({
+                bio: profile?.bio || '',
+                interests: Array.isArray(profile?.interests) ? profile.interests : [],
+                phone: profile?.phone || '',
+                profilePicture: profile?.profilePicture || '',
+                firstName: user?.firstName || '',
+                lastName: user?.lastName || '',
+                email: user?.email || '',
+            });
+        }
+    }, [profile, user]);
+
+    useEffect(() => {
         const fetchUserProfile = async () => {
+            if (!user?.id) return;
+            
             try {
                 dispatch(fetchProfileStart());
                 const profileData = await profileService.getUserProfile(user.id);
-                dispatch(fetchProfileSuccess(profileData.profile));
+                
                 if (!profileData.profile) {
-                    setShowCreateModal(true);
+                    console.log('No profile found, enabling edit mode');
+                    setIsEditing(true);
+                    dispatch(fetchProfileSuccess(null));
+                } else {
+                    console.log('Profile found:', profileData.profile);
+                    dispatch(fetchProfileSuccess(profileData.profile));
                 }
             } catch (err) {
-                dispatch(fetchProfileFailure(err.message));
+                console.error('Error fetching profile:', err);
+                if (err.response?.status === 404) {
+                    setIsEditing(true);
+                    dispatch(fetchProfileSuccess(null));
+                } else {
+                    dispatch(fetchProfileFailure(err.message));
+                }
             }
         };
 
-        if (user?.id) {
+        if (user?.id && !profile) {
             fetchUserProfile();
         }
-    }, [dispatch, user?.id]);
+    }, [dispatch, user?.id, profile]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         
-        // Special handling for interests
         if (name === 'interests') {
             setFormData(prev => ({
                 ...prev,
@@ -70,26 +96,43 @@ const UserProfileDetails = () => {
         }
     };
 
-    const handleCreateProfile = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            dispatch(createProfileStart());
-            const result = await profileService.createUserProfile(user.id, formData);
-            dispatch(createProfileSuccess(result.profile));
-            setShowCreateModal(false);
+            // Validate profilePicture field
+            if (formData.profilePicture && !isValidUrl(formData.profilePicture)) {
+                throw new Error('Profile picture must be a valid URL');
+            }
+
+            console.log('Submitting form data:', formData);
+            if (!profile) {
+                dispatch(createProfileStart());
+                const result = await profileService.createUserProfile(user.id, formData);
+                dispatch(createProfileSuccess(result.profile));
+            } else {
+                dispatch(updateProfileStart());
+                const result = await profileService.updateUserProfile(user.id, formData);
+                dispatch(updateProfileSuccess(result.profile));
+            }
+            setIsEditing(false);
         } catch (err) {
-            dispatch(createProfileFailure(err.message));
+            console.error('Profile operation error:', err);
+            const action = profile ? updateProfileFailure : createProfileFailure;
+            dispatch(action(
+                err.response?.status === 401 
+                    ? 'Your session has expired. Please log in again.'
+                    : err.message || 'Operation failed. Please try again.'
+            ));
         }
     };
 
-    const handleUpdateProfile = async () => {
+    // Helper function to validate URL
+    const isValidUrl = (url) => {
         try {
-            dispatch(updateProfileStart());
-            const result = await profileService.updateUserProfile(user.id, formData);
-            dispatch(updateProfileSuccess(result.profile));
-            setIsEditing(false);
-        } catch (err) {
-            dispatch(updateProfileFailure(err.message));
+            new URL(url);
+            return true;
+        } catch (_) {
+            return false;
         }
     };
 
@@ -98,77 +141,44 @@ const UserProfileDetails = () => {
             {loading && <div className="loading-overlay">Loading...</div>}
             {error && <div className="error-message">{error}</div>}
 
-            <ProfileModal
-                isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                title="Complete Your Profile"
-            >
-                <form onSubmit={handleCreateProfile} className="profile-form">
-                    <h3>Basic Information</h3>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>First Name:</label>
-                            <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Last Name:</label>
-                            <input
-                                type="text"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className="form-group">
-                        <label>Email:</label>
-                        <input
-                            type="email"
-                            value={user?.email}
-                            disabled
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Phone:</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Bio:</label>
-                        <textarea
-                            name="bio"
-                            value={formData.bio}
-                            onChange={handleInputChange}
-                            placeholder="Tell us about yourself"
-                        />
-                    </div>
-                    <button type="submit" className="btn-primary">
-                        Create Profile
-                    </button>
-                </form>
-            </ProfileModal>
-
             <div className="profile-content">
+            <div className="form-group">
+                <ImageUpload 
+                    onImageSelect={(file) => {
+                        //TODO: Handle the file upload here
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            setFormData(prev => ({
+                                ...prev,
+                                profilePicture: reader.result
+                            }));
+                        };
+                        reader.readAsDataURL(file);
+                    }} 
+                />
+            </div>
+                <div className="profile-header">
                 <div className="profile-header">
                     <h2>{user?.username}'s Profile</h2>
-                    {!isEditing && !showCreateModal && (
-                        <button onClick={() => setIsEditing(true)} className="btn-edit">
+                    {/* Show Edit button if there's a profile and not in edit mode */}
+                    {!isEditing && profile && (
+                        <button 
+                            onClick={() => setIsEditing(true)} 
+                            className="btn-edit"
+                        >
                             Edit Profile
                         </button>
                     )}
+                    {/* Show Create Profile button if there's no profile and not in edit mode */}
+                    {!isEditing && !profile && (
+                        <button 
+                            onClick={() => setIsEditing(true)} 
+                            className="btn-edit"
+                        >
+                            Create Profile
+                        </button>
+                    )}
                 </div>
-
 
                 <div className="profile-display">
                     <div className="profile-picture">
@@ -180,8 +190,7 @@ const UserProfileDetails = () => {
 
                     <div className="profile-info">
                         {isEditing ? (
-                            // Edit Mode
-                            <form onSubmit={handleUpdateProfile}>
+                            <form onSubmit={handleSubmit}>
                                 <div className="form-group">
                                     <label>First Name:</label>
                                     <input
@@ -189,6 +198,7 @@ const UserProfileDetails = () => {
                                         name="firstName"
                                         value={formData.firstName}
                                         onChange={handleInputChange}
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
@@ -198,6 +208,7 @@ const UserProfileDetails = () => {
                                         name="lastName"
                                         value={formData.lastName}
                                         onChange={handleInputChange}
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
@@ -227,9 +238,22 @@ const UserProfileDetails = () => {
                                         placeholder="Enter interests separated by commas"
                                     />
                                 </div>
+
+
                                 <div className="edit-actions">
-                                    <button type="submit" className="btn-save">Save Changes</button>
-                                    <button type="button" onClick={() => setIsEditing(false)} className="btn-cancel">Cancel</button>
+                                    <button type="submit" className="btn-save">
+                                        {profile ? 'Save Changes' : 'Create Profile'}
+                                    </button>
+                                    {/* Only show Cancel if we have an existing profile */}
+                                    {profile && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setIsEditing(false)} 
+                                            className="btn-cancel"
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
                                 </div>
                             </form>
                         ) : (
@@ -238,6 +262,7 @@ const UserProfileDetails = () => {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };

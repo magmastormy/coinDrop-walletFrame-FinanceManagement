@@ -113,7 +113,6 @@ class ProfileController {
 
             const profile = await UserProfile.create(profileData);
             await profile.populate('user', 'username email profilePicture firstName lastName');
-
             res.status(201).json({
                 message: 'Profile created successfully',
                 profile

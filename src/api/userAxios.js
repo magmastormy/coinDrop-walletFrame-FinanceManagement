@@ -32,17 +32,25 @@ axiosInstance.interceptors.request.use(
     async (config) => {
         const token = localStorage.getItem('token');
 
+        if (!token) {
+            return config;
+        }
+
         if (isTokenExpired(token)) {
             try {
                 const newToken = await refreshToken();
-                localStorage.setItem('token', newToken); // Store the new token
-                config.headers.Authorization = `Bearer ${newToken}`; // Set the new token in the request
+                localStorage.setItem('token', newToken);
+                config.headers.Authorization = `Bearer ${newToken}`;
             } catch (error) {
                 console.error('Token refresh failed:', error);
-                // Handle token refresh failure (e.g., redirect to login)
+
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+                return Promise.reject(error);
             }
         } else {
-            config.headers.Authorization = `Bearer ${token}`; // Set the existing token
+            config.headers.Authorization = `Bearer ${token}`;
         }
 
         return config;
@@ -60,8 +68,14 @@ axiosInstance.interceptors.response.use(
         // Return the data directly
         return response.data;
     },
-    (error) => {
+    async (error) => {
         console.error('User-axios - Axios error:', error);
+        if (error.response?.status === 401) {
+            console.log('User-axios - Token expired, sending you to login page.');
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            window.location.href = '/login';
+        }
         return Promise.reject(error);
     }
 );

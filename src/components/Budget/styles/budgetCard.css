@@ -1,0 +1,51 @@
+.budget-card {
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .budget-card h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  
+  .budget-details,
+  .budget-meta,
+  .budget-actions {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  
+  .budget-details p,
+  .budget-meta p {
+    flex: 1 1 33%; /* Adjust the width of each detail item here */
+    margin-right: 10px;
+    font-size: 14px;
+  }
+  
+  .budget-details p:last-child,
+  .budget-meta p:last-child {
+    margin-right: 0;
+  }
+  
+  .budget-actions {
+    justify-content: flex-end;
+  }
+  
+  .budget-actions button {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-left: 5px;
+  }
+  
+  .budget-actions button:hover {
+    background-color: #e0e0e0;
+  }
