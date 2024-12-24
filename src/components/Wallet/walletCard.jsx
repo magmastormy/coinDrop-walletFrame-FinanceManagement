@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEllipsisV, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faEllipsisV, faTrash, faEdit, faArrowRight, faWallet } from '@fortawesome/free-solid-svg-icons';
 import walletService from '../../services/walletService';
 import { deleteWallet, updateWallet } from '../../slices/walletSlice';
+import WalletTransfer from './walletTransfer';
 import './styles/walletStyles.css';
 
 const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
     const [showOptions, setShowOptions] = useState(false);
+    const [showTransferModal, setShowTransferModal] = useState(false);
     const dispatch = useDispatch();
 
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to delete this wallet?')) {
             try {
+                console.log("WalletCard, wallet._id: ", wallet._id);
+                console.log("WalletCard, wallet: ", wallet);
+
                 await walletService.deleteWallet(wallet._id);
                 dispatch(deleteWallet(wallet._id));
             } catch (error) {
@@ -21,10 +26,15 @@ const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
         }
     };
 
+    // Get wallet icon or use default
+    const getWalletIcon = () => {
+        return wallet.icon || faWallet;
+    };
+
     return (
         <div className="wallet-card">
             <div className="wallet-card-header">
-                <FontAwesomeIcon icon={wallet.metadata.icon} className="wallet-icon" />
+                <FontAwesomeIcon icon={getWalletIcon()} className="wallet-icon" />
                 <button 
                     className="options-btn"
                     onClick={() => setShowOptions(!showOptions)}
@@ -39,7 +49,7 @@ const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
                         <button onClick={handleDelete}>
                             <FontAwesomeIcon icon={faTrash} /> Delete
                         </button>
-                        <button onClick={onTransfer}>
+                        <button onClick={() => setShowTransferModal(true)}>
                             <FontAwesomeIcon icon={faArrowRight} /> Transfer
                         </button>
                     </div>
@@ -52,6 +62,13 @@ const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
                 </div>
                 <div className="wallet-type">{wallet.type}</div>
             </div>
+            {showTransferModal && (
+                <WalletTransfer
+                    sourceWallet={wallet}
+                    onClose={() => setShowTransferModal(false)}
+                    onTransferComplete={onUpdate}
+                />
+            )}
         </div>
     );
 };

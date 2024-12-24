@@ -19,6 +19,9 @@ const walletSlice = createSlice({
         },
         setLoading: (state, action) =>{
             state.loading = action.payload;
+            if (action.payload === true) {
+                state.error = null;
+            }
         },
         setError: (state, action) =>{
             state.error = action.payload;

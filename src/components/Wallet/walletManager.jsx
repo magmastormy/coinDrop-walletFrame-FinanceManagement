@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import walletService from '../../services/walletService';
-import { setWallets, setLoading, setError } from '../../slices/walletSlice';
+import { setWallets, setLoading, setError, updateWallet } from '../../slices/walletSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWallet } from '@fortawesome/free-solid-svg-icons';
+import { faWallet, faChartLine,faArrowLeft  } from '@fortawesome/free-solid-svg-icons';
 import CreateNewWallet from './newWallet';
 import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
@@ -20,15 +20,18 @@ const WalletManager = () => {
     const [walletBudgets, setWalletBudgets] = useState([]);
 
     useEffect(() => {
-        fetchWallets();
-    }, [dispatch]);
+        if (user && user.id) {
+            fetchWallets();
+        }
+    }, [dispatch, user]);
 
-    const fetchWallets = async () => {
+    const fetchWallets = async () => {        
         dispatch(setLoading(true));
         try {
             if (!user || !user.id) {
                 throw new Error('User not authenticated');
             }
+
             const data = await walletService.getAllWallets(user.id);
             dispatch(setWallets(data.wallets || []));
         } catch (error) {
@@ -45,9 +48,9 @@ const WalletManager = () => {
             setSelectedWallet(wallet);
             setActiveView('budgets');
         } catch (err) {
-            console.error(err);
+          console.error(err);
         }
-    };
+      };
 
     const handleDeleteWallet = async (walletId) => {
         try {

@@ -4,8 +4,12 @@ const API_URL = '/wallets';
 
 const walletService = {
     getAllWallets: async (userId) => {
-        console.log("Wallet Service - getAllWallets - userId Received: ", userId);
         try {
+            if (!userId) {
+                throw new Error('UserId is required');
+            }
+            
+            console.log("Wallet Service - getAllWallets - userId Received: ", userId);
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
             return response; 
         } catch (error) {
@@ -45,6 +49,14 @@ const walletService = {
 
     transferBalance: async (transferData) => {
         const response = await axiosInstance.post(`${API_URL}/transfer`, transferData);
+        return response.data;
+    },
+    transferBetweenWallets: async (fromWalletId, toWalletId, amount) => {
+        const response = await axiosInstance.post(`${API_URL}/transfer`, {
+            fromWalletId,
+            toWalletId,
+            amount
+        });
         return response.data;
     }
 

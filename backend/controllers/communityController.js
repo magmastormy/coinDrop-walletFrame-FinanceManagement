@@ -9,7 +9,7 @@ class CommunityController {
         try {
             const postData = {
                 ...req.body,
-                author: req.user._id
+                author: req.user._id || req.query.userId || req.user.userId
             };
 
             const post = new CommunityPost(postData);
@@ -96,7 +96,7 @@ class CommunityController {
     static async updatePost(req, res) {
         try {
             const post = await CommunityPost.findOneAndUpdate(
-                { _id: req.params.id, author: req.user._id },
+                { _id: req.params.id, author: req.user._id || req.query.userId || req.user.userId},
                 req.body,
                 { 
                     new: true, 

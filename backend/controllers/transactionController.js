@@ -7,13 +7,15 @@ class TransactionController {
     // Create a new transaction
     static async createTransaction(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
             const { budgetId, walletId, ...transactionData } = req.body;
             
             // Verify walletId and budgetId are valid and belong to the user
             const budget = await Budget.findById(budgetId).session(session);
             const wallet = await Wallet.findById(walletId).session(session);
     
-            if (!budget || !wallet || budget.userId.toString() !== req.user._id.toString() || wallet.userId.toString() !== req.user._id.toString()) {
+            if (!budget || !wallet || budget.userId.toString() !== userId.toString() || wallet.userId.toString() !== userId.toString()) {
                 await session.abortTransaction();
                 session.endSession();
                 return res.status(400).json({ error: 'Invalid budgetId or walletId' });
@@ -31,7 +33,7 @@ class TransactionController {
                 ...transactionData,
                 budgetId,
                 walletId,
-                userId: req.user._id
+                userId: userId,
             });
             await transaction.save({ session });
     
@@ -49,12 +51,15 @@ class TransactionController {
             });
         }
     }
-    
+
     static async createTransactionForBudget(req, res) {
         const session = await mongoose.startSession();
         session.startTransaction();
     
         try {
+
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
             const { budgetId } = req.params;
             const { amount, type, category, description } = req.body;
     
@@ -64,7 +69,7 @@ class TransactionController {
     
             const budget = await Budget.findOne({
                 _id: budgetId,
-                userId: req.user._id
+                userId: userId,
             }).session(session);
     
             if (!budget) {
@@ -80,7 +85,7 @@ class TransactionController {
     
             // Create transaction
             const transaction = new Transaction({
-                userId: req.user._id,
+                userId: userId,
                 budgetId,
                 walletId: wallet._id, // This will be removed later
                 amount,
@@ -128,7 +133,7 @@ class TransactionController {
                 endDate 
             } = req.query;
 
-            const filter = { userId: req.user._id };
+            const filter = { userId: req.user._id || req.query.userId || req.user.userId};
 
             // Optional filters
             if (type) filter.type = type;
@@ -168,7 +173,10 @@ class TransactionController {
 
             // Ensure transaction belongs to the user
             const transaction = await Transaction.findOneAndUpdate(
-                { _id: id, userId: req.user._id },
+                { 
+                    _id: id, 
+                    userId: req.user._id || req.query.userId || req.user.userId,
+                },
                 req.body,
                 { new: true, runValidators: true }
             );
@@ -198,7 +206,7 @@ class TransactionController {
 
             const transaction = await Transaction.findOneAndDelete({
                 _id: id,
-                userId: req.user._id
+                userId: req.user._id || req.query.userId || req.user.userId,
             });
 
             if (!transaction) {
@@ -246,10 +254,11 @@ class TransactionController {
 
     static async getTransactionsByBudget(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const { budgetId } = req.params;
             const budget = await Budget.findOne({ 
                 _id: budgetId,
-                userId: req.user._id
+                userId: userId,
             });
 
             if (!budget) {
@@ -258,7 +267,7 @@ class TransactionController {
 
             const transactions = await Transaction.find({
                 budgetId,
-                userId: req.user._id
+                userId: userId,
             }).populate('walletId');
 
             // Calculate budget progress
@@ -287,12 +296,13 @@ class TransactionController {
         session.startTransaction();
 
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const { budgetId } = req.params;
             const { amount, type, category, description } = req.body;
 
             const budget = await Budget.findOne({
                 _id: budgetId,
-                userId: req.user._id
+                userId: userId,
             }).session(session);
 
             if (!budget) {
@@ -308,7 +318,7 @@ class TransactionController {
 
             // Create transaction
             const transaction = new Transaction({
-                userId: req.user._id,
+                userId: userId,
                 budgetId,
                 walletId: wallet._id,
                 amount,

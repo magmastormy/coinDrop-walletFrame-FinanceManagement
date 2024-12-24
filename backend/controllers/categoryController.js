@@ -6,7 +6,7 @@ class CategoryController {
         try {
             const categoryData = {
                 ...req.body,
-                userId: req.user._id // Associate the category with the user
+                userId: req.user._id || req.query.userId || req.user.userId // Associate the category with the user
             };
             const category = new Category(categoryData);
             await category.save();
@@ -26,7 +26,7 @@ class CategoryController {
     // Get all categories for a user
     static async getAllCategories(req, res) {
         try {
-            const categories = await Category.find({ userId: req.user._id }); // Filter by userId
+            const categories = await Category.find({ userId: req.user._id || req.query.userId || req.user.userId}); // Filter by userId
             res.json(categories);
         } catch (error) {
             res.status(500).json({

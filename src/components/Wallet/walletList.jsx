@@ -12,19 +12,29 @@ import '../Transaction/styles/transactionStyles.css';
 
 const WalletList = () => {
     const dispatch = useDispatch();
+    const { user } = useSelector(state => state.auth);
     const { wallets, loading, error } = useSelector(state => state.wallet);
+
+    console.log("Walletlist, user.id:", user.id);
 
     useEffect(() => {
         fetchWallets();
-    }, []);
+
+        if (user?.id) {
+            fetchWallets();
+        }
+
+    }, [dispatch, user?.id]);
 
     const fetchWallets = async () => {
         try {
             dispatch(setLoading(true));
-            const data = await walletService.getAllWallets();
+            const data = await walletService.getAllWallets(user.id);
             dispatch(setWallets(data.wallets));
         } catch (error) {
             dispatch(setError(error.message));
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 

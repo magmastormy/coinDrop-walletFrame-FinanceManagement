@@ -5,10 +5,11 @@ class SettingsController {
     // Get user settings
     static async getUserSettings(req, res) {
         try {
-            let settings = await UserSettings.findOne({ userId: req.user._id });
+            const userId = req.user._id || req.query.userId || req.user.userId;
+            let settings = await UserSettings.findOne({ userId: userId });
             
             if (!settings) {
-                settings = await UserSettings.createDefaultSettings(req.user._id);
+                settings = await UserSettings.createDefaultSettings(userId);
             }
 
             // Remove sensitive data
@@ -27,8 +28,9 @@ class SettingsController {
     // Update notification settings
     static async updateNotificationSettings(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const settings = await UserSettings.findOneAndUpdate(
-                { userId: req.user._id },
+                { userId: userId },
                 { 'notifications': req.body },
                 { new: true, runValidators: true }
             );
@@ -54,8 +56,9 @@ class SettingsController {
     // Update preferences
     static async updatePreferences(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const settings = await UserSettings.findOneAndUpdate(
-                { userId: req.user._id },
+                { userId: userId },
                 { 'preferences': req.body },
                 { new: true, runValidators: true }
             );
@@ -81,8 +84,9 @@ class SettingsController {
     // Update security settings
     static async updateSecuritySettings(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const { twoFactorAuth, biometricLogin } = req.body;
-            const settings = await UserSettings.findOne({ userId: req.user._id });
+            const settings = await UserSettings.findOne({ userId: userId });
 
             if (!settings) {
                 return res.status(404).json({
@@ -114,8 +118,9 @@ class SettingsController {
     // Verify transaction PIN
     static async verifyTransactionPin(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const { pin } = req.body;
-            const settings = await UserSettings.findOne({ userId: req.user._id })
+            const settings = await UserSettings.findOne({ userId: userId})
                 .select('+security.transactionPin');
 
             if (!settings || !settings.security.transactionPinEnabled) {

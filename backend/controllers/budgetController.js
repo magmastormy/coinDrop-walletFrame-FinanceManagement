@@ -10,7 +10,7 @@ class BudgetController {
             if (!name || !amount || !category) {
                 return res.status(400).json({ error: 'Name, amount, and category are required.' });
             }
-            
+
             const budgetData = {
                 ...req.body,
                 userId: req.user._id || req.query.userId || req.user.userId,
@@ -35,7 +35,7 @@ class BudgetController {
     static async getUserBudgets(req, res) {
         try {
             const { category, status } = req.query;
-            const filter = { userId: req.user._id };
+            const filter = { userId: req.user._id || req.query.userId || req.user.userId};
             if (category) filter.category = category;
             if (status) filter.status = status;
             const budgets = await Budget.find(filter).sort({ amount: -1 });
