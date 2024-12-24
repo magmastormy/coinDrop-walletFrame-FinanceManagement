@@ -58,7 +58,7 @@ const TransactionManager = () => {
             {loading && <p>Loading transactions...</p>}
             {error && <p className="error-message">{error}</p>}
             <TransactionList transactions={transactions} />
-            <CreateTransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTransactionCreated={handleTransactionCreated} />
+            <CreateTransactionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTransactionCreated={handleTransactionCreated} wallets={wallets} />
         </div>
     );
 };

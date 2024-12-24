@@ -9,6 +9,7 @@ import CreateNewWallet from './newWallet';
 import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
 import TransactionList from '../Transaction/transactionList';
+import WalletChart from './walletCharts';
 
 const WalletManager = () => {
     const dispatch = useDispatch();
@@ -68,6 +69,10 @@ const WalletManager = () => {
     return (
         <div className="wallet-manager">
             <h2>My Wallets</h2>
+            <div className="wallet-chart-container">
+                <FontAwesomeIcon icon={faWallet} size="lg" />
+                <WalletChart wallets={wallets} />
+            </div>
             {!selectedWallet ? (
                 <div>
                     <CreateNewWallet onWalletCreated={fetchWallets} />

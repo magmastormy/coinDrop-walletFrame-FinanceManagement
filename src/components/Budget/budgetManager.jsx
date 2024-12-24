@@ -5,7 +5,12 @@ import budgetService from '../../services/budgetService';
 import CreateBudgetModal from './createBudgetModal';
 import BudgetList from './budgetList';
 import BudgetTransactionList from './budgetTransactionList';
+import BudgetChart from './budgetCharts';
+import BudgetPerformanceChart from './budgetPerformanceChart';
+import TransactionChart from '../Transaction/transactionCharts';
+import {faChartLine} from '@fortawesome/free-solid-svg-icons';
 import './styles/budgetStyles.css';
+
 const BudgetManager = () => 
 {
    const dispatch = useDispatch();
@@ -16,7 +21,8 @@ const BudgetManager = () =>
    const [selectedBudget, setSelectedBudget] = useState(null);
    const [transactions, setTransactions] = useState([]);
    const [filter, setFilter] = useState({ category: '', dateRange: '' });
-    useEffect(() => {
+    
+   useEffect(() => {
        fetchBudgets();
    }, [dispatch]);
     const fetchBudgets = async () => {
@@ -64,13 +70,28 @@ const BudgetManager = () =>
     return (
        <div className="budget-manager">
            <h2>My Budgets</h2>
-           <input
-               type="text"
-               name="category"
-               placeholder="Filter by category"
-               value={filter.category}
-               onChange={handleFilterChange}
-           />
+           <div className="budget-chart-container">
+                <FontAwesomeIcon icon={faChartLine} size="lg" />
+                <BudgetChart budgets={budgets} />
+                {
+                    selectedBudget && (
+                        <>
+                            <BudgetPerformanceChart performanceData={budgets} />
+                            <TransactionChart transactions={transactions} />
+                        </>
+                    )
+                }
+            </div>
+           <div className="budget-filter">
+                <input
+                    type="text"
+                    name="category"
+                    placeholder="Filter by category"
+                    value={filter.category}
+                    onChange={handleFilterChange}
+                />
+            </div>
+
            <button onClick={() => setIsModalOpen(true)} className="create-budget-btn">
                + Create Budget
            </button>

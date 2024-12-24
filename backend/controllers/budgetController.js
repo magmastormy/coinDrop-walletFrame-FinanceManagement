@@ -6,6 +6,11 @@ class BudgetController {
     // Create a new budget
     static async createBudget(req, res) {
         try {
+            const { name, amount, category } = req.body; // Add required fields
+            if (!name || !amount || !category) {
+                return res.status(400).json({ error: 'Name, amount, and category are required.' });
+            }
+            
             const budgetData = {
                 ...req.body,
                 userId: req.user._id || req.query.userId || req.user.userId,

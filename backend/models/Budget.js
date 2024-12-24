@@ -76,7 +76,7 @@ const BudgetSchema = new mongoose.Schema({
 });
 
 // Virtual for total spent
-BudgetSchema.virtual('totalSpent', {
+BudgetSchema.virtual('calculatedTotalSpent', {
     ref: 'Transaction',
     localField: '_id',
     foreignField: 'budgetId',

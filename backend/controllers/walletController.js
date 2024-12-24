@@ -29,14 +29,16 @@ class WalletController {
     // Get all wallets for a user
     static async getUserWallets(req, res) {
         try {
-            console.log('Wallet Controller - Fetching wallets for user ID(req.query.userId):', req.query.userId);
+            const userId = req.user._id; // Use req.user._id directly
+            console.log('Wallet Controller - Fetching wallets for user ID:', userId);
+            
             const wallets = await Wallet.find({ 
-                userId: req.query.userId || req.user.userId , 
+                userId, 
                 isActive: true 
             }).sort({ balance: -1 });
-
+    
             console.log('Wallet Controller - Fetched wallets:', wallets);
-
+    
             res.json({
                 wallets,
                 totalWallets: wallets.length,

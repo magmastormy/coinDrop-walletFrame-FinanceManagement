@@ -15,6 +15,11 @@ const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) =>
     return (
         <div className="filter-transactions">
             <h3>Filter Transactions</h3>
+            <div className="wallet-filter">
+                {wallets.map(wallet => (
+                    <WalletCard key={wallet._id} wallet={wallet} onSelect={onWalletSelect} />
+                ))}
+            </div>
             <div className="horizontal-filters">
                 <input
                     type="number"

@@ -1,4 +1,6 @@
 const Transaction = require('../models/Transaction');
+const Budget = require('../models/Budget');
+const Wallet = require('../models/Wallet');
 const mongoose = require('mongoose');
 
 class TransactionController {
@@ -45,6 +47,72 @@ class TransactionController {
                 error: 'Transaction creation failed',
                 details: error.message
             });
+        }
+    }
+    
+    static async createTransactionForBudget(req, res) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+    
+        try {
+            const { budgetId } = req.params;
+            const { amount, type, category, description } = req.body;
+    
+            if (!amount || !type || !category) { // Add required fields validation
+                return res.status(400).json({ error: 'Amount, type, and category are required.' });
+            }
+    
+            const budget = await Budget.findOne({
+                _id: budgetId,
+                userId: req.user._id
+            }).session(session);
+    
+            if (!budget) {
+                throw new Error('Budget not found');
+            }
+    
+            // Get wallet from budget
+            const wallet = await Wallet.findById(budget.walletId).session(session);
+            
+            if (!wallet) {
+                throw new Error('Associated wallet not found');
+            }
+    
+            // Create transaction
+            const transaction = new Transaction({
+                userId: req.user._id,
+                budgetId,
+                walletId: wallet._id, // This will be removed later
+                amount,
+                type,
+                category,
+                description,
+                date: new Date()
+            });
+    
+            await transaction.save({ session });
+    
+            // Update wallet balance
+            if (type === 'expense') {
+                wallet.balance -= amount;
+            } else if (type === 'income') {
+                wallet.balance += amount;
+            }
+            
+            await wallet.save({ session });
+    
+            // Update budget spent amount
+            await budget.updateTotalSpent(amount);
+    
+            await session.commitTransaction();
+    
+            res.json({ transaction, wallet, budget });
+    
+        } catch (error) {
+            await session.abortTransaction();
+            res.status(500).json({ error: 'Transaction creation failed', details: error.message });
+        } finally {
+            session.endSession();
         }
     }
 

@@ -49,15 +49,8 @@ const transactionSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Create indexes for better query performance
-transactionSchema.index({ userId: 1, date: -1 });
-transactionSchema.index({ category: 1 });
-transactionSchema.index({ type: 1 });
-transactionSchema.index({ walletId: 1 });
-transactionSchema.index({ 'location.coordinates': '2dsphere' });
-
 // Static method to get transactions by budget
-TransactionSchema.statics.getTransactionsByBudget = async function(budgetId) {
+transactionSchema.statics.getTransactionsByBudget = async function(budgetId) {
     return this.find({ budgetId }).sort({ date: -1 });
 };
 

@@ -47,7 +47,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/category', categoryRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
