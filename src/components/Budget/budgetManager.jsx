@@ -8,6 +8,7 @@ import BudgetTransactionList from './budgetTransactionList';
 import BudgetChart from './budgetCharts';
 import BudgetPerformanceChart from './budgetPerformanceChart';
 import TransactionChart from '../Transaction/transactionCharts';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {faChartLine} from '@fortawesome/free-solid-svg-icons';
 import './styles/budgetStyles.css';
 
@@ -97,7 +98,7 @@ const BudgetManager = () =>
            </button>
            <BudgetList 
                budgets={budgets} 
-               onBudgetSelect={handleBudgetSelect}
+               onBudgetSelect={handleBudgetSelect} //TODO: create a place for this propr in Budget List and make it active
                onEdit={handleEditBudget} 
                onDelete={handleDeleteBudget} 
            />

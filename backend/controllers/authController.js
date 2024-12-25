@@ -73,7 +73,7 @@ class AuthController {
             await user.save();
 
             // Generate tokens
-            const { accessToken, refreshToken } = this.generateTokens(user._id, user.role);
+            const { accessToken, refreshToken } = AuthController.generateTokens(user._id, user.role);
 
             // Return success response
             res.status(201).json({

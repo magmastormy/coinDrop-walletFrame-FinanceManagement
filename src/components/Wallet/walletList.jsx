@@ -1,58 +1,20 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWallet, faPlus } from '@fortawesome/free-solid-svg-icons';
-import walletService from '../../services/walletService';
-import { setWallets, setLoading, setError } from '../../slices/walletSlice';
+import { faWallet } from '@fortawesome/free-solid-svg-icons';
 import CreateNewWallet from './newWallet';
 import WalletCard from './WalletCard';
-import EmptyState from '../../pages/emptyState'
+import EmptyState from '../../pages/emptyState';
 import '../Transaction/styles/transactionStyles.css';
 
-const WalletList = () => {
-    const dispatch = useDispatch();
-    const { user } = useSelector(state => state.auth);
-    const { wallets, loading, error } = useSelector(state => state.wallet);
-
-    console.log("Walletlist, user.id:", user.id);
-
-    useEffect(() => {
-        fetchWallets();
-
-        if (user?.id) {
-            fetchWallets();
-        }
-
-    }, [dispatch, user?.id]);
-
-    const fetchWallets = async () => {
-        try {
-            dispatch(setLoading(true));
-            const data = await walletService.getAllWallets(user.id);
-            dispatch(setWallets(data.wallets));
-        } catch (error) {
-            dispatch(setError(error.message));
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
-
-    if (loading) {
-        return <div className="loading-spinner">Loading...</div>;
-    }
-
-    if (error) {
-        return <div className="error-message">{error}</div>;
-    }
-
+const WalletList = ({ wallets, onWalletSelect, onDelete }) => {
     if (!wallets.length) {
         return (
             <EmptyState
                 icon={<FontAwesomeIcon icon={faWallet} size="3x" />}
                 title="No Wallets Yet"
                 description="Create your first wallet to start tracking your finances"
-                action={<CreateNewWallet onWalletCreated={fetchWallets} />}
+                action={<CreateNewWallet onWalletCreated={onWalletSelect} />}
             />
         );
     }
@@ -61,7 +23,7 @@ const WalletList = () => {
         <div className="wallet-container">
             <div className="wallet-header">
                 <h2>My Wallets</h2>
-                <CreateNewWallet onWalletCreated={fetchWallets} />
+                <CreateNewWallet onWalletCreated={onWalletSelect} />
             </div>
             <motion.div 
                 className="wallet-grid"
@@ -73,7 +35,8 @@ const WalletList = () => {
                     <WalletCard 
                         key={wallet._id} 
                         wallet={wallet} 
-                        onUpdate={fetchWallets}
+                        onUpdate={onWalletSelect}
+                        onDelete={onDelete}
                     />
                 ))}
             </motion.div>

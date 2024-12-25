@@ -33,10 +33,35 @@ const connectDB = async () => {
         });
 
         return connection;
-    } catch (error) {
-        console.error('🔴 MongoDB Connection Error:', error.message);
-        // Exit process with failure
-        process.exit(1);
+    }catch(error)
+    {
+        console.error("No internet. Connecting to the local database");
+
+        try{
+            const mongoURI = process.env.MONGO_LOCAL;
+
+            if (!mongoURI) {
+                throw new Error('MongoDB localsconnection string is not defined');
+            }
+    
+
+            const connection = await mongoose.connect(mongoURI);
+    
+            // Log successful connection details
+            console.log('🟢 MongoDB Connection Established LOCAL');
+            console.log(`📍 Connected to LOCAL Database: ${connection.connection.db.databaseName}`);
+    
+            // Optional: Log when connection is fully open
+            connection.connection.on('open', () => {
+                console.log('📨 LOCAL MongoDB Connection Fully Initialized');
+            });
+
+            return connection;
+        }catch (error) {
+            console.error('🔴 MongoDB Connection Error:', error.message);
+            // Exit process with failure
+            process.exit(1);
+        }
     }
 };
 

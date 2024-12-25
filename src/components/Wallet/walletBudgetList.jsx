@@ -1,7 +1,7 @@
 // src/components/Wallet/WalletBudgetList.jsx
 import React from 'react';
 import './styles/walletStyles.css';
-import BudgetCard from '../Budget/BudgetCard';
+import BudgetCard from '../Budget/budgetCard';
 
 const WalletBudgetList = ({ budgets }) => {
     return (

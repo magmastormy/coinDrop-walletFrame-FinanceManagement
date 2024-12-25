@@ -23,7 +23,7 @@ const WalletManager = () => {
         if (user && user.id) {
             fetchWallets();
         }
-    }, [dispatch, user]);
+    }, [user]);
 
     const fetchWallets = async () => {        
         dispatch(setLoading(true));
