@@ -10,6 +10,7 @@ import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
 import TransactionList from '../Transaction/transactionList';
 import WalletChart from './walletCharts';
+import './styles/walletManagerStyles.css';
 
 const WalletManager = () => {
     const dispatch = useDispatch();
@@ -61,6 +62,16 @@ const WalletManager = () => {
         }
     };
 
+    const handleWalletUpdate = async (walletId, updatedData) => {
+        try {
+            await walletService.updateWallet(walletId, updatedData);
+            dispatch(updateWallet({ id: walletId, ...updatedData }));
+            fetchWallets(); // Refresh the wallets list
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
+
     if (loading) {
         return <div>Loading your wallets...</div>;
     }
@@ -83,11 +94,15 @@ const WalletManager = () => {
                         wallets={wallets}
                         onWalletSelect={handleWalletSelect}
                         onDelete={handleDeleteWallet}
+                        onWalletUpdate={handleWalletUpdate}
                     />
                 </div>
             ) : (
                 <div>
-                    <button onClick={() => setSelectedWallet(null)}>Back to Wallets</button>
+                    <button className="back-button">
+                        <FontAwesomeIcon icon={faArrowLeft} />
+                        <span onClick={() => setSelectedWallet(null)}>Back to Wallets</span>
+                    </button>
                     <div>
                         <h3>{selectedWallet.name}</h3>
                         <WalletBudgetList budgets={walletBudgets} />

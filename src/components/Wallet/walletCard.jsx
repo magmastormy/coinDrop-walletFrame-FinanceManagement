@@ -5,10 +5,14 @@ import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
 import './styles/walletCardStyles.css';
 
-const WalletCard = ({ wallet, onUpdate, onDelete }) => {
+const WalletCard = ({ wallet, wallets, onUpdate, onDelete }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+
+    const getWalletIcon = () => {
+        return faWallet; // Default wallet icon
+    };
 
     const handleOptionsToggle = () => {
         setShowOptions(prev => !prev);
@@ -81,6 +85,7 @@ const WalletCard = ({ wallet, onUpdate, onDelete }) => {
             {showTransferModal && (
                 <WalletTransfer
                     sourceWallet={wallet}
+                    wallets={wallets}
                     onClose={() => setShowTransferModal(false)}
                     onUpdate={onUpdate}
                 />

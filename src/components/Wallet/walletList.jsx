@@ -7,14 +7,14 @@ import WalletCard from './walletCard';
 import EmptyState from '../../pages/emptyState';
 import './styles/walletListStyles.css';
 
-const WalletList = ({ wallets, onWalletSelect, onDelete }) => {
+const WalletList = ({ wallets, onWalletUpdate, onWalletDelete }) => {
     if (!wallets.length) {
         return (
             <EmptyState
                 icon={<FontAwesomeIcon icon={faWallet} size="3x" />}
                 title="No Wallets Yet"
                 description="Create your first wallet to start tracking your finances"
-                action={<CreateNewWallet onWalletCreated={onWalletSelect} />}
+                action={<CreateNewWallet onWalletCreated={onWalletUpdate} />}
             />
         );
     }
@@ -31,8 +31,9 @@ const WalletList = ({ wallets, onWalletSelect, onDelete }) => {
                     <WalletCard 
                         key={wallet._id} 
                         wallet={wallet} 
-                        onUpdate={onWalletSelect}
-                        onDelete={onDelete}
+                        wallets={wallets}  // Pass all wallets
+                        onUpdate={onWalletUpdate}
+                        onDelete={onWalletDelete}
                     />
                 ))}
             </motion.div>

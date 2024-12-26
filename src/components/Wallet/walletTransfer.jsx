@@ -3,9 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import './styles/walletTransferStyles.css';
 
-const WalletTransfer = ({ wallets, onClose, onTransfer }) => {
+const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
     const [formData, setFormData] = useState({
-        fromWalletId: '',
+        fromWalletId: sourceWallet._id,
         toWalletId: '',
         amount: ''
     });
@@ -53,13 +53,11 @@ const WalletTransfer = ({ wallets, onClose, onTransfer }) => {
                             value={formData.fromWalletId}
                             onChange={handleChange}
                             required
+                            disabled
                         >
-                            <option value="">Select Wallet</option>
-                            {wallets.map(wallet => (
-                                <option key={wallet._id} value={wallet._id}>
-                                    {wallet.name} (${wallet.balance})
-                                </option>
-                            ))}
+                            <option value={sourceWallet._id}>
+                                {sourceWallet.name} (${sourceWallet.balance})
+                            </option>
                         </select>
                     </div>
 
@@ -72,13 +70,13 @@ const WalletTransfer = ({ wallets, onClose, onTransfer }) => {
                             required
                         >
                             <option value="">Select Wallet</option>
-                            {wallets.map(wallet => (
-                                wallet._id !== formData.fromWalletId && (
+                            {wallets && wallets.filter(wallet => wallet._id !== sourceWallet._id)
+                                .map(wallet => (
                                     <option key={wallet._id} value={wallet._id}>
-                                        {wallet.name} (${wallet.balance})
+                                        {wallet.name} (${wallet.balance.toFixed(2)})
                                     </option>
-                                )
-                            ))}
+                                ))
+                            }
                         </select>
                     </div>
 
