@@ -1,6 +1,6 @@
 import React from 'react';
 import WalletCard from './transactionWalletCard';
-import './styles/transactionStyles.css';
+import './styles/transactionFilterStyles.css';
 
 
 const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) => {

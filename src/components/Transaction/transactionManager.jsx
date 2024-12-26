@@ -5,13 +5,14 @@ import transactionService from '../../services/transactionService';
 import CreateTransactionModal from './createTransactionModal';
 import TransactionList from './transactionList';
 import FilterTransactions from './filterTransactions';
-import './styles/transactionStyles.css';
+import './styles/transactionManagerStyles.css';
 
 
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions, loading, error } = useSelector(state => state.transaction);
     const { wallets } = useSelector(state => state.wallet);
+    const {user} = useSelector(state=>state.auth);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filters, setFilters] = useState({
         minAmount: '',
@@ -29,7 +30,12 @@ const TransactionManager = () => {
     const fetchTransactions = async () => {
         dispatch(setLoading(true));
         try {
-            const data = await transactionService.getUserTransactions(filters);
+
+            if (!user?.id){
+                throw new Error('User Not Authenticated');
+            }
+
+            const data = await transactionService.getUserTransactions(user.id, filters);
             dispatch(setTransactions(data.transactions || []));
         } catch (err) {
             dispatch(setError(err.message));

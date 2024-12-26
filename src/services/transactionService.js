@@ -3,14 +3,19 @@ import axiosInstance from '../api/userAxios';
 const API_URL = '/transactions';
 
 const transactionService = {
-    getUserTransactions: async (userId) => {
+    getUserTransactions: async (userId, filters = {}) => {
         console.log("Transaction Service - getAllTransactions - userId Received: ", userId);
         try {
-            const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
+            const queryParams = new URLSearchParams({
+                userId,
+                ...filters
+            }).toString();
+
+            const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
             return response; 
         } catch (error) {
             console.error('Transaction Service - Error fetching transactions:', error);
-            throw error; // Propagate the error for handling in the frontend
+            throw error;
         }
     },
 

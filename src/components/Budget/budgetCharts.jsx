@@ -1,5 +1,29 @@
+// src/components/Budget/budgetCharts.jsx
 import React from 'react';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const BudgetChart = ({ budgets }) => {
     const data = {
@@ -7,16 +31,31 @@ const BudgetChart = ({ budgets }) => {
         datasets: [
             {
                 data: budgets.map(b => b.amount),
-                backgroundColor: budgets.map(() => `#${Math.floor(Math.random()*16777215).toString(16)}`),
-                hoverBackgroundColor: budgets.map(() => `#${Math.floor(Math.random()*16777215).toString(16)}`),
+                backgroundColor: budgets.map(() => 
+                    `hsl(${Math.random() * 360}, 70%, 50%)`
+                ),
+                borderWidth: 1
+            }
+        ]
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right'
             },
-        ],
+            title: {
+                display: true,
+                text: 'Budget Distribution'
+            }
+        }
     };
 
     return (
-        <div>
-            <h3>Budget Distribution</h3>
-            <Pie data={data} />
+        <div style={{ height: '300px', width: '100%', padding: '20px' }}>
+            <Pie data={data} options={options} />
         </div>
     );
 };

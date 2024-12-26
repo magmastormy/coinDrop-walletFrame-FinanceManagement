@@ -1,6 +1,8 @@
+// src/components/Transaction/transactionList.jsx
 import React from 'react';
 import { useTable } from 'react-table';
-import './styles/transactionStyles.css';
+import './styles/transactionListStyles.css';
+
 const TransactionList = ({ transactions }) => {
     const data = React.useMemo(() => transactions, [transactions]);
 
@@ -46,24 +48,38 @@ const TransactionList = ({ transactions }) => {
     } = useTable({ columns, data });
 
     return (
-        <table {...getTableProps()} className="transaction-table">
+        <table className="transaction-table" {...getTableProps()}>
             <thead>
-                {headerGroups.map(headerGroup => (
-                    <tr {...headerGroup.getHeaderGroupProps()}>
-                        {headerGroup.headers.map(column => (
-                            <th {...column.getHeaderProps()}>{column.render('Header')}</th>
-                        ))}
-                    </tr>
-                ))}
+                {headerGroups.map(headerGroup => {
+                    const { key, ...headerGroupProps } = headerGroup.getHeaderGroupProps();
+                    return (
+                        <tr key={key} {...headerGroupProps}>
+                            {headerGroup.headers.map(column => {
+                                const { key, ...columnProps } = column.getHeaderProps();
+                                return (
+                                    <th key={key} {...columnProps}>
+                                        {column.render('Header')}
+                                    </th>
+                                );
+                            })}
+                        </tr>
+                    );
+                })}
             </thead>
             <tbody {...getTableBodyProps()}>
                 {rows.map(row => {
                     prepareRow(row);
+                    const { key, ...rowProps } = row.getRowProps();
                     return (
-                        <tr  {...row.getRowProps()}>
-                            {row.cells.map(cell => (
-                                <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                            ))}
+                        <tr key={key} {...rowProps}>
+                            {row.cells.map(cell => {
+                                const { key, ...cellProps } = cell.getCellProps();
+                                return (
+                                    <td key={key} {...cellProps}>
+                                        {cell.render('Cell')}
+                                    </td>
+                                );
+                            })}
                         </tr>
                     );
                 })}

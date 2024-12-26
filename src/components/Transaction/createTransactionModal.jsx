@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import transactionService from '../../services/transactionService';
+import './styles/transactionCreateNewStyles.css';
 
 const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets }) => {
     const dispatch = useDispatch();

@@ -1,5 +1,5 @@
 import React from 'react';
-import './styles/transactionStyles.css';
+import './styles/transactionCardStyles.css';
 const TransactionCard = ({ transaction, onEdit, onDelete }) => {
     return (
         <div className="transaction-card">

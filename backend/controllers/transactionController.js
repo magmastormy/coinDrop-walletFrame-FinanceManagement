@@ -130,7 +130,10 @@ class TransactionController {
                 type, 
                 category, 
                 startDate, 
-                endDate 
+                endDate,
+                walletId,
+                minAmount,
+                maxAmount
             } = req.query;
 
             const filter = { userId: req.user._id || req.query.userId || req.user.userId};
@@ -138,6 +141,7 @@ class TransactionController {
             // Optional filters
             if (type) filter.type = type;
             if (category) filter.category = category;
+            if (walletId) filter.walletId = walletId;
             
             if (startDate && endDate) {
                 filter.date = {
@@ -149,7 +153,8 @@ class TransactionController {
             const transactions = await Transaction.find(filter)
                 .sort({ date: -1 })
                 .skip((page - 1) * limit)
-                .limit(Number(limit));
+                .limit(Number(limit))
+                .populate('walletId', 'name balance');
 
             const total = await Transaction.countDocuments(filter);
 
@@ -230,7 +235,7 @@ class TransactionController {
     // Get transaction statistics
     static async getTransactionStats(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = req.user._id || req.query.userId || req.user.userId;
 
             const stats = await Transaction.aggregate([
                 { $match: { userId: mongoose.Types.ObjectId(userId) } },

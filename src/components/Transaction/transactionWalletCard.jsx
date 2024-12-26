@@ -1,5 +1,5 @@
 import React from 'react';
-import './styles/transactionStyles.css';
+import './styles/transactionWalletCardStyles.css';
 
 const TransactionWalletCard = ({ wallet, onSelect }) => {
     return (
