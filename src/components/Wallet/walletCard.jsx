@@ -1,72 +1,88 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV, faTrash, faEdit, faArrowRight, faWallet } from '@fortawesome/free-solid-svg-icons';
-import walletService from '../../services/walletService';
-import { deleteWallet, updateWallet } from '../../slices/walletSlice';
+import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
-import './styles/walletStyles.css';
+import './styles/walletCardStyles.css';
 
-const WalletCard = ({ wallet, onUpdate, onTransfer }) => {
+const WalletCard = ({ wallet, onUpdate, onDelete }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
-    const dispatch = useDispatch();
+    const [showEditModal, setShowEditModal] = useState(false);
 
-    const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this wallet?')) {
-            try {
-                console.log("WalletCard, wallet._id: ", wallet._id);
-                console.log("WalletCard, wallet: ", wallet);
+    const handleOptionsToggle = () => {
+        setShowOptions(prev => !prev);
+    };
 
-                await walletService.deleteWallet(wallet._id);
-                dispatch(deleteWallet(wallet._id));
-            } catch (error) {
-                console.error('Failed to delete wallet:', error);
-            }
+    const handleOutsideClick = (e) => {
+        if (showOptions && !e.target.closest('.options-menu') && !e.target.closest('.options-btn')) {
+            setShowOptions(false);
         }
     };
 
-    // Get wallet icon or use default
-    const getWalletIcon = () => {
-        return wallet.icon || faWallet;
-    };
+    useEffect(() => {
+        document.addEventListener('click', handleOutsideClick);
+        return () => {
+            document.removeEventListener('click', handleOutsideClick);
+        };
+    }, [showOptions]);
 
     return (
         <div className="wallet-card">
             <div className="wallet-card-header">
                 <FontAwesomeIcon icon={getWalletIcon()} className="wallet-icon" />
-                <button 
-                    className="options-btn"
-                    onClick={() => setShowOptions(!showOptions)}
-                >
+                <button type="button" className="options-btn" onClick={handleOptionsToggle} title="Options">
                     <FontAwesomeIcon icon={faEllipsisV} />
                 </button>
-                {showOptions && (
-                    <div className="options-menu">
-                        <button onClick={() => {onUpdate}}>
-                            <FontAwesomeIcon icon={faEdit} /> Edit
-                        </button>
-                        <button onClick={handleDelete}>
-                            <FontAwesomeIcon icon={faTrash} /> Delete
-                        </button>
-                        <button onClick={() => setShowTransferModal(true)}>
-                            <FontAwesomeIcon icon={faArrowRight} /> Transfer
-                        </button>
-                    </div>
-                )}
             </div>
             <div className="wallet-card-content">
-                <h3>{wallet.name}</h3>
-                <div className={`balance ${wallet.balance >= 0 ? 'positive' : 'negative'}`}>
+                <h3 className="wallet-name">{wallet.name}</h3>
+                <div className="wallet-type">{wallet.type}</div>
+                <div className={`wallet-balance ${wallet.balance >= 0 ? 'positive' : 'negative'}`}>
                     ${wallet.balance.toFixed(2)}
                 </div>
-                <div className="wallet-type">{wallet.type}</div>
             </div>
+
+            {showOptions && (
+                <div className="options-menu">
+                    <button onClick={() => {
+                        setShowEditModal(true);
+                        setShowOptions(false);
+                    }}>
+                        <FontAwesomeIcon icon={faEdit} />
+                        <span>Edit</span>
+                    </button>
+                    <button onClick={() => {
+                        onDelete(wallet._id);
+                        setShowOptions(false);
+                    }}>
+                        <FontAwesomeIcon icon={faTrash} />
+                        <span>Delete</span>
+                    </button>
+                    <button onClick={() => {
+                        setShowTransferModal(true);
+                        setShowOptions(false);
+                    }}>
+                        <FontAwesomeIcon icon={faArrowRight} />
+                        <span>Transfer</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Modals */}
+            {showEditModal && (
+                <EditWalletModal
+                    wallet={wallet}
+                    onClose={() => setShowEditModal(false)}
+                    onUpdate={onUpdate}
+                />
+            )}
+
             {showTransferModal && (
                 <WalletTransfer
                     sourceWallet={wallet}
                     onClose={() => setShowTransferModal(false)}
-                    onTransferComplete={onUpdate}
+                    onUpdate={onUpdate}
                 />
             )}
         </div>

@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWallet } from '@fortawesome/free-solid-svg-icons';
 import CreateNewWallet from './newWallet';
-import WalletCard from './WalletCard';
+import WalletCard from './walletCard';
 import EmptyState from '../../pages/emptyState';
-import '../Transaction/styles/transactionStyles.css';
+import './styles/walletListStyles.css';
 
 const WalletList = ({ wallets, onWalletSelect, onDelete }) => {
     if (!wallets.length) {
@@ -21,12 +21,8 @@ const WalletList = ({ wallets, onWalletSelect, onDelete }) => {
 
     return (
         <div className="wallet-container">
-            <div className="wallet-header">
-                <h2>My Wallets</h2>
-                <CreateNewWallet onWalletCreated={onWalletSelect} />
-            </div>
             <motion.div 
-                className="wallet-grid"
+                className="wallets-placement-container"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}

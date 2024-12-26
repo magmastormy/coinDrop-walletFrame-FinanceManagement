@@ -33,8 +33,12 @@ const walletService = {
     },
 
     updateWallet: async (id, walletData) => {
-        const response = await axiosInstance.put(`${API_URL}/${id}`, walletData);
-        return response.data;
+        try {
+            const response = await axiosInstance.put(`${API_URL}/${id}`, walletData);
+            return response.data.wallet;
+        } catch (error) {
+            throw error;
+        }
     },
 
     deleteWallet: async (id) => {

@@ -12,7 +12,7 @@ import {
     faChartLine,
     faDollarSign
 } from '@fortawesome/free-solid-svg-icons';
-import './styles/walletStyles.css';
+import './styles/walletIconStyles.css';
 
 const icons = [
     { icon: faWallet, name: 'Wallet' },

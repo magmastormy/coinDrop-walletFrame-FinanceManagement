@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import WalletIconOptions from './newWalletIcons';
 import walletService from '../../services/walletService';
 import { addWallet } from '../../slices/walletSlice';
-import './styles/walletStyles.css';
+import './styles/newWalletStyles.css';
 
 const CreateNewWallet = ({ onWalletCreated }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
