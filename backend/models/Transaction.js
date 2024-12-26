@@ -40,11 +40,22 @@ const transactionSchema = new mongoose.Schema({
         ref: 'Wallet',
         required: true
     },
+
     budgetId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Budget',
-        required: true
+        required: function() {
+            return this.type !== 'transfer'; // Only required for non-transfer transactions
+        }
     },
+    fromWalletId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wallet'
+    },
+    toWalletId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wallet'
+    }
 }, {
     timestamps: true
 });

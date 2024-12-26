@@ -51,19 +51,19 @@ const walletService = {
         return response.data;
     },
 
-    transferBalance: async (transferData) => {
-        const response = await axiosInstance.post(`${API_URL}/transfer`, transferData);
-        return response.data;
-    },
     transferBetweenWallets: async (fromWalletId, toWalletId, amount) => {
-        const response = await axiosInstance.post(`${API_URL}/transfer`, {
-            fromWalletId,
-            toWalletId,
-            amount
-        });
-        return response.data;
+        try {
+            const response = await axiosInstance.post(`${API_URL}/transfer`, {
+                fromWalletId,
+                toWalletId,
+                amount: parseFloat(amount)
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Transfer failed:', error);
+            throw error;
+        }
     }
-
 };
 
 export default walletService;

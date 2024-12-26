@@ -160,16 +160,26 @@ class WalletController {
 
         try {
             const { fromWalletId, toWalletId, amount } = req.body;
+            const numAmount = parseFloat(amount);
+
+            if (!fromWalletId || !toWalletId || !amount) {
+                throw new Error('Missing required fields');
+            }
+
+            console.log("Wallet Controller - Transfering balance from wallet:", fromWalletId, "to wallet:", toWalletId, "Amount:", numAmount);
+            console.log("this is the body: ", req.body);
 
             // Validate wallets belong to user
             const fromWallet = await Wallet.findOne({ 
                 _id: fromWalletId, 
                 userId: req.user._id || req.query.userId || req.user.userId,
+                isActive: true
             }).session(session);
 
             const toWallet = await Wallet.findOne({ 
                 _id: toWalletId, 
-                userId: req.user._id 
+                userId: req.user._id || req.query.userId || req.user.userId,
+                isActive: true 
             }).session(session);
 
             if (!fromWallet || !toWallet) {
@@ -193,38 +203,43 @@ class WalletController {
             fromWallet.balance -= amount;
             toWallet.balance += amount;
 
-            await fromWallet.save({ session });
-            await toWallet.save({ session });
+            await Promise.all([
+                fromWallet.save({ session }),
+                toWallet.save({ session })
+            ]);
 
             // Create transfer transaction
             const transferTransaction = new Transaction({
-                userId: req.user._id,
+                userId: req.user._id || req.query.userId || req.user.userId,
                 type: 'transfer',
-                amount: -amount,
-                fromWalletId,
-                toWalletId,
-                description: `Transfer from ${fromWallet.name} to ${toWallet.name}`
+                amount: numAmount,
+                category: 'Transfer', // Default category
+                description: `Transfer from ${fromWallet.name} to ${toWallet.name}`,
+                date: new Date(),
+                walletId: fromWallet._id, // Set source wallet as primary
+                fromWalletId: fromWallet._id,
+                toWalletId: toWallet._id
             });
 
             await transferTransaction.save({ session });
-
             await session.commitTransaction();
-            session.endSession();
 
             res.json({
-                message: 'Balance transferred successfully',
+                message: 'Transfer successfully',
                 fromWallet,
                 toWallet,
                 transferTransaction
             });
         } catch (error) {
             await session.abortTransaction();
-            session.endSession();
+            console.log('Transfer failed:', error);
 
-            res.status(500).json({
-                error: 'Balance transfer failed',
+            res.status(400).json({
+                error: 'Transfer failed',
                 details: error.message
             });
+        }finally{
+            session.endSession();
         }
     }
 
@@ -234,7 +249,7 @@ class WalletController {
             const { walletId } = req.params;
             const budgets = await Budget.find({ 
                 walletId,
-                userId: req.user._id 
+                userId: req.user._id || req.query.userId || req.user.userId
             });
             
             res.json({ budgets });

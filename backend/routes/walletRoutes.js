@@ -20,15 +20,6 @@ const walletCreationValidation = [
         .isLength({ min: 3, max: 3 }).withMessage('Currency must be a 3-letter ISO code')
 ];
 
-const balanceTransferValidation = [
-    body('fromWalletId')
-        .notEmpty().withMessage('Source wallet ID is required'),
-    body('toWalletId')
-        .notEmpty().withMessage('Destination wallet ID is required'),
-    body('amount')
-        .isFloat({ min: 0.01 }).withMessage('Transfer amount must be a positive number')
-];
-
 // Protect all wallet routes
 router.use(authMiddleware);
 
@@ -47,7 +38,11 @@ router.get('/stats', WalletController.getWalletStats);
 
 // Balance Transfer Route
 router.post('/transfer', 
-    balanceTransferValidation, 
+    [
+        body('fromWalletId').notEmpty().withMessage('Source wallet ID is required'),
+        body('toWalletId').notEmpty().withMessage('Destination wallet ID is required'),
+        body('amount').isFloat({ min: 0.01 }).withMessage('Transfer amount must be a positive number')
+    ],
     WalletController.transferBalance
 );
 

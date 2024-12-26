@@ -7,7 +7,7 @@ import WalletCard from './walletCard';
 import EmptyState from '../../pages/emptyState';
 import './styles/walletListStyles.css';
 
-const WalletList = ({ wallets, onWalletUpdate, onWalletDelete }) => {
+const WalletList = ({ wallets, onWalletUpdate, onWalletDelete, onTransfer }) => {
     if (!wallets.length) {
         return (
             <EmptyState
@@ -34,6 +34,7 @@ const WalletList = ({ wallets, onWalletUpdate, onWalletDelete }) => {
                         wallets={wallets}  // Pass all wallets
                         onUpdate={onWalletUpdate}
                         onDelete={onWalletDelete}
+                        onTransfer={onTransfer}  // Add this line
                     />
                 ))}
             </motion.div>

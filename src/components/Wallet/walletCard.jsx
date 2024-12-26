@@ -5,7 +5,7 @@ import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
 import './styles/walletCardStyles.css';
 
-const WalletCard = ({ wallet, wallets, onUpdate, onDelete }) => {
+const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -88,6 +88,7 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete }) => {
                     wallets={wallets}
                     onClose={() => setShowTransferModal(false)}
                     onUpdate={onUpdate}
+                    onTransfer={onTransfer}
                 />
             )}
         </div>
