@@ -26,7 +26,16 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                 throw new Error('Amount must be greater than 0');
             }
 
-            await transactionService.createTransaction(transactionData);
+            const cleanTransactionData = {
+                amount: amount,
+                type: transactionData.type,
+                category: transactionData.category,
+                description: transactionData.description || '',
+                date: transactionData.date || new Date().toISOString().split('T')[0],
+                walletId: transactionData.walletId
+            };
+    
+            const response = await transactionService.createTransaction(cleanTransactionData);
             onTransactionCreated(response);
             onClose();
         } catch (error) {
@@ -114,8 +123,10 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             ))}
                         </select>
                     </div>
-                    <button type="submit">Create Transaction</button>
-                    <button type="button" onClick={onClose}>Close</button>
+                    <div className="form-actions">
+                        <button type="submit">{initialData ? 'Update' : 'Create'} Transaction</button>
+                        <button type="button" onClick={onClose}>Cancel</button>
+                    </div>
                 </form>
             </div>
         </div>

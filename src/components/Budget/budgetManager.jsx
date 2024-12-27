@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {setBudgets, setLoading, setError } from '../../slices/budgetSlice';
 import budgetService from '../../services/budgetService';
+import transactionService from '../../services/transactionService';
 import CreateBudgetModal from './createBudgetModal';
 import BudgetList from './budgetList';
 import BudgetTransactionList from './budgetTransactionList';
@@ -14,60 +15,81 @@ import './styles/budgetManagerStyles.css';
 
 const BudgetManager = () => 
 {
-   const dispatch = useDispatch();
-   const { budgets, loading, error } = useSelector(state => state.budget);
-   const { user } = useSelector(state => state.auth);
-   const [isModalOpen, setIsModalOpen] = useState(false);
-   const [editingBudget, setEditingBudget] = useState(null);
-   const [selectedBudget, setSelectedBudget] = useState(null);
-   const [transactions, setTransactions] = useState([]);
-   const [filter, setFilter] = useState({ category: '', dateRange: '' });
+    const dispatch = useDispatch();
+    const { budgets, loading, error } = useSelector(state => state.budget);
+    const { user } = useSelector(state => state.auth);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingBudget, setEditingBudget] = useState(null);
+    const [selectedBudget, setSelectedBudget] = useState(null);
+    const [transactions, setTransactions] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [filter, setFilter] = useState({ category: '', dateRange: '' });
     
-   useEffect(() => {
-       fetchBudgets();
-   }, [dispatch]);
+    useEffect(() => {
+        fetchBudgets();
+    }, [dispatch]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const fetchedCategories = await categoryService.getUserCategories(user.id);
+            setCategories(fetchedCategories);
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
+
     const fetchBudgets = async () => {
-       dispatch(setLoading(true));
-       try {
-           if (!user || !user.id) {
-               throw new Error('User not authenticated');
-           }
-           const data = await budgetService.getUserBudgets(user.id);
-           dispatch(setBudgets(data.budgets || []));
-       } catch (err) {
-           dispatch(setError(err.message));
-       } finally {
-           dispatch(setLoading(false));
-       }
-   };
+        dispatch(setLoading(true));
+        try {
+            if (!user || !user.id) {
+                throw new Error('User not authenticated');
+            }
+            const data = await budgetService.getUserBudgets(user.id);
+            dispatch(setBudgets(data.budgets || []));
+        } catch (err) {
+            dispatch(setError(err.message));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+    
     const handleBudgetSelect = async (budget) => {
-       try {
-           const data = await transactionService.getBudgetTransactions(budget._id);
-           setTransactions(data.transactions);
-           setSelectedBudget(budget);
-       } catch (err) {
-           console.error(err);
-       }
-   };
+        try {
+            const data = await transactionService.getBudgetTransactions(budget._id);
+            setTransactions(data.transactions);
+            setSelectedBudget(budget);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleBudgetCreated = () => {
-       fetchBudgets(); // Refresh the budget list after creating a new budget
-       setIsModalOpen(false);
-   };
+        fetchBudgets();
+        setIsModalOpen(false);
+    };
+
     const handleEditBudget = (budget) => {
-       setEditingBudget(budget);
-       setIsModalOpen(true);
-   };
+        setEditingBudget(budget);
+        setIsModalOpen(true);
+    };
+
     const handleDeleteBudget = async (budgetId) => {
        try {
            await budgetService.deleteBudget(budgetId);
-           fetchBudgets(); // Refresh the budget list after deletion
+           fetchBudgets();
        } catch (err) {
            dispatch(setError(err.message));
        }
    };
+
     const handleFilterChange = (e) => {
        setFilter({ ...filter, [e.target.name]: e.target.value });
    };
+
     return (
        <div className="budget-manager">
            <h2>My Budgets</h2>
@@ -98,14 +120,15 @@ const BudgetManager = () =>
            </button>
            <BudgetList 
                budgets={budgets} 
-               onBudgetSelect={handleBudgetSelect} //TODO: create a place for this propr in Budget List and make it active
+               onBudgetSelect={handleBudgetSelect}
                onEdit={handleEditBudget} 
                onDelete={handleDeleteBudget} 
            />
            <CreateBudgetModal 
                isOpen={isModalOpen} 
                onClose={() => setIsModalOpen(false)}
-               onBudgetCreated={handleBudgetCreated} 
+               onBudgetCreated={handleBudgetCreated}
+               categories={categories}
            />
            {selectedBudget && (
                <BudgetTransactionList 

@@ -6,49 +6,56 @@ const mongoose = require('mongoose');
 class TransactionController {
     // Create a new transaction
     static async createTransaction(req, res) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
+            const { walletId, ...transactionData } = req.body;
 
-            const { budgetId, walletId, ...transactionData } = req.body;
             
-            // Verify walletId and budgetId are valid and belong to the user
-            const budget = await Budget.findById(budgetId).session(session);
-            const wallet = await Wallet.findById(walletId).session(session);
-    
-            if (!budget || !wallet || budget.userId.toString() !== userId.toString() || wallet.userId.toString() !== userId.toString()) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.status(400).json({ error: 'Invalid budgetId or walletId' });
+            if (!walletId || !transactionData.amount || !transactionData.type) {
+                throw new Error('Wallet, amount and type are required');
             }
     
-            // Ensure walletId matches the wallet associated with the budget
-            if (budget.walletId.toString() !== walletId) {
-                await session.abortTransaction();
-                session.endSession();
-                return res.status(400).json({ error: 'Wallet does not match the budget' });
+            //check if wallet exist and belongs to the user
+            const wallet = await Wallet.findOne({ 
+                _id: walletId,
+                userId: userId 
+            }).session(session);
+
+            if (!wallet) {
+                throw new Error('Invalid wallet');
             }
     
-            // Create the transaction
             const transaction = new Transaction({
                 ...transactionData,
-                budgetId,
                 walletId,
                 userId: userId,
             });
             await transaction.save({ session });
-    
+
+            // Update wallet balance
+            if (transaction.type === 'expense') {
+                wallet.balance -= transaction.amount;
+            } else if (transaction.type === 'income') {
+                wallet.balance += transaction.amount;
+            }
+            
+            await wallet.save({ session });
             await session.commitTransaction();
-            session.endSession();
-    
+            
             res.status(201).json({
                 message: 'Transaction created successfully',
                 transaction
             });
         } catch (error) {
+            await session.abortTransaction();
             res.status(400).json({
                 error: 'Transaction creation failed',
                 details: error.message
             });
+        }finally {
+            session.endSession();
         }
     }
 

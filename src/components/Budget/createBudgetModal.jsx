@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import budgetService from '../../services/budgetService';
 import './styles/budgetCreateStyles.css';
 
-const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated }) => {
+const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated, categories }) => {
     const [budgetData, setBudgetData] = useState({
         name: '',
         amount: 0,
-        type: 'monthly', // Updated to match backend
-        category: '',
-        startDate: '',
+        type: 'monthly',
+        categoryId: '',
+        startDate: new Date().toISOString().split('T')[0],
         endDate: '',
-        currency: 'USD',
         metadata: {
-            icon: 'budget', // Default icon
+            icon: 'budget',
             color: '#007bff'
         }
     });
@@ -23,9 +22,19 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated }) => {
         setError(null);
 
         try {
+            if (!budgetData.categoryId) {
+                throw new Error('Please select a category');
+            }
+
+            const amount = parseFloat(budgetData.amount);
+            if (isNaN(amount) || amount <= 0) {
+                throw new Error('Please enter a valid amount');
+            }
+
             await budgetService.createBudget(budgetData);
-            onBudgetCreated(); // Notify parent to refresh budgets
-            setBudgetData({ name: '', amount: 0, type: 'monthly', category: '', startDate: '', endDate: '', metadata: { icon: 'budget', color: '#007bff' } }); // Reset form
+            onBudgetCreated();
+            setBudgetData({ name: '', amount: 0, type: 'monthly', category: '', startDate: '', endDate: '', metadata: { icon: 'budget', color: '#007bff' } });
+            onClose();
         } catch (err) {
             setError(err.message);
         }
@@ -73,13 +82,19 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated }) => {
                     </div>
                     <div className="form-group">
                         <label htmlFor="budgetCategory">Category</label>
-                        <input
+                        <select
                             id="budgetCategory"
-                            type="text"
-                            value={budgetData.category}
-                            onChange={e => setBudgetData({ ...budgetData, category: e.target.value })}
+                            value={budgetData.categoryId}
+                            onChange={e => setBudgetData({ ...budgetData, categoryId: e.target.value })}
                             required
-                        />
+                        >
+                            <option value="">Select Category</option>
+                            {categories.map(category => (
+                                <option key={category._id} value={category._id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="form-group">
                         <label htmlFor="startDate">Start Date</label>
@@ -105,7 +120,13 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated }) => {
                         <select
                             id="budgetIcon"
                             value={budgetData.metadata.icon}
-                            onChange={e => setBudgetData({ ...budgetData, metadata: { ...budgetData.metadata, icon: e.target.value } })}
+                            onChange={e => setBudgetData({
+                                ...budgetData,
+                                metadata: {
+                                    ...budgetData.metadata,
+                                    icon: e.target.value
+                                }
+                            })}
                         >
                             <option value="budget">Budget</option>
                             <option value="savings">Savings</option>

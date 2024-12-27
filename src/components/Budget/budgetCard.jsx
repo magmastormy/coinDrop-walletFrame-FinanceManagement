@@ -6,7 +6,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
     <div className="budget-card">
       <h3>{budget.name}</h3>
       <div className="budget-details">
-        <p>Category: {budget.category}</p>
+        <p>Category: {budget.categoryId?.name}</p>
         <p>Amount: {budget.amount}</p>
         <p>Type: {budget.type}</p>
       </div>

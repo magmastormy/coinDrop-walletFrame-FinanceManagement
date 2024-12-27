@@ -22,10 +22,10 @@ const BudgetSchema = new mongoose.Schema({
         },
         default: 'monthly'
     },
-    category: {
-        type: String,
-        required: [true, 'Budget category is required'],
-        trim: true
+    categoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: [true, 'Category is required']
     },
     amount: {
         type: Number,
@@ -45,15 +45,6 @@ const BudgetSchema = new mongoose.Schema({
     endDate: {
         type: Date,
         required: [true, 'End date is required']
-    },
-    currency: {
-        type: String,
-        default: 'USD',
-        uppercase: true,
-        validate: {
-            validator: (value) => validator.isISO4217(value),
-            message: 'Invalid currency code'
-        }
     },
     isRecurring: {
         type: Boolean,
