@@ -1,6 +1,6 @@
 // src/components/Budget/BudgetTransactionList.jsx 
 import React from 'react';
-import './styles/budgetStyles.css';
+import './styles/budgetTransactionListStyles.css';
 import TransactionCard from '../Transaction/TransactionCard';
 
 const BudgetTransactionList = ({ transactions, budget }) => {

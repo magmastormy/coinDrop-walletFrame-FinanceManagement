@@ -1,4 +1,5 @@
 import React from 'react';
+import './styles/budgetListStyles.css';
 import BudgetCard from './budgetCard';
 
 const BudgetList = ({ budgets, onEdit, onDelete }) => {

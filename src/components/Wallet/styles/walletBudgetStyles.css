@@ -1,0 +1,15 @@
+.wallet-budgets {
+    margin-top: var(--spacing-lg);
+}
+
+.budgets-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+    .budgets-container {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import './styles/budgetCard.css';
+import './styles/budgetCardStyles.css';
 
 const BudgetCard = ({ budget, onEdit, onDelete }) => {
   return (

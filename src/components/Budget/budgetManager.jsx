@@ -10,7 +10,7 @@ import BudgetPerformanceChart from './budgetPerformanceChart';
 import TransactionChart from '../Transaction/transactionCharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {faChartLine} from '@fortawesome/free-solid-svg-icons';
-import './styles/budgetStyles.css';
+import './styles/budgetManagerStyles.css';
 
 const BudgetManager = () => 
 {

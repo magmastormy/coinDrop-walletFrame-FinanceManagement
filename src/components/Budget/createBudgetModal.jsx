@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import budgetService from '../../services/budgetService';
-import './styles/budgetStyles.css';
+import './styles/budgetCreateStyles.css';
 
 const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated }) => {
     const [budgetData, setBudgetData] = useState({
