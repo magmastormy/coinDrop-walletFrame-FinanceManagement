@@ -1,0 +1,58 @@
+.filter-transactions {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .filter-transactions h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .horizontal-filters {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .horizontal-filters input,
+  .horizontal-filters select {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    min-width: 150px;
+    transition: all 200ms ease;
+  }
+  
+  .horizontal-filters input:focus,
+  .horizontal-filters select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+  }
+  
+  .wallet-filter {
+    display: flex;
+    gap: var(--spacing-md);
+    overflow-x: auto;
+    padding: var(--spacing-sm) 0;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 200ms ease;
+  }
+  
+  button:hover {
+    background-color: var(--primary-dark);
+  }

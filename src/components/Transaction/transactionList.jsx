@@ -3,7 +3,7 @@ import React from 'react';
 import { useTable } from 'react-table';
 import './styles/transactionListStyles.css';
 
-const TransactionList = ({ transactions }) => {
+const TransactionList = ({ transactions, handleEdit, handleDelete }) => {
     const data = React.useMemo(() => transactions, [transactions]);
 
     const columns = React.useMemo(
@@ -36,7 +36,7 @@ const TransactionList = ({ transactions }) => {
                 ),
             },
         ],
-        []
+        [handleEdit, handleDelete]
     );
 
     const {

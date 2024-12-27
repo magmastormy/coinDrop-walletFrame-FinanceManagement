@@ -1,0 +1,46 @@
+.transaction-card {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  
+  .transaction-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .transaction-card h3 {
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .transaction-card p {
+    color: var(--text-secondary);
+    margin: var(--spacing-xs) 0;
+    font-size: var(--font-size-base);
+  }
+  
+  .transaction-card button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin-right: var(--spacing-sm);
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    transition: all 200ms ease;
+    cursor: pointer;
+  }
+  
+  .transaction-card button:first-of-type {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+  }
+  
+  .transaction-card button:last-of-type {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+  }

@@ -1,0 +1,57 @@
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed; /* Fixed position to cover the entire screen */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex; /* Use flexbox to center the modal */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  z-index: 1000; /* Ensure it appears above other elements */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: white; /* White background for the modal */
+  border-radius: 8px; /* Rounded corners */
+  padding: 2rem; /* Padding inside the modal */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+  width: 400px; /* Set a width for the modal */
+}
+
+/* Form Styles */
+.modal-content form {
+  display: flex;
+  flex-direction: column; /* Stack form elements vertically */
+}
+
+.modal-content label {
+  margin-bottom: 0.5rem; /* Space between label and input */
+}
+
+.modal-content input,
+.modal-content select {
+  margin-bottom: 1rem; /* Space between inputs */
+  padding: 0.5rem; /* Padding inside inputs */
+  border: 1px solid #ccc; /* Border for inputs */
+  border-radius: 4px; /* Rounded corners for inputs */
+}
+
+.modal-content button {
+  padding: 0.5rem; /* Padding for buttons */
+  border: none; /* Remove default border */
+  border-radius: 4px; /* Rounded corners for buttons */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+.modal-content button[type="button"] {
+  background-color: #f44336; /* Red background for close button */
+  color: white; /* White text for close button */
+}
+
+.modal-content button[type="submit"] {
+  background-color: #4CAF50; /* Green background for submit button */
+  color: white; /* White text for submit button */
+}

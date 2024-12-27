@@ -1,0 +1,42 @@
+/* Category Panel Styles */
+/* Category Panel Styles */
+.category-panel {
+    position: absolute; /* Change to absolute positioning */
+    top: 1rem; /* Distance from the top */
+    right: 1rem; /* Distance from the right */
+    width: 250px; /* Width of the panel */
+    max-height: 300px; /* Maximum height of the panel */
+    background-color: var(--surface, #ffffff); /* Background color */
+    border: 1px solid var(--border, #dadce0); /* Border color */
+    border-radius: var(--radius-lg, 0.5rem); /* Rounded corners */
+    box-shadow: var(--shadow-lg, 0 4px 8px rgba(0, 0, 0, 0.1)); /* Shadow for depth */
+    overflow-y: auto; /* Enable vertical scrolling */
+    z-index: 1000; /* Ensure it appears above other elements */
+    padding: 1rem; /* Padding inside the panel */
+}
+
+/* Category List Styles */
+.category-list {
+    list-style: none; /* Remove default list styling */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+}
+
+/* Individual Category Item Styles */
+.category-item {
+    padding: 0.5rem; /* Padding for each item */
+    border-bottom: 1px solid var(--border, #dadce0); /* Bottom border for separation */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: background-color 0.2s; /* Smooth background color transition */
+}
+
+.category-item:hover {
+    background-color: var(--hover, #f0f0f0); /* Change background on hover */
+}
+
+/* Empty State Styles */
+.empty-state {
+    text-align: center; /* Center text */
+    color: var(--text-secondary, #5f6368); /* Text color */
+    padding: 1rem; /* Padding for empty state */
+}

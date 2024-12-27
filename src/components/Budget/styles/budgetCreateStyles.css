@@ -1,0 +1,86 @@
+/* Modal Layout */
+.budget-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .budget-modal {
+    background-color: var(--surface);
+    border-radius: 16px;
+    padding: var(--spacing-lg);
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Form Elements */
+  .budget-form-group {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .budget-form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  
+  .budget-form-group input,
+  .budget-form-group select {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    transition: all 200ms ease;
+  }
+  
+  .budget-form-group input:focus,
+  .budget-form-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    outline: none;
+  }
+  
+  /* Buttons */
+  .budget-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+  }
+  
+  .create-btn,
+  .cancel-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+  }
+  
+  .create-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+  }
+  
+  .create-btn:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .cancel-btn {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  
+  .cancel-btn:hover {
+    background-color: var(--background);
+  }

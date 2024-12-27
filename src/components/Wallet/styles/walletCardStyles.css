@@ -1,77 +1,73 @@
 .wallet-card {
     background-color: var(--surface);
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     padding: var(--spacing-lg);
-    position: relative;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.wallet-card:hover {
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    position: relative;
+  }
+  
+  .wallet-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-}
-
-.wallet-header {
+  }
+  
+  .wallet-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-md);
-}
-
-.wallet-icon {
+  }
+  
+  .wallet-icon {
     font-size: var(--font-size-xl);
     color: var(--primary);
-}
-
-.wallet-name {
+  }
+  
+  .wallet-name {
     font-size: var(--font-size-lg);
     font-weight: 600;
     color: var(--text-primary);
-}
-
-.wallet-balance {
+    margin: var(--spacing-xs) 0;
+  }
+  
+  .wallet-balance {
     font-size: var(--font-size-xl);
     font-weight: 700;
     color: var(--primary);
-    margin: var(--spacing-sm) 0;
-}
-
-.wallet-type {
+  }
+  
+  .wallet-balance.positive {
+    color: #28a745;
+  }
+  
+  .wallet-balance.negative {
+    color: #dc3545;
+  }
+  
+  .wallet-type {
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
-}
-
-.options-btn {
+  }
+  
+  /* Card Actions */
+  .wallet-actions {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+  }
+  
+  .wallet-action-btn {
     background: none;
     border: none;
     color: var(--text-secondary);
+    padding: var(--spacing-xs);
     cursor: pointer;
-    padding: var(--spacing-sm);
-}
-
-.options-menu {
-    position: absolute;
-    right: var(--spacing-md);
-    top: 3rem;
-    background-color: var(--surface);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md);
-    z-index: 10;
-}
-
-.options-menu button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: none;
-    background: none;
-    cursor: pointer;
-    color: var(--text-primary);
-}
-
-.options-menu button:hover {
-    background-color: var(--background);
-}
+    transition: color 200ms ease;
+  }
+  
+  .wallet-action-btn:hover {
+    color: var(--primary);
+  }

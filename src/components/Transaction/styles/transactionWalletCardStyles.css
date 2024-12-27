@@ -1,0 +1,31 @@
+.wallet-card {
+    background-color: var(--surface);
+    border-radius: 12px;
+    padding: var(--spacing-md);
+    min-width: 200px;
+    cursor: pointer;
+    transition: all 200ms ease;
+  }
+  
+  .wallet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .wallet-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .wallet-card-header h3 {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    margin: 0;
+  }
+  
+  .wallet-balance {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--primary);
+  }

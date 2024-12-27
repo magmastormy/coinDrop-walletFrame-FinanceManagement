@@ -24,9 +24,18 @@ class CategoryController {
     }
 
     // Get all categories for a user
-    static async getAllCategories(req, res) {
+    static async getUserCategories(req, res) {
         try {
-            const categories = await Category.find({ userId: req.user._id || req.query.userId || req.user.userId}); // Filter by userId
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
+            if (!userId) {
+                return res.status(400).json({
+                    error: 'User ID is required',
+                    details: 'No user ID provided'
+            })};
+            const categories = await Category.find({ userId});
+            console.log("Categories controller: fetched categories: - ", categories);
+
             res.json(categories);
         } catch (error) {
             res.status(500).json({
@@ -44,7 +53,7 @@ class CategoryController {
             const category = await Category.findOneAndUpdate(
                 { 
                     _id: id, 
-                    userId: req.user._id // Ensure the category belongs to the user
+                    userId: req.user._id || req.query.userId || req.user.userId,
                 },
                 req.body,
                 { 
@@ -78,7 +87,7 @@ class CategoryController {
         try {
             const category = await Category.findOneAndDelete({
                 _id: id,
-                userId: req.user._id // Ensure the category belongs to the user
+                userId: req.user._id || req.query.userId || req.user.userId
             });
 
             if (!category) {

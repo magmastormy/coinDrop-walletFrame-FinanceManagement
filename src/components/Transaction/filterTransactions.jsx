@@ -2,8 +2,8 @@ import React from 'react';
 import WalletCard from './transactionWalletCard';
 import './styles/transactionFilterStyles.css';
 
+const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect, categories, onCategorySelect }) => {
 
-const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFilters(prevFilters => ({
@@ -20,6 +20,14 @@ const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) =>
                     <WalletCard key={wallet._id} wallet={wallet} onSelect={onWalletSelect} />
                 ))}
             </div>
+            <div className="category-filter">
+                <select name="category" value={filters.category} onChange={handleChange}>
+                    <option value="">All Categories</option>
+                    {categories.map(category => (
+                        <option key={category._id} value={category.name}>{category.name}</option>
+                    ))}
+                </select>
+            </div>
             <div className="horizontal-filters">
                 <input
                     type="number"
@@ -35,16 +43,6 @@ const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) =>
                     value={filters.maxAmount}
                     onChange={handleChange}
                 />
-                <select
-                    name="category"
-                    value={filters.category}
-                    onChange={handleChange}
-                >
-                    <option value="">All Categories</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                    <option value="transfer">Transfer</option>
-                </select>
                 <input
                     type="date"
                     name="startDate"
@@ -57,11 +55,6 @@ const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect }) =>
                     value={filters.endDate}
                     onChange={handleChange}
                 />
-            </div>
-            <div className="wallet-cards-container">
-                {wallets.map(wallet => (
-                    <WalletCard key={wallet._id} wallet={wallet} onSelect={onWalletSelect} />
-                ))}
             </div>
             <button onClick={() => setFilters({ minAmount: '', maxAmount: '', category: '', startDate: '', endDate: '' })}>
                 Clear Filters
