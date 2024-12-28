@@ -3,8 +3,11 @@ import React from 'react';
 import { useTable } from 'react-table';
 import './styles/transactionListStyles.css';
 
-const TransactionList = ({ transactions, handleEdit, handleDelete }) => {
-    const data = React.useMemo(() => transactions, [transactions]);
+const TransactionList = ({ transactions=[], handleEdit, handleDelete }) => {
+    const data = React.useMemo(() => 
+        Array.isArray(transactions) ? transactions : [], 
+        [transactions]
+    );
 
     const columns = React.useMemo(
         () => [
@@ -15,6 +18,7 @@ const TransactionList = ({ transactions, handleEdit, handleDelete }) => {
             {
                 Header: 'Amount',
                 accessor: 'amount',
+                Cell: ({ value }) => `$${Number(value).toFixed(2)}`
             },
             {
                 Header: 'Type',

@@ -25,12 +25,16 @@ ChartJS.register(
   Legend
 );
 
-const BudgetChart = ({ budgets }) => {
+const BudgetChart = ({ budgets=[] }) => {
+    if (!Array.isArray(budgets)) {
+        console.warn('BudgetChart: budgets prop is not an array');
+        return null;
+    }
     const data = {
-        labels: budgets.map(b => b.category),
+        labels: budgets.map(b => b.category || 'Uncategorized'),
         datasets: [
             {
-                data: budgets.map(b => b.amount),
+                data: budgets.map(b => b.amount || 0),
                 backgroundColor: budgets.map(() => 
                     `hsl(${Math.random() * 360}, 70%, 50%)`
                 ),

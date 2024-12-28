@@ -1,0 +1,130 @@
+/* categoryManagerStyles.css */
+.category-manager {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.category-manager h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.category-form {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.category-form input {
+    flex: 1;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.category-form input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.category-form button,
+.category-list button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category-form button {
+    background-color: #3498db;
+    color: white;
+}
+
+.category-form button:hover {
+    background-color: #2980b9;
+}
+
+.category-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.category-list li {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.category-list li:hover {
+    transform: translateX(5px);
+}
+
+.category-list li button {
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.category-list li button:first-of-type {
+    background-color: #f39c12;
+    color: white;
+}
+
+.category-list li button:last-of-type {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.category-list li button:hover {
+    opacity: 0.9;
+}
+
+.error-message {
+    color: #e74c3c;
+    background-color: #fde8e7;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+/* Loading state */
+.category-manager p {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .category-form {
+        flex-direction: column;
+    }
+    
+    .category-list li {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .category-list li button {
+        width: 100%;
+        margin: 0.2rem 0;
+    }
+}

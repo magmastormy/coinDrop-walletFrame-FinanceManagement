@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import transactionService from '../../services/transactionService';
 import './styles/transactionCreateNewStyles.css';
 
-const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets, categories, initialData }) => {
+const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets=[], categories=[], initialData }) => {
     if (!isOpen) return null;
     const [error, setError] = useState('');
 
@@ -116,7 +116,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             required
                         >
                             <option value="">Select a wallet</option>
-                            {wallets.map(wallet => (
+                            {Array.isArray(wallets) && wallets.map(wallet => (
                                 <option key={wallet._id} value={wallet._id}>
                                     {wallet.name}
                                 </option>

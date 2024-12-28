@@ -1,6 +1,14 @@
 import axiosInstance from "../api/userAxios";
 import { loginSuccess, loginFailure, logout as logoutAction } from '../slices/authSlice';
 import store from '../slices/store';
+import walletService from './walletService';
+import budgetService from './budgetService';
+import categoryService from './categoryService';
+import transactionService from './transactionService';
+import { setWallets } from '../slices/walletSlice';
+import { setBudgets } from '../slices/budgetSlice';
+import { setCategories } from '../slices/categorySlice';
+import { setTransactions } from '../slices/transactionSlice';
 
 // Simple error messages
 const AUTH_ERRORS = {
@@ -21,32 +29,55 @@ const storeUserData = (token, user) => {
     }
 };
 
-// Clear user data from storage
+
 const clearUserData = () => {
     console.log('Clearing user data...');
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 };
 
-// Update Redux state
+
 const updateAppState = (action) => {
     store.dispatch(action);
 };
 
-// Login Function
+
 export const loginUser = async (credentials) => {
     console.log('🔒 Login attempt with:', credentials.email);
     try {
         const response = await axiosInstance.post("/auth/login", credentials);
         console.log('Server response:', response);
 
-        // Check if we have the required data
         if (!response || !response.token || !response.user) {
             console.error('❌ Invalid server response:', response);
             throw new Error('Login failed - invalid server response');
         }
 
         console.log('✅ Login successful');
+
+        //now i want to fetch the users data from the database to sort this bug where components have missing data
+        //lets get everything wallets, budgets, categories
+        //i think transactions are not necessary for now, maybe for the dashboard but not yet.
+        const userId = response.user.id || response.user._id || response.user.userId || response.user._userId;
+        console.log("Login userId:", userId);
+
+        const userWallets = await walletService.getAllWallets(userId);
+        console.log('userWallets:', userWallets);
+
+        const userBudgets = await budgetService.getUserBudgets(userId);
+        console.log('userBudgets:', userBudgets);
+
+        const userCategories = await categoryService.getUserCategories(userId);
+        console.log('userCategories:', userCategories);
+
+        const userTransactions = await transactionService.getUserTransactions(userId);
+        console.log('userTransactions:', userTransactions);
+
+        updateAppState(setWallets(userWallets || []));
+        updateAppState(setBudgets(userBudgets || []));
+        updateAppState(setCategories(userCategories || []));
+        updateAppState(setTransactions(userTransactions || []));
+
         storeUserData(response.token, response.user);
         updateAppState(loginSuccess({ 
             token: response.token, 
@@ -67,7 +98,7 @@ export const loginUser = async (credentials) => {
 export const registerUser = async (userData) => {
     console.log('📝 Registration attempt:', userData.email);
     try {
-        // Basic validation
+
         const requiredFields = ['email', 'password', 'username', 'firstName', 'lastName'];
         const missingFields = requiredFields.filter(field => !userData[field]);
         
@@ -75,14 +106,25 @@ export const registerUser = async (userData) => {
             throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
 
-        // Remove confirmPassword from data sent to server
         const { confirmPassword, ...registrationData } = userData;
         
-        // Send registration request
         const response = await axiosInstance.post("/auth/register", registrationData);
         console.log('✅ Registration successful:', response.data);
         
-        // Automatically log in after successful registration
+        //idea, because of lack of categories, lets enforce a "default" category for all useers,
+        //at least for transactions to start and other stuff.
+        //this is a temporary solution, we will remove it later
+        try {
+            await categoryService.createCategory({
+                name: "Default",
+                userId: response.user.id,
+                description: "Default category for uncategorized items"
+            });
+            console.log('✅ Default category created for new user');
+        } catch (categoryError) {
+            console.error('❌ Error creating default category:', categoryError);
+        }
+     
         if (response?.data?.token && response?.data?.user) {
             storeUserData(response.data.token, response.data.user);
             updateAppState(loginSuccess({ 
@@ -98,7 +140,6 @@ export const registerUser = async (userData) => {
     }
 };
 
-// Logout Function
 export const logoutUser = () => {
     console.log('👋 Logging out...');
     clearUserData();
@@ -133,9 +174,8 @@ export const changePassword = async(oldPassword, newPassword) => {
             newPassword
         });
 
-        return response.data; // Return the response data (e.g., success message)
+        return response.data;
     } catch (error) {
-        // Handle errors (e.g., incorrect current password)
         throw new Error(error.response?.data?.message || 'Failed to change password.');
     }
 };

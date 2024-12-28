@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTransactions, setLoading, setError } from '../../slices/transactionSlice';
+import { setWallets } from '../../slices/walletSlice';
+import walletService from '../../services/walletService';
 import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
 import CreateTransactionModal from './createTransactionModal';
@@ -28,8 +30,14 @@ const TransactionManager = () => {
     });
 
     useEffect(() => {
-        fetchTransactions();
-        fetchCategories();
+        Promise.all([
+            fetchTransactions(),
+            fetchCategories(),
+            fetchWallets()
+        ]).catch(err => {
+            console.error("Error Fetching initial data");
+            dispatch(setError(err.message));
+        });
     }, [dispatch, filters]);
 
     const fetchCategories = async () => {
@@ -41,7 +49,7 @@ const TransactionManager = () => {
             const fetchedCategories = await categoryService.getUserCategories(user.id);
 
             const categories = Array.isArray(fetchedCategories) ? fetchedCategories : [];
-            // Add "None" category if it doesn't exist
+            // Add "None" category if it doesn't exist, temporary solution
             if (!categories.some(cat => cat.name === "None")) {
                 categories.push({ _id: 'none', name: 'None' });
             }
@@ -68,6 +76,22 @@ const TransactionManager = () => {
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
+            dispatch(setLoading(false));
+        }
+    };
+    const fetchWallets = async()=>{
+        dispatch(setLoading(true));
+        try{
+            if (!user?.id)
+            {
+                throw new Error('User Not Authenticated');
+            }
+            const data = await walletService.getAllWallets(user.id);
+            dispatch(setWallets(data.wallets || []));
+        }catch(err)
+        {
+            dispatch(setError(err.message));
+        } finally{
             dispatch(setLoading(false));
         }
     };
@@ -122,11 +146,12 @@ const TransactionManager = () => {
             if (!window.confirm('Are you sure you want to delete this transaction?')) {
                 return;
             }
+
             dispatch(setLoading(true));
+
             await transactionService.deleteTransaction(transactionId);
+
             fetchTransactions();
-            // Optional: Add success message
-            console.log('Transaction deleted successfully');
         } catch (err) {
             dispatch(setError(err.message));
         } finally {

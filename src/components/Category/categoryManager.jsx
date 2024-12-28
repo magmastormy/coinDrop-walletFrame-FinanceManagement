@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector} from 'react-redux';
 import { setCategories, setLoading, setError } from '../../slices/categorySlice';
 import categoryService from '../../services/categoryService';
 import './styles/categoryManagerStyles.css';

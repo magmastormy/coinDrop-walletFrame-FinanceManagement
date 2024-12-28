@@ -21,12 +21,16 @@ ChartJS.register(
   Legend
 );
 
-const WalletChart = ({ wallets }) => {
+const WalletChart = ({ wallets =[] }) => {
+    if (!Array.isArray(wallets)) {
+        console.warn('WalletChart: wallets prop is not an array');
+        return null;
+    }
     const chartData = {
         labels: wallets.map(w => w.name),
         datasets: [{
             label: 'Wallet Balance',
-            data: wallets.map(w => w.balance),
+            data: wallets.map(w => w.balance || 0),
             backgroundColor: wallets.map(() => `rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 0.6)`),
             borderWidth: 1
         }]

@@ -2,7 +2,7 @@ import React from 'react';
 import WalletCard from './transactionWalletCard';
 import './styles/transactionFilterStyles.css';
 
-const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect, categories, onCategorySelect }) => {
+const FilterTransactions = ({ filters, setFilters, wallets=[], onWalletSelect, categories=[], onCategorySelect }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -16,15 +16,28 @@ const FilterTransactions = ({ filters, setFilters, wallets, onWalletSelect, cate
         <div className="filter-transactions">
             <h3>Filter Transactions</h3>
             <div className="wallet-filter">
-                {wallets.map(wallet => (
-                    <WalletCard key={wallet._id} wallet={wallet} onSelect={onWalletSelect} />
+                {Array.isArray(wallets) && wallets.map(wallet => (
+                    <WalletCard 
+                        key={wallet._id} 
+                        wallet={wallet} 
+                        onSelect={onWalletSelect} 
+                    />
                 ))}
             </div>
             <div className="category-filter">
-                <select name="category" value={filters.category} onChange={handleChange}>
+                <select 
+                    name="category" 
+                    value={filters.category} 
+                    onChange={handleChange}
+                >
                     <option value="">All Categories</option>
-                    {categories.map(category => (
-                        <option key={category._id} value={category.name}>{category.name}</option>
+                    {Array.isArray(categories) && categories.map(category => (
+                        <option 
+                            key={category._id} 
+                            value={category.name}
+                        >
+                            {category.name}
+                        </option>
                     ))}
                 </select>
             </div>

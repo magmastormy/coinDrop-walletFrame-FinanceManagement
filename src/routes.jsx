@@ -9,6 +9,7 @@ import Transaction from './components/Transaction/transactionManager';
 import Home from './pages/Home';
 import Sidebar from './components/Sidebar/sideBar';
 import Profile from './components/Profile/profileManager';
+import Category from './components/Category/categoryManager';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -57,6 +58,12 @@ const AppRoutes = () => {
                 <Route path="/profile" element={
                     <ProtectedRoute>
                         <Profile />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/category" element={
+                    <ProtectedRoute>
+                        <Category />
                     </ProtectedRoute>
                 } />
                 
