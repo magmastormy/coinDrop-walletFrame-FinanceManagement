@@ -6,6 +6,7 @@ import transactionReducer from './transactionSlice';
 import settingsReducer from './settingSlice';
 import profileReducer from './profileSlice';
 import categoryReducer from './categorySlice';
+import educationReducer from './educationSlice';
 
 export const store = configureStore({
     reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
         setting: settingsReducer,
         profile: profileReducer,
         category: categoryReducer,
+        education: educationReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {

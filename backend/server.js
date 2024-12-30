@@ -13,6 +13,7 @@ const communityRoutes = require('./routes/communityRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const educationRoutes = require('./routes/educationRoutes');
 const app = express();
 
 // Connect Database
@@ -48,7 +49,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/categories', categoryRoutes);
-
+app.use('/api/education', educationRoutes);
 // Health Check Route
 app.get('/api/health', (req, res) => {
     const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';

@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Sidebar from './components/Sidebar/sideBar';
 import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
+import Education from './components/Education/educationManager';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -64,6 +65,12 @@ const AppRoutes = () => {
                 <Route path="/category" element={
                     <ProtectedRoute>
                         <Category />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/education" element={
+                    <ProtectedRoute>
+                        <EducationManager />
                     </ProtectedRoute>
                 } />
                 
