@@ -11,7 +11,7 @@ import Sidebar from './components/Sidebar/sideBar';
 import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
 import Education from './components/Education/educationManager';
-
+import UserEducation from './components/Education/userEducation/userEducationManager';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
@@ -70,7 +70,13 @@ const AppRoutes = () => {
 
                 <Route path="/education" element={
                     <ProtectedRoute>
-                        <EducationManager />
+                        <Education />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/user-education" element={
+                    <ProtectedRoute>
+                        <UserEducation />
                     </ProtectedRoute>
                 } />
                 

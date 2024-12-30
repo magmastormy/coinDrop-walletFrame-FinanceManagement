@@ -1,0 +1,23 @@
+.education-manager {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+  }
+  
+  .education-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .education-header h2 {
+    font-size: var(--font-size-2xl);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  .education-actions {
+    display: flex;
+    gap: var(--spacing-md);
+  }

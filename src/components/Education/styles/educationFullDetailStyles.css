@@ -1,0 +1,31 @@
+.education-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+    background-color: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .education-detail-header {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .education-detail-title {
+    font-size: var(--font-size-2xl);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .education-detail-meta {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    display: flex;
+    gap: var(--spacing-md);
+  }
+  
+  .education-detail-content {
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--text-primary);
+  }

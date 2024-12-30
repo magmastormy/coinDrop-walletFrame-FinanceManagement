@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import EducationNavBar from './educationNavBar';
 import EducationSearchBar from './educationSearchBar';
@@ -19,22 +20,38 @@ import {
 import './styles/educationManagerStyles.css';
 
 const EducationManager = () => {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const { educations, loading, error } = useSelector(state => state.education);
     const [filteredEducation, setFilteredEducation] = useState([]);
+    const [userEducationInfo, setUserEducationInfo] = useState(null);
     const {user} = useSelector(state => state.auth);
     
     useEffect(() => {
         fetchEducationPosts();
+        fetchUserEducationInfo();
     }, []);
+
+    const handleNavigateToUserEducation = () => {
+        navigate('/user-education');
+    };
 
     const fetchEducationPosts = async () => {
         dispatch(setLoading(true));
         try {
             const response = await educationService.getEducations();
-            dispatch(setEducations(response.data));
+            dispatch(setEducations(response));
         } catch (err) {
             dispatch(setError(err.message));
+        }
+    };
+
+    const fetchUserEducationInfo = async () => {
+        try {
+            const response = await educationService.getUserEducations(user.id);
+            setUserEducationInfo(response.data);
+        } catch (err) {
+            console.error('Error fetching user education info:', err);
         }
     };
 
@@ -102,15 +119,29 @@ const EducationManager = () => {
 
     return (
         <div className="education-manager">
-            <EducationNavBar />
+            <div className="education-header">
+                <EducationNavBar />
+                <button 
+                    className="create-education-btn"
+                    onClick={handleNavigateToUserEducation}
+                >
+                    My Education Posts ({userEducationInfo?.posts?.length || 0})
+                </button>
+            </div>
             <EducationSearchBar onSearch={handleSearch} />
-            <EducationGrid 
-                educations={filteredEducation.length ? filteredEducation : educations}
-                onDelete={handleDeleteEducation}
-                onUpdate={handleUpdateEducation}
-                onLike={handleLike}
-                onComment={handleComment}
-            />
+            {loading ? (
+                <div>Loading...</div>
+            ) : error ? (
+                <div>Error: {error}</div>
+            ) : (
+                <EducationGrid 
+                    educations={filteredEducation.length ? filteredEducation : educations}
+                    onDelete={handleDeleteEducation}
+                    onUpdate={handleUpdateEducation}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                />
+            )}
         </div>
     );
 };

@@ -58,7 +58,7 @@ export const loginUser = async (credentials) => {
         //now i want to fetch the users data from the database to sort this bug where components have missing data
         //lets get everything wallets, budgets, categories
         //i think transactions are not necessary for now, maybe for the dashboard but not yet.
-        const userId = response.user.id || response.user._id || response.user.userId || response.user._userId;
+        /*const userId = response.user.id || response.user._id || response.user.userId || response.user._userId;
         console.log("Login userId:", userId);
 
         const userWallets = await walletService.getAllWallets(userId);
@@ -76,7 +76,7 @@ export const loginUser = async (credentials) => {
         updateAppState(setWallets(userWallets || []));
         updateAppState(setBudgets(userBudgets || []));
         updateAppState(setCategories(userCategories || []));
-        updateAppState(setTransactions(userTransactions || []));
+        updateAppState(setTransactions(userTransactions || [])); */
 
         storeUserData(response.token, response.user);
         updateAppState(loginSuccess({ 

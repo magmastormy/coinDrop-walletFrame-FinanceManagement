@@ -2,7 +2,12 @@ import React from 'react';
 import EducationCard from './educationCard';
 import './styles/educationGridStyles.css';
 
-const EducationGrid = ({ educations, onEdit, onDelete, onLike, onComment }) => {
+const EducationGrid = ({ educations = [], onEdit, onDelete, onLike, onComment }) => {
+    if (!Array.isArray(educations)) {
+        console.warn('EducationGrid: educations prop is not an array');
+        return null;
+    }
+    
     if (!educations.length) {
         return <div className="empty-state">No education posts available</div>;
     }

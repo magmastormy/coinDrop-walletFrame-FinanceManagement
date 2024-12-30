@@ -1,46 +1,54 @@
 import React, { useState } from 'react';
 import './styles/createEditEducationPostStyles.css';
 
-const CreateEditEducationPost = ({ onCreatePost }) => {
-    const [title, setTitle] = useState('');
-    const [details, setDetails] = useState('');
-    const [images, setImages] = useState([]);
+const CreateEditEducationPost = ({ onCreateEducation, initialData }) => {
+    const [title, setTitle] = useState(initialData?.title || '');
+    const [details, setDetails] = useState(initialData?.details || '');
+    const [images, setImages] = useState(initialData?.images || []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const newPost = {
+        onCreateEducation({
             title,
             details,
             images,
-            date: new Date().toISOString(),
-            author: 'Current User' //TODO: Replace with actual user data
-        };
-        onCreatePost(newPost);
-        setTitle('');
-        setDetails('');
-        setImages([]);
+            date: new Date().toISOString()
+        });
     };
 
     return (
-        <form className="create-edit-education-post" onSubmit={handleSubmit}>
-            <div className="image-bar">
-                {/*TODO: Image upload logic here */}
-            </div>
-            <div className="text-editor">
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Title"
-                />
-                <textarea
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    placeholder="Details"
-                />
-            </div>
-            <button type="submit">Post</button>
-        </form>
+        <div className="post-form-container">
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label htmlFor="title">Title</label>
+                    <input
+                        id="title"
+                        type="text"
+                        className="form-input"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter post title"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="details">Details</label>
+                    <textarea
+                        id="details"
+                        className="form-textarea"
+                        value={details}
+                        onChange={(e) => setDetails(e.target.value)}
+                        placeholder="Enter post details"
+                        required
+                    />
+                </div>
+                <div className="form-actions">
+                    <button type="submit" className="submit-btn">
+                        {initialData ? 'Update' : 'Create'} Post
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 };
 
