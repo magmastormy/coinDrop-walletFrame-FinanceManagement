@@ -72,6 +72,27 @@ const educationSlice = createSlice({
             if (education) {
                 education.comments = education.comments.filter(c => c._id !== commentId);
             }
+        },
+
+        updateEditorContent: (state, action) => {
+            const { id, content } = action.payload;
+            const education = state.educations.find(e => e._id === id);
+            if (education) {
+                education.details = content;
+            }
+        },
+
+        addImageToPost: (state, action) => {
+            const { id, imageUrl } = action.payload;
+            const education = state.educations.find(e => e._id === id);
+            if (education) {
+                education.images = education.images || [];
+                education.images.push({
+                    url: imageUrl,
+                    alt: '',
+                    caption: ''
+                });
+            }
         }
     }
 });
@@ -87,7 +108,9 @@ export const {
     addLike,
     removeLike,
     addComment,
-    deleteComment
+    deleteComment,
+    updateEditorContent,
+    addImageToPost
 } = educationSlice.actions;
 
 export default educationSlice.reducer;

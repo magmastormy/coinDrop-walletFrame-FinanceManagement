@@ -5,6 +5,12 @@ import './styles/educationCardStyles.css';
 const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
     const [showFullDetail, setShowFullDetail] = useState(false);
 
+    const getAuthorName = (author) => {
+        if (!author) return 'Unknown';
+        if (typeof author === 'string') return author;
+        return author.username || `${author.firstName} ${author.lastName}` || 'Anonymous';
+    };
+
     return (
         <div className="education-card">
             <h3>{education.title}</h3>
@@ -26,7 +32,10 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
             </div>
             {showFullDetail && (
                 <EducationFullDetail
-                    education={education}
+                    education={{
+                        ...education,
+                        author: getAuthorName(education.author)
+                    }}
                     onComment={onComment}
                     onLike={onLike}
                 />

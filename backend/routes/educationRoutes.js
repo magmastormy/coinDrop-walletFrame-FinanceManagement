@@ -4,6 +4,8 @@ const { body } = require('express-validator');
 const EducationController = require('../controllers/educationController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { validationMiddleware } = require('../middleware/validationMiddleware');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
 
 // Education Validation Middleware
 const educationValidation = [
@@ -26,5 +28,6 @@ router.delete('/:id', EducationController.deleteEducation);
 router.post('/:id/like', EducationController.likeEducation);
 router.post('/:id/comments', body('text').isLength({ min: 1, max: 500 }).withMessage('Comment must be between 1 and 500 characters'), validationMiddleware, EducationController.addComment);
 router.delete('/:id/comments/:commentId', EducationController.deleteComment);
-
+router.post('/upload-image', upload.single('image'), EducationController.uploadImage
+);
 module.exports = router;

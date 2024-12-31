@@ -14,10 +14,14 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const educationRoutes = require('./routes/educationRoutes');
+const initCloudinary = require('./config/cloudinary');
 const app = express();
 
 // Connect Database
 connectDB();
+
+// Initialize Cloudinary
+initCloudinary();
 
 // Ensure upload directories exist
 ensureUploadDirectories()

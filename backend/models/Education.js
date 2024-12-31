@@ -12,7 +12,7 @@ const EducationSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 10,
-        maxlength: 2000
+        maxlength: 50000
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
@@ -23,7 +23,16 @@ const EducationSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    images: [String],
+    images: [{
+        url: String,
+        alt: String,
+        caption: String
+    }],
+    contentType: {
+        type: String,
+        enum: ['markdown', 'tiptap'],
+        default: 'tiptap'
+    },
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'

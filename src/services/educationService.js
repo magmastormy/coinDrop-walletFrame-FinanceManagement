@@ -9,8 +9,30 @@ const educationService = {
     },
 
     createEducation: async (educationData) => {
-        const response = await axiosInstance.post(API_URL, educationData);
+        const imagePromises = educationData.images?.map(async file => {
+            if (file instanceof File) {
+                return await educationService.uploadImage(file);
+            }
+            return file;
+        });
+
+        const uploadedImages = imagePromises ? await Promise.all(imagePromises) : [];
+        
+        const response = await axiosInstance.post(API_URL, {
+            ...educationData,
+            images: uploadedImages,
+            contentType: 'tiptap'
+        });
         return response.data;
+    },
+
+    uploadImage: async (file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data.url;
     },
 
     updateEducation: async (id, educationData) => {

@@ -1,5 +1,5 @@
 // src/components/Education/userEducation/createEditEducationPost.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -114,6 +114,21 @@ const CreateEditEducationPost = ({ onCreateEducation, initialData }) => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const validateForm = () => {
+        if (!title || title.trim().length < 5) {
+            setError('Title must be at least 5 characters long');
+            return false;
+        }
+
+        if (!editor || !editor.getText().trim() || editor.getText().trim().length < 10) {
+            setError('Content must be at least 10 characters long');
+            return false;
+        }
+
+        setError('');
+        return true;
     };
 
     return (

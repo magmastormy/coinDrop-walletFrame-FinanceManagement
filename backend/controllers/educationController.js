@@ -1,11 +1,47 @@
 const Education = require('../models/Education');
-
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs').promises;
 class EducationController {
+
+    static async uploadImage(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No image provided' });
+            }
+
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'education',
+                resource_type: 'image',
+                transformation: [
+                    { width: 1200, crop: 'limit' },
+                    { quality: 'auto' }
+                ]
+            });
+
+            // Clean up local file after upload
+            await fs.unlink(req.file.path);
+
+            res.json({ 
+                url: result.secure_url,
+                public_id: result.public_id
+            });
+        } catch (error) {
+            // Clean up local file if upload failed
+            if (req.file) {
+                await fs.unlink(req.file.path).catch(console.error);
+            }
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     static async createEducation(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
             const education = new Education({
                 ...req.body,
-                author: req.user._id
+                author: userId,
+                contentType: 'tiptap'
             });
             await education.save();
             res.status(201).json(education);
@@ -13,6 +49,7 @@ class EducationController {
             res.status(400).json({ error: error.message });
         }
     }
+
 
     static async getEducations(req, res) {
         try {
@@ -61,17 +98,27 @@ class EducationController {
 
     static async likeEducation(req, res) {
         try {
+
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
             const education = await Education.findById(req.params.id);
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
             }
-            if (education.likes.includes(req.user._id)) {
-                education.likes.pull(req.user._id);
+
+            const likeIndex = education.likes.indexOf(userId);
+
+            if (likeIndex === -1) {
+                education.likes.push(userId);
             } else {
-                education.likes.push(req.user._id);
+                education.likes.splice(likeIndex, 1);
             }
+
             await education.save();
-            res.status(200).json(education);
+            res.json({
+                message: likeIndex === -1 ? 'Post liked' : 'Post unliked',
+                likeCount: education.likes.length
+            });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
@@ -79,16 +126,20 @@ class EducationController {
 
     static async addComment(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
             const education = await Education.findById(req.params.id);
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
             }
             const comment = {
-                user: req.user._id,
-                text: req.body.text
+                user: userId,
+                text: req.body.text,
+                date: new Date().toISOString()
             };
             education.comments.push(comment);
             await education.save();
+
             res.status(201).json(education);
         } catch (error) {
             res.status(400).json({ error: error.message });
