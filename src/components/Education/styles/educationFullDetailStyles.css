@@ -1,31 +1,51 @@
-.education-detail {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: var(--spacing-xl);
-    background-color: var(--surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-  }
-  
-  .education-detail-header {
-    margin-bottom: var(--spacing-xl);
-  }
-  
-  .education-detail-title {
-    font-size: var(--font-size-2xl);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .education-detail-meta {
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    display: flex;
-    gap: var(--spacing-md);
-  }
-  
-  .education-detail-content {
-    font-size: var(--font-size-base);
-    line-height: 1.6;
-    color: var(--text-primary);
-  }
+/* src/components/Education/styles/educationFullDetailStyles.css */
+.education-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.education-modal {
+  background: white;
+  width: 90%;
+  max-width: 900px;
+  height: 90vh;
+  border-radius: 8px;
+  position: relative;
+}
+
+.education-modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.education-modal-content {
+  padding: 2rem;
+  overflow-y: auto;
+  height: calc(90vh - 60px);
+}
+
+.reading-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #eee;
+}
+
+.reading-progress-bar .progress {
+  height: 100%;
+  background: #007bff;
+  transition: width 0.3s ease;
+}

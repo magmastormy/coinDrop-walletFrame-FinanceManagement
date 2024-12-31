@@ -33,6 +33,7 @@ const UserEducationManager = () => {
 
     const handleCreateEducation = async (newEducation) => {
         dispatch(setLoading(true));
+        console.log('Create New Education:', newEducation);
         try {
             const response = await educationService.createEducation(newEducation);
             dispatch(addEducation(response));
