@@ -17,6 +17,7 @@ import {
     addComment,
     deleteComment 
 } from '../../slices/educationSlice';
+import CommentModal from './commentModal';
 import './styles/educationManagerStyles.css';
 
 const EducationManager = () => {
@@ -26,6 +27,8 @@ const EducationManager = () => {
     const [filteredEducation, setFilteredEducation] = useState([]);
     const [userEducationInfo, setUserEducationInfo] = useState(null);
     const {user} = useSelector(state => state.auth);
+    const [showCommentModal, setShowCommentModal] = useState(false);
+    const [selectedEducationId, setSelectedEducationId] = useState(null);
     
     useEffect(() => {
         fetchEducationPosts();
@@ -102,6 +105,21 @@ const EducationManager = () => {
         }
     };
 
+    const handleCommentClick = (educationId) => {
+        setSelectedEducationId(educationId);
+        setShowCommentModal(true);
+    };
+
+    const handleCommentSubmit = async (commentData) => {
+        try {
+            const response = await educationService.addComment(selectedEducationId, commentData);
+            dispatch(addComment({ educationId: selectedEducationId, comment: response }));
+            setShowCommentModal(false);
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
+
     const handleSearch = (searchTerm) => {
         if (!searchTerm) {
             setFilteredEducation([]);
@@ -139,7 +157,15 @@ const EducationManager = () => {
                     onDelete={handleDeleteEducation}
                     onUpdate={handleUpdateEducation}
                     onLike={handleLike}
-                    onComment={handleComment}
+                    onComment={handleCommentClick}
+                />
+            )}
+
+            {showCommentModal && (
+                <CommentModal
+                    isOpen={showCommentModal}
+                    onClose={() => setShowCommentModal(false)}
+                    onSubmit={handleCommentSubmit}
                 />
             )}
         </div>

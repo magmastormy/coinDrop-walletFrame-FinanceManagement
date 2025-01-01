@@ -14,6 +14,7 @@ import {
     addLike,
     addComment 
 } from '../../../slices/educationSlice';
+import CommentModal from '../commentModal';
 import './styles/userEducationManagerStyles.css';
 
 const UserEducationManager = () => {
@@ -21,6 +22,7 @@ const UserEducationManager = () => {
     const { educations =[], loading, error } = useSelector(state => state.education);
     const { user } = useSelector(state => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showCommentModal, setShowCommentModal] = useState(false);
 
     useEffect(() => {
         fetchUserEducations();
@@ -48,10 +50,16 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleEditEducation = async (id, educationData) => {
+    const handleEditEducation = async (education) => {
         dispatch(setLoading(true));
         try {
-            const response = await educationService.updateEducation(id, educationData);
+            const educationData = {
+                title: education.title,
+                details: education.details,
+                images: education.images || []
+            };
+
+            const response = await educationService.updateEducation(education._id, educationData);
             dispatch(updateEducation(response));
         } catch (err) {
             dispatch(setError(err.message));
@@ -84,6 +92,20 @@ const UserEducationManager = () => {
             dispatch(setError(err.message));
         }
     };
+    const handleCommentClick = (educationId) => {
+        setSelectedEducationId(educationId);
+        setShowCommentModal(true);
+    };
+
+    const handleCommentSubmit = async (commentData) => {
+        try {
+            const response = await educationService.addComment(selectedEducationId, commentData);
+            dispatch(addComment({ educationId: selectedEducationId, comment: response }));
+            setShowCommentModal(false);
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
 
     return (
         <div className="education-manager-container">
@@ -112,7 +134,7 @@ const UserEducationManager = () => {
                     onEdit={handleEditEducation}
                     onDelete={handleDeleteEducation}
                     onLike={handleLike}
-                    onComment={handleComment}
+                    onComment={handleCommentClick}
                 />
             )}
 
@@ -120,6 +142,14 @@ const UserEducationManager = () => {
                 <CreateEducationPost 
                     onCreateEducation={handleCreateEducation}
                     onClose={() => setShowCreateModal(false)}
+                />
+            )}
+
+            {showCommentModal && (
+                <CommentModal
+                    isOpen={showCommentModal}
+                    onClose={() => setShowCommentModal(false)}
+                    onSubmit={handleCommentSubmit}
                 />
             )}
         </div>

@@ -36,8 +36,20 @@ const educationService = {
     },
 
     updateEducation: async (id, educationData) => {
-        const response = await axiosInstance.put(`${API_URL}/${id}`, educationData);
-        return response.data;
+        if (!id || typeof id !== 'string') {
+            throw new Error('Invalid education ID');
+        }
+        
+        try {
+            const response = await axiosInstance.put(`${API_URL}/${id}`, {
+                ...educationData,
+                contentType: 'tiptap'
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Update education error:', error);
+            throw error;
+        }
     },
 
     getUserEducations: async (userId) => {
@@ -48,6 +60,41 @@ const educationService = {
     deleteEducation: async (id) => {
         const response = await axiosInstance.delete(`${API_URL}/${id}`);
         return response.data;
+    },
+
+    likeEducation: async (educationId) => {
+        if (!educationId || typeof educationId !== 'string') {
+            throw new Error('Invalid education ID');
+        }
+
+        try {
+            const response = await axiosInstance.post(`${API_URL}/${educationId}/like`);
+            return response.data;
+        } catch (error) {
+            console.error('Like education error:', error);
+            throw error;
+        }
+    },
+    
+    addComment: async (educationId, commentData) => {
+        if (!educationId || typeof educationId !== 'string') {
+            throw new Error('Invalid education ID');
+        }
+
+        if (!commentData?.text || typeof commentData.text !== 'string') {
+            throw new Error('Comment text is required');
+        }
+
+        try {
+            const response = await axiosInstance.post(
+                `${API_URL}/${educationId}/comments`,
+                { text: commentData.text }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Add comment error:', error);
+            throw error;
+        }
     },
 };
 

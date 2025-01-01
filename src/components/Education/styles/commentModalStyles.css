@@ -1,0 +1,25 @@
+/* src/components/Education/styles/commentModalStyles.css */
+.comment-modal {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 500px;
+}
+
+.comment-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
