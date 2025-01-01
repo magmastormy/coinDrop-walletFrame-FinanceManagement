@@ -1,21 +1,21 @@
 /* Auth Container */
 .auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f9fafb;
-    padding: 1rem;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f4f4f4; /* Light gray background */
+  padding: 2rem; /* Increased padding for better spacing */
 }
 
 /* Auth Card */
 .auth-card {
-    background-color: white;
-    border-radius: 0.5rem;
-    padding: 2rem;
-    width: 100%;
-    max-width: 28rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-radius: 8px; /* Modern rounded corners */
+  padding: 3rem; /* Increased padding for better content spacing */
+  width: 100%;
+  max-width: 400px; /* Adjusted max-width for better responsiveness */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* Subtle box shadow */
 }
 
 /* Auth Header */
@@ -25,15 +25,15 @@
 }
 
 .auth-title {
-    font-size: 1.875rem;
-    font-weight: 800;
-    color: #111827;
-    margin-bottom: 1rem;
+  font-size: 24px; /* Adjusted font size */
+  font-weight: 700; /* Slightly lighter font weight */
+  color: #333333; /* Dark gray text */
+  margin-bottom: 1rem;
 }
 
 .auth-subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
+  font-size: 14px; /* Adjusted font size */
+  color: #666666; /* Lighter gray text */
 }
 
 .auth-link {
@@ -48,9 +48,9 @@
 
 /* Form */
 .auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .form-fields-container {
@@ -64,13 +64,13 @@
 }
 
 .form-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    color: #111827;
-    font-size: 0.875rem;
-    appearance: none;
+  width: 100%;
+  padding: 1rem; /* Increased padding for better input field spacing */
+  border: 1px solid #cccccc; /* Light gray border */
+  border-radius: 4px; /* Modern rounded corners */
+  color: #333333; /* Dark gray text */
+  font-size: 16px; /* Adjusted font size */
+  appearance: none;
 }
 
 .form-input:focus {
@@ -96,16 +96,16 @@
 
 /* Submit Button */
 .auth-submit-button {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background-color: #2563eb;
-    color: white;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  width: 100%;
+  padding: 1rem; /* Increased padding for better button spacing */
+  background-color: #007bff; /* Primary color button */
+  color: #ffffff;
+  font-size: 16px; /* Adjusted font size */
+  font-weight: 600; /* Slightly bolder font weight */
+  border: none;
+  border-radius: 4px; /* Modern rounded corners */
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Smoother transition */
 }
 
 .auth-submit-button:hover:not(.button-disabled) {
