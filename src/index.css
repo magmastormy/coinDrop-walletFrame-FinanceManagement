@@ -2,18 +2,18 @@
 
 /* CSS Reset and Base Styles */
 :root {
-  /* Color System */
-  --primary: #CC8B65; /* Rich, earthy color for primary elements */
-  --primary-light: #E3DCD2; /* Lighter version for highlights */
-  --primary-dark: #013328; /* Dark green for contrast */
-  --secondary: #013328; /* Deep green for secondary elements */
-  --surface: #E3DCD2; /* Warm, light color for surfaces */
-  --background: #E3DCD2; /* Same as surface for consistency */
-  --text-primary: #100C0D; /* Very dark color for primary text */
-  --text-secondary: #013328; /* Dark green for secondary text */
-  --border: #013328; /* Dark green for borders */
-  --error: #FF4D4F; /* Red for error messages */
-  --success: #73D13D; /* Green for success messages */
+  --primary: #CC8B65;
+  --primary-light: #E3DCD2;
+  --primary-dark: #013328;
+  --secondary: #013328;
+  --surface: #E3DCD2;
+  --background: #E3DCD2;
+  --text-primary: #100C0D;
+  --text-secondary: #013328;
+  --border: #013328;
+  --error: #FF4D4F;
+  --success: #73D13D;
+  
 
   /* Spacing System */
   --spacing-xs: 0.5rem;
