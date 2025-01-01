@@ -136,11 +136,11 @@ const EducationManager = () => {
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <div className="education-manager">
-            <div className="education-header">
+        <div className="education-manager-container">
+            <div className="education-manager-header">
                 <EducationNavBar />
                 <button 
-                    className="create-education-btn"
+                    className="user-education-button"
                     onClick={handleNavigateToUserEducation}
                 >
                     My Education Posts ({userEducationInfo?.posts?.length || 0})

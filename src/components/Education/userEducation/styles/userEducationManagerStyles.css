@@ -1,54 +1,68 @@
 .education-manager-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
 }
 
 .manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-xl);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    padding: 0 var(--spacing-md); 
 }
 
 .manager-title {
-  font-size: var(--font-size-2xl);
-  color: var(--text-primary);
+    font-size: var(--font-size-2xl);
+    color: var(--text-primary);
+    font-weight: 600; 
 }
 
 .create-post-btn {
-  background-color: var(--primary);
-  color: white;
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+    background-color: var(--primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: var(--font-size-md); 
 }
 
 .create-post-btn:hover {
-  background-color: var(--primary-dark);
+    background-color: var(--primary-dark);
 }
 
 .posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-md); 
 }
 
-.loading-state, .error-state {
-  text-align: center;
-  padding: 2rem;
-  border-radius: 8px;
-  background: var(--surface);
-  margin: 1rem 0;
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 2rem;
+    border-radius: 8px;
+    background: var(--surface);
+    margin: 1rem 0;
 }
 
 .loading-state {
-  color: var(--text-secondary);
+    color: var(--text-secondary);
 }
 
 .error-state {
-  color: var(--error);
-  border: 1px solid var(--error);
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+/* Optional: Style for action buttons (edit, delete) on each post */
+.post-actions {
+    margin-top: var(--spacing-sm);
+    text-align: right; 
 }

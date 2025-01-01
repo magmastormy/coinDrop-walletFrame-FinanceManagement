@@ -1,48 +1,71 @@
 .user-education-card {
-  background-color: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--spacing-lg);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: var(--spacing-md);
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  overflow: hidden; /* To prevent content from overflowing */
+  display: flex;
+  flex-direction: column; 
 }
 
 .user-education-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px); 
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
+/* Header Section */
+.card-header { 
+  display: flex; 
+  align-items: center; 
+  margin-bottom: 15px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
+  margin-right: 10px;
 }
 
-.post-title {
-  font-size: var(--font-size-lg);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
+/* Title and Content Preview */
+.post-title { 
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
 }
 
-.post-meta {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+.post-content-preview {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Number of lines to show */
+  -webkit-box-orient: vertical; 
 }
 
-.post-actions {
-  display: flex;
-  gap: var(--spacing-sm);
+/* Metadata (Date, Category, etc.) */
+.post-meta { 
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 15px;
+}
+
+/* Optional: Actions (Edit, Delete) - Style as needed */
+.post-actions { 
+  margin-top: 15px;
+  text-align: right; /* Align actions to the right */
+}
+
+.post-actions button {
+  /* Style buttons for actions */
 }

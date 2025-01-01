@@ -31,32 +31,32 @@ const MenuBar = ({ editor }) => {
     };
 
     return (
-        <div className="editor-menu">
-            <button onClick={() => editor.chain().focus().toggleBold().run()}>
+        <div className="create-edit-education-menu-bar">
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBold().run()}>
                 <FontAwesomeIcon icon={faBold} />
             </button>
-            <button onClick={() => editor.chain().focus().toggleItalic().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleItalic().run()}>
                 <FontAwesomeIcon icon={faItalic} />
             </button>
-            <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
                 <FontAwesomeIcon icon={faHeading} />
             </button>
-            <button onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBulletList().run()}>
                 <FontAwesomeIcon icon={faList} />
             </button>
-            <button onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
                 <FontAwesomeIcon icon={faCode} />
             </button>
-            <button onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBlockquote().run()}>
                 <FontAwesomeIcon icon={faQuoteLeft} />
             </button>
-            <button onClick={() => imageInputRef.current?.click()}>
+            <button className="create-edit-education-menu-button" onClick={() => imageInputRef.current?.click()}>
                 <FontAwesomeIcon icon={faImage} />
             </button>
-            <button onClick={() => editor.chain().focus().undo().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().undo().run()}>
                 <FontAwesomeIcon icon={faUndo} />
             </button>
-            <button onClick={() => editor.chain().focus().redo().run()}>
+            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().redo().run()}>
                 <FontAwesomeIcon icon={faRedo} />
             </button>
             <input
@@ -139,13 +139,13 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
     };
 
     return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
-            <div className="education-editor">
-                <div className="modal-header">
-                    <h2>{initialData ? 'Edit Post' : 'Create New Post'}</h2>
-                    <button 
+        <div className="create-edit-education-modal-overlay" onClick={handleOverlayClick}>
+            <div className="create-edit-education-modal">
+                <div className="create-edit-education-modal-header">
+                    <h2 className="create-edit-education-modal-title">{initialData ? 'Edit Post' : 'Create New Post'}</h2>
+                    <button
                         type="button" 
-                        className="close-button"
+                        className="create-edit-education-close-button"
                         onClick={onClose}
                         aria-label="Close"
                     >
@@ -153,29 +153,29 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                     </button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    {error && <div className="error-message">{error}</div>}
+                    {error && <div className="create-edit-education-error-message">{error}</div>}
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter title"
-                        className="title-input"
+                        className="create-edit-education-title-input"
                     />
-                    <div className="editor-container">
+                    <div className="create-edit-education-editor-container">
                         <MenuBar editor={editor} />
                         <EditorContent editor={editor} />
                     </div>
-                    <div className="form-actions">
-                        <button 
+                    <div className="create-edit-education-form-actions">
+                        <button
                             type="button" 
-                            className="cancel-btn"
+                            className="create-edit-education-cancel-btn"
                             onClick={onClose}
                         >
                             Cancel
                         </button>
-                        <button 
+                        <button
                             type="button" 
-                            onClick={() => setIsPreview(!isPreview)}
+                            className="create-edit-education-preview-btn" onClick={() => setIsPreview(!isPreview)}
                         >
                             {isPreview ? 'Edit' : 'Preview'}
                         </button>
@@ -189,8 +189,8 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                     </div>
                 </form>
                 {isPreview && (
-                    <div className="preview-mode">
-                        <h2>{title}</h2>
+                    <div className="create-edit-education-preview-mode">
+                        <h2 className="create-edit-education-preview-title">{title}</h2>
                         <div dangerouslySetInnerHTML={{ __html: editor?.getHTML() }} />
                     </div>
                 )}

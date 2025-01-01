@@ -1,23 +1,34 @@
 .education-manager {
-    max-width: var(--content-max-width);
-    margin: 0 auto;
-    padding: var(--spacing-lg);
-  }
-  
-  .education-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xl);
-  }
-  
-  .education-header h2 {
-    font-size: var(--font-size-2xl);
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-  
-  .education-actions {
-    display: flex;
-    gap: var(--spacing-md);
-  }
+  display: flex;
+  flex-direction: column; /* Stack header and content vertically */
+  max-width: var(--content-max-width);
+  margin: var(--spacing-lg) auto; /* Center on page */
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm); /* Subtle shadow for depth */
+}
+
+.education-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color); /* Visual separation */
+}
+
+.education-header h2 {
+  font-size: var(--font-size-xl); /* Slightly smaller, modern font size */
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.education-actions {
+  display: flex;
+  gap: var(--spacing-sm); /* Reduced gap for compactness */
+}
+
+.education-actions button {
+  padding: var(--spacing-xs) var(--spacing-sm); /* Button size adjustment */
+  border-radius: var(--border-radius-sm); /* Rounded buttons */
+  cursor: pointer; /* Indicate interactivity */
+}

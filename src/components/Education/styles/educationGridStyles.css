@@ -1,13 +1,14 @@
 .education-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--spacing-lg);
-    padding: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjust minmax for card width */
+  gap: 2rem; /* Consistent spacing between cards */
+  padding: 2rem; /* Padding around the grid */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .education-grid {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+    padding: 1rem; /* Reduced padding on smaller screens */
   }
-  
-  @media (max-width: 768px) {
-    .education-grid {
-      grid-template-columns: 1fr;
-      padding: var(--spacing-md);
-    }
-  }
+}

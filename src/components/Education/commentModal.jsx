@@ -31,34 +31,34 @@ const CommentModal = ({ isOpen, onClose, onSubmit }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={(e) => e.target.className === 'modal-overlay' && onClose()}>
-            <div className="comment-modal">
-                <div className="modal-header">
-                    <h3>Add Comment</h3>
+        <div className="comment-modal-overlay" onClick={(e) => e.target.className === 'comment-modal-overlay' && onClose()}>
+            <div className="comment-modal-content">
+                <div className="comment-modal-header">
+                    <h3 className="comment-modal-title">Add Comment</h3>
                     <button 
                         type="button"
-                        className="close-button"
+                        className="comment-modal-close-button"
                         onClick={onClose}
                         aria-label="Close"
                     >×</button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    {error && <div className="error-message">{error}</div>}
+                    {error && <div className="comment-modal-error-message">{error}</div>}
                     <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Write your comment..."
                         rows={4}
-                        className="comment-input"
+                        className="comment-modal-input"
                     />
-                    <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="cancel-btn">
+                    <div className="comment-modal-actions">
+                        <button type="button" onClick={onClose} className="comment-modal-cancel-btn">
                             Cancel
                         </button>
                         <button 
                             type="submit" 
                             disabled={isSubmitting}
-                            className="submit-btn"
+                            className="comment-modal-submit-btn"
                         >
                             {isSubmitting ? 'Posting...' : 'Post Comment'}
                         </button>

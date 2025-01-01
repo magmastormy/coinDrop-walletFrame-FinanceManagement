@@ -4,7 +4,7 @@ import './styles/educationNavBarStyles.css';
 //so basically this is a filter
 const EducationNavBar = () => {
     return (
-        <nav className="education-nav-bar">
+        <nav className="education-navbar">
             <h1>Education Posts</h1>
             {/* Add more navigation items if needed */}
         </nav>

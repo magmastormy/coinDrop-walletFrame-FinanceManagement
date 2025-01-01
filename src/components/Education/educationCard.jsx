@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import EducationFullDetail from './educationFullDetailModal';
+import EducationFullDetailModal from './educationFullDetailModal';
+import EducationRenderer from './educationRenderer';
 import './styles/educationCardStyles.css';
 
 const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
@@ -13,18 +14,20 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
     };
 
     return (
-        <div className="education-card">
-            <h3>{education.title}</h3>
-            <p>{education.details.substring(0, 100)}...</p>
-            <div className="education-meta">
-                <span>Author: {getAuthorName(education.author)}</span>
-                <span>Date: {new Date(education.date).toLocaleDateString()}</span>
-                <span>Likes: {education.likes?.length || 0}</span>
+        <div className="education-card-container">
+            <h3 className="education-card-title">{education.title}</h3>
+            <div className="education-card-details">
+                <EducationRenderer content={education.details} maxLength={100} />
             </div>
-            <div className="education-actions">
+            <div className="education-card-meta">
+                <span className="education-card-author">Author: {getAuthorName(education.author)}</span>
+                <span className="education-card-date">Date: {new Date(education.date).toLocaleDateString()}</span>
+                <span className="education-card-likes">Likes: {education.likes?.length || 0}</span>
+            </div>  
+            <div className="education-card-actions"> 
                 <button onClick={() => onLike(education._id)}>Like</button>
-                <button onClick={() => onComment(education._id)}>Comment</button>
-                {education.isAuthor && (
+                <button onClick={() => setShowFullDetail(true)}>Comment</button> 
+                {education.isEditable && ( 
                     <>
                         <button onClick={() => onEdit(education)}>Edit</button>
                         <button onClick={() => onDelete(education._id)}>Delete</button>
@@ -32,13 +35,14 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
                 )}
             </div>
             {showFullDetail && (
-                <EducationFullDetail
-                    education={{
-                        ...education,
-                        author: getAuthorName(education.author)
-                    }}
+                <EducationFullDetailModal
+                    education={education}
+                    authorName={getAuthorName(education.author)}
                     onComment={onComment}
                     onLike={onLike}
+                    onClose={() => {
+                        setShowFullDetail(false);
+                    }}
                 />
             )}
         </div>

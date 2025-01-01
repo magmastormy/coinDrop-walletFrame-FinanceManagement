@@ -3,49 +3,70 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Dimmed backdrop */
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1000; /* Ensure modal is on top */
 }
 
 .education-modal {
-  background: white;
-  width: 90%;
-  max-width: 900px;
-  height: 90vh;
-  border-radius: 8px;
-  position: relative;
+  background-color: #fff; /* Light background */
+  width: 80%; /* Adjust width as needed */
+  max-width: 800px; /* Maximum width */
+  max-height: 80vh; /* Maximum height */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  overflow-y: auto; /* Enable scrolling if content overflows */
+  position: relative; /* For positioning close button */
 }
 
 .education-modal-header {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0; /* Light gray border */
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.education-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888; /* Gray color for close button */
+}
+
 .education-modal-content {
-  padding: 2rem;
-  overflow-y: auto;
-  height: calc(90vh - 60px);
+  padding: 2rem; 
+  /* Remove explicit height to allow scrolling */
 }
 
 .reading-progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #eee;
+  position: fixed; /* Fixed to the bottom of the viewport */
+  bottom: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 4px; /* Thin bar */
+  background-color: #f0f0f0; /* Very light gray background */
+  z-index: 1001; /* Ensure it's above the modal */
 }
 
 .reading-progress-bar .progress {
   height: 100%;
-  background: #007bff;
-  transition: width 0.3s ease;
+  background-color: #007bff; /* Primary color for progress */
+  width: 0; /* Initial width */
+  transition: width 0.3s ease-in-out; /* Smooth transition */
+}
+
+/* Style scrollbar (optional) */
+.education-modal-content::-webkit-scrollbar {
+  width: 8px; 
+}
+
+.education-modal-content::-webkit-scrollbar-thumb {
+  background-color: #ddd; /* Light gray scrollbar thumb */
+  border-radius: 4px; 
 }

@@ -1,25 +1,33 @@
 /* src/components/Education/styles/commentModalStyles.css */
 .comment-modal {
-    background: white;
-    padding: 2rem;
-    border-radius: var(--radius-lg);
-    width: 90%;
-    max-width: 500px;
+  background: var(--bg-light);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  width: 95%;
+  max-width: 600px;
+  box-shadow: var(--shadow-md);
 }
 
 .comment-input {
-    width: 100%;
-    min-height: 100px;
-    padding: 1rem;
-    margin: 1rem 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    resize: vertical;
+  width: 100%;
+  min-height: 80px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  font-size: var(--font-size-sm);
+  transition: border-color 0.2s ease-in-out;
+
+  &:focus {
+    border-color: var(--primary-color);
+    outline: none;
+  }
 }
 
 .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
 }

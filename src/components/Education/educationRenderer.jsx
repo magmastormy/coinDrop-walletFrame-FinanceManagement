@@ -10,7 +10,7 @@ const EducationRenderer = ({ content }) => {
 
     return (
         <div 
-            className="education-content"
+            className="education-renderer-content"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />
     );

@@ -1,35 +1,44 @@
 .info-bar {
-  background-color: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
+    background-color: #f8f9fa; /* Light gray background */
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .stats-container {
-  display: flex;
-  gap: var(--spacing-xl);
-  padding: var(--spacing-md);
+    display: flex;
+    gap: 32px; /* Increased spacing between stats */
 }
 
 .stat-item {
-  text-align: center;
+    text-align: center;
 }
 
 .stat-value {
-  font-size: var(--font-size-xl);
-  color: var(--primary);
-  font-weight: 600;
+    font-size: 24px; /* Larger font size for values */
+    color: #007bff; /* Primary blue color */
+    font-weight: 600;
 }
 
 .stat-label {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+    font-size: 14px; /* Smaller font size for labels */
+    color: #6c757d; /* Secondary gray color */
 }
 
-.filter-section {
-  display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--border);
+.filter-button {
+    background-color: #007bff; /* Primary blue color */
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.filter-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
 }

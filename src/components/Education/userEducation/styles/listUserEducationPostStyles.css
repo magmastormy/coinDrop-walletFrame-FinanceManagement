@@ -1,26 +1,57 @@
 .posts-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+  padding: 0; /* Remove default padding */
+  list-style: none; /* Remove list bullets */
 }
 
-.list-filters {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
+.post-item {
+  border: 1px solid var(--border-color); /* Add a subtle border */
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  background-color: var(--bg-color); /* Light background */
+  box-shadow: var(--shadow); /* Add a subtle shadow */
+  transition: transform 0.2s ease-in-out; /* Smooth hover effect */
 }
 
-.filter-group {
-  display: flex;
-  gap: var(--spacing-sm);
+.post-item:hover {
+  transform: translateY(-2px); /* Lift on hover */
 }
 
-.sort-select {
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  color: var(--text-primary);
+.post-title {
+  font-size: var(--font-size-lg);
+  font-weight: bold;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-color-primary); /* Darker text for title */
+}
+
+.post-meta {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-secondary); /* Lighter text for meta info */
+  margin-bottom: var(--spacing-sm);
+}
+
+.post-content {
+  color: var(--text-color-primary);
+  line-height: 1.6; /* Improve readability */
+}
+
+.post-actions {
+  margin-top: var(--spacing-sm);
+  display: flex;
+  justify-content: flex-end; /* Align actions to the right */
+}
+
+.post-actions button {
+  background-color: transparent; /* Make buttons transparent */
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  color: var(--text-color-secondary); /* Lighter text for actions */
+  transition: color 0.2s ease-in-out;
+}
+
+.post-actions button:hover {
+  color: var(--text-color-primary); /* Darker text on hover */
 }
 
 .empty-state {

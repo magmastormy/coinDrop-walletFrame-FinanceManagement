@@ -108,26 +108,26 @@ const UserEducationManager = () => {
     };
 
     return (
-        <div className="education-manager-container">
-            <div className="manager-header">
-                <h1 className="manager-title">My Education Posts</h1>
+        <div className="user-education-manager-container">
+            <div className="user-education-manager-header">
+                <h1 className="user-education-manager-title">My Education Posts</h1>
                 <button 
-                    className="create-post-btn"
+                    className="user-education-create-post-btn"
                     onClick={() => setShowCreateModal(true)}
                 >
                     Create New Post
                 </button>
             </div>
 
-            <UserEducationInformation 
-                totalPosts={educations.length || 0}
-                user={user}
-            />
+            <UserEducationInformation
+                totalPosts={educations.length || 0} 
+                user={user} 
+             />
 
             {loading ? (
-                <div className="loading-state">Loading...</div>
+                <div className="user-education-loading-state">Loading...</div>
             ) : error ? (
-                <div className="error-state">Error: {error}</div>
+                <div className="user-education-error-state">Error: {error}</div>
             ) : (
                 <EducationPostList 
                     educations={educations || []}

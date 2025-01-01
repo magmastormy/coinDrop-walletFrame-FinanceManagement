@@ -53,25 +53,25 @@ const UserProfileDetails = () => {
             if (!user?.id) return;
             
             try {
-                dispatch(fetchProfileStart());
-                const profileData = await profileService.getUserProfile(user.id);
-                
-                if (!profileData.profile) {
-                    console.log('No profile found, enabling edit mode');
-                    setIsEditing(true);
-                    dispatch(fetchProfileSuccess(null));
-                } else {
-                    console.log('Profile found:', profileData.profile);
-                    dispatch(fetchProfileSuccess(profileData.profile));
-                }
-            } catch (err) {
-                console.error('Error fetching profile:', err);
-                if (err.response?.status === 404) {
-                    setIsEditing(true);
-                    dispatch(fetchProfileSuccess(null));
-                } else {
-                    dispatch(fetchProfileFailure(err.message));
-                }
+              dispatch(fetchProfileStart());
+              const profileData = await profileService.getUserProfile(user.id);
+
+              if (!profileData.profile) {
+                // Profile not found, enable edit mode
+                setIsEditing(true); 
+                dispatch(fetchProfileSuccess(null)); 
+              } else {
+                dispatch(fetchProfileSuccess(profileData.profile));
+              }
+            } catch (error) {
+              if (error.response && error.response.status === 404) {
+                // Handle 404 (profile not found) - enable edit mode
+                setIsEditing(true); 
+                dispatch(fetchProfileSuccess(null)); 
+              } else {
+                // Handle other errors
+                dispatch(fetchProfileFailure(error.message)); 
+              }
             }
         };
 

@@ -9,31 +9,31 @@ const UserEducationPostCard = ({ education, onEdit, onDelete, onLike, onComment}
     };
 
     return (
-        <div className="user-education-card">
-          <div className="card-header">
-            <h3 className="post-title">{education.title}</h3>
-            <div className="post-meta">
-              <span>Posted {new Date(education.date).toLocaleDateString()}</span>
+        <div className="user-education-post-card">
+          <div className="user-education-post-card-header">
+            <h3 className="user-education-post-title">{education.title}</h3>
+            <div className="user-education-post-meta">
+              <span className="user-education-post-date">Posted {new Date(education.date).toLocaleDateString()}</span>
             </div>
           </div>
           
-          <div className="card-content">
-            <div className="content-preview" 
+          <div className="user-education-post-card-content">
+            <div className="user-education-post-content-preview" 
                  dangerouslySetInnerHTML={{ __html: education.details.substring(0, 200) + '...' }} 
             />
           </div>
     
-          <div className="card-footer">
-            <div className="interaction-stats">
-              <span>{education.likes?.length || 0} Likes</span>
-              <span>{education.comments?.length || 0} Comments</span>
+          <div className="user-education-post-card-footer">
+            <div className="user-education-post-interaction-stats">
+              <span className="user-education-post-likes">{education.likes?.length || 0} Likes</span>
+              <span className="user-education-post-comments">{education.comments?.length || 0} Comments</span>
             </div>
             
-            <div className="action-buttons">
-              <button className="btn-primary" onClick={() => onLike(education._id)}>
+            <div className="user-education-post-action-buttons">
+              <button className="user-education-post-btn-like" onClick={() => onLike(education._id)}>
                 Like
               </button>
-              <button className="btn-secondary" onClick={() => onComment(education._id)}>
+              <button className="user-education-post-btn-comment" onClick={() => onComment(education._id)}>
                 Comment
               </button>
               <button className="btn-edit" onClick={() => onEdit(education)}>

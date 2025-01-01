@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import EducationRenderer from './educationRenderer';
 import './styles/educationFullDetailStyles.css';
 
 const EducationFullDetailModal = ({ education, onClose, onLike, onComment }) => {
@@ -26,44 +26,44 @@ const EducationFullDetailModal = ({ education, onClose, onLike, onComment }) => 
     }, []);
 
     return (
-        <div className="education-modal-overlay">
-            <div className="education-modal">
-                <div className="education-modal-header">
-                    <h2>{education.title}</h2>
+        <div className="edu-modal-overlay">
+            <div className="edu-modal">
+                <div className="edu-modal-header">
+                    <h2 className="edu-modal-title">{education.title}</h2>
                     <button 
-                        className="modal-close"
+                        className="edu-modal-close"
                         onClick={onClose}
                         aria-label="Close"
                     >×</button>
                 </div>
 
-                <div className="education-modal-content">
-                    <ReactMarkdown>{education.details}</ReactMarkdown>
+                <div className="edu-modal-content">
+                    <EducationRenderer content={education.details} /> 
 
-                    <div className="education-meta">
-                        <span>Author: {education.author}</span>
-                        <span>Posted: {new Date(education.date).toLocaleDateString()}</span>
-                        <span>Likes: {education.likes?.length || 0}</span>
+                    <div className="edu-modal-meta">
+                        <span className="edu-modal-author">Author: {education.author}</span>
+                        <span className="edu-modal-date">Posted: {new Date(education.date).toLocaleDateString()}</span>
+                        <span className="edu-modal-likes">Likes: {education.likes?.length || 0}</span>
                     </div>
 
-                    <div className="education-actions">
-                        <button onClick={() => onLike(education._id)}>Like</button>
-                        <button onClick={() => onComment(education._id)}>Comment</button>
+                    <div className="edu-modal-actions">
+                        <button className="edu-modal-button" onClick={() => onLike(education._id)}>Like</button>
+                        <button className="edu-modal-button" onClick={() => onComment(education._id)}>Comment</button>
                     </div>
 
-                    <div className="education-comments">
+                    <div className="edu-modal-comments">
                         {education.comments?.map(comment => (
-                            <div key={comment._id} className="comment">
-                                <p>{comment.text}</p>
-                                <span>{new Date(comment.date).toLocaleDateString()}</span>
+                            <div key={comment._id} className="edu-modal-comment">
+                                <p className="edu-modal-comment-text">{comment.text}</p>
+                                <span className="edu-modal-comment-date">{new Date(comment.date).toLocaleDateString()}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="reading-progress-bar">
-                    <div 
-                        className="progress" 
+                <div className="edu-reading-progress-bar">
+                    <div
+                        className="edu-progress"
                         style={{width: `${readingProgress}%`}} 
                     />
                 </div>

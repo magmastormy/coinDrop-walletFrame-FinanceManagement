@@ -9,11 +9,11 @@ const EducationGrid = ({ educations = [], onEdit, onDelete, onLike, onComment })
     }
     
     if (!educations.length) {
-        return <div className="empty-state">No education posts available</div>;
+        return <div className="education-grid__empty-state">No education posts available</div>;
     }
 
     return (
-        <div className="education-grid">
+        <div className="education-grid__container">
             {educations.map(education => (
                 <EducationCard
                     key={education._id}

@@ -19,12 +19,12 @@ const ListUserEducationPost = ({ educations, onEdit, onDelete, onLike, onComment
     });
 
     if (!educations.length) {
-        return <div className="empty-state">No education posts available</div>;
+        return <div className="listUserEducationPost-emptyState">No education posts available</div>;
     }
     
     if (!Array.isArray(educations)) {
         console.error('Invalid educations prop:', educations);
-        return <div className="error-state">Error: Invalid data format</div>;
+        return <div className="listUserEducationPost-errorState">Error: Invalid data format</div>;
     }
     
 
@@ -36,14 +36,14 @@ const ListUserEducationPost = ({ educations, onEdit, onDelete, onLike, onComment
               placeholder="Search posts..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="search-input"
+              className="listUserEducationPost-searchInput"
             />
             <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
+              className="listUserEducationPost-sortSelect"
             >
-              <option valuse="date">Latest First</option>
+              <option value="date">Latest First</option>
               <option value="likes">Most Liked</option>
             </select>
           </div>

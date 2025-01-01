@@ -9,14 +9,14 @@ const EducationSearchBar = ({ onSearch }) => {
     };
 
     return (
-        <div className="education-search-bar">
-            <input
+        <div className="educationSearchBar">
+            <input className="educationSearchInput"
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search education posts..."
+                placeholder="Search Posts..."
             />
-            <button onClick={handleSearch}>Search</button>
+            <button className="educationSearchButton" onClick={handleSearch}>Search</button>
         </div>
     );
 };
