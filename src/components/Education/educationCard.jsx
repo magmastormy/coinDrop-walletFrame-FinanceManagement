@@ -8,7 +8,6 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
     console.log("--> Education containment: ", education);
 
     const getAuthorName = (author) => {
-        //because author has 3 objects id, _id and username
         if (!author) return 'Unknown';
         return author.username || `${author.firstName} ${author.lastName}` || 'Anonymous';
     };
@@ -25,6 +24,7 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
                 <span className="education-card-likes">Likes: {education.likes?.length || 0}</span>
             </div>  
             <div className="education-card-actions"> 
+                <button onClick={() => setShowFullDetail(true)}>Read</button>
                 <button onClick={() => onLike(education._id)}>Like</button>
                 <button onClick={() => setShowFullDetail(true)}>Comment</button> 
                 {education.isEditable && ( 

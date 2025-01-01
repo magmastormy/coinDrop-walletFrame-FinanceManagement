@@ -5,6 +5,16 @@ import './styles/educationFullDetailStyles.css';
 const EducationFullDetailModal = ({ education, onClose, onLike, onComment }) => {
     const [readingProgress, setReadingProgress] = useState(0);
 
+    if (!education) {
+        return null;
+    }
+    const { title, details, author, date, likes = [], comments = [] } = education;
+
+    const getAuthorName = (author) => {
+        if (!author) return 'Unknown';
+        return author.username || `${author.firstName} ${author.lastName}` || 'Anonymous';
+    };
+
     useEffect(() => {
         const handleScroll = (e) => {
             const container = e.target;
@@ -41,7 +51,7 @@ const EducationFullDetailModal = ({ education, onClose, onLike, onComment }) => 
                     <EducationRenderer content={education.details} /> 
 
                     <div className="edu-modal-meta">
-                        <span className="edu-modal-author">Author: {education.author}</span>
+                        <span className="edu-modal-author">Author: {getAuthorName(education.author)}</span>
                         <span className="edu-modal-date">Posted: {new Date(education.date).toLocaleDateString()}</span>
                         <span className="edu-modal-likes">Likes: {education.likes?.length || 0}</span>
                     </div>
@@ -52,11 +62,17 @@ const EducationFullDetailModal = ({ education, onClose, onLike, onComment }) => 
                     </div>
 
                     <div className="edu-modal-comments">
-                        {education.comments?.map(comment => (
-                            <div key={comment._id} className="edu-modal-comment">
-                                <p className="edu-modal-comment-text">{comment.text}</p>
-                                <span className="edu-modal-comment-date">{new Date(comment.date).toLocaleDateString()}</span>
-                            </div>
+                        {comments.map(comment => (
+                            comment && (
+                                <div key={comment._id || Date.now()} className="edu-modal-comment">
+                                    <p className="edu-modal-comment-text">
+                                        {comment.text || 'No comment text'}
+                                    </p>
+                                    <span className="edu-modal-comment-date">
+                                        {comment.date ? new Date(comment.date).toLocaleDateString() : 'No date'}
+                                    </span>
+                                </div>
+                            )
                         ))}
                     </div>
                 </div>
