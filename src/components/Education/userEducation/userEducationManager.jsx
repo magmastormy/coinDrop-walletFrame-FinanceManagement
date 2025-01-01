@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import CreateEducationPost from './createEditEducationPost';
 import EducationPostList from './listUserEducationPost';
@@ -8,7 +8,11 @@ import {
     setEducations, 
     setLoading, 
     setError,
-    addEducation 
+    addEducation,
+    updateEducation,
+    deleteEducation,
+    addLike,
+    addComment 
 } from '../../../slices/educationSlice';
 import './styles/userEducationManagerStyles.css';
 
@@ -16,6 +20,7 @@ const UserEducationManager = () => {
     const dispatch = useDispatch();
     const { educations =[], loading, error } = useSelector(state => state.education);
     const { user } = useSelector(state => state.auth);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
         fetchUserEducations();
@@ -25,7 +30,7 @@ const UserEducationManager = () => {
         dispatch(setLoading(true));
         try {
             const response = await educationService.getUserEducations(user.id);
-            dispatch(setEducations(response.data));
+            dispatch(setEducations(response));
         } catch (err) {
             dispatch(setError(err.message));
         }
@@ -37,6 +42,7 @@ const UserEducationManager = () => {
         try {
             const response = await educationService.createEducation(newEducation);
             dispatch(addEducation(response));
+            setShowCreateModal(false);
         } catch (err) {
             dispatch(setError(err.message));
         }
@@ -83,7 +89,12 @@ const UserEducationManager = () => {
         <div className="education-manager-container">
             <div className="manager-header">
                 <h1 className="manager-title">My Education Posts</h1>
-                <CreateEducationPost onCreateEducation={handleCreateEducation} />
+                <button 
+                    className="create-post-btn"
+                    onClick={() => setShowCreateModal(true)}
+                >
+                    Create New Post
+                </button>
             </div>
 
             <UserEducationInformation 
@@ -102,6 +113,13 @@ const UserEducationManager = () => {
                     onDelete={handleDeleteEducation}
                     onLike={handleLike}
                     onComment={handleComment}
+                />
+            )}
+
+            {showCreateModal && (
+                <CreateEducationPost 
+                    onCreateEducation={handleCreateEducation}
+                    onClose={() => setShowCreateModal(false)}
                 />
             )}
         </div>

@@ -1,14 +1,14 @@
 /* index.js - index.cssCSS Reset and Base Styles */
 :root {
   /* Color System */
-  --primary: #1a73e8;
-  --primary-light: #4285f4;
-  --primary-dark: #1557b0;
+  --primary: #4361ee;
+  --primary-light: #4895ef;
+  --primary-dark: #3046c7;
   --surface: #ffffff;
-  --background: #f8f9fa;
-  --text-primary: #202124;
-  --text-secondary: #5f6368;
-  --border: #dadce0;
+  --background: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
   
   /* Typography */
   --font-family: system-ui, -apple-system, sans-serif;

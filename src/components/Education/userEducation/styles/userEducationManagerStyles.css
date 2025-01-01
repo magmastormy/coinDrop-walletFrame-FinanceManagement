@@ -1,7 +1,7 @@
 .education-manager-container {
-  max-width: var(--content-max-width);
+  max-width: 1200px;
   margin: 0 auto;
-  padding: var(--spacing-lg);
+  padding: 2rem;
 }
 
 .manager-header {
@@ -34,4 +34,21 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-lg);
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 8px;
+  background: var(--surface);
+  margin: 1rem 0;
+}
+
+.loading-state {
+  color: var(--text-secondary);
+}
+
+.error-state {
+  color: var(--error);
+  border: 1px solid var(--error);
 }

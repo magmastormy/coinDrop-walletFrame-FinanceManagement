@@ -11,10 +11,10 @@ const educationSlice = createSlice({
     name: 'education',
     initialState,
     reducers: {
-        // Fetch Educations
         setEducations: (state, action) => {
-            state.educations = action.payload;
+            state.educations = Array.isArray(action.payload) ? action.payload : [];
             state.loading = false;
+            state.error = null;
         },
         setLoading: (state, action) => {
             state.loading = action.payload;
@@ -30,7 +30,6 @@ const educationSlice = createSlice({
             state.selectedEducation = action.payload;
         },
         
-        // CRUD Operations
         addEducation: (state, action) => {
             state.educations.push(action.payload);
         },
@@ -44,7 +43,6 @@ const educationSlice = createSlice({
             state.educations = state.educations.filter(e => e._id !== action.payload);
         },
 
-        // Like/Comment Operations
         addLike: (state, action) => {
             const { educationId, userId } = action.payload;
             const education = state.educations.find(e => e._id === educationId);
