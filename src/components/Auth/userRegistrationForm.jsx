@@ -48,13 +48,13 @@ const UserRegistration = () => {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <div className="auth-header">
-                    <h2 className="auth-title">
+        <div className="registration-container">
+            <div className="registration-card">
+                <div className="registration-header">
+                    <h2 className="registration-title">
                         Create your account
                     </h2>
-                    <p className="auth-subtitle">
+                    <p className="registration-subtitle">
                         Or{' '}
                         <button
                             onClick={() => navigate('/login')}
@@ -66,14 +66,14 @@ const UserRegistration = () => {
                 </div>
 
                 {error && (
-                    <div className="error-alert" role="alert">
+                    <div className="registration-error-alert" role="alert">
                         <span>{error}</span>
                     </div>
                 )}
 
-                <form className="auth-form" onSubmit={handleSubmit}>
-                    <div className="form-fields-container">
-                        <div className="form-grid">
+                <form className="registration-form" onSubmit={handleSubmit}>
+                    <div className="registration-form-fields-container">
+                        <div className="registration-form-grid">
                             <div className="form-field">
                                 <label htmlFor="firstName" className="sr-only">First Name</label>
                                 <input
@@ -177,7 +177,7 @@ const UserRegistration = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`auth-submit-button ${loading ? 'button-disabled' : ''}`}
+                            className={`registration-submit-button ${loading ? 'button-disabled' : ''}`}
                         >
                             {loading ? 'Creating account...' : 'Create account'}
                         </button>

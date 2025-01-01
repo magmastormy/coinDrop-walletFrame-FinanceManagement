@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../../services/authService';
-import './styles/loginStyles.css';
+import '../Auth/styles/loginStyles.css'; 
 
 const UserLogin = () => {
     const navigate = useNavigate();
@@ -38,69 +38,61 @@ const UserLogin = () => {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <div className="auth-header">
-                    <h2 className="auth-title">
-                        Sign in to your account
-                    </h2>
-                    <p className="auth-subtitle">
-                        Or{' '}
-                        <button
-                            onClick={() => navigate('/register')}
-                            className="auth-link"
-                        >
-                            create a new account
-                        </button>
-                    </p>
-                </div>
-                
+        <div className="login-container">
+            <div className="login-card">
+                <h2 className="login-title">Sign in to your account</h2>
+
                 {error && (
-                    <div className="error-alert" role="alert">
-                        <span>{error}</span>
+                    <div className="login-error-alert" role="alert">
+                        {error}
                     </div>
                 )}
 
-                <form className="auth-form" onSubmit={handleSubmit}>
-                    <div className="form-fields-container">
-                        <div className="form-field">
-                            <label htmlFor="email" className="sr-only">Email address</label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                className="form-input form-input-top"
-                                placeholder="Email address"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-field">
-                            <label htmlFor="password" className="sr-only">Password</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                className="form-input form-input-bottom"
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
+                <form className="login-form" onSubmit={handleSubmit}>
+                    <div className="login-form-field">
+                        <label htmlFor="email">Email address</label>
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
+                            className="login-input"
+                            placeholder="Enter your email"
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
                     </div>
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`auth-submit-button ${loading ? 'button-disabled' : ''}`}
-                        >
-                            {loading ? 'Signing in...' : 'Sign in'}
-                        </button>
+                    <div className="login-form-field">
+                        <label htmlFor="password">Password</label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            className="login-input"
+                            placeholder="Enter your password"
+                            value={formData.password}
+                            onChange={handleChange}
+                        />
                     </div>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`login-submit-button ${loading ? 'button-disabled' : ''}`}
+                    >
+                        {loading ? 'Signing in...' : 'Sign in'}
+                    </button>
                 </form>
+
+                <p className="login-signup-link">
+                    Don't have an account?{' '}
+                    <button
+                        onClick={() => navigate('/register')}
+                        className="login-link"
+                    >
+                        Sign up
+                    </button>
+                </p>
             </div>
         </div>
     );
