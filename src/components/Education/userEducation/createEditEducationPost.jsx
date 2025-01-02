@@ -14,8 +14,7 @@ import imageCompression from 'browser-image-compression';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5mb
 const MAX_DIMENSION = 1920;
 
-const MenuBar = ({ editor, isUploadingImage, onImageUpload  }) => {
-    const imageInputRef = useRef(null);
+const MenuBar = ({ editor, onImageUpload }) => {
     const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const handleImageUpload = async (file) => {
@@ -63,12 +62,13 @@ const MenuBar = ({ editor, isUploadingImage, onImageUpload  }) => {
         }
     };
 
-    const addImage = (e) => {
-        e.preventDefault();
-        const file = e.target.files?.[0];
-        if (file) {
-            onImageUpload(file);
-        }
+    const handleImageClick = (e) => {
+        e.preventDefault(); 
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => onImageUpload(e.target.files[0]);
+        input.click();
     };
 
     return (
@@ -91,34 +91,15 @@ const MenuBar = ({ editor, isUploadingImage, onImageUpload  }) => {
             <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBlockquote().run()}>
                 <FontAwesomeIcon icon={faQuoteLeft} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => imageInputRef.current?.click()}>
-                <FontAwesomeIcon icon={faImage} />
-            </button>
             <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().undo().run()}>
                 <FontAwesomeIcon icon={faUndo} />
             </button>
             <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().redo().run()}>
                 <FontAwesomeIcon icon={faRedo} />
             </button>
-            <button 
-                className="editor-menu-button"
-                onClick={(e) => {
-                    e.preventDefault();
-                    imageInputRef.current?.click();
-                }}
-                disabled={isUploadingImage}
-            >
-                <FontAwesomeIcon icon={faImage} />
-                {isUploadingImage && <span className="loading-indicator">...</span>}
-            </button>
-            <input
-                type="file"
-                ref={imageInputRef}
-                onChange={addImage}
-                accept="image/*"
-                style={{ display: 'none' }}
-                disabled={isUploadingImage}
-            />
+            <button className="create-edit-education-menu-button" onClick={handleImageClick} disabled={isUploadingImage}>
+                <FontAwesomeIcon icon={faImage} /> {isUploadingImage && <span className="loading-indicator">...</span>}
+            </button> 
         </div>
     );
 };
