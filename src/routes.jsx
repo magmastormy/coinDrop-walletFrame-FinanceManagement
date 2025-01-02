@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Login from './components/Auth/userLoginForm';
 import Register from './components/Auth/userRegistrationForm';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './components/Dashboard/dashboardManager';
 import Wallet from './components/Wallet/walletManager';
 import Budget from './components/Budget/budgetManager';
 import Transaction from './components/Transaction/transactionManager';

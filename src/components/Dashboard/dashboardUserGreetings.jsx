@@ -9,7 +9,7 @@ import {
     faCloudSun,
     faCloudMoon
 } from '@fortawesome/free-solid-svg-icons';
-import './styles/dashboardStyles.css';
+import './styles/dashboardUserGreetingsStyles.css';
 
 const DashboardUserGreetings = () => {
     const { user } = useSelector(state => state.auth);

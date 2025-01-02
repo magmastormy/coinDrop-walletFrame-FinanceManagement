@@ -1,7 +1,7 @@
 import React from 'react';
-import DashboardUserGreetings from './dashboardUser Greetings';
+import DashboardUserGreetings from './dashboardUserGreetings';
 import DashboardQuickNavLinks from './dashboardQuickNavLinks';
-import DashboardUserShortAnalytics from './dashboardUser ShortAnalytics';
+import DashboardUserShortAnalytics from './dashboardUserShortAnalytics';
 import DashboardBarChart from './dashboardBarChart';
 import DashboardPieChart from './dashboardPieChart';
 import DashboardTables from './dashboardTables';
@@ -14,7 +14,7 @@ const DashboardManager = () => {
       <DashboardUserGreetings />
       <DashboardQuickNavLinks />
       <div className="dashboard-analytics">
-        <DashboardUser ShortAnalytics />
+        <DashboardUserShortAnalytics />
         <div className="dashboard-charts">
           <DashboardBarChart />
           <DashboardPieChart />
