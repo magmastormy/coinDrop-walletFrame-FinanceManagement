@@ -1,71 +1,111 @@
-.user-education-card {
+/* styles/userEducationPostCardStyles.css */
+
+.user-education-post-card {
   background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-  overflow: hidden; /* To prevent content from overflowing */
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  display: flex; /* Make the card a flex container */
+  flex-direction: column; /* Stack header, content, and footer vertically */
+  min-height: 0; /* Important: Prevents content from pushing footer out*/
+}
+
+.user-education-post-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.user-education-post-card-header {
   display: flex;
-  flex-direction: column; 
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
-.user-education-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-3px); 
+.user-education-post-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 }
 
-/* Header Section */
-.card-header { 
-  display: flex; 
-  align-items: center; 
-  margin-bottom: 15px;
+.user-education-post-meta {
+  color: #718096;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
-.user-info {
+.user-education-post-card-content {
+  margin-bottom: 1rem;
+  overflow: hidden;
+  flex-grow: 1; /* Allow content to take up available space */
+}
+
+.user-education-post-content-preview {
+  line-height: 1.6;
+}
+
+.user-education-post-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto; /* Push footer to the bottom */
+}
+
+.user-education-post-interaction-stats {
   display: flex;
   align-items: center;
+  color: #718096;
+  font-size: 0.875rem;
 }
 
-.user-avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  margin-right: 10px;
+.user-education-post-interaction-stats span {
+  margin-right: 1rem;
 }
 
-/* Title and Content Preview */
-.post-title { 
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
+.user-education-post-action-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.post-content-preview {
-  font-size: 0.9rem;
-  color: #555;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* Number of lines to show */
-  -webkit-box-orient: vertical; 
+.user-education-post-action-buttons button {
+  background-color: #edf2f7;
+  border: none;
+  border-radius: 0.375rem;
+  color: #4a5568;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  font-size: 0.875rem;
 }
 
-/* Metadata (Date, Category, etc.) */
-.post-meta { 
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 15px;
+.user-education-post-action-buttons button:hover {
+  background-color: #e2e8f0;
+  transform: scale(1.05);
 }
 
-/* Optional: Actions (Edit, Delete) - Style as needed */
-.post-actions { 
-  margin-top: 15px;
-  text-align: right; /* Align actions to the right */
+.user-education-post-action-buttons button:active {
+  transform: scale(0.95);
 }
 
-.post-actions button {
-  /* Style buttons for actions */
+@media (max-width: 768px) {
+  .user-education-post-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .user-education-post-meta {
+      margin-top: 0.5rem;
+  }
+
+  .user-education-post-card-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 1rem; /* Added margin for better mobile layout */
+  }
+  .user-education-post-interaction-stats {
+      margin-right: 0;
+  }
 }

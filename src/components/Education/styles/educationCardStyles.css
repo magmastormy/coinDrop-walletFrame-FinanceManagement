@@ -1,34 +1,94 @@
-.education-card {
-  background-color: #fff; /* White background for the card */
-  border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle box shadow */
-  padding: 20px; /* Padding around the content */
-  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions on hover */
-  margin-bottom: 20px; /* Spacing between cards */
-}
+/* educationCardStyles.css */
 
-.education-card:hover {
-  transform: translateY(-2px); /* Slight lift on hover */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* More pronounced shadow on hover */
-}
-
-.education-card-title {
-  font-size: 1.2rem; /* Larger and prominent title */
-  font-weight: 600;
-  color: #333; /* Darker text color for better contrast */
-  margin-bottom: 10px;
-}
-
-.education-card-content {
-  color: #666; /* Slightly lighter text for the description */
-  font-size: 1rem;
-  margin-bottom: 15px;
-}
-
-.education-card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #999; /* Light gray for metadata */
-  font-size: 0.9rem;
-}
+.education-card-container {
+    background-color: #fff; /* Equivalent to bg-white */
+    border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    padding: 1.5rem; /* Equivalent to p-6 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Equivalent to shadow-sm */
+    margin-bottom: 1rem; /* Equivalent to mb-4 */
+    overflow: hidden; /* Needed for card hover effect */
+    position: relative; /* Needed for full detail modal positioning */
+    transition: all 0.3s ease-in-out; /* Equivalent to transition all duration-300 ease-in-out */
+  }
+  
+  .education-card-container:hover {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Equivalent to hover:shadow-md */
+    transform: translateY(-5px); /* Add subtle hover lift */
+  }
+  
+  .education-card-title {
+    font-size: 1.25rem; /* Equivalent to text-xl */
+    font-weight: 600; /* Equivalent to font-semibold */
+    margin-bottom: 0.5rem; /* Equivalent to mb-2 */
+  }
+  
+  .education-card-details {
+    margin-bottom: 1rem; /* Equivalent to mb-4 */
+  }
+  
+  .education-card-meta {
+    display: flex;
+    align-items: center;
+    color: #718096; /* Equivalent to text-gray-600 */
+    font-size: 0.875rem; /* Equivalent to text-sm */
+    margin-bottom: 1rem; /* Equivalent to mb-4 */
+  }
+  
+  .education-card-meta span + span {
+    margin-left: 1rem; /* Equivalent to ml-4 */
+  }
+  
+  .education-card-author .meta-text,
+  .education-card-date .meta-text,
+  .education-card-likes .meta-text {
+    color: inherit; /* Inherit color from .education-card-meta */
+  }
+  
+  .education-card-likes {
+    display: flex;
+    align-items: center;
+  }
+  
+  .education-card-likes .fa-heart {
+    color: #f47e17; /* Equivalent to text-red-500 */
+    margin-right: 0.5rem; /* Equivalent to mr-2 */
+  }
+  
+  .education-card-likes.liked .fa-heart {
+    color: #dc3545; /* Equivalent to text-red-600 */
+  }
+  
+  .education-card-actions {
+    display: flex;
+    justify-content: space-between; /* Equivalent to justify-between */
+  }
+  
+  .action-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Equivalent to gap-2 */
+    padding: 0.5rem 1rem; /* Equivalent to px-4 py-2 */
+    border: none;
+    border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    background-color: #edf2f7; /* Equivalent to bg-gray-100 */
+    color: #4a5568; /* Equivalent to text-gray-700 */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out; /* Equivalent to transition-colors duration-200 */
+  }
+  
+  .action-button:hover {
+    background-color: #e2e8f0; /* Equivalent to hover:bg-gray-200 */
+  }
+  
+  .read-button,
+  .like-button,
+  .comment-button,
+  .edit-button,
+  .delete-button {
+    /* Remove duplicate styles for individual buttons */
+  }
+  
+  .like-button.liked {
+    background-color: #f47e17; /* Equivalent to bg-red-500 */
+    color: #fff; /* Equivalent to text-white */
+  }

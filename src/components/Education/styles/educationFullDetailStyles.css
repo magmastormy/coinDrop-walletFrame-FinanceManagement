@@ -1,72 +1,280 @@
 /* src/components/Education/styles/educationFullDetailStyles.css */
-.education-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Dimmed backdrop */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000; /* Ensure modal is on top */
+.edu-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
 }
 
-.education-modal {
-  background-color: #fff; /* Light background */
-  width: 80%; /* Adjust width as needed */
-  max-width: 800px; /* Maximum width */
-  max-height: 80vh; /* Maximum height */
-  border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
-  overflow-y: auto; /* Enable scrolling if content overflows */
-  position: relative; /* For positioning close button */
+.edu-modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
 }
 
-.education-modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e0e0e0; /* Light gray border */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Header */
+.edu-modal-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
 }
 
-.education-modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #888; /* Gray color for close button */
+.edu-modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark);
+    line-height: 1.4;
 }
 
-.education-modal-content {
-  padding: 2rem; 
-  /* Remove explicit height to allow scrolling */
+.edu-modal-actions {
+    display: flex;
+    gap: var(--spacing-sm);
 }
 
-.reading-progress-bar {
-  position: fixed; /* Fixed to the bottom of the viewport */
-  bottom: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 4px; /* Thin bar */
-  background-color: #f0f0f0; /* Very light gray background */
-  z-index: 1001; /* Ensure it's above the modal */
+.edu-action-button,
+.edu-modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--background);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
 }
 
-.reading-progress-bar .progress {
-  height: 100%;
-  background-color: #007bff; /* Primary color for progress */
-  width: 0; /* Initial width */
-  transition: width 0.3s ease-in-out; /* Smooth transition */
+.edu-action-button:hover,
+.edu-modal-close:hover {
+    background: var(--background-dark);
+    color: var(--dark);
 }
 
-/* Style scrollbar (optional) */
-.education-modal-content::-webkit-scrollbar {
-  width: 8px; 
+.edu-action-button.active {
+    color: var(--primary);
+    background: var(--primary-light);
 }
 
-.education-modal-content::-webkit-scrollbar-thumb {
-  background-color: #ddd; /* Light gray scrollbar thumb */
-  border-radius: 4px; 
+/* Content */
+.edu-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+}
+
+.edu-modal-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.edu-modal-meta > span {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.edu-modal-meta svg {
+    font-size: 1rem;
+}
+
+.edu-modal-meta .liked {
+    color: var(--danger);
+}
+
+.edu-modal-body {
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Interaction Buttons */
+.edu-modal-interaction {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md) 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.edu-interaction-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--background);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.edu-interaction-button:hover {
+    background: var(--background-dark);
+}
+
+.edu-interaction-button.liked {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.edu-interaction-button.liked:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Comments Section */
+.edu-modal-comments {
+    margin-top: var(--spacing-xl);
+}
+
+.edu-modal-comments h3 {
+    color: var(--dark);
+    font-size: 1.1rem;
+    margin: 0 0 var(--spacing-md);
+}
+
+.edu-modal-comment {
+    background: var(--background);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.comment-date {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.comment-text {
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.no-comments {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: var(--spacing-lg);
+    font-style: italic;
+}
+
+/* Progress Bar */
+.edu-reading-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--background);
+    overflow: hidden;
+}
+
+.edu-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    transition: width 0.2s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .edu-modal-overlay {
+        padding: 0;
+    }
+
+    .edu-modal {
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .edu-modal-header {
+        padding: var(--spacing-md);
+    }
+
+    .edu-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .edu-modal-content {
+        padding: var(--spacing-md);
+    }
+
+    .edu-modal-interaction {
+        flex-direction: column;
+    }
+
+    .edu-interaction-button {
+        width: 100%;
+        justify-content: center;
+        padding: var(--spacing-md);
+    }
+}
+
+/* Accessibility Focus Styles */
+.edu-action-button:focus-visible,
+.edu-modal-close:focus-visible,
+.edu-interaction-button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Animation Classes */
+@keyframes likeAnimation {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+.edu-interaction-button.liked svg {
+    animation: likeAnimation 0.3s ease-in-out;
 }

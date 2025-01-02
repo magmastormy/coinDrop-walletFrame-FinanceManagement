@@ -1,51 +1,186 @@
 .budget-card {
-  background-color: #ffffff;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
+    background-color: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: all var(--transition-fast);
 }
 
-.budget-card h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
+.budget-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
-.budget-details,
-.budget-meta,
+/* Header */
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.budget-header h3 {
+    margin: 0;
+    color: var(--dark);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.budget-type-badge {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* Progress Section */
+.budget-progress {
+    margin-bottom: var(--spacing-lg);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--background);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-xs);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.budget-amounts {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Details */
+.budget-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.detail-item svg {
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+/* Status */
+.budget-status {
+    display: inline-block;
+    margin-bottom: var(--spacing-md);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: capitalize;
+}
+
+/* Actions */
 .budget-actions {
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.budget-details p,
-.budget-meta p {
-  flex: 1 1 33%; /* Adjust the width of each detail item here */
-  margin-right: 10px;
-  font-size: 14px;
-}
-
-.budget-details p:last-child,
-.budget-meta p:last-child {
-  margin-right: 0;
-}
-
-.budget-actions {
-  justify-content: flex-end;
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
 }
 
 .budget-actions button {
-  background-color: #f0f0f0;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  margin-left: 5px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    border: none;
+    cursor: pointer;
 }
 
-.budget-actions button:hover {
-  background-color: #e0e0e0;
+.edit-btn {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.edit-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.delete-btn {
+    background-color: var(--error-light);
+    color: var(--error);
+}
+
+.delete-btn:hover {
+    background-color: var(--error);
+    color: white;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .budget-card {
+        padding: var(--spacing-md);
+    }
+
+    .budget-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .budget-type-badge {
+        font-size: 0.8rem;
+        padding: 3px 10px;
+    }
+
+    .budget-actions {
+        flex-direction: column;
+    }
+
+    .budget-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .budget-card {
+        padding: var(--spacing-sm);
+    }
+
+    .budget-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    .detail-item {
+        font-size: 0.85rem;
+    }
 }

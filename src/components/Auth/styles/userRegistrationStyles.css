@@ -1,0 +1,224 @@
+.register-container {
+    max-width: 500px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: var(--spacing-lg);
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.register-header h2 {
+    font-size: 1.8rem;
+    color: var(--dark);
+    margin: 0 0 var(--spacing-xs);
+}
+
+.register-header p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.error-message {
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    font-size: 0.95rem;
+}
+
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) calc(var(--spacing-md) * 2 + 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--background);
+    transition: all var(--transition-fast);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+}
+
+.password-toggle {
+    position: absolute;
+    right: var(--spacing-md);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    transition: color var(--transition-fast);
+}
+
+.password-toggle:hover {
+    color: var(--text);
+}
+
+.error-text {
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-left: var(--spacing-xs);
+}
+
+.password-strength {
+    margin-top: var(--spacing-xs);
+}
+
+.strength-meter {
+    display: flex;
+    gap: 4px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.strength-segment {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background var(--transition-fast);
+}
+
+.strength-segment.active {
+    background: var(--primary);
+}
+
+.strength-segment.active:nth-child(-n+2) {
+    background: var(--danger);
+}
+
+.strength-segment.active:nth-child(3) {
+    background: var(--warning);
+}
+
+.strength-segment.active:nth-child(n+4) {
+    background: var(--success);
+}
+
+.strength-feedback {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.feedback-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.feedback-icon {
+    color: var(--danger);
+}
+
+.register-button {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    transition: background var(--transition-fast);
+    margin-top: var(--spacing-md);
+}
+
+.register-button:hover:not(:disabled) {
+    background: var(--primary-dark);
+}
+
+.register-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.login-prompt {
+    text-align: center;
+    margin-top: var(--spacing-lg);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.login-prompt a {
+    color: var(--primary);
+    text-decoration: none;
+    margin-left: var(--spacing-xs);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.login-prompt a:hover {
+    color: var(--primary-dark);
+}
+
+/* Animation Classes */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.register-button svg {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .register-container {
+        width: 100%;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}

@@ -30,12 +30,6 @@ const UserEducationPostCard = ({ education, onEdit, onDelete, onLike, onComment}
             </div>
             
             <div className="user-education-post-action-buttons">
-              <button className="user-education-post-btn-like" onClick={() => onLike(education._id)}>
-                Like
-              </button>
-              <button className="user-education-post-btn-comment" onClick={() => onComment(education._id)}>
-                Comment
-              </button>
               <button className="btn-edit" onClick={() => onEdit(education)}>
                 Edit
               </button>

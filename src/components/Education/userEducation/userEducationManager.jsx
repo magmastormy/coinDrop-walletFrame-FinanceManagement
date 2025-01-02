@@ -23,10 +23,21 @@ const UserEducationManager = () => {
     const { user } = useSelector(state => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCommentModal, setShowCommentModal] = useState(false);
+    const [editingEducation, setEditingEducation] = useState(null);
 
     useEffect(() => {
         fetchUserEducations();
     }, []);
+
+    const handleEditEducation = async (education) => {
+        setEditingEducation(education);
+        setShowCreateModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowCreateModal(false);
+        setEditingEducation(null);
+    };
 
     const fetchUserEducations = async () => {
         dispatch(setLoading(true));
@@ -50,19 +61,23 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleEditEducation = async (education) => {
+    const handleUpdateEducation = async (updatedData) => {
         dispatch(setLoading(true));
         try {
-            const educationData = {
-                title: education.title,
-                details: education.details,
-                images: education.images || []
-            };
+            if (!editingEducation?._id) {
+                throw new Error('No education selected for editing');
+            }
 
-            const response = await educationService.updateEducation(education._id, educationData);
+            const response = await educationService.updateEducation(
+                editingEducation._id, 
+                updatedData
+            );
             dispatch(updateEducation(response));
+            handleCloseModal();
         } catch (err) {
             dispatch(setError(err.message));
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 
@@ -139,8 +154,9 @@ const UserEducationManager = () => {
             )}
 
             {showCreateModal && (
-                <CreateEducationPost 
-                    onCreateEducation={handleCreateEducation}
+                <CreateEducationPost
+                    initialData={editingEducation}
+                    onCreateEducation={editingEducation ? handleUpdateEducation : handleCreateEducation}
                     onClose={() => setShowCreateModal(false)}
                 />
             )}

@@ -1,0 +1,211 @@
+.education-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+}
+
+.education-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: all var(--transition-fast);
+}
+
+.education-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.education-card-header {
+    padding: var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+}
+
+.author-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.author-details h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.author-details span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.education-actions {
+    position: relative;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--background);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+    background: var(--background-dark);
+    color: var(--dark);
+}
+
+.education-card-content {
+    padding: var(--spacing-md);
+}
+
+.education-card-content h2 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    line-height: 1.4;
+}
+
+.education-card-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.education-card-footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border);
+}
+
+.interaction-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.interaction-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.interaction-btn:hover {
+    color: var(--dark);
+}
+
+.interaction-btn.liked {
+    color: var(--danger);
+}
+
+.interaction-btn.bookmarked {
+    color: var(--primary);
+}
+
+/* Loading State */
+.education-grid-loading {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+}
+
+.education-card-skeleton {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    padding: var(--spacing-md);
+}
+
+.skeleton-header {
+    height: 40px;
+    background: var(--background);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.skeleton-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.skeleton-line {
+    height: 12px;
+    background: var(--background);
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.skeleton-footer {
+    height: 32px;
+    background: var(--background);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+}
+
+/* Empty State */
+.no-educations {
+    text-align: center;
+    padding: var(--spacing-xl);
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.no-educations h3 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 1.2rem;
+    color: var(--dark);
+}
+
+.no-educations p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .education-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+        padding: var(--spacing-sm);
+    }
+}

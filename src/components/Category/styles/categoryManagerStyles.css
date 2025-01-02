@@ -1,130 +1,232 @@
 /* categoryManagerStyles.css */
 .category-manager {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.category-manager h2 {
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
-    font-size: 1.8rem;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 0.5rem;
-}
-
-.category-form {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    height: 100%;
     display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    flex-direction: column;
+    gap: var(--spacing-lg);
 }
 
-.category-form input {
-    flex: 1;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
+/* Header */
+.manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.category-form input:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.category-form button,
-.category-list button {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.category-form button {
-    background-color: #3498db;
-    color: white;
-}
-
-.category-form button:hover {
-    background-color: #2980b9;
-}
-
-.category-list {
-    list-style: none;
-    padding: 0;
+.manager-header h2 {
     margin: 0;
+    color: var(--dark);
+    font-size: 1.25rem;
+    font-weight: 600;
 }
 
-.category-list li {
+.loading-spinner {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+/* Error Message */
+.error-message {
     display: flex;
     align-items: center;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    transition: transform 0.2s ease;
-}
-
-.category-list li:hover {
-    transform: translateX(5px);
-}
-
-.category-list li button {
-    margin-left: auto;
-    padding: 0.5rem 1rem;
-    margin-left: 0.5rem;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background-color: var(--danger-light);
+    color: var(--danger);
+    border-radius: var(--radius-md);
     font-size: 0.9rem;
 }
 
-.category-list li button:first-of-type {
-    background-color: #f39c12;
+.error-message svg {
+    font-size: 1.1rem;
+}
+
+/* Form */
+.category-form {
+    margin-bottom: var(--spacing-md);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.input-group input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.form-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary {
+    background-color: var(--primary);
     color: white;
 }
 
-.category-list li button:last-of-type {
-    background-color: #e74c3c;
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--background);
+    color: var(--dark);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border);
+}
+
+.btn-danger {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+.btn-danger:hover {
+    background-color: var(--danger);
     color: white;
 }
 
-.category-list li button:hover {
-    opacity: 0.9;
+/* Category List */
+.category-list-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
-.error-message {
-    color: #e74c3c;
-    background-color: #fde8e7;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background-color: var(--background);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    transition: all var(--transition-fast);
 }
 
-/* Loading state */
-.category-manager p {
+.category-item:hover {
+    border-color: var(--primary-light);
+    background-color: white;
+}
+
+.category-name {
+    color: var(--dark);
+    font-weight: 500;
+}
+
+.category-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.category-actions button {
+    padding: 6px;
+    border-radius: var(--radius-sm);
+}
+
+/* Delete Confirmation */
+.delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.9rem;
+    color: var(--danger);
+}
+
+.delete-confirm button {
+    padding: 4px 8px;
+}
+
+/* Empty State */
+.empty-state {
     text-align: center;
-    color: #7f8c8d;
-    font-style: italic;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+    background-color: var(--background);
+    border-radius: var(--radius-lg);
 }
 
-/* Responsive design */
-@media (max-width: 600px) {
-    .category-form {
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .category-manager {
+        padding: var(--spacing-md);
+    }
+
+    .manager-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .input-group {
         flex-direction: column;
     }
-    
-    .category-list li {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .category-list li button {
+
+    .form-buttons {
         width: 100%;
-        margin: 0.2rem 0;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .category-manager {
+        padding: var(--spacing-sm);
+    }
+
+    .category-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .category-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .delete-confirm {
+        width: 100%;
+        justify-content: flex-end;
     }
 }

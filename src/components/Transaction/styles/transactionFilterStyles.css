@@ -1,58 +1,152 @@
 .filter-transactions {
-    background-color: var(--surface);
-    border-radius: 12px;
+    background-color: white;
+    border-radius: var(--radius-md);
     padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
-  }
-  
-  .filter-transactions h3 {
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .horizontal-filters {
-    display: flex;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .horizontal-filters input,
-  .horizontal-filters select {
-    padding: var(--spacing-sm);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: var(--font-size-base);
-    min-width: 150px;
-    transition: all 200ms ease;
-  }
-  
-  .horizontal-filters input:focus,
-  .horizontal-filters select:focus {
+}
+
+/* Filter Header */
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.filter-header h3 {
+    margin: 0;
+    color: var(--dark);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.clear-filters-btn {
+    padding: 6px 12px;
+    color: var(--error);
+    background: none;
+    border: 1px solid var(--error);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.clear-filters-btn:hover {
+    background-color: #FFF2F0;
+}
+
+/* Filter Sections */
+.filter-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.filter-section h4 {
+    margin: 0 0 var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Wallet Filter */
+.wallet-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Category Filter */
+.category-filter select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: white;
+    color: var(--dark);
+    font-size: 0.95rem;
+    transition: border-color var(--transition-fast);
+}
+
+.category-filter select:focus {
     border-color: var(--primary);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-  }
-  
-  .wallet-filter {
-    display: flex;
+}
+
+/* Amount Filters */
+.amount-filters,
+.date-filters {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-md);
-    overflow-x: auto;
-    padding: var(--spacing-sm) 0;
-    margin-bottom: var(--spacing-md);
-  }
-  
-  button {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 200ms ease;
-  }
-  
-  button:hover {
-    background-color: var(--primary-dark);
-  }
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.filter-group label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.filter-group input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--dark);
+    transition: border-color var(--transition-fast);
+}
+
+.filter-group input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.filter-group input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.filter-group input[type="number"]::-webkit-outer-spin-button,
+.filter-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.filter-group input[type="date"] {
+    font-family: inherit;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .filter-transactions {
+        padding: var(--spacing-md);
+    }
+
+    .amount-filters,
+    .date-filters {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    .clear-filters-btn {
+        width: 100%;
+    }
+}

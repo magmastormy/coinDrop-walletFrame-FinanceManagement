@@ -1,28 +1,86 @@
 .wallet-container {
-    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
 }
 
-.wallets-placement-container {
+/* Summary Section */
+.wallet-summary {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-header h2 {
+    margin: 0;
+    color: var(--dark);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.total-balance {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.balance-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.balance-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    transition: all var(--transition-fast);
+}
+
+.balance-amount.positive {
+    color: var(--success);
+}
+
+.balance-amount.negative {
+    color: var(--danger);
+}
+
+/* Wallets Grid */
+.wallets-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--spacing-lg);
 }
 
+/* Empty State */
 .empty-state {
     text-align: center;
-    padding: var(--spacing-xl);
-    background-color: var(--surface);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    background-color: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
 }
 
-.empty-state-icon {
+.empty-state svg {
     color: var(--primary);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    font-size: 3rem;
 }
 
 .empty-state h3 {
-    color: var(--text-primary);
+    color: var(--dark);
+    font-size: 1.25rem;
     margin-bottom: var(--spacing-sm);
 }
 
@@ -31,8 +89,58 @@
     margin-bottom: var(--spacing-lg);
 }
 
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .wallets-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+
 @media (max-width: 768px) {
-    .wallets-placement-container {
+    .wallet-container {
+        padding: var(--spacing-md);
+        gap: var(--spacing-lg);
+    }
+
+    .wallet-summary {
+        padding: var(--spacing-md);
+    }
+
+    .summary-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .balance-amount {
+        font-size: 1.75rem;
+    }
+
+    .wallets-grid {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .wallet-container {
+        padding: var(--spacing-sm);
+    }
+
+    .wallet-summary {
+        padding: var(--spacing-sm);
+    }
+
+    .summary-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .summary-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .balance-amount {
+        font-size: 1.5rem;
     }
 }

@@ -1,26 +1,49 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faTimes } from '@fortawesome/free-solid-svg-icons';
 import WalletIconOptions from './newWalletIcons';
 import walletService from '../../services/walletService';
+import { useDispatch } from 'react-redux';
 import { addWallet } from '../../slices/walletSlice';
 import './styles/newWalletStyles.css';
 
 const CreateNewWallet = ({ onWalletCreated }) => {
+    const dispatch = useDispatch();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [walletData, setWalletData] = useState({
         name: '',
-        type: 'bank', // default type
+        type: 'bank',
         balance: '',
-        icon: 'default-wallet-icon' // default icon
+        icon: 'default-wallet-icon'
     });
     const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                handleClose();
+            }
+        };
+
+        if (isModalOpen) {
+            document.addEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isModalOpen]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setIsLoading(true);
 
         try {
-            // Validate balance is a number
             const balance = parseFloat(walletData.balance);
             if (isNaN(balance)) {
                 throw new Error('Balance must be a valid number');
@@ -32,14 +55,21 @@ const CreateNewWallet = ({ onWalletCreated }) => {
             });
 
             if (newWallet) {
-                onWalletCreated(); // Refresh wallet list
-                setIsModalOpen(false);
-                resetForm();
+                dispatch(addWallet(newWallet));
+                onWalletCreated();
+                handleClose();
             }
         } catch (error) {
             console.error('Failed to create wallet:', error);
             setError(error.message || 'Failed to create wallet');
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const handleClose = () => {
+        setIsModalOpen(false);
+        resetForm();
     };
 
     const resetForm = () => {
@@ -50,99 +80,157 @@ const CreateNewWallet = ({ onWalletCreated }) => {
             icon: 'default-wallet-icon'
         });
         setError(null);
+        setIsLoading(false);
     };
 
     const handleIconSelect = (icon) => {
         setWalletData(prev => ({ ...prev, icon }));
-        console.log("New Wallet - handle icon select: ", icon);
     };
 
     return (
         <>
-            <button 
+            <motion.button 
                 className="create-wallet-btn"
                 onClick={() => setIsModalOpen(true)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                aria-label="Create new wallet"
             >
-                + Create New Wallet
-            </button>
+                <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                <span>Create New Wallet</span>
+            </motion.button>
 
-            {isModalOpen && (
-                <div className="wallet-modal-overlay">
-                    <div className="wallet-modal">
-                        <h2>Create New Wallet</h2>
-                        {error && <div className="error-message">{error}</div>}
-                        
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="walletName">Wallet Name</label>
-                                <input
-                                    id="walletName"
-                                    type="text"
-                                    value={walletData.name}
-                                    onChange={e => setWalletData(prev => ({
-                                        ...prev,
-                                        name: e.target.value
-                                    }))}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="walletType">Wallet Type</label>
-                                <select
-                                    id="walletType"
-                                    value={walletData.type}
-                                    onChange={e => setWalletData(prev => ({
-                                        ...prev,
-                                        type: e.target.value
-                                    }))}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <>
+                        <motion.div 
+                            className="wallet-modal-overlay"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleClose}
+                        />
+                        <motion.div 
+                            className="wallet-modal"
+                            role="dialog"
+                            aria-labelledby="modal-title"
+                            aria-describedby="modal-description"
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="modal-header">
+                                <h2 id="modal-title">Create New Wallet</h2>
+                                <motion.button
+                                    className="close-btn"
+                                    onClick={handleClose}
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    aria-label="Close modal"
                                 >
-                                    <option value="bank">Bank Account</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="credit">Credit Card</option>
-                                    <option value="savings">Savings</option>
-                                </select>
+                                    <FontAwesomeIcon icon={faTimes} aria-hidden="true" />
+                                </motion.button>
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="walletBalance">Initial Balance</label>
-                                <input
-                                    id="walletBalance"
-                                    type="number"
-                                    step="0.01"
-                                    value={walletData.balance}
-                                    onChange={e => setWalletData(prev => ({
-                                        ...prev,
-                                        balance: e.target.value
-                                    }))}
-                                    required
-                                />
-                            </div>
-
-                            <WalletIconOptions
-                                selectedIcon={walletData.icon}
-                                onSelectIcon={handleIconSelect}
-                            />
-
-                            <div className="modal-actions">
-                                <button type="submit" className="create-btn">
-                                    Create Wallet
-                                </button>
-                                <button 
-                                    type="button" 
-                                    className="cancel-btn"
-                                    onClick={() => {
-                                        setIsModalOpen(false);
-                                        resetForm();
-                                    }}
+                            {error && (
+                                <motion.div 
+                                    className="error-message"
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    role="alert"
                                 >
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                                    {error}
+                                </motion.div>
+                            )}
+                            
+                            <form onSubmit={handleSubmit} id="modal-description">
+                                <div className="form-group">
+                                    <label htmlFor="walletName">Wallet Name</label>
+                                    <input
+                                        id="walletName"
+                                        type="text"
+                                        value={walletData.name}
+                                        onChange={e => setWalletData(prev => ({
+                                            ...prev,
+                                            name: e.target.value
+                                        }))}
+                                        placeholder="Enter wallet name"
+                                        required
+                                        aria-required="true"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="walletType">Wallet Type</label>
+                                    <select
+                                        id="walletType"
+                                        value={walletData.type}
+                                        onChange={e => setWalletData(prev => ({
+                                            ...prev,
+                                            type: e.target.value
+                                        }))}
+                                        required
+                                        aria-required="true"
+                                    >
+                                        <option value="bank">Bank Account</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="credit">Credit Card</option>
+                                        <option value="savings">Savings</option>
+                                        <option value="investment">Investment</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="walletBalance">Initial Balance</label>
+                                    <input
+                                        id="walletBalance"
+                                        type="number"
+                                        step="0.01"
+                                        value={walletData.balance}
+                                        onChange={e => setWalletData(prev => ({
+                                            ...prev,
+                                            balance: e.target.value
+                                        }))}
+                                        placeholder="0.00"
+                                        required
+                                        aria-required="true"
+                                        aria-label="Initial balance in dollars"
+                                    />
+                                </div>
+
+                                <WalletIconOptions
+                                    selectedIcon={walletData.icon}
+                                    onSelectIcon={handleIconSelect}
+                                />
+
+                                <div className="modal-actions">
+                                    <motion.button 
+                                        type="submit" 
+                                        className="create-btn"
+                                        disabled={isLoading}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        {isLoading ? 'Creating...' : 'Create Wallet'}
+                                    </motion.button>
+                                    <motion.button 
+                                        type="button" 
+                                        className="cancel-btn"
+                                        onClick={handleClose}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </>
     );
 };

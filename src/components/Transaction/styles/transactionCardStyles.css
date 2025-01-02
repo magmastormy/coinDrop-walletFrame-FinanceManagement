@@ -1,46 +1,172 @@
 .transaction-card {
-    background-color: var(--surface);
-    border-radius: 12px;
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
     box-shadow: var(--shadow-sm);
-    transition: transform 200ms ease, box-shadow 200ms ease;
-  }
-  
-  .transaction-card:hover {
-    transform: translateY(-2px);
+    transition: all var(--transition-fast);
+    border: 1px solid var(--border);
+}
+
+.transaction-card:hover {
     box-shadow: var(--shadow-md);
-  }
-  
-  .transaction-card h3 {
-    font-size: var(--font-size-lg);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  .transaction-card p {
+    transform: translateY(-2px);
+}
+
+.transaction-card.expense {
+    border-left: 4px solid var(--error);
+}
+
+.transaction-card.income {
+    border-left: 4px solid var(--accent-2);
+}
+
+.transaction-card.transfer {
+    border-left: 4px solid var(--primary);
+}
+
+/* Card Header */
+.transaction-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.transaction-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--dark);
+    word-break: break-word;
+}
+
+/* Type Badge */
+.transaction-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.transaction-type-badge.expense {
+    background-color: #FFF2F0;
+    color: var(--error);
+}
+
+.transaction-type-badge.income {
+    background-color: #F6FFED;
+    color: var(--accent-2);
+}
+
+.transaction-type-badge.transfer {
+    background-color: #E6F7FF;
+    color: var(--primary);
+}
+
+/* Transaction Details */
+.transaction-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.transaction-amount {
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: var(--font-primary);
+}
+
+.expense .transaction-amount {
+    color: var(--error);
+}
+
+.income .transaction-amount {
+    color: var(--accent-2);
+}
+
+.transfer .transaction-amount {
+    color: var(--primary);
+}
+
+.transaction-date {
     color: var(--text-secondary);
-    margin: var(--spacing-xs) 0;
-    font-size: var(--font-size-base);
-  }
-  
-  .transaction-card button {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    margin-right: var(--spacing-sm);
-    border-radius: 6px;
-    font-size: var(--font-size-sm);
-    transition: all 200ms ease;
-    cursor: pointer;
-  }
-  
-  .transaction-card button:first-of-type {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-  }
-  
-  .transaction-card button:last-of-type {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-  }
+    font-size: 0.9rem;
+}
+
+/* Card Actions */
+.transaction-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border);
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    background: none;
+    border: 1px solid var(--border);
+}
+
+.action-btn.edit {
+    color: var(--primary);
+}
+
+.action-btn.edit:hover {
+    background-color: var(--secondary);
+    border-color: var(--primary);
+}
+
+.action-btn.delete {
+    color: var(--error);
+}
+
+.action-btn.delete:hover {
+    background-color: #FFF2F0;
+    border-color: var(--error);
+}
+
+.action-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .transaction-card {
+        padding: var(--spacing-sm);
+    }
+
+    .transaction-title {
+        font-size: 1rem;
+    }
+
+    .transaction-amount {
+        font-size: 1.1rem;
+    }
+
+    .action-text {
+        display: none;
+    }
+
+    .action-btn {
+        padding: 6px;
+    }
+
+    .transaction-type-badge {
+        padding: 2px 8px;
+        font-size: 0.8rem;
+    }
+}

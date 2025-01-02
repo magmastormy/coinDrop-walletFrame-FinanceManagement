@@ -163,7 +163,7 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                     />
                     <div className="create-edit-education-editor-container">
                         <MenuBar editor={editor} />
-                        <EditorContent editor={editor} />
+                        <EditorContent editor={editor} className="create-edit-education-editor"/>
                     </div>
                     <div className="create-edit-education-form-actions">
                         <button

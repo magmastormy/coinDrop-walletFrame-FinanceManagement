@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import transactionService from '../../services/transactionService';
 import './styles/transactionCreateNewStyles.css';
 
 const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets=[], categories=[], initialData }) => {
     if (!isOpen) return null;
+    
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [transactionData, setTransactionData] = useState(initialData || {
         amount: '',
@@ -15,8 +17,27 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         walletId: ''
     });
 
+    const handleEscapeKey = useCallback((event) => {
+        if (event.key === 'Escape') {
+            onClose();
+        }
+    }, [onClose]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleEscapeKey);
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+            document.removeEventListener('keydown', handleEscapeKey);
+            document.body.style.overflow = 'unset';
+        };
+    }, [handleEscapeKey]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setIsSubmitting(true);
+        
         try {
             if (!transactionData.walletId || !transactionData.category) {
                 throw new Error('Please select both wallet and category');
@@ -27,7 +48,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
             }
 
             const cleanTransactionData = {
-                amount: amount,
+                amount: transactionData.amount,
                 type: transactionData.type,
                 category: transactionData.category,
                 description: transactionData.description || '',
@@ -41,15 +62,24 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         } catch (error) {
             setError(error.message || 'Failed to create transaction');
             console.error('Transaction creation failed:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
         }
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>{initialData ? 'Edit' : 'Create'} Transaction</h2>
-                {error && <div className="error-message">{error}</div>}
-                <form onSubmit={handleSubmit}>
+        <div className="modal-overlay fade-in" onClick={handleOverlayClick} role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title">
+            <div className="modal-content slide-up" onClick={(e) => e.stopPropagation()}>
+                <button className="modal-close" onClick={onClose} aria-label="Close modal">×</button>
+                <h2 id="transaction-modal-title">{initialData ? 'Edit' : 'Create'} Transaction</h2>
+                {error && <div className="error-message" role="alert">{error}</div>}
+                <form onSubmit={handleSubmit} className="transaction-form">
                     <div className="form-group">
                         <label htmlFor="amount">Amount</label>
                         <input
@@ -58,6 +88,9 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             value={transactionData.amount}
                             onChange={e => setTransactionData({ ...transactionData, amount: e.target.value })}
                             required
+                            min="0"
+                            step="0.01"
+                            placeholder="Enter amount"
                         />
                     </div>
                     <div className="form-group">
@@ -95,6 +128,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             type="text"
                             value={transactionData.description}
                             onChange={e => setTransactionData({ ...transactionData, description: e.target.value })}
+                            placeholder="Enter description (optional)"
                         />
                     </div>
                     <div className="form-group">
@@ -123,9 +157,13 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             ))}
                         </select>
                     </div>
-                    <div className="form-actions">
-                        <button type="submit">{initialData ? 'Update' : 'Create'} Transaction</button>
-                        <button type="button" onClick={onClose}>Cancel</button>
+                    <div className="modal-footer">
+                        <button type="button" onClick={onClose} className="secondary">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? 'Processing...' : initialData ? 'Update' : 'Create'} Transaction
+                        </button>
                     </div>
                 </form>
             </div>
