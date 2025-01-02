@@ -1,6 +1,26 @@
 import axiosInstance from "../api/userAxios";
 const API_URL = '/education';
 
+const compressImage = async (file) => {
+    if (!file.type.startsWith('image/')) {
+        return file;
+    }
+    
+    try {
+        const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true
+        };
+        
+        const compressedFile = await imageCompression(file, options);
+        return compressedFile;
+    } catch (error) {
+        console.error('Image compression failed:', error);
+        return file;
+    }
+};
+
 const educationService = {
 
     getEducations: async () => {
@@ -23,16 +43,24 @@ const educationService = {
             images: uploadedImages,
             contentType: 'tiptap'
         });
-        return response.data;
+        return response;
     },
 
     uploadImage: async (file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data.url;
+        try {
+            const compressedFile = await compressImage(file);
+            const formData = new FormData();
+            formData.append('image', compressedFile);
+            
+            const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                maxBodyLength: 10 * 1024 * 1024 // 10MB
+            });
+            return response.data.url;
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            throw error;
+        }
     },
 
     updateEducation: async (id, educationData) => {

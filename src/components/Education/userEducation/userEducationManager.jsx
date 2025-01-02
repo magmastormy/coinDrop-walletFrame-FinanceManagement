@@ -38,6 +38,10 @@ const UserEducationManager = () => {
         setShowCreateModal(false);
         setEditingEducation(null);
     };
+    const handleCreateClick = () =>{
+        setShowCreateModal(true);
+        setEditingEducation(null);
+    }
 
     const fetchUserEducations = async () => {
         dispatch(setLoading(true));
@@ -128,7 +132,7 @@ const UserEducationManager = () => {
                 <h1 className="user-education-manager-title">My Education Posts</h1>
                 <button 
                     className="user-education-create-post-btn"
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={handleCreateClick}
                 >
                     Create New Post
                 </button>

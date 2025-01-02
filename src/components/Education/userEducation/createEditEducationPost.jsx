@@ -9,24 +9,65 @@ import {
     faImage, faHeading, faQuoteLeft, faUndo, faRedo 
 } from '@fortawesome/free-solid-svg-icons';
 import './styles/createEditEducationPostStyles.css';
+import imageCompression from 'browser-image-compression';
 
-const MenuBar = ({ editor }) => {
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5mb
+const MAX_DIMENSION = 1920;
+
+const MenuBar = ({ editor, isUploadingImage, onImageUpload  }) => {
     const imageInputRef = useRef(null);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-    if (!editor) return null;
+    const handleImageUpload = async (file) => {
+        if (!file) return;
+        setIsUploadingImage(true);
 
-    const addImage = async (e) => {
+        try {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                throw new Error('Please select an image file');
+            }
+
+            // Validate and compress image
+            if (file.size > MAX_FILE_SIZE) {
+                const options = {
+                    maxSizeMB: 5,
+                    maxWidthOrHeight: MAX_DIMENSION,
+                    useWebWorker: true,
+                };
+                file = await imageCompression(file, options);
+            }
+
+            // Convert to base64 and insert into editor
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (editor) {
+                    editor
+                        .chain()
+                        .focus()
+                        .setImage({ src: reader.result })
+                        .run();
+                }
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            alert(error.message || 'Failed to upload image');
+        } finally {
+            setIsUploadingImage(false);
+            // Reset input to allow selecting same file again
+            if (imageInputRef.current) {
+                imageInputRef.current.value = '';
+            }
+        }
+    };
+
+    const addImage = (e) => {
+        e.preventDefault();
         const file = e.target.files?.[0];
         if (file) {
-            try {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    editor.chain().focus().setImage({ src: reader.result }).run();
-                };
-                reader.readAsDataURL(file);
-            } catch (error) {
-                console.error('Image upload failed:', error);
-            }
+            onImageUpload(file);
         }
     };
 
@@ -59,12 +100,24 @@ const MenuBar = ({ editor }) => {
             <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().redo().run()}>
                 <FontAwesomeIcon icon={faRedo} />
             </button>
+            <button 
+                className="editor-menu-button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    imageInputRef.current?.click();
+                }}
+                disabled={isUploadingImage}
+            >
+                <FontAwesomeIcon icon={faImage} />
+                {isUploadingImage && <span className="loading-indicator">...</span>}
+            </button>
             <input
                 type="file"
                 ref={imageInputRef}
                 onChange={addImage}
                 accept="image/*"
                 style={{ display: 'none' }}
+                disabled={isUploadingImage}
             />
         </div>
     );
@@ -75,6 +128,7 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -89,6 +143,44 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
         content: initialData?.details || '',
         autofocus: true,
     });
+
+    const handleImageUpload = async (file) => {
+        if (!file) return;
+        setIsUploadingImage(true);
+
+        try {
+            if (!file.type.startsWith('image/')) {
+                throw new Error('Please select an image file');
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                const options = {
+                    maxSizeMB: 5,
+                    maxWidthOrHeight: MAX_DIMENSION,
+                    useWebWorker: true,
+                };
+                file = await imageCompression(file, options);
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (editor) {
+                    editor
+                        .chain()
+                        .focus()
+                        .setImage({ src: reader.result })
+                        .run();
+                }
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            alert(error.message || 'Failed to upload image');
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -162,8 +254,13 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                         className="create-edit-education-title-input"
                     />
                     <div className="create-edit-education-editor-container">
-                        <MenuBar editor={editor} />
-                        <EditorContent editor={editor} className="create-edit-education-editor"/>
+                        <MenuBar
+                            editor={editor}
+                            isUploadingImage={isUploadingImage}
+                            onImageUpload={handleImageUpload} />
+                        <EditorContent 
+                            editor={editor} 
+                            className="create-edit-education-editor"/>
                     </div>
                     <div className="create-edit-education-form-actions">
                         <button

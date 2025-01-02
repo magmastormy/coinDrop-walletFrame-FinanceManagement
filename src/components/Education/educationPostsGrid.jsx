@@ -8,7 +8,16 @@ const EducationGrid = ({ educations = [], onEdit, onDelete, onLike, onComment })
         return null;
     }
     
+    const validEducations = educations.filter(education => 
+        education && typeof education === 'object' && education._id
+    );
+    
     if (!educations.length) {
+        return <div className="education-grid__empty-state">No education posts available</div>;
+    }
+
+    
+    if (!validEducations.length) {
         return <div className="education-grid__empty-state">No education posts available</div>;
     }
 
