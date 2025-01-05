@@ -12,6 +12,7 @@ import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
 import Education from './components/Education/educationManager';
 import UserEducation from './components/Education/userEducation/userEducationManager';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);

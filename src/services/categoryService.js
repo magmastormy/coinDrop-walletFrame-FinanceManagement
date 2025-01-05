@@ -2,6 +2,20 @@
 import axiosInstance from "../api/userAxios";
 const API_URL = '/categories';
 
+// Export individual functions for better tree-shaking
+export const getUserCategories = async (userId) => {
+    try {
+        if (!userId) {
+            throw new Error('User ID is required');
+        }
+        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+    }
+};
+
 const categoryService = {
     createCategory: async (categoryData) => {
         try {

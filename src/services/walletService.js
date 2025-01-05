@@ -14,7 +14,7 @@ const walletService = {
             return response; 
         } catch (error) {
             console.error('Wallet Service - Error fetching wallets:', error);
-            throw error; // Propagate the error for handling in the frontend
+            throw error;
         }
     },
     getWalletBudgets: async (walletId) => {
@@ -56,11 +56,10 @@ const walletService = {
             const response = await axiosInstance.post(`${API_URL}/transfer`, {
                 fromWalletId,
                 toWalletId,
-                amount: parseFloat(amount)
+                amount
             });
             return response.data;
         } catch (error) {
-            console.error('Transfer failed:', error);
             throw error;
         }
     }

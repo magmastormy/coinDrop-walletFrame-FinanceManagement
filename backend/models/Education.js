@@ -12,7 +12,7 @@ const EducationSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 10,
-        maxlength: 50000
+        maxlength: 1000000
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,7 +24,10 @@ const EducationSchema = new mongoose.Schema({
         default: Date.now
     },
     images: [{
-        url: String,
+        url: {
+            type: String,
+            maxlength: 1000000
+        },
         alt: String,
         caption: String
     }],

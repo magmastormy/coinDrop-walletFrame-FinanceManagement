@@ -29,32 +29,46 @@ const educationService = {
     },
 
     createEducation: async (educationData) => {
-        const imagePromises = educationData.images?.map(async file => {
-            if (file instanceof File) {
-                return await educationService.uploadImage(file);
-            }
-            return file;
-        });
+        try {
+            const imagePromises = educationData.images?.map(async file => {
+                if (file instanceof File) {
+                    const compressedFile = await compressImage(file);
+                    return await educationService.uploadImage(compressedFile);
+                }
+                return file;
+            });
 
-        const uploadedImages = imagePromises ? await Promise.all(imagePromises) : [];
+            const uploadedImages = imagePromises ? await Promise.all(imagePromises) : [];
         
-        const response = await axiosInstance.post(API_URL, {
-            ...educationData,
-            images: uploadedImages,
-            contentType: 'tiptap'
-        });
-        return response;
+            const response = await axiosInstance.post(API_URL, {
+                ...educationData,
+                images: uploadedImages,
+                contentType: 'tiptap'
+            }, {
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response;
+        } catch (error) {
+            console.error('Create education error:', error);
+            throw error;
+        }
     },
 
     uploadImage: async (file) => {
         try {
-            const compressedFile = await compressImage(file);
             const formData = new FormData();
-            formData.append('image', compressedFile);
+            formData.append('image', file);
             
             const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                maxBodyLength: 10 * 1024 * 1024 // 10MB
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity
             });
             return response.data.url;
         } catch (error) {

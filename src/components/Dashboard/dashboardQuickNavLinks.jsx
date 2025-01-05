@@ -4,108 +4,101 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faWallet,
-    faChartLine,
+    faChartPie,
+    faMoneyBillTransfer,
+    faGear,
     faGraduationCap,
-    faExchangeAlt,
-    faHistory,
-    faUserCog
+    faChartLine
 } from '@fortawesome/free-solid-svg-icons';
+import './styles/dashboardQuickNavLinksStyles.css';
 
 const DashboardQuickNavLinks = () => {
     const navLinks = [
         {
             to: '/wallet',
             icon: faWallet,
-            text: 'Wallet',
-            color: '#3b82f6'
+            title: 'Wallets',
+            description: 'Manage your wallets and accounts',
+            gradient: 'from-blue-500 to-blue-400'
         },
         {
-            to: '/markets',
+            to: '/category',
+            icon: faChartPie,
+            title: 'Categories',
+            description: 'Organize your expenses',
+            gradient: 'from-purple-500 to-purple-400'
+        },
+        {
+            to: '/transaction',
+            icon: faMoneyBillTransfer,
+            title: 'Transactions',
+            description: 'Track income and expenses',
+            gradient: 'from-green-500 to-green-400'
+        },
+        {
+            to: '/investments',
             icon: faChartLine,
-            text: 'Markets',
-            color: '#10b981'
+            title: 'Investments',
+            description: 'Monitor your portfolio',
+            gradient: 'from-amber-500 to-amber-400'
         },
         {
             to: '/education',
             icon: faGraduationCap,
-            text: 'Learn',
-            color: '#8b5cf6'
-        },
-        {
-            to: '/trade',
-            icon: faExchangeAlt,
-            text: 'Trade',
-            color: '#ef4444'
-        },
-        {
-            to: '/history',
-            icon: faHistory,
-            text: 'History',
-            color: '#f59e0b'
+            title: 'Learn',
+            description: 'Financial education resources',
+            gradient: 'from-red-500 to-red-400'
         },
         {
             to: '/settings',
-            icon: faUserCog,
-            text: 'Settings',
-            color: '#6b7280'
+            icon: faGear,
+            title: 'Settings',
+            description: 'Configure your preferences',
+            gradient: 'from-gray-600 to-gray-500'
         }
     ];
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.3,
-                ease: "easeOut"
-            }
-        }
-    };
-
     return (
         <motion.div 
-            className="quick-nav"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="quick-nav-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            {navLinks.map((link, index) => (
-                <motion.div
-                    key={link.to}
-                    variants={itemVariants}
-                    whileHover={{ 
-                        scale: 1.05,
-                        transition: { duration: 0.2 }
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    <Link 
-                        to={link.to}
-                        className="quick-nav-link"
-                        style={{
-                            '--hover-color': link.color
+            <div className="quick-nav-header">
+                <h3>Quick Navigation</h3>
+            </div>
+            <div className="quick-nav-grid">
+                {navLinks.map((link, index) => (
+                    <motion.div
+                        key={link.to}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{
+                            duration: 0.3,
+                            delay: index * 0.1,
+                            ease: "easeOut"
                         }}
                     >
-                        <FontAwesomeIcon 
-                            icon={link.icon} 
-                            className="quick-nav-icon"
-                            style={{ color: link.color }}
-                        />
-                        <span>{link.text}</span>
-                    </Link>
-                </motion.div>
-            ))}
+                        <Link 
+                            to={link.to}
+                            className="quick-nav-item"
+                        >
+                            <motion.div 
+                                className={`quick-nav-icon-wrapper bg-gradient-to-br ${link.gradient}`}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <FontAwesomeIcon icon={link.icon} className="quick-nav-icon" />
+                            </motion.div>
+                            <div className="quick-nav-content">
+                                <h4>{link.title}</h4>
+                                <p>{link.description}</p>
+                            </div>
+                        </Link>
+                    </motion.div>
+                ))}
+            </div>
         </motion.div>
     );
 };

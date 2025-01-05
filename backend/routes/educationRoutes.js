@@ -5,7 +5,14 @@ const EducationController = require('../controllers/educationController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { validationMiddleware } = require('../middleware/validationMiddleware');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    dest: 'uploads/',
+    storage: storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
+ });
 
 // Education Validation Middleware
 const educationValidation = [

@@ -2,6 +2,22 @@ import axiosInstance from '../api/userAxios';
 
 const API_URL = '/transactions';
 
+// Export individual functions for better tree-shaking
+export const getUserTransactions = async (userId, filters = {}) => {
+    try {
+        const queryParams = new URLSearchParams({
+            userId,
+            ...filters
+        }).toString();
+
+        const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user transactions:', error);
+        throw error;
+    }
+};
+
 const transactionService = {
     getUserTransactions: async (userId, filters = {}) => {
         console.log("Transaction Service - getAllTransactions - userId Received: ", userId);
@@ -45,36 +61,24 @@ const transactionService = {
     }
 };
 
-const getBudgetTransactions = async (budgetId) => {
+export const getBudgetTransactions = async (budgetId) => {
     try {
-        const response = await fetch(`/api/transactions/budget/${budgetId}`, {
-            headers: getAuthHeader()
-        });
-        return handleResponse(response);
+        const response = await axiosInstance.get(`${API_URL}/budget/${budgetId}`);
+        return response.data;
     } catch (error) {
+        console.error('Error fetching budget transactions:', error);
         throw error;
     }
 };
 
-const createBudgetTransaction = async (budgetId, transactionData) => {
+export const createBudgetTransaction = async (budgetId, transactionData) => {
     try {
-        const response = await fetch(`/api/transactions/budget/${budgetId}`, {
-            method: 'POST',
-            headers: {
-                ...getAuthHeader(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(transactionData)
-        });
-        return handleResponse(response);
+        const response = await axiosInstance.post(`${API_URL}/budget/${budgetId}`, transactionData);
+        return response.data;
     } catch (error) {
+        console.error('Error creating budget transaction:', error);
         throw error;
     }
-};
-
-export {
-    getBudgetTransactions,
-    createBudgetTransaction
 };
 
 export default transactionService;

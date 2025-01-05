@@ -1,0 +1,122 @@
+:root {
+  --dashboard-primary: #4f46e5;
+  --dashboard-secondary: #6366f1;
+  --dashboard-success: #10b981;
+  --dashboard-warning: #f59e0b;
+  --dashboard-danger: #ef4444;
+  --dashboard-bg: #f8fafc;
+  --dashboard-card-bg: #ffffff;
+  --dashboard-shadow: rgba(0, 0, 0, 0.1);
+  --loading-gradient: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    padding: 2rem;
+    display: grid;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: var(--dashboard-bg);
+}
+
+/* Analytics Section */
+.dashboard-analytics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Charts Section */
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.chart-container {
+    background: var(--dashboard-card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px -5px var(--dashboard-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -5px var(--dashboard-shadow);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.chart-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Tables and Stocks Section */
+.dashboard-tables-stocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .dashboard-analytics,
+    .dashboard-charts,
+    .dashboard-tables-stocks {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .chart-container {
+        background: #1f2937;
+    }
+
+    .chart-title {
+        color: #f3f4f6;
+    }
+}
+
+.dashboard-loading {
+    animation: pulse 1.5s ease-in-out infinite;
+    background: var(--loading-gradient);
+    background-size: 200% 100%;
+}
+
+.dashboard-error {
+    background: rgba(var(--dashboard-danger), 0.1);
+    border: 1px solid var(--dashboard-danger);
+    padding: 1rem;
+    border-radius: 8px;
+    color: var(--dashboard-danger);
+}
+
+@keyframes pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+}

@@ -1,42 +1,79 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faEllipsisVertical, 
-    faDownload,
-    faRotate
-} from '@fortawesome/free-solid-svg-icons';
+import { faEllipsisVertical, faDownload, faRotate, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import Chart from 'chart.js/auto';
+import { getUserTransactions } from '../../services/transactionService';
+import { getUserCategories } from '../../services/categoryService';
+import './styles/dashboardPieChartStyles.css';
 
-const DashboardPieChart = ({ data }) => {
+const DashboardPieChart = () => {
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
+    const [loading, setLoading] = useState(true);
+    const { user } = useSelector(state => state.auth);
+    const [chartData, setChartData] = useState(null);
 
-    // Mock data - replace with real data from props
-    const mockData = {
-        labels: ['Bitcoin', 'Ethereum', 'Cardano', 'Solana', 'Others'],
-        datasets: [{
-            data: [40, 25, 15, 12, 8],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(153, 102, 255, 0.8)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)'
-            ],
-            borderWidth: 1,
-            hoverOffset: 4
-        }]
+    const generateRandomColor = (index) => {
+        const colors = [
+            'rgba(59, 130, 246, 0.8)',   // Blue
+            'rgba(16, 185, 129, 0.8)',   // Green
+            'rgba(249, 115, 22, 0.8)',   // Orange
+            'rgba(139, 92, 246, 0.8)',   // Purple
+            'rgba(239, 68, 68, 0.8)',    // Red
+            'rgba(245, 158, 11, 0.8)',   // Yellow
+            'rgba(14, 165, 233, 0.8)',   // Light Blue
+            'rgba(168, 85, 247, 0.8)',   // Violet
+            'rgba(234, 88, 12, 0.8)',    // Dark Orange
+            'rgba(22, 163, 74, 0.8)',    // Dark Green
+        ];
+        return colors[index % colors.length];
     };
 
     useEffect(() => {
+        const fetchData = async () => {
+            if (user && user.id) {
+                try {
+                    setLoading(true);
+                    const [transactionsData, categoriesData] = await Promise.all([
+                        getUserTransactions(user.id),
+                        getUserCategories(user.id)
+                    ]);
+
+                    // Process transactions by category
+                    const expensesByCategory = {};
+                    transactionsData.forEach(transaction => {
+                        const category = categoriesData.find(c => c._id === transaction.categoryId);
+                        if (category && transaction.type === 'expense') {
+                            expensesByCategory[category.name] = (expensesByCategory[category.name] || 0) + transaction.amount;
+                        }
+                    });
+
+                    // Prepare chart data
+                    const labels = Object.keys(expensesByCategory);
+                    const data = Object.values(expensesByCategory);
+                    const backgroundColor = labels.map((_, index) => generateRandomColor(index));
+
+                    setChartData({
+                        labels,
+                        data,
+                        backgroundColor
+                    });
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        
+        fetchData();
+    }, [user]);
+
+    useEffect(() => {
+        if (loading || !chartData) return;
+
         if (chartInstance.current) {
             chartInstance.current.destroy();
         }
@@ -45,45 +82,45 @@ const DashboardPieChart = ({ data }) => {
 
         chartInstance.current = new Chart(ctx, {
             type: 'doughnut',
-            data: mockData,
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    data: chartData.data,
+                    backgroundColor: chartData.backgroundColor,
+                    borderWidth: 1,
+                    borderColor: '#ffffff'
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'right',
+                        position: 'bottom',
                         labels: {
                             usePointStyle: true,
                             padding: 20,
                             font: {
                                 size: 12
-                            }
+                            },
+                            color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937'
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        titleFont: {
-                            size: 14
-                        },
-                        bodyFont: {
-                            size: 13
-                        },
                         callbacks: {
-                            label: function(context) {
+                            label: (context) => {
                                 const label = context.label || '';
                                 const value = context.raw || 0;
-                                return `${label}: ${value}%`;
+                                const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD',
+                                    minimumFractionDigits: 0
+                                }).format(value)} (${percentage}%)`;
                             }
                         }
                     }
-                },
-                cutout: '60%',
-                animation: {
-                    animateScale: true,
-                    animateRotate: true,
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
                 }
             }
         });
@@ -93,71 +130,51 @@ const DashboardPieChart = ({ data }) => {
                 chartInstance.current.destroy();
             }
         };
-    }, [data]);
-
-    const containerVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5
-            }
-        }
-    };
-
-    const handleRefresh = () => {
-        // Add refresh logic here
-        console.log('Refreshing chart data...');
-    };
-
-    const handleDownload = () => {
-        const link = document.createElement('a');
-        link.download = 'portfolio-distribution.png';
-        link.href = chartRef.current.toDataURL('image/png');
-        link.click();
-    };
+    }, [chartData, loading]);
 
     return (
         <motion.div 
-            className="chart-container"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
         >
-            <div className="chart-header">
-                <h3 className="chart-title">Portfolio Distribution</h3>
-                <div className="chart-actions">
-                    <button 
-                        className="chart-action-button"
-                        onClick={handleRefresh}
-                        title="Refresh data"
-                    >
-                        <FontAwesomeIcon icon={faRotate} />
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Expenses by Category
+                </h3>
+                <div className="flex items-center space-x-2">
+                    <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                        <FontAwesomeIcon icon={faRotate} className="h-4 w-4" />
                     </button>
-                    <button 
-                        className="chart-action-button"
-                        onClick={handleDownload}
-                        title="Download chart"
-                    >
-                        <FontAwesomeIcon icon={faDownload} />
+                    <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                        <FontAwesomeIcon icon={faDownload} className="h-4 w-4" />
                     </button>
-                    <button 
-                        className="chart-action-button"
-                        title="More options"
-                    >
-                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                    <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                        <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
                     </button>
                 </div>
             </div>
-            <div className="chart-content" style={{ height: '400px' }}>
-                <canvas ref={chartRef}></canvas>
-            </div>
-            <div className="chart-footer">
-                <div className="total-value">
-                    <span className="label">Total Value</span>
-                    <span className="value">$15,420.50</span>
-                </div>
+            
+            <div className="relative h-80">
+                {loading ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="text-blue-500 mb-2"
+                        >
+                            <FontAwesomeIcon icon={faSpinner} className="h-8 w-8" />
+                        </motion.div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading chart data...</p>
+                    </div>
+                ) : !chartData || chartData.labels.length === 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-gray-500 dark:text-gray-400">No expense data available</p>
+                    </div>
+                ) : (
+                    <canvas ref={chartRef} />
+                )}
             </div>
         </motion.div>
     );

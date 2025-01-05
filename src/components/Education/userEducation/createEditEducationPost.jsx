@@ -20,45 +20,26 @@ const MenuBar = ({ editor, onImageUpload }) => {
     const handleImageUpload = async (file) => {
         if (!file) return;
         setIsUploadingImage(true);
-
+    
         try {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                throw new Error('Please select an image file');
-            }
-
-            // Validate and compress image
-            if (file.size > MAX_FILE_SIZE) {
-                const options = {
-                    maxSizeMB: 5,
-                    maxWidthOrHeight: MAX_DIMENSION,
-                    useWebWorker: true,
-                };
-                file = await imageCompression(file, options);
-            }
-
-            // Convert to base64 and insert into editor
+            const compressedFile = await imageCompression(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: MAX_DIMENSION,
+                useWebWorker: true
+            });
+            
             const reader = new FileReader();
             reader.onload = () => {
                 if (editor) {
-                    editor
-                        .chain()
-                        .focus()
-                        .setImage({ src: reader.result })
-                        .run();
+                    editor.chain().focus().setImage({ src: reader.result }).run();
                 }
             };
-            reader.readAsDataURL(file);
-
+            reader.readAsDataURL(compressedFile);
         } catch (error) {
             console.error('Image upload failed:', error);
-            alert(error.message || 'Failed to upload image');
+            setError('Image upload failed: ' + error.message);
         } finally {
             setIsUploadingImage(false);
-            // Reset input to allow selecting same file again
-            if (imageInputRef.current) {
-                imageInputRef.current.value = '';
-            }
         }
     };
 

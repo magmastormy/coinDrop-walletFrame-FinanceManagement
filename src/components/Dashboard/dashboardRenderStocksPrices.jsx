@@ -1,191 +1,158 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faArrowTrendUp,
     faArrowTrendDown,
-    faStar,
-    faEllipsisVertical
+    faSpinner,
+    faRotate
 } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
+import './styles/dashboardRenderStocksPricesStyles.css';
+
+const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
+const CRYPTO_IDS = ['bitcoin', 'ethereum', 'binancecoin', 'ripple', 'cardano'];
 
 const DashboardRenderStocksPrices = () => {
-    // Mock data - replace with real API data
-    const mockStocks = [
-        {
-            id: 1,
-            symbol: 'BTC',
-            name: 'Bitcoin',
-            price: 45230.50,
-            change: 2.5,
-            volume: '1.2B',
-            marketCap: '870.5B',
-            favorite: true
-        },
-        {
-            id: 2,
-            symbol: 'ETH',
-            name: 'Ethereum',
-            price: 2350.75,
-            change: -1.2,
-            volume: '800M',
-            marketCap: '280.3B',
-            favorite: true
-        },
-        {
-            id: 3,
-            symbol: 'ADA',
-            name: 'Cardano',
-            price: 1.25,
-            change: 5.8,
-            volume: '150M',
-            marketCap: '40.1B',
-            favorite: false
-        },
-        {
-            id: 4,
-            symbol: 'SOL',
-            name: 'Solana',
-            price: 98.45,
-            change: -0.5,
-            volume: '250M',
-            marketCap: '35.2B',
-            favorite: false
-        },
-        {
-            id: 5,
-            symbol: 'DOT',
-            name: 'Polkadot',
-            price: 18.30,
-            change: 3.2,
-            volume: '120M',
-            marketCap: '18.5B',
-            favorite: false
-        }
-    ];
+    const [cryptoData, setCryptoData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
-    const [stocks, setStocks] = useState(mockStocks);
-    const [sortConfig, setSortConfig] = useState({
-        key: null,
-        direction: 'ascending'
-    });
+    const fetchCryptoData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-    const handleSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
+            const response = await axios.get(`${COINGECKO_API_URL}/simple/price`, {
+                params: {
+                    ids: CRYPTO_IDS.join(','),
+                    vs_currencies: 'usd',
+                    include_24hr_change: true,
+                    include_last_updated_at: true
+                }
+            });
 
-    const handleFavorite = (id) => {
-        setStocks(stocks.map(stock => 
-            stock.id === id ? { ...stock, favorite: !stock.favorite } : stock
-        ));
-    };
+            const formattedData = CRYPTO_IDS.map(id => ({
+                id,
+                name: id.charAt(0).toUpperCase() + id.slice(1),
+                price: response.data[id].usd,
+                priceChange: response.data[id].usd_24h_change,
+                lastUpdated: new Date(response.data[id].last_updated_at * 1000)
+            }));
 
-    const sortedStocks = React.useMemo(() => {
-        if (!sortConfig.key) return stocks;
-
-        return [...stocks].sort((a, b) => {
-            if (a[sortConfig.key] < b[sortConfig.key]) {
-                return sortConfig.direction === 'ascending' ? -1 : 1;
-            }
-            if (a[sortConfig.key] > b[sortConfig.key]) {
-                return sortConfig.direction === 'ascending' ? 1 : -1;
-            }
-            return 0;
-        });
-    }, [stocks, sortConfig]);
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
+            setCryptoData(formattedData);
+            setLastUpdated(new Date());
+        } catch (err) {
+            setError('Failed to fetch cryptocurrency data');
+            console.error('Error fetching crypto data:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const rowVariants = {
-        hidden: { opacity: 0, x: -20 },
-        visible: {
-            opacity: 1,
-            x: 0,
-            transition: {
-                duration: 0.3
-            }
-        }
-    };
+    useEffect(() => {
+        fetchCryptoData();
+        
+        // Refresh data every 5 minutes
+        const interval = setInterval(fetchCryptoData, 5 * 60 * 1000);
+        
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <motion.div 
-            className="table-container"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="crypto-prices-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            <div className="table-header">
-                <h3 className="table-title">Market Overview</h3>
-                <div className="table-actions">
-                    <button className="table-action-button">
-                        <FontAwesomeIcon icon={faEllipsisVertical} />
-                    </button>
+            <div className="crypto-header">
+                <h3>Cryptocurrency Prices</h3>
+                <div className="crypto-actions">
+                    {lastUpdated && (
+                        <span className="last-updated">
+                            Last updated: {lastUpdated.toLocaleTimeString()}
+                        </span>
+                    )}
+                    <motion.button
+                        className="refresh-button"
+                        onClick={fetchCryptoData}
+                        disabled={loading}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <FontAwesomeIcon 
+                            icon={loading ? faSpinner : faRotate} 
+                            className={loading ? 'fa-spin' : ''} 
+                        />
+                    </motion.button>
                 </div>
             </div>
-            <div className="table-responsive">
-                <table className="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th onClick={() => handleSort('symbol')} style={{ cursor: 'pointer' }}>Symbol</th>
-                            <th onClick={() => handleSort('price')} style={{ cursor: 'pointer' }}>Price</th>
-                            <th onClick={() => handleSort('change')} style={{ cursor: 'pointer' }}>24h Change</th>
-                            <th onClick={() => handleSort('volume')} style={{ cursor: 'pointer' }}>Volume</th>
-                            <th onClick={() => handleSort('marketCap')} style={{ cursor: 'pointer' }}>Market Cap</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedStocks.map((stock) => (
-                            <motion.tr 
-                                key={stock.id}
-                                variants={rowVariants}
-                            >
-                                <td>
-                                    <button 
-                                        className={`favorite-button ${stock.favorite ? 'active' : ''}`}
-                                        onClick={() => handleFavorite(stock.id)}
-                                    >
-                                        <FontAwesomeIcon icon={faStar} />
-                                    </button>
-                                </td>
-                                <td>
-                                    <div className="symbol-cell">
-                                        <span className="symbol">{stock.symbol}</span>
-                                        <span className="name">{stock.name}</span>
-                                    </div>
-                                </td>
-                                <td>${stock.price.toLocaleString()}</td>
-                                <td className={stock.change >= 0 ? 'positive' : 'negative'}>
-                                    <FontAwesomeIcon 
-                                        icon={stock.change >= 0 ? faArrowTrendUp : faArrowTrendDown} 
-                                        className="trend-icon"
+
+            {error ? (
+                <motion.div 
+                    className="error-message"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {error}
+                </motion.div>
+            ) : (
+                <div className="crypto-list">
+                    {cryptoData.map((crypto, index) => (
+                        <motion.div
+                            key={crypto.id}
+                            className="crypto-item"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ 
+                                duration: 0.3,
+                                delay: index * 0.1,
+                                ease: "easeOut"
+                            }}
+                        >
+                            <div className="crypto-info">
+                                <div className="crypto-name">
+                                    <img 
+                                        src={`https://assets.coingecko.com/coins/images/1/thumb/${crypto.id}.png`}
+                                        alt={crypto.name}
+                                        className="crypto-icon"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                        }}
                                     />
-                                    {stock.change}%
-                                </td>
-                                <td>${stock.volume}</td>
-                                <td>${stock.marketCap}</td>
-                                <td>
-                                    <button className="action-button">
-                                        <FontAwesomeIcon icon={faEllipsisVertical} />
-                                    </button>
-                                </td>
-                            </motion.tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                    <span>{crypto.name}</span>
+                                </div>
+                                <motion.div 
+                                    className="crypto-price"
+                                    initial={false}
+                                    animate={{ scale: [1.1, 1] }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    ${crypto.price.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    })}
+                                </motion.div>
+                            </div>
+                            <motion.div 
+                                className={`crypto-change ${crypto.priceChange >= 0 ? 'positive' : 'negative'}`}
+                                initial={false}
+                                animate={{ scale: [1.1, 1] }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <FontAwesomeIcon 
+                                    icon={crypto.priceChange >= 0 ? faArrowTrendUp : faArrowTrendDown} 
+                                    className="trend-icon"
+                                />
+                                {Math.abs(crypto.priceChange).toFixed(2)}%
+                            </motion.div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
         </motion.div>
     );
 };

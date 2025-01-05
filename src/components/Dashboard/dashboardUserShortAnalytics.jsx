@@ -1,132 +1,178 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faArrowTrendUp,
-    faArrowTrendDown,
-    faCoins,
-    faChartPie,
+    faWallet,
     faChartLine,
-    faWallet
+    faChartPie,
+    faArrowTrendUp,
+    faSpinner
 } from '@fortawesome/free-solid-svg-icons';
+import { getUserTransactions } from '../../services/transactionService';
+import walletService from '../../services/walletService';
+import { getUserBudgets } from '../../services/budgetService';
+import './styles/dashboardUserShortAnalyticsStyles.css';
 
-const DashboardUserShortAnalytics = ({ analytics }) => {
-    // Mock data - replace with real data from props or API
-    const data = {
-        totalBalance: 15420.50,
-        totalProfit: 2340.75,
-        profitPercentage: 17.9,
-        activeInvestments: 8,
-        portfolioDiversity: 75, // percentage of portfolio spread across different assets
-        monthlyGrowth: 8.5,
-        recentTransactions: 12
+const DashboardUserShortAnalytics = () => {
+    const [loading, setLoading] = useState(true);
+    const [analytics, setAnalytics] = useState({
+        totalBalance: 0,
+        totalWallets: 0,
+        monthlyExpenses: 0,
+        savingsRate: 0,
+        budgetAdherence: 0
+    });
+
+    const { user } = useSelector(state => state.auth);
+
+    useEffect(() => {
+        const fetchAnalytics = async () => {
+            if (user && user.id) {
+                try {
+                    setLoading(true);
+
+                    // walletAnalytics
+                    const [walletResponse, budgetResponse, transactionResponse] = await Promise.all([
+                        walletService.getAllWallets(user.id),
+                        getUserBudgets(user.id),
+                        getUserTransactions(user.id)
+                    ]);
+                
+                    console.log("Dashboard walletresponse: ", walletResponse);
+                    console.log("Dashboard budgetresponse: ", budgetResponse);
+                    console.log("Dashboard transactionresponse: ", transactionResponse);
+                
+                    const totalBalance = walletResponse.totalBalance;
+                    setAnalytics({ totalBalance });
+                    const totalWallets = walletResponse.totalWallets;
+                    setAnalytics({totalWallets});
+
+                    // Calculate monthly expenses
+                    const currentMonth = new Date().getMonth();
+                    const currentMonthTransactions = transactions.data.filter(t => {
+                        const transactionMonth = new Date(t.date).getMonth();
+                        return transactionMonth === currentMonth && t.type === 'expense';
+                    });
+
+                    const monthlyExpenses = currentMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+                    // Calculate savings rate
+                    const monthlyIncome = transactions.data.filter(t => {
+                        const transactionMonth = new Date(t.date).getMonth();
+                        return transactionMonth === currentMonth && t.type === 'income';
+                    }).reduce((sum, t) => sum + t.amount, 0);
+
+                    const savingsRate = monthlyIncome > 0 
+                        ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 
+                        : 0;
+
+                    // Calculate budget adherence
+                    const budgetAdherence = budgets.length > 0 
+                        ? budgets.reduce((acc, budget) => {
+                            const spent = currentMonthTransactions
+                                .filter(t => t.categoryId === budget.categoryId)
+                                .reduce((sum, t) => sum + t.amount, 0);
+                            return acc + (spent <= budget.amount ? 1 : 0);
+                        }, 0) / budgets.length * 100
+                        : 0;
+
+                    setAnalytics({
+                        totalBalance,
+                        monthlyExpenses,
+                        savingsRate: Math.round(savingsRate),
+                        budgetAdherence: Math.round(budgetAdherence)
+                    });
+                } catch (error) {
+                    console.error('Error fetching analytics:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchAnalytics();
+    }, [user]);
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
     };
 
-    const metrics = [
+    const analyticsItems = [
         {
             title: 'Total Balance',
-            value: `$${data.totalBalance.toLocaleString()}`,
+            value: formatCurrency(analytics.totalBalance),
             icon: faWallet,
-            color: '#3b82f6',
-            trend: 'up',
-            trendValue: '+2.5%'
+            color: 'bg-blue-500'
         },
         {
-            title: 'Total Profit',
-            value: `$${data.totalProfit.toLocaleString()}`,
-            icon: faCoins,
-            color: '#10b981',
-            trend: 'up',
-            trendValue: `+${data.profitPercentage}%`
-        },
-        {
-            title: 'Portfolio Diversity',
-            value: `${data.portfolioDiversity}%`,
-            icon: faChartPie,
-            color: '#8b5cf6',
-            trend: 'neutral'
-        },
-        {
-            title: 'Monthly Growth',
-            value: `${data.monthlyGrowth}%`,
+            title: 'Monthly Expenses',
+            value: formatCurrency(analytics.monthlyExpenses),
             icon: faChartLine,
-            color: '#ef4444',
-            trend: 'up',
-            trendValue: '+3.2%'
+            color: 'bg-red-500'
+        },
+        {
+            title: 'Savings Rate',
+            value: `${analytics.savingsRate}%`,
+            icon: faChartPie,
+            color: 'bg-green-500'
+        },
+        {
+            title: 'Budget Adherence',
+            value: `${analytics.budgetAdherence}%`,
+            icon: faArrowTrendUp,
+            color: 'bg-purple-500'
         }
     ];
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.3,
-                ease: "easeOut"
-            }
-        }
-    };
-
-    const getTrendIcon = (trend) => {
-        if (trend === 'up') return faArrowTrendUp;
-        if (trend === 'down') return faArrowTrendDown;
-        return null;
-    };
-
-    const getTrendClass = (trend) => {
-        if (trend === 'up') return 'trend-up';
-        if (trend === 'down') return 'trend-down';
-        return '';
-    };
-
     return (
-        <motion.div 
-            className="analytics-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-        >
-            {metrics.map((metric, index) => (
-                <motion.div
-                    key={metric.title}
-                    className="analytics-card"
-                    variants={itemVariants}
-                    whileHover={{ 
-                        scale: 1.02,
-                        transition: { duration: 0.2 }
-                    }}
-                >
-                    <div className="analytics-card-header">
-                        <FontAwesomeIcon 
-                            icon={metric.icon} 
-                            className="analytics-icon"
-                            style={{ color: metric.color }}
-                        />
-                        <h3>{metric.title}</h3>
-                    </div>
-                    <div className="analytics-card-content">
-                        <span className="analytics-value">{metric.value}</span>
-                        {metric.trend && metric.trendValue && (
-                            <div className={`trend ${getTrendClass(metric.trend)}`}>
-                                <FontAwesomeIcon icon={getTrendIcon(metric.trend)} />
-                                <span>{metric.trendValue}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {loading ? (
+                <div className="col-span-4 flex justify-center items-center p-8">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="text-2xl text-blue-500"
+                    >
+                        <FontAwesomeIcon icon={faSpinner} />
+                    </motion.div>
+                </div>
+            ) : (
+                analyticsItems.map((item, index) => (
+                    <motion.div
+                        key={item.title}
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                    {item.title}
+                                </h3>
+                                <div className="mt-2 flex items-baseline">
+                                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                                        {item.value}
+                                    </p>
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </motion.div>
-            ))}
-        </motion.div>
+                            <div className={`p-3 rounded-full ${item.color}`}>
+                                <FontAwesomeIcon 
+                                    icon={item.icon} 
+                                    className="h-6 w-6 text-white"
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+                ))
+            )}
+        </div>
     );
 };
 
