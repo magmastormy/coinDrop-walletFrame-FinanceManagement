@@ -1,0 +1,9 @@
+.savings-account-goal-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.savings-accounts, .savings-goals {
+    display: flex;
+    flex-wrap: wrap;
+}
