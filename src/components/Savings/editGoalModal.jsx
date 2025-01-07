@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { useDispatch } from 'react-redux';
 import { updateSavingsGoal } from '../../slices/savingsGoalSlice';
 import savingsGoalService from '../../services/savingsGoalService';
+import dayjs from 'dayjs';
 
 const EditGoalModal = ({ open, onClose, goal }) => {
     const dispatch = useDispatch();
@@ -24,7 +25,7 @@ const EditGoalModal = ({ open, onClose, goal }) => {
                 name: goal.name || '',
                 targetAmount: goal.targetAmount || '',
                 currentAmount: goal.currentAmount || '',
-                targetDate: goal.targetDate ? new Date(goal.targetDate) : null,
+                targetDate: goal.targetDate ? dayjs(goal.targetDate) : null,
                 description: goal.description || ''
             });
         }
@@ -58,7 +59,7 @@ const EditGoalModal = ({ open, onClose, goal }) => {
             setError('Target date is required');
             return false;
         }
-        if (new Date(formData.targetDate) < new Date()) {
+        if (formData.targetDate.isBefore(dayjs())) {
             setError('Target date must be in the future');
             return false;
         }
@@ -115,7 +116,7 @@ const EditGoalModal = ({ open, onClose, goal }) => {
                     fullWidth
                     margin="normal"
                 />
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DatePicker
                         label="Target Date"
                         value={formData.targetDate}
@@ -123,7 +124,7 @@ const EditGoalModal = ({ open, onClose, goal }) => {
                         renderInput={(params) => (
                             <TextField {...params} fullWidth margin="normal" />
                         )}
-                        minDate={new Date()}
+                        minDate={dayjs()}
                     />
                 </LocalizationProvider>
                 <TextField

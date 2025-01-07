@@ -28,6 +28,7 @@
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.4.7",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
     "dompurify": "^3.2.3",
     "framer-motion": "^11.14.4",
     "react": "^18.3.1",

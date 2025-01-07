@@ -1,66 +1,66 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { 
+    Dialog, 
+    DialogTitle, 
+    DialogContent, 
+    DialogActions, 
+    Button, 
+    TextField 
+} from '@mui/material';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker } from '@mui/x-date-pickers';
 import { savingsGoalService } from '../../services/savingsGoalService';
 import { addSavingsGoal, setError } from '../../slices/savingsGoalSlice';
+import dayjs from 'dayjs';
 import './styles/newGoalDialogStyles.css';
 
-const NewGoalDialog = ({ open, onClose, onComplete }) => {
+const NewGoalDialog = ({ open, onClose }) => {
     const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
-    
-    const [goalData, setGoalData] = useState({
+    const { user } = useSelector(state => state.auth);
+    const [formError, setFormError] = useState('');
+    const [formData, setFormData] = useState({
         name: '',
         targetAmount: '',
-        deadline: null,
+        currentAmount: '',
+        targetDate: null,
         description: ''
     });
-    const [error, setLocalError] = useState('');
 
-    const handleChange = (field) => (event) => {
-        setGoalData({
-            ...goalData,
-            [field]: event.target.value
-        });
-    };
-
-    const handleDateChange = (date) => {
-        setGoalData({
-            ...goalData,
-            deadline: date
-        });
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const validateForm = () => {
-        if (!goalData.name.trim()) {
-            setLocalError('Please enter a goal name');
+        if (!formData.name.trim()) {
+            setFormError('Name is required');
             return false;
         }
-        
-        const amount = parseFloat(goalData.targetAmount);
-        if (isNaN(amount) || amount <= 0) {
-            setLocalError('Please enter a valid target amount');
+        if (!formData.targetAmount || formData.targetAmount <= 0) {
+            setFormError('Target amount must be greater than 0');
             return false;
         }
-
-        if (!goalData.deadline) {
-            setLocalError('Please select a deadline');
+        if (!formData.currentAmount || formData.currentAmount < 0) {
+            setFormError('Current amount cannot be negative');
             return false;
         }
-
-        if (goalData.deadline < new Date()) {
-            setLocalError('Deadline cannot be in the past');
+        if (!formData.targetDate) {
+            setFormError('Target date is required');
             return false;
         }
-
+        if (formData.targetDate.isBefore(dayjs())) {
+            setFormError('Target date must be in the future');
+            return false;
+        }
+        if (Number(formData.currentAmount) > Number(formData.targetAmount)) {
+            setFormError('Current amount cannot be greater than target amount');
+            return false;
+        }
         return true;
     };
 
@@ -68,16 +68,14 @@ const NewGoalDialog = ({ open, onClose, onComplete }) => {
         if (!validateForm()) return;
 
         try {
-            const newGoal = {
-                ...goalData,
-                userId: user._id,
-                currentAmount: 0,
-                progress: 0
+            const goalData = {
+                ...formData,
+                userId: user.id,
+                targetDate: formData.targetDate.toISOString()
             };
 
-            const response = await savingsGoalService.createSavingsGoal(newGoal);
-            dispatch(addSavingsGoal(response));
-            onComplete();
+            const response = await savingsGoalService.createSavingsGoal(goalData);
+            dispatch(addSavingsGoal(response.data));
             onClose();
         } catch (err) {
             dispatch(setError(err.message));
@@ -85,73 +83,72 @@ const NewGoalDialog = ({ open, onClose, onComplete }) => {
     };
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={onClose}
-            className="new-goal-dialog"
-            aria-labelledby="new-goal-dialog-title"
-        >
-            <DialogTitle id="new-goal-dialog-title">
-                Create New Savings Goal
-            </DialogTitle>
+        <Dialog open={open} onClose={onClose} className="new-goal-dialog">
+            <DialogTitle>Create New Savings Goal</DialogTitle>
             <DialogContent>
-                <TextField
-                    fullWidth
-                    margin="normal"
-                    label="Goal Name"
-                    value={goalData.name}
-                    onChange={handleChange('name')}
-                    error={error.includes('name')}
-                />
-
-                <TextField
-                    fullWidth
-                    margin="normal"
-                    label="Target Amount"
-                    type="number"
-                    value={goalData.targetAmount}
-                    onChange={handleChange('targetAmount')}
-                    error={error.includes('amount')}
-                    InputProps={{
-                        inputProps: { 
-                            min: 0,
-                            step: "0.01"
-                        }
-                    }}
-                />
-
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DatePicker
-                        label="Deadline"
-                        value={goalData.deadline}
-                        onChange={handleDateChange}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                fullWidth
-                                margin="normal"
-                                error={error.includes('deadline')}
-                            />
-                        )}
-                        minDate={new Date()}
-                    />
-                </LocalizationProvider>
-
-                <TextField
-                    fullWidth
-                    margin="normal"
-                    label="Description (Optional)"
-                    multiline
-                    rows={3}
-                    value={goalData.description}
-                    onChange={handleChange('description')}
-                />
-
-                {error && (
+                {formError && (
                     <div className="error-message">
-                        {error}
+                        {formError}
                     </div>
                 )}
+                <TextField
+                    name="name"
+                    label="Goal Name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    name="targetAmount"
+                    label="Target Amount"
+                    type="number"
+                    value={formData.targetAmount}
+                    onChange={handleInputChange}
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                        startAdornment: <span>$</span>
+                    }}
+                />
+                <TextField
+                    name="currentAmount"
+                    label="Current Amount"
+                    type="number"
+                    value={formData.currentAmount}
+                    onChange={handleInputChange}
+                    fullWidth
+                    margin="normal"
+                    InputProps={{
+                        startAdornment: <span>$</span>
+                    }}
+                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                        label="Target Date"
+                        value={formData.targetDate}
+                        onChange={(newValue) => {
+                            setFormData(prev => ({
+                                ...prev,
+                                targetDate: newValue
+                            }));
+                        }}
+                        renderInput={(params) => (
+                            <TextField {...params} fullWidth margin="normal" />
+                        )}
+                        minDate={dayjs()}
+                    />
+                </LocalizationProvider>
+                <TextField
+                    name="description"
+                    label="Description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    fullWidth
+                    margin="normal"
+                    multiline
+                    rows={4}
+                />
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} color="primary">

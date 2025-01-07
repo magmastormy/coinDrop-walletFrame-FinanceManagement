@@ -1,0 +1,117 @@
+.savings-goal-manager {
+    padding: 2rem;
+    min-height: 100vh;
+    background-color: var(--background-color);
+}
+
+.savings-goal-manager.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 300px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    margin: 2rem auto;
+    max-width: 600px;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+}
+
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.goal-card {
+    background-color: var(--card-background);
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+    transition: transform 0.2s ease-in-out;
+}
+
+.goal-card:hover {
+    transform: translateY(-2px);
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.goal-progress {
+    position: relative;
+    height: 8px;
+    background-color: var(--background-color);
+    border-radius: 4px;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 4px;
+    transition: width 0.3s ease-in-out;
+}
+
+.progress-text {
+    position: absolute;
+    right: 0;
+    top: -20px;
+}
+
+.goal-amounts {
+    margin: 1rem 0;
+}
+
+.goal-description {
+    margin: 1rem 0;
+    color: var(--text-color-secondary);
+}
+
+.goal-deadline {
+    display: block;
+    margin-top: 1rem;
+    color: var(--text-color-secondary);
+}
+
+.error-message {
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: var(--error-background);
+    border-radius: 4px;
+    color: var(--error-color);
+}
+
+@media (max-width: 768px) {
+    .savings-goal-manager {
+        padding: 1rem;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .goals-grid {
+        grid-template-columns: 1fr;
+    }
+}
