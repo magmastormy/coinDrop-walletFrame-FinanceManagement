@@ -13,6 +13,7 @@ import {
 import { getUserTransactions } from '../../services/transactionService';
 import { getUserCategories } from '../../services/categoryService';
 import './styles/dashboardTablesStyles.css';
+
 const DashboardTables = () => {
     const [transactions, setTransactions] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -31,10 +32,13 @@ const DashboardTables = () => {
                         getUserCategories(user.id)
                     ]);
 
-                    setTransactions(transactionsResponse.data);
-                    setCategories(categoriesResponse);
+                    // Ensure we have valid data before setting state
+                    setTransactions(transactionsResponse?.data || []);
+                    setCategories(categoriesResponse || []);
                 } catch (error) {
                     console.error('Error fetching transactions:', error);
+                    setTransactions([]);
+                    setCategories([]);
                 } finally {
                     setLoading(false);
                 }
@@ -45,35 +49,64 @@ const DashboardTables = () => {
     }, [user]);
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        try {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid Date';
+        }
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2
-        }).format(amount);
+        try {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(amount || 0);
+        } catch (error) {
+            console.error('Error formatting currency:', error);
+            return '$0.00';
+        }
     };
 
     const getCategoryName = (categoryId) => {
-        const category = categories.find(c => c._id === categoryId);
-        return category ? category.name : 'Uncategorized';
+        try {
+            const category = categories.find(c => c._id === categoryId);
+            return category ? category.name : 'Uncategorized';
+        } catch (error) {
+            console.error('Error getting category name:', error);
+            return 'Uncategorized';
+        }
     };
 
-    const filteredTransactions = transactions
-        .filter(transaction => {
-            const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                getCategoryName(transaction.categoryId).toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesFilter = filterType === 'all' || transaction.type === filterType;
-            return matchesSearch && matchesFilter;
-        })
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 10); // Show only last 10 transactions
+    // Safely filter and sort transactions
+    const getFilteredTransactions = () => {
+        try {
+            if (!Array.isArray(transactions)) return [];
+            
+            return transactions
+                .filter(transaction => {
+                    if (!transaction) return false;
+                    
+                    const matchesSearch = (transaction.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        getCategoryName(transaction.categoryId).toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesFilter = filterType === 'all' || transaction.type === filterType;
+                    return matchesSearch && matchesFilter;
+                })
+                .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+                .slice(0, 10); // Show only last 10 transactions
+        } catch (error) {
+            console.error('Error filtering transactions:', error);
+            return [];
+        }
+    };
+
+    const filteredTransactions = getFilteredTransactions();
 
     return (
         <motion.div

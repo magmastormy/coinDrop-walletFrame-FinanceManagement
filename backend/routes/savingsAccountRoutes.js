@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const SavingsAccountController = require('../controllers/savingsAccountController');
-const { authenticate } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
-router.use(authenticate);
+router.use(authMiddleware);
 
 // Get all savings accounts for a user
 router.get('/', SavingsAccountController.getUserSavingsAccounts);

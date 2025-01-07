@@ -18,6 +18,8 @@ const Sidebar = ({ isAuthenticated }) => {
         {name: 'Profile', link: '/profile', icon: faUser},
         {name: 'Categories', link: '/category', icon: faChartPie},
         {name: 'Education', link: '/education', icon: faBookOpen},
+        {name: 'Savings Goals', link: '/saving-goal', icon: faSackDollar},
+        {name: 'Savings Accounts', link: '/saving-account', icon: faSackDollar},
     ];
 
     return (

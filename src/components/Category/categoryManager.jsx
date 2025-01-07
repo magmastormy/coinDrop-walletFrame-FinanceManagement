@@ -187,7 +187,14 @@ const CategoryManager = () => {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.2 }}
                         >
-                            <span className="category-name">{category.name}</span>
+                            <span className="category-name">
+                                {category.name}
+                                {category.name === "None" && (
+                                    <span className="default-badge" title="Default category - cannot be deleted">
+                                        Default
+                                    </span>
+                                )}
+                            </span>
                             <div className="category-actions">
                                 {deleteConfirm === category._id ? (
                                     <div className="delete-confirm">
@@ -196,6 +203,7 @@ const CategoryManager = () => {
                                             onClick={() => handleDeleteCategory(category._id)}
                                             className="btn-danger"
                                             aria-label="Confirm delete category"
+                                            disabled={category.name === "None"}
                                         >
                                             <FontAwesomeIcon icon={faCheck} />
                                         </button>
@@ -211,15 +219,17 @@ const CategoryManager = () => {
                                     <>
                                         <button 
                                             onClick={() => handleEditClick(category)}
-                                            className="btn-secondary"
-                                            aria-label={`Edit category ${category.name}`}
+                                            className="btn-edit"
+                                            aria-label="Edit category"
                                         >
                                             <FontAwesomeIcon icon={faEdit} />
                                         </button>
                                         <button 
                                             onClick={() => setDeleteConfirm(category._id)}
-                                            className="btn-danger"
-                                            aria-label={`Delete category ${category.name}`}
+                                            className="btn-delete"
+                                            aria-label="Delete category"
+                                            disabled={category.name === "None"}
+                                            title={category.name === "None" ? "Cannot delete default category" : "Delete category"}
                                         >
                                             <FontAwesomeIcon icon={faTrash} />
                                         </button>

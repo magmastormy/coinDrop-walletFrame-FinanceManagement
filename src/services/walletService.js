@@ -11,10 +11,10 @@ const walletService = {
             
             console.log("Wallet Service - getAllWallets - userId Received: ", userId);
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-            return response; 
+            return response.data || []; 
         } catch (error) {
             console.error('Wallet Service - Error fetching wallets:', error);
-            throw error;
+            return []; 
         }
     },
     getWalletBudgets: async (walletId) => {

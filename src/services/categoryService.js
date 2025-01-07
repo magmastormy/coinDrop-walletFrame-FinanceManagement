@@ -58,8 +58,10 @@ const categoryService = {
 
     deleteCategory: async (id) => {
         try {
-            if (!id) {
-                throw new Error('Category ID is required');
+            // First fetch the category to check if it's the default "None" category
+            const category = await axiosInstance.get(`${API_URL}/${id}`);
+            if (category.data.name === "None") {
+                throw new Error("Cannot delete the default 'None' category");
             }
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
             return response.data;

@@ -32,36 +32,36 @@ const DashboardUserShortAnalytics = () => {
                 try {
                     setLoading(true);
 
-                    // walletAnalytics
+                    // Fetch all data
                     const [walletResponse, budgetResponse, transactionResponse] = await Promise.all([
                         walletService.getAllWallets(user.id),
                         getUserBudgets(user.id),
                         getUserTransactions(user.id)
                     ]);
-                
-                    console.log("Dashboard walletresponse: ", walletResponse);
-                    console.log("Dashboard budgetresponse: ", budgetResponse);
-                    console.log("Dashboard transactionresponse: ", transactionResponse);
-                
-                    const totalBalance = walletResponse.totalBalance;
-                    setAnalytics({ totalBalance });
-                    const totalWallets = walletResponse.totalWallets;
-                    setAnalytics({totalWallets});
+
+                    // Initialize variables with safe defaults
+                    const wallets = walletResponse?.data || [];
+                    const budgets = budgetResponse?.data || [];
+                    const transactions = transactionResponse?.data || [];
+
+                    // Calculate total balance from wallets
+                    const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
+                    const totalWallets = wallets.length;
 
                     // Calculate monthly expenses
                     const currentMonth = new Date().getMonth();
-                    const currentMonthTransactions = transactions.data.filter(t => {
+                    const currentMonthTransactions = transactions.filter(t => {
                         const transactionMonth = new Date(t.date).getMonth();
                         return transactionMonth === currentMonth && t.type === 'expense';
                     });
 
-                    const monthlyExpenses = currentMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+                    const monthlyExpenses = currentMonthTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
                     // Calculate savings rate
-                    const monthlyIncome = transactions.data.filter(t => {
+                    const monthlyIncome = transactions.filter(t => {
                         const transactionMonth = new Date(t.date).getMonth();
                         return transactionMonth === currentMonth && t.type === 'income';
-                    }).reduce((sum, t) => sum + t.amount, 0);
+                    }).reduce((sum, t) => sum + (t.amount || 0), 0);
 
                     const savingsRate = monthlyIncome > 0 
                         ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 
@@ -72,19 +72,28 @@ const DashboardUserShortAnalytics = () => {
                         ? budgets.reduce((acc, budget) => {
                             const spent = currentMonthTransactions
                                 .filter(t => t.categoryId === budget.categoryId)
-                                .reduce((sum, t) => sum + t.amount, 0);
+                                .reduce((sum, t) => sum + (t.amount || 0), 0);
                             return acc + (spent <= budget.amount ? 1 : 0);
                         }, 0) / budgets.length * 100
                         : 0;
 
                     setAnalytics({
                         totalBalance,
+                        totalWallets,
                         monthlyExpenses,
                         savingsRate: Math.round(savingsRate),
                         budgetAdherence: Math.round(budgetAdherence)
                     });
                 } catch (error) {
                     console.error('Error fetching analytics:', error);
+                    // Set safe default values on error
+                    setAnalytics({
+                        totalBalance: 0,
+                        totalWallets: 0,
+                        monthlyExpenses: 0,
+                        savingsRate: 0,
+                        budgetAdherence: 0
+                    });
                 } finally {
                     setLoading(false);
                 }
@@ -111,6 +120,12 @@ const DashboardUserShortAnalytics = () => {
             color: 'bg-blue-500'
         },
         {
+            title: 'Total Wallets',
+            value: analytics.totalWallets,
+            icon: faWallet,
+            color: 'bg-blue-500'
+        },
+        {
             title: 'Monthly Expenses',
             value: formatCurrency(analytics.monthlyExpenses),
             icon: faChartLine,
@@ -131,9 +146,9 @@ const DashboardUserShortAnalytics = () => {
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {loading ? (
-                <div className="col-span-4 flex justify-center items-center p-8">
+                <div className="col-span-5 flex justify-center items-center p-8">
                     <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}

@@ -12,7 +12,8 @@ import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
 import Education from './components/Education/educationManager';
 import UserEducation from './components/Education/userEducation/userEducationManager';
-
+import SavingGoal from './components/Savings/savingsGoalManager';
+import SavingAccount from './components/Savings/savingsAccountManager';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
@@ -78,6 +79,18 @@ const AppRoutes = () => {
                 <Route path="/user-education" element={
                     <ProtectedRoute>
                         <UserEducation />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/saving-goal" element={
+                    <ProtectedRoute>
+                        <SavingGoal />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/saving-account" element={
+                    <ProtectedRoute>
+                        <SavingAccount />
                     </ProtectedRoute>
                 } />
                 

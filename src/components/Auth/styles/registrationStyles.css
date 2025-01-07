@@ -68,6 +68,15 @@
 
 .form-field {
     position: relative;
+    margin-bottom: 1rem;
+}
+
+.password-requirements {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.2;
 }
 
 .form-input {

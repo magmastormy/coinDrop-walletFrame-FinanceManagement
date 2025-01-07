@@ -53,9 +53,16 @@ class EducationController {
 
     static async getEducations(req, res) {
         try {
-            const educations = await Education.find().populate('author', 'username');
+            const userId = req.user.userId || req.user._id || req.query.userId;
+            const query = req.query.all === 'true' ? {} : { author: userId };
+            
+            const educations = await Education.find(query)
+                .populate('author', 'username firstName lastName profilePicture')
+                .sort({ createdAt: -1 });
+                
             res.status(200).json(educations);
         } catch (error) {
+            console.error('Error fetching education posts:', error);
             res.status(400).json({ error: error.message });
         }
     }

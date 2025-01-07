@@ -1,4 +1,7 @@
 const User = require('../models/User');
+const UserProfile = require('../models/UserProfile');
+const Category = require('../models/Category');
+const SavingsAccount = require('../models/SavingsAccount');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -24,9 +27,12 @@ class AuthController {
     // User Registration
     static async register(req, res) {
         try {
+            console.log('📝 Registration request received:', req.body);
+            
             // Check for validation errors
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
+                console.log('❌ Validation errors:', errors.array());
                 return res.status(400).json({ 
                     error: 'Validation failed',
                     details: errors.array() 
@@ -43,12 +49,13 @@ class AuthController {
             } = req.body;
 
             // Check if user already exists
+            console.log('🔍 Checking for existing user...');
             const existingUser = await User.findOne({ 
                 $or: [{ email }, { username }] 
             });
 
             if (existingUser) {
-                console.log("User already exists: ", existingUser);
+                console.log("❌ User already exists: ", existingUser);
                 return res.status(400).json({ 
                     error: 'User already exists',
                     details: existingUser.email === email 
@@ -56,6 +63,8 @@ class AuthController {
                         : 'Username is already taken'
                 });
             }
+
+            console.log('✅ No existing user found, creating new user...');
 
             // Create new user
             const user = new User({
@@ -70,31 +79,98 @@ class AuthController {
                 lastLogin: new Date()
             });
 
-            await user.save();
+            console.log('💾 Attempting to save user to database...');
+            const savedUser = await user.save();
+            console.log('✅ User saved successfully:', savedUser._id);
+
+            // Create user profile
+            console.log('👤 Creating user profile...');
+            const userProfile = new UserProfile({
+                userId: savedUser._id,
+                bio: '',
+                location: '',
+                interests: [],
+                expertise: [],
+                communityRole: 'member',
+                reputation: 0,
+                badges: [],
+                createdAt: new Date()
+            });
+            await userProfile.save();
+            console.log('✅ User profile created successfully');
+
+            // Create default category
+            console.log('📁 Creating default category...');
+            const category = new Category({
+                name: "None",
+                userId: savedUser._id,
+                description: "Default category for uncategorized items",
+                color: "#808080",
+                icon: "folder",
+                isDefault: true
+            });
+            await category.save();
+            console.log('✅ Default category created successfully');
+
+            // Create default savings account
+            console.log('💰 Creating default savings account...');
+            const savingsAccount = new SavingsAccount({
+                userId: savedUser._id,
+                name: "Savings",
+                balance: 0,
+                description: "Default savings account",
+                type: "general",
+                isDefault: true
+            });
+            await savingsAccount.save();
+            console.log('✅ Default savings account created successfully');
 
             // Generate tokens
-            const { accessToken, refreshToken } = AuthController.generateTokens(user._id, user.role);
+            console.log('🔑 Generating authentication tokens...');
+            const { accessToken, refreshToken } = AuthController.generateTokens(savedUser._id, savedUser.role);
+            console.log('✅ Tokens generated successfully');
 
             // Return success response
+            console.log('📤 Sending success response...');
             res.status(201).json({
                 message: 'User registered successfully',
                 user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role
+                    id: savedUser._id,
+                    username: savedUser.username,
+                    email: savedUser.email,
+                    firstName: savedUser.firstName,
+                    lastName: savedUser.lastName,
+                    role: savedUser.role
                 },
                 token: accessToken,
                 refreshToken
             });
 
         } catch (error) {
-            console.error('Registration error:', error);
+            console.error('❌ Registration error:', error);
+            console.error('Error stack:', error.stack);
+            
+            // Check for specific MongoDB errors
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({
+                    error: 'Validation error',
+                    details: Object.values(error.errors).map(err => err.message)
+                });
+            }
+            
+            if (error.code === 11000) {
+                const field = Object.keys(error.keyPattern)[0];
+                return res.status(400).json({
+                    error: 'Duplicate field error',
+                    details: `${field} already exists`
+                });
+            }
+
             res.status(500).json({ 
                 error: 'Server error',
-                details: 'Could not register user'
+                details: process.env.NODE_ENV === 'development' 
+                    ? error.message 
+                    : 'Could not register user'
             });
         }
     }

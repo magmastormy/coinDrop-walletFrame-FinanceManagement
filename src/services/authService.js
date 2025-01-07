@@ -5,6 +5,7 @@ import walletService from './walletService';
 import budgetService from './budgetService';
 import categoryService from './categoryService';
 import transactionService from './transactionService';
+import savingsAccountService from './savingsAccountService'; // Added import statement
 import { setWallets } from '../slices/walletSlice';
 import { setBudgets } from '../slices/budgetSlice';
 import { setCategories } from '../slices/categorySlice';
@@ -14,6 +15,46 @@ import { setTransactions } from '../slices/transactionSlice';
 const AUTH_ERRORS = {
     INVALID_LOGIN: 'Wrong email or password. Please try again.',
     SERVER_ERROR: 'Something went wrong. Please try again later.',
+    VALIDATION_ERROR: 'Please check your input and try again.',
+    NETWORK_ERROR: 'Network error. Please check your connection.',
+    DUPLICATE_EMAIL: 'This email is already registered.',
+    DUPLICATE_USERNAME: 'This username is already taken.',
+    PASSWORD_REQUIREMENTS: 'Password must include uppercase, lowercase, number, and special character.',
+    MISSING_FIELDS: 'Please fill in all required fields.',
+};
+
+// Helper function to format error messages
+const formatErrorMessage = (error) => {
+    if (!error.response) {
+        return AUTH_ERRORS.NETWORK_ERROR;
+    }
+
+    const { status, data } = error.response;
+
+    if (status === 400) {
+        if (data.details) {
+            return {
+                error: AUTH_ERRORS.VALIDATION_ERROR,
+                details: data.details
+            };
+        }
+        if (data.message?.includes('email')) {
+            return AUTH_ERRORS.DUPLICATE_EMAIL;
+        }
+        if (data.message?.includes('username')) {
+            return AUTH_ERRORS.DUPLICATE_USERNAME;
+        }
+        if (data.message?.includes('password')) {
+            return AUTH_ERRORS.PASSWORD_REQUIREMENTS;
+        }
+        return data.message || AUTH_ERRORS.VALIDATION_ERROR;
+    }
+
+    if (status === 401) {
+        return AUTH_ERRORS.INVALID_LOGIN;
+    }
+
+    return AUTH_ERRORS.SERVER_ERROR;
 };
 
 // Save user data in browser storage
@@ -29,19 +70,19 @@ const storeUserData = (token, user) => {
     }
 };
 
-
+// Clear user data from browser storage
 const clearUserData = () => {
     console.log('Clearing user data...');
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 };
 
-
+// Update app state with a given action
 const updateAppState = (action) => {
     store.dispatch(action);
 };
 
-
+// Login function
 export const loginUser = async (credentials) => {
     console.log('🔒 Login attempt with:', credentials.email);
     try {
@@ -98,12 +139,11 @@ export const loginUser = async (credentials) => {
 export const registerUser = async (userData) => {
     console.log('📝 Registration attempt:', userData.email);
     try {
-
         const requiredFields = ['email', 'password', 'username', 'firstName', 'lastName'];
         const missingFields = requiredFields.filter(field => !userData[field]);
         
         if (missingFields.length > 0) {
-            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+            throw new Error(AUTH_ERRORS.MISSING_FIELDS);
         }
 
         const { confirmPassword, ...registrationData } = userData;
@@ -111,18 +151,31 @@ export const registerUser = async (userData) => {
         const response = await axiosInstance.post("/auth/register", registrationData);
         console.log('✅ Registration successful:', response.data);
         
-        //idea, because of lack of categories, lets enforce a "default" category for all useers,
-        //at least for transactions to start and other stuff.
-        //this is a temporary solution, we will remove it later
+        const userId = response.data.user.id;
+
+        // Create default "None" category
         try {
             await categoryService.createCategory({
-                name: "Default",
-                userId: response.user.id,
+                name: "None",
+                userId: userId,
                 description: "Default category for uncategorized items"
             });
-            console.log('✅ Default category created for new user');
+            console.log('✅ Default "None" category created for new user');
         } catch (categoryError) {
             console.error('❌ Error creating default category:', categoryError);
+        }
+
+        // Create default savings account
+        try {
+            await savingsAccountService.createSavingsAccount({
+                userId: userId,
+                name: "Savings",
+                balance: 0,
+                description: "Default savings account"
+            });
+            console.log('✅ Default savings account created for new user');
+        } catch (savingsError) {
+            console.error('❌ Error creating default savings account:', savingsError);
         }
      
         if (response?.data?.token && response?.data?.user) {
@@ -136,10 +189,12 @@ export const registerUser = async (userData) => {
         return response.data;
     } catch (error) {
         console.error('❌ Registration error:', error.response || error);
-        throw new Error(error.response?.data?.message || 'Registration failed - please try again');
+        const formattedError = formatErrorMessage(error);
+        throw formattedError;
     }
 };
 
+// Logout function
 export const logoutUser = () => {
     console.log('👋 Logging out...');
     clearUserData();
@@ -167,6 +222,7 @@ export const getStoredUser = () => {
     }
 };
 
+// Change password function
 export const changePassword = async(oldPassword, newPassword) => {
     try {
         const response = await axiosInstance.put('/auth/change-password', {

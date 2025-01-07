@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { registerUser } from '../../services/authService';
 import './styles/registrationStyles.css';
 
@@ -14,7 +15,6 @@ const UserRegistration = () => {
         lastName: '',
         phone: ''
     });
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
@@ -27,21 +27,49 @@ const UserRegistration = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validation checks
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            toast.error('Passwords do not match');
+            return;
+        }
+
+        if (formData.password.length < 8) {
+            toast.error('Password must be at least 8 characters long');
+            return;
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            toast.error('Password must include uppercase, lowercase, number, and special character');
+            return;
+        }
+
+        if (!formData.email.includes('@')) {
+            toast.error('Please enter a valid email address');
             return;
         }
         
         try {
-            setError('');
             setLoading(true);
             console.log('📝 Registration attempt:', formData.email);
             await registerUser(formData);
             console.log('✅ Registration successful, redirecting...');
+            toast.success('Account created successfully! Redirecting to dashboard...');
             navigate('/dashboard');
         } catch (err) {
             console.error('❌ Registration failed:', err);
-            setError(err.message || 'Failed to create account');
+            // Handle specific error cases
+            if (err.response?.data?.details) {
+                const errors = err.response.data.details;
+                errors.forEach(error => {
+                    toast.error(error.msg);
+                });
+            } else if (err.response?.data?.message) {
+                toast.error(err.response.data.message);
+            } else {
+                toast.error(err.message || 'Failed to create account. Please try again.');
+            }
         } finally {
             setLoading(false);
         }
@@ -64,12 +92,6 @@ const UserRegistration = () => {
                         </button>
                     </p>
                 </div>
-
-                {error && (
-                    <div className="registration-error-alert" role="alert">
-                        <span>{error}</span>
-                    </div>
-                )}
 
                 <form className="registration-form" onSubmit={handleSubmit}>
                     <div className="registration-form-fields-container">
@@ -142,6 +164,9 @@ const UserRegistration = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                             />
+                            <small className="password-requirements">
+                                Password must be at least 8 characters and include uppercase, lowercase, number, and special character
+                            </small>
                         </div>
 
                         <div className="form-field">

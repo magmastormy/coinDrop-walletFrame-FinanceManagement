@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import savingsGoalService from '../../services/savingsGoalService';
 import { setSavingsGoals, setLoading, setError } from '../../slices/savingsGoalSlice';
-import './styles/savingsGoalStyles.css';
+import './styles/savingsGoalManagerStyles.css';
 import EditGoalModal from './editGoalModal'; // New modal for editing goals
 
 const SavingsGoalManager = () => {

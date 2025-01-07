@@ -36,32 +36,51 @@ const DashboardPieChart = () => {
             if (user && user.id) {
                 try {
                     setLoading(true);
-                    const [transactionsData, categoriesData] = await Promise.all([
+                    const [transactionsResponse, categoriesData] = await Promise.all([
                         getUserTransactions(user.id),
                         getUserCategories(user.id)
                     ]);
 
+                    const transactionsData = transactionsResponse.data || [];
+                    
                     // Process transactions by category
                     const expensesByCategory = {};
-                    transactionsData.forEach(transaction => {
-                        const category = categoriesData.find(c => c._id === transaction.categoryId);
-                        if (category && transaction.type === 'expense') {
-                            expensesByCategory[category.name] = (expensesByCategory[category.name] || 0) + transaction.amount;
-                        }
-                    });
+                    if (Array.isArray(transactionsData)) {
+                        transactionsData.forEach(transaction => {
+                            const category = categoriesData.find(c => c._id === transaction.categoryId);
+                            if (category && transaction.type === 'expense') {
+                                expensesByCategory[category.name] = (expensesByCategory[category.name] || 0) + transaction.amount;
+                            }
+                        });
+                    }
 
-                    // Prepare chart data
-                    const labels = Object.keys(expensesByCategory);
-                    const data = Object.values(expensesByCategory);
-                    const backgroundColor = labels.map((_, index) => generateRandomColor(index));
+                    // If no data, set default state
+                    if (Object.keys(expensesByCategory).length === 0) {
+                        setChartData({
+                            labels: ['No Expenses'],
+                            data: [100],
+                            backgroundColor: [generateRandomColor(0)]
+                        });
+                    } else {
+                        // Prepare chart data
+                        const labels = Object.keys(expensesByCategory);
+                        const data = Object.values(expensesByCategory);
+                        const backgroundColor = labels.map((_, index) => generateRandomColor(index));
 
-                    setChartData({
-                        labels,
-                        data,
-                        backgroundColor
-                    });
+                        setChartData({
+                            labels,
+                            data,
+                            backgroundColor
+                        });
+                    }
                 } catch (error) {
                     console.error('Error fetching data:', error);
+                    // Set default state on error
+                    setChartData({
+                        labels: ['Error Loading Data'],
+                        data: [100],
+                        backgroundColor: ['rgba(239, 68, 68, 0.8)'] // Red color for error
+                    });
                 } finally {
                     setLoading(false);
                 }
