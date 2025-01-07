@@ -29,6 +29,7 @@ router.use(authMiddleware);
 
 router.post('/', educationValidation, validationMiddleware, EducationController.createEducation);
 router.get('/', EducationController.getEducations);
+router.get('/user/:userId', EducationController.getUserEducations);
 router.get('/:id', EducationController.getEducationById);
 router.put('/:id', educationValidation, validationMiddleware, EducationController.updateEducation);
 router.delete('/:id', EducationController.deleteEducation);

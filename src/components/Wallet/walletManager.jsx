@@ -34,6 +34,7 @@ const WalletManager = () => {
             }
 
             const data = await walletService.getAllWallets(user.id);
+            console.log("Wallet Manager - fetchWallets - Data:", data);
             dispatch(setWallets(data.wallets || []));
         } catch (error) {
             dispatch(setError(error.message));

@@ -13,8 +13,8 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  min-height: 100vh;
-  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  min-height: calc(100vh - 64px);
+  background-color: #f5f5f5;
   position: relative;
   overflow: hidden;
 }
@@ -54,6 +54,9 @@
   gap: 20px;
   flex: 1;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  height: 300px;
+  width: 100%;
 }
 
 .chart-container:hover {
@@ -99,6 +102,34 @@
   box-shadow: 0 12px 40px 0 var(--glass-shadow);
 }
 
+/* Paper styles */
+.MuiPaper-root {
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.MuiPaper-root:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* Analytics cards */
+.analytics-card {
+  transition: transform 0.3s ease-in-out;
+}
+
+.analytics-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Crypto prices panel */
+.crypto-panel {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* Quick navigation */
+.quick-nav {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
 @media (prefers-color-scheme: dark) {
   .dashboard-container {
     background: linear-gradient(135deg, #a5a2a2 0%, #89a7db 100%);
@@ -109,5 +140,23 @@
   .stock-display {
     background: rgba(30, 41, 59, 0.9);
     border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (max-width: 1200px) {
+  .chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 960px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .chart-container {
+    height: 200px;
   }
 }

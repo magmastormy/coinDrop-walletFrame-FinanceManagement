@@ -12,7 +12,7 @@ const educationSlice = createSlice({
     initialState,
     reducers: {
         setEducations: (state, action) => {
-            state.educations = Array.isArray(action.payload) ? action.payload : [];
+            state.educations = action.payload?.data || action.payload || [];
             state.loading = false;
             state.error = null;
         },

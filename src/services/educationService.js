@@ -1,143 +1,155 @@
-import axiosInstance from "../api/userAxios";
+import axiosInstance from '../api/userAxios';
+import imageCompression from 'browser-image-compression';
+
 const API_URL = '/education';
 
 const compressImage = async (file) => {
-    if (!file.type.startsWith('image/')) {
-        return file;
-    }
-    
+    if (!file || !file.type.startsWith('image/')) return file;
+
+    const options = {
+        maxSizeMB: 1, // Max file size of 1MB
+        maxWidthOrHeight: 1920, // Max width/height of 1920px
+        useWebWorker: true,
+        fileType: 'image/jpeg' // Convert all images to JPEG for consistency
+    };
+
     try {
-        const options = {
-            maxSizeMB: 1,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true
-        };
-        
         const compressedFile = await imageCompression(file, options);
         return compressedFile;
     } catch (error) {
-        console.error('Image compression failed:', error);
+        console.error('Error compressing image:', error);
         return file;
     }
 };
 
 const educationService = {
-
     getEducations: async () => {
-        const response = await axiosInstance.get(API_URL);
-        return response;
-    },
-
-    createEducation: async (educationData) => {
         try {
-            const imagePromises = educationData.images?.map(async file => {
-                if (file instanceof File) {
-                    const compressedFile = await compressImage(file);
-                    return await educationService.uploadImage(compressedFile);
-                }
-                return file;
-            });
-
-            const uploadedImages = imagePromises ? await Promise.all(imagePromises) : [];
-        
-            const response = await axiosInstance.post(API_URL, {
-                ...educationData,
-                images: uploadedImages,
-                contentType: 'tiptap'
-            }, {
-                maxBodyLength: Infinity,
-                maxContentLength: Infinity,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await axiosInstance.get(API_URL);
+            console.log('Education Service - getEducations - Response:', response);
+            console.log('Education Service - getEducations - Response data:', response.data);
             return response;
         } catch (error) {
-            console.error('Create education error:', error);
-            throw error;
-        }
-    },
-
-    uploadImage: async (file) => {
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                maxContentLength: Infinity,
-                maxBodyLength: Infinity
-            });
-            return response.data.url;
-        } catch (error) {
-            console.error('Image upload failed:', error);
-            throw error;
-        }
-    },
-
-    updateEducation: async (id, educationData) => {
-        if (!id || typeof id !== 'string') {
-            throw new Error('Invalid education ID');
-        }
-        
-        try {
-            const response = await axiosInstance.put(`${API_URL}/${id}`, {
-                ...educationData,
-                contentType: 'tiptap'
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Update education error:', error);
             throw error;
         }
     },
 
     getUserEducations: async (userId) => {
-        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-        return response;
+        try {
+            const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
+            console.log('Education Service - getUserEducations - Response:', response);
+            console.log('Education Service - getUserEducations - Response data:', response.data);
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    createEducation: async (postData) => {
+        try {
+            let formData = new FormData();
+            
+            // Handle text data
+            formData.append('title', postData.title);
+            formData.append('details', postData.details);
+            formData.append('category', postData.category);
+            
+            // Handle images
+            if (postData.images && postData.images.length > 0) {
+                for (let image of postData.images) {
+                    const compressedImage = await compressImage(image);
+                    formData.append('images', compressedImage);
+                }
+            }
+
+            const response = await axiosInstance.post(API_URL, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    updateEducation: async (id, postData) => {
+        try {
+            let formData = new FormData();
+            
+            // Handle text data
+            formData.append('title', postData.title);
+            formData.append('details', postData.details);
+            formData.append('category', postData.category);
+            
+            // Handle images
+            if (postData.images && postData.images.length > 0) {
+                for (let image of postData.images) {
+                    // Only compress if it's a new image (File object)
+                    if (image instanceof File) {
+                        const compressedImage = await compressImage(image);
+                        formData.append('images', compressedImage);
+                    } else {
+                        formData.append('existingImages', image);
+                    }
+                }
+            }
+
+            const response = await axiosInstance.put(`${API_URL}/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     },
 
     deleteEducation: async (id) => {
-        const response = await axiosInstance.delete(`${API_URL}/${id}`);
-        return response.data;
-    },
-
-    likeEducation: async (educationId) => {
-        if (!educationId || typeof educationId !== 'string') {
-            throw new Error('Invalid education ID');
-        }
-
         try {
-            const response = await axiosInstance.post(`${API_URL}/${educationId}/like`);
+            const response = await axiosInstance.delete(`${API_URL}/${id}`);
             return response.data;
         } catch (error) {
-            console.error('Like education error:', error);
             throw error;
         }
     },
-    
-    addComment: async (educationId, commentData) => {
-        if (!educationId || typeof educationId !== 'string') {
-            throw new Error('Invalid education ID');
-        }
 
-        if (!commentData?.text || typeof commentData.text !== 'string') {
-            throw new Error('Comment text is required');
-        }
-
+    likeEducation: async (id) => {
         try {
-            const response = await axiosInstance.post(
-                `${API_URL}/${educationId}/comments`,
-                { text: commentData.text }
-            );
+            const response = await axiosInstance.post(`${API_URL}/${id}/like`);
             return response.data;
         } catch (error) {
-            console.error('Add comment error:', error);
             throw error;
         }
     },
+
+    unlikeEducation: async (id) => {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/${id}/like`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    addComment: async (id, comment) => {
+        try {
+            const response = await axiosInstance.post(`${API_URL}/${id}/comments`, { content: comment });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    deleteComment: async (educationId, commentId) => {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/${educationId}/comments/${commentId}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    }
 };
 
 export default educationService;

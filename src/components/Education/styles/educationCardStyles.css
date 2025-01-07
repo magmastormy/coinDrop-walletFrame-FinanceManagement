@@ -1,94 +1,111 @@
 /* educationCardStyles.css */
 
-.education-card-container {
-    background-color: #fff; /* Equivalent to bg-white */
-    border-radius: 0.5rem; /* Equivalent to rounded-lg */
-    padding: 1.5rem; /* Equivalent to p-6 */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Equivalent to shadow-sm */
-    margin-bottom: 1rem; /* Equivalent to mb-4 */
-    overflow: hidden; /* Needed for card hover effect */
-    position: relative; /* Needed for full detail modal positioning */
-    transition: all 0.3s ease-in-out; /* Equivalent to transition all duration-300 ease-in-out */
-  }
-  
-  .education-card-container:hover {
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Equivalent to hover:shadow-md */
-    transform: translateY(-5px); /* Add subtle hover lift */
-  }
-  
-  .education-card-title {
-    font-size: 1.25rem; /* Equivalent to text-xl */
-    font-weight: 600; /* Equivalent to font-semibold */
-    margin-bottom: 0.5rem; /* Equivalent to mb-2 */
-  }
-  
-  .education-card-details {
-    margin-bottom: 1rem; /* Equivalent to mb-4 */
-  }
-  
-  .education-card-meta {
+.education-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease-in-out;
+    min-width: 300px;
+    width: 100%;
+}
+
+.education-card:hover {
+    transform: translateY(-4px);
+}
+
+.education-card-content {
+    flex-grow: 1;
+    padding: 16px;
+    overflow: hidden;
+}
+
+.education-card-header {
     display: flex;
     align-items: center;
-    color: #718096; /* Equivalent to text-gray-600 */
-    font-size: 0.875rem; /* Equivalent to text-sm */
-    margin-bottom: 1rem; /* Equivalent to mb-4 */
-  }
-  
-  .education-card-meta span + span {
-    margin-left: 1rem; /* Equivalent to ml-4 */
-  }
-  
-  .education-card-author .meta-text,
-  .education-card-date .meta-text,
-  .education-card-likes .meta-text {
-    color: inherit; /* Inherit color from .education-card-meta */
-  }
-  
-  .education-card-likes {
+    margin-bottom: 16px;
+}
+
+.education-card-avatar {
+    margin-right: 12px;
+}
+
+.education-card-author {
+    flex-grow: 1;
+}
+
+.education-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.education-card-preview {
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.education-card-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.education-card-action-group {
     display: flex;
     align-items: center;
-  }
-  
-  .education-card-likes .fa-heart {
-    color: #f47e17; /* Equivalent to text-red-500 */
-    margin-right: 0.5rem; /* Equivalent to mr-2 */
-  }
-  
-  .education-card-likes.liked .fa-heart {
-    color: #dc3545; /* Equivalent to text-red-600 */
-  }
-  
-  .education-card-actions {
-    display: flex;
-    justify-content: space-between; /* Equivalent to justify-between */
-  }
-  
-  .action-button {
+    gap: 8px;
+}
+
+.education-card-stats {
     display: flex;
     align-items: center;
-    gap: 0.5rem; /* Equivalent to gap-2 */
-    padding: 0.5rem 1rem; /* Equivalent to px-4 py-2 */
-    border: none;
-    border-radius: 0.5rem; /* Equivalent to rounded-lg */
-    background-color: #edf2f7; /* Equivalent to bg-gray-100 */
-    color: #4a5568; /* Equivalent to text-gray-700 */
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out; /* Equivalent to transition-colors duration-200 */
-  }
-  
-  .action-button:hover {
-    background-color: #e2e8f0; /* Equivalent to hover:bg-gray-200 */
-  }
-  
-  .read-button,
-  .like-button,
-  .comment-button,
-  .edit-button,
-  .delete-button {
-    /* Remove duplicate styles for individual buttons */
-  }
-  
-  .like-button.liked {
-    background-color: #f47e17; /* Equivalent to bg-red-500 */
-    color: #fff; /* Equivalent to text-white */
-  }
+    gap: 16px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.education-card-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.education-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 16px;
+}
+
+.education-card-date {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.875rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .education-card {
+        min-width: 100%;
+    }
+}
+
+@media (min-width: 601px) and (max-width: 960px) {
+    .education-card {
+        min-width: 280px;
+    }
+}
+
+@media (min-width: 961px) {
+    .education-card {
+        min-width: 320px;
+    }
+}

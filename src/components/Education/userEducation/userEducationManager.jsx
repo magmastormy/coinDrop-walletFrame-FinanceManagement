@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import CreateEducationPost from './createEditEducationPost';
-import EducationPostList from './listUserEducationPost';
-import UserEducationInformation from './userEducationInformationBar';
+import { motion } from 'framer-motion';
+import { 
+    Box,
+    Typography,
+    CircularProgress,
+    Grid,
+    Button,
+    Alert,
+    Container,
+    Fab
+} from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import educationService from '../../../services/educationService';
 import { 
     setEducations, 
@@ -10,74 +19,30 @@ import {
     setError,
     addEducation,
     updateEducation,
-    deleteEducation,
-    addLike,
-    addComment 
+    deleteEducation
 } from '../../../slices/educationSlice';
-import CommentModal from '../commentModal';
+import CreateEditEducationPost from './createEditEducationPost';
+import EducationCard from '../educationCard';
 import './styles/userEducationManagerStyles.css';
 
 const UserEducationManager = () => {
     const dispatch = useDispatch();
-    const { educations =[], loading, error } = useSelector(state => state.education);
+    const { educations, loading, error } = useSelector(state => state.education);
     const { user } = useSelector(state => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showCommentModal, setShowCommentModal] = useState(false);
-    const [editingEducation, setEditingEducation] = useState(null);
+    const [editingPost, setEditingPost] = useState(null);
 
     useEffect(() => {
-        fetchUserEducations();
-    }, []);
+        fetchUserEducationPosts();
+    }, [user.id]);
 
-    const handleEditEducation = async (education) => {
-        setEditingEducation(education);
-        setShowCreateModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowCreateModal(false);
-        setEditingEducation(null);
-    };
-    const handleCreateClick = () =>{
-        setShowCreateModal(true);
-        setEditingEducation(null);
-    }
-
-    const fetchUserEducations = async () => {
+    const fetchUserEducationPosts = async () => {
+        if (!user?.id) return;
+        
         dispatch(setLoading(true));
         try {
             const response = await educationService.getUserEducations(user.id);
-            dispatch(setEducations(response));
-        } catch (err) {
-            dispatch(setError(err.message));
-        }
-    };
-
-    const handleCreateEducation = async (newEducation) => {
-        dispatch(setLoading(true));
-        console.log('Create New Education:', newEducation);
-        try {
-            const response = await educationService.createEducation(newEducation);
-            dispatch(addEducation(response));
-            setShowCreateModal(false);
-        } catch (err) {
-            dispatch(setError(err.message));
-        }
-    };
-
-    const handleUpdateEducation = async (updatedData) => {
-        dispatch(setLoading(true));
-        try {
-            if (!editingEducation?._id) {
-                throw new Error('No education selected for editing');
-            }
-
-            const response = await educationService.updateEducation(
-                editingEducation._id, 
-                updatedData
-            );
-            dispatch(updateEducation(response));
-            handleCloseModal();
+            dispatch(setEducations(response.data.data));
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -85,7 +50,35 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleDeleteEducation = async (id) => {
+    const handleCreatePost = async (postData) => {
+        dispatch(setLoading(true));
+        try {
+            const response = await educationService.createEducation(postData);
+            dispatch(addEducation(response));
+            setShowCreateModal(false);
+        } catch (err) {
+            dispatch(setError(err.message));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    const handleEditPost = async (id, postData) => {
+        dispatch(setLoading(true));
+        try {
+            const response = await educationService.updateEducation(id, postData);
+            dispatch(updateEducation(response));
+            setEditingPost(null);
+        } catch (err) {
+            dispatch(setError(err.message));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    const handleDeletePost = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this post?')) return;
+
         try {
             await educationService.deleteEducation(id);
             dispatch(deleteEducation(id));
@@ -94,85 +87,140 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleLike = async (educationId) => {
+    const handleLike = async (postId) => {
         try {
-            await educationService.likeEducation(educationId);
-            dispatch(addLike({ educationId, userId: user.id }));
+            await educationService.likeEducation(postId);
+            fetchUserEducationPosts();
         } catch (err) {
             dispatch(setError(err.message));
         }
     };
 
-    const handleComment = async (educationId, commentData) => {
+    const handleComment = async (postId, comment) => {
         try {
-            const response = await educationService.addComment(educationId, commentData);
-            dispatch(addComment({ educationId, comment: response }));
+            await educationService.addComment(postId, comment);
+            fetchUserEducationPosts();
         } catch (err) {
             dispatch(setError(err.message));
         }
-    };
-    const handleCommentClick = (educationId) => {
-        setSelectedEducationId(educationId);
-        setShowCommentModal(true);
     };
 
-    const handleCommentSubmit = async (commentData) => {
-        try {
-            const response = await educationService.addComment(selectedEducationId, commentData);
-            dispatch(addComment({ educationId: selectedEducationId, comment: response }));
-            setShowCommentModal(false);
-        } catch (err) {
-            dispatch(setError(err.message));
-        }
-    };
+    if (loading) {
+        return (
+            <Box className="user-education-manager loading">
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
-        <div className="user-education-manager-container">
-            <div className="user-education-manager-header">
-                <h1 className="user-education-manager-title">My Education Posts</h1>
-                <button 
-                    className="user-education-create-post-btn"
-                    onClick={handleCreateClick}
+        <Container maxWidth="xl" className="user-education-manager" sx={{ 
+            height: 'calc(100vh - 64px)', // Subtract header height
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            py: 3
+        }}>
+            <Box className="header" sx={{ 
+                mb: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                <Typography variant="h4" component="h1">
+                    My Education Posts
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() => setShowCreateModal(true)}
                 >
-                    Create New Post
-                </button>
-            </div>
+                    Create Post
+                </Button>
+            </Box>
 
-            <UserEducationInformation
-                totalPosts={educations.length || 0} 
-                user={user} 
-             />
+            {error && (
+                <Alert severity="error" className="error-alert" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
 
-            {loading ? (
-                <div className="user-education-loading-state">Loading...</div>
-            ) : error ? (
-                <div className="user-education-error-state">Error: {error}</div>
-            ) : (
-                <EducationPostList 
-                    educations={educations || []}
-                    onEdit={handleEditEducation}
-                    onDelete={handleDeleteEducation}
-                    onLike={handleLike}
-                    onComment={handleCommentClick}
+            <Box sx={{ 
+                flex: 1,
+                overflowY: 'auto',
+                pb: 3
+            }}>
+                {educations?.length === 0 ? (
+                    <Box className="empty-state" sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        gap: 2
+                    }}>
+                        <Typography variant="h6">
+                            You haven't created any education posts yet
+                        </Typography>
+                        <Typography color="textSecondary" paragraph>
+                            Share your knowledge with the community
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<AddIcon />}
+                            onClick={() => setShowCreateModal(true)}
+                        >
+                            Create Your First Post
+                        </Button>
+                    </Box>
+                ) : (
+                    <Grid container spacing={3} className="posts-grid">
+                        {educations?.map(post => (
+                            <Grid item xs={12} sm={6} md={4} key={post._id}>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <EducationCard
+                                        education={post}
+                                        onLike={() => handleLike(post._id)}
+                                        onComment={handleComment}
+                                        onEdit={() => setEditingPost(post)}
+                                        onDelete={() => handleDeletePost(post._id)}
+                                        currentUser={user}
+                                        showActions={true}
+                                    />
+                                </motion.div>
+                            </Grid>
+                        ))}
+                    </Grid>
+                )}
+            </Box>
+
+            {(showCreateModal || editingPost) && (
+                <CreateEditEducationPost
+                    open={true}
+                    onClose={() => {
+                        setShowCreateModal(false);
+                        setEditingPost(null);
+                    }}
+                    onSubmit={editingPost ? handleEditPost : handleCreatePost}
+                    post={editingPost}
                 />
             )}
 
-            {showCreateModal && (
-                <CreateEducationPost
-                    initialData={editingEducation}
-                    onCreateEducation={editingEducation ? handleUpdateEducation : handleCreateEducation}
-                    onClose={() => setShowCreateModal(false)}
-                />
-            )}
-
-            {showCommentModal && (
-                <CommentModal
-                    isOpen={showCommentModal}
-                    onClose={() => setShowCommentModal(false)}
-                    onSubmit={handleCommentSubmit}
-                />
-            )}
-        </div>
+            <Fab
+                color="primary"
+                aria-label="add"
+                className="mobile-add-button"
+                onClick={() => setShowCreateModal(true)}
+            >
+                <AddIcon />
+            </Fab>
+        </Container>
     );
 };
 

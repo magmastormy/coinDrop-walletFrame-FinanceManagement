@@ -45,8 +45,11 @@
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
-    position: relative;
-    margin: var(--spacing-md);
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
     z-index: 1001;
 }
 

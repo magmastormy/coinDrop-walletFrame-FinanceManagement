@@ -1,47 +1,42 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-    faTimes, 
-    faHeart, 
-    faComment,
-    faUser,
-    faCalendar,
-    faShare,
-    faBookmark
-} from '@fortawesome/free-solid-svg-icons';
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    IconButton,
+    Typography,
+    Box,
+    Avatar,
+    Chip,
+    LinearProgress,
+    Button,
+    Divider,
+    Grid,
+    ImageList,
+    ImageListItem,
+    TextField
+} from '@mui/material';
+import { 
+    Close as CloseIcon,
+    Favorite as FavoriteIcon,
+    FavoriteBorder as FavoriteBorderIcon,
+    Comment as CommentIcon,
+    Share as ShareIcon,
+    Bookmark as BookmarkIcon,
+    BookmarkBorder as BookmarkBorderIcon,
+    Person as PersonIcon,
+    CalendarToday as CalendarIcon
+} from '@mui/icons-material';
 import EducationRenderer from './educationRenderer';
 import './styles/educationFullDetailStyles.css';
 
-const EducationFullDetailModal = ({ education, onClose, onLike, onComment, isLiked }) => {
+const EducationFullDetailModal = ({ education, onClose, onLike, onComment, isLiked, currentUser }) => {
     const [readingProgress, setReadingProgress] = useState(0);
     const [isBookmarked, setIsBookmarked] = useState(false);
-    const modalRef = useRef(null);
+    const [showCommentInput, setShowCommentInput] = useState(false);
+    const [commentText, setCommentText] = useState('');
     const contentRef = useRef(null);
-
-    useEffect(() => {
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                onClose();
-            }
-        };
-
-        const handleClickOutside = (e) => {
-            if (modalRef.current && !modalRef.current.contains(e.target)) {
-                onClose();
-            }
-        };
-
-        document.addEventListener('keydown', handleEscape);
-        document.addEventListener('mousedown', handleClickOutside);
-        document.body.style.overflow = 'hidden';
-
-        return () => {
-            document.removeEventListener('keydown', handleEscape);
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.body.style.overflow = 'unset';
-        };
-    }, [onClose]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -64,9 +59,13 @@ const EducationFullDetailModal = ({ education, onClose, onLike, onComment, isLik
         };
     }, []);
 
-    const getAuthorName = (author) => {
-        if (!author) return 'Unknown';
-        return author.username || `${author.firstName} ${author.lastName}` || 'Anonymous';
+    const handleCommentSubmit = (e) => {
+        e.preventDefault();
+        if (commentText.trim()) {
+            onComment(education._id, commentText);
+            setCommentText('');
+            setShowCommentInput(false);
+        }
     };
 
     const handleBookmark = () => {
@@ -74,202 +73,260 @@ const EducationFullDetailModal = ({ education, onClose, onLike, onComment, isLik
         // TODO: Implement bookmark functionality
     };
 
-    const handleShare = () => {
-        // TODO: Implement share functionality
-        navigator.clipboard.writeText(window.location.href);
-    };
-
-    const modalVariants = {
-        hidden: { opacity: 0, scale: 0.95 },
-        visible: { 
-            opacity: 1, 
-            scale: 1,
-            transition: {
-                duration: 0.2,
-                ease: "easeOut"
-            }
-        },
-        exit: {
-            opacity: 0,
-            scale: 0.95,
-            transition: {
-                duration: 0.15,
-                ease: "easeIn"
-            }
+    const handleShare = async () => {
+        try {
+            await navigator.share({
+                title: education.title,
+                text: education.details.substring(0, 100) + '...',
+                url: window.location.href
+            });
+        } catch (err) {
+            // Fallback to clipboard copy
+            navigator.clipboard.writeText(window.location.href);
         }
     };
 
-    const overlayVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1 },
-        exit: { opacity: 0 }
+    const formatDate = (date) => {
+        return new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
     };
 
-    if (!education) return null;
-
     return (
-        <AnimatePresence>
-            <motion.div 
-                className="edu-modal-overlay"
-                variants={overlayVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="modal-title"
-            >
-                <motion.div 
-                    className="edu-modal"
-                    variants={modalVariants}
-                    ref={modalRef}
-                >
-                    <header className="edu-modal-header">
-                        <h2 
-                            id="modal-title"
-                            className="edu-modal-title"
+        <Dialog 
+            open={true}
+            onClose={onClose}
+            maxWidth="lg"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    minHeight: '80vh',
+                    maxHeight: '90vh',
+                    width: '90%',
+                    margin: '20px',
+                    overflowY: 'auto',
+                    '& .MuiDialogContent-root': {
+                        padding: '24px',
+                        overflowY: 'auto'
+                    }
+                }
+            }}
+        >
+            <DialogContent sx={{ p: 0 }}>
+                <Box sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    overflow: 'hidden'
+                }}>
+                    <Box sx={{ 
+                        position: 'sticky', 
+                        top: 0, 
+                        bgcolor: 'background.paper', 
+                        zIndex: 1,
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        p: 2
+                    }}>
+                        <IconButton
+                            onClick={onClose}
+                            sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 8,
+                            }}
                         >
+                            <CloseIcon />
+                        </IconButton>
+                        <Typography variant="h4" component="h2" gutterBottom>
                             {education.title}
-                        </h2>
-                        <div className="edu-modal-actions">
-                            <motion.button
-                                className="edu-action-button"
-                                onClick={handleBookmark}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
-                            >
-                                <FontAwesomeIcon 
-                                    icon={faBookmark} 
-                                    className={isBookmarked ? 'active' : ''} 
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Avatar
+                                src={education.author?.profilePicture}
+                                alt={education.author?.username}
+                                sx={{ mr: 1 }}
+                            />
+                            <Box>
+                                <Typography variant="subtitle1">
+                                    {education.author?.username}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {new Date(education.date).toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ 
+                        flex: 1, 
+                        overflowY: 'auto',
+                        p: 3,
+                        '& img': {
+                            maxWidth: '100%',
+                            height: 'auto'
+                        }
+                    }}>
+                        <Box className="content-header">
+                            <Typography variant="h4" component="h1" gutterBottom>
+                                {education.title}
+                            </Typography>
+
+                            <Box className="author-info">
+                                <Avatar className="author-avatar">
+                                    {education.author?.firstName?.[0] || <PersonIcon />}
+                                </Avatar>
+                                <Box>
+                                    <Typography variant="subtitle1">
+                                        {education.author?.firstName} {education.author?.lastName}
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        <CalendarIcon fontSize="small" />
+                                        {formatDate(education.date)}
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {education.category && (
+                                <Chip 
+                                    label={education.category}
+                                    color="primary"
+                                    variant="outlined"
+                                    className="category-chip"
                                 />
-                            </motion.button>
-                            <motion.button
-                                className="edu-action-button"
-                                onClick={handleShare}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                aria-label="Share post"
-                            >
-                                <FontAwesomeIcon icon={faShare} />
-                            </motion.button>
-                            <motion.button 
-                                className="edu-modal-close"
-                                onClick={onClose}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                aria-label="Close modal"
-                            >
-                                <FontAwesomeIcon icon={faTimes} />
-                            </motion.button>
-                        </div>
-                    </header>
-
-                    <div 
-                        className="edu-modal-content"
-                        ref={contentRef}
-                        role="article"
-                    >
-                        <div className="edu-modal-meta">
-                            <span className="edu-modal-author">
-                                <FontAwesomeIcon icon={faUser} aria-hidden="true" />
-                                {getAuthorName(education.author)}
-                            </span>
-                            <span className="edu-modal-date">
-                                <FontAwesomeIcon icon={faCalendar} aria-hidden="true" />
-                                {new Date(education.date).toLocaleDateString()}
-                            </span>
-                            <span className="edu-modal-likes">
-                                <FontAwesomeIcon 
-                                    icon={faHeart} 
-                                    className={isLiked ? 'liked' : ''} 
-                                    aria-hidden="true" 
-                                />
-                                {education.likes?.length || 0}
-                            </span>
-                        </div>
-
-                        <div className="edu-modal-body">
-                            <EducationRenderer content={education.details} />
-                        </div>
-
-                        <div className="edu-modal-interaction">
-                            <motion.button 
-                                className={`edu-interaction-button ${isLiked ? 'liked' : ''}`}
-                                onClick={onLike}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                aria-label={isLiked ? "Unlike post" : "Like post"}
-                            >
-                                <FontAwesomeIcon icon={faHeart} />
-                                <span>{isLiked ? 'Liked' : 'Like'}</span>
-                            </motion.button>
-                            <motion.button 
-                                className="edu-interaction-button"
-                                onClick={onComment}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                aria-label="Add comment"
-                            >
-                                <FontAwesomeIcon icon={faComment} />
-                                <span>Comment</span>
-                            </motion.button>
-                        </div>
-
-                        <div className="edu-modal-comments">
-                            <h3>Comments</h3>
-                            {education.comments?.length > 0 ? (
-                                education.comments.map(comment => (
-                                    comment && (
-                                        <motion.div 
-                                            key={comment._id || Date.now()} 
-                                            className="edu-modal-comment"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.2 }}
-                                        >
-                                            <div className="comment-header">
-                                                <span className="comment-author">
-                                                    <FontAwesomeIcon icon={faUser} aria-hidden="true" />
-                                                    {comment.author?.username || 'Anonymous'}
-                                                </span>
-                                                <span className="comment-date">
-                                                    {comment.date ? 
-                                                        new Date(comment.date).toLocaleDateString() : 
-                                                        'No date'
-                                                    }
-                                                </span>
-                                            </div>
-                                            <p className="comment-text">
-                                                {comment.text || 'No comment text'}
-                                            </p>
-                                        </motion.div>
-                                    )
-                                ))
-                            ) : (
-                                <p className="no-comments">No comments yet. Be the first to comment!</p>
                             )}
-                        </div>
-                    </div>
+                        </Box>
 
-                    <div 
-                        className="edu-reading-progress-bar"
-                        role="progressbar"
-                        aria-valuenow={readingProgress}
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                        aria-label="Reading progress"
-                    >
-                        <motion.div
-                            className="edu-progress"
-                            initial={{ width: "0%" }}
-                            animate={{ width: `${readingProgress}%` }}
-                            transition={{ duration: 0.2 }}
-                        />
-                    </div>
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+                        <Divider className="content-divider" />
+
+                        <Box className="main-content">
+                            <Typography variant="body1" component="div" className="content-text">
+                                <EducationRenderer content={education.details} />
+                            </Typography>
+
+                            {education.images && education.images.length > 0 && (
+                                <Box className="images-container">
+                                    <ImageList 
+                                        cols={education.images.length === 1 ? 1 : 2} 
+                                        gap={8}
+                                    >
+                                        {education.images.map((image, index) => (
+                                            <ImageListItem key={index}>
+                                                <img
+                                                    src={image}
+                                                    alt={`Content image ${index + 1}`}
+                                                    loading="lazy"
+                                                    className="content-image"
+                                                />
+                                            </ImageListItem>
+                                        ))}
+                                    </ImageList>
+                                </Box>
+                            )}
+                        </Box>
+
+                        <Box className="interaction-bar">
+                            <Box className="left-actions">
+                                <IconButton 
+                                    onClick={() => onLike(education._id)}
+                                    color={isLiked ? "primary" : "default"}
+                                    aria-label={isLiked ? "unlike" : "like"}
+                                >
+                                    {isLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                                </IconButton>
+                                <Typography variant="caption">
+                                    {education.likes?.length || 0}
+                                </Typography>
+
+                                <IconButton 
+                                    onClick={() => setShowCommentInput(true)}
+                                    aria-label="comment"
+                                >
+                                    <CommentIcon />
+                                </IconButton>
+                                <Typography variant="caption">
+                                    {education.comments?.length || 0}
+                                </Typography>
+                            </Box>
+
+                            <Box className="right-actions">
+                                <IconButton 
+                                    onClick={handleBookmark}
+                                    aria-label={isBookmarked ? "unbookmark" : "bookmark"}
+                                >
+                                    {isBookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                                </IconButton>
+
+                                <IconButton 
+                                    onClick={handleShare}
+                                    aria-label="share"
+                                >
+                                    <ShareIcon />
+                                </IconButton>
+                            </Box>
+                        </Box>
+
+                        {showCommentInput && (
+                            <Box component="form" onSubmit={handleCommentSubmit} className="comment-input">
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    placeholder="Write a comment..."
+                                    variant="outlined"
+                                />
+                                <Box className="comment-actions">
+                                    <Button 
+                                        onClick={() => setShowCommentInput(false)}
+                                        color="inherit"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button 
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        disabled={!commentText.trim()}
+                                    >
+                                        Comment
+                                    </Button>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {education.comments && education.comments.length > 0 && (
+                            <Box className="comments-section">
+                                <Typography variant="h6" gutterBottom>
+                                    Comments ({education.comments.length})
+                                </Typography>
+                                {education.comments.map((comment, index) => (
+                                    <Box key={index} className="comment">
+                                        <Avatar className="comment-avatar">
+                                            {comment.author?.firstName?.[0] || <PersonIcon />}
+                                        </Avatar>
+                                        <Box className="comment-content">
+                                            <Typography variant="subtitle2">
+                                                {comment.author?.firstName} {comment.author?.lastName}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {comment.content}
+                                            </Typography>
+                                            <Typography variant="caption" color="textSecondary">
+                                                {formatDate(comment.date)}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
+                    </Box>
+                </Box>
+            </DialogContent>
+        </Dialog>
     );
 };
 
