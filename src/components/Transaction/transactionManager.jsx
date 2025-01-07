@@ -15,98 +15,58 @@ import './styles/transactionManagerStyles.css';
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions, loading, error } = useSelector(state => state.transaction || {});
-    const { wallets } = useSelector(state => state.wallet || {});
-    const savingsAccount = useSelector(state => state.savingsAccount?.account);
     const { user } = useSelector(state => state.auth || {});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
+    const [wallets, setLocalWallets] = useState([]);
     const [filters, setFilters] = useState({
         minAmount: '',
         maxAmount: '',
         category: '',
+        wallet: '',
         startDate: '',
         endDate: '',
-        walletId: '',
-        source: '' // 'wallet' or 'savings'
+        type: ''
     });
 
     useEffect(() => {
-        Promise.all([
-            fetchTransactions(),
-            fetchCategories(),
-            fetchWallets(),
-            fetchSavingsAccount()
-        ]).catch(err => {
-            console.error("Error Fetching initial data");
+        fetchInitialData();
+    }, [user]);
+
+    const fetchInitialData = async () => {
+        if (!user?.id) return;
+        
+        dispatch(setLoading(true));
+        try {
+            // Fetch wallets directly
+            const walletsResponse = await walletService.getUserWallets(user.id);
+            setLocalWallets(walletsResponse.data);
+            
+            // Fetch categories
+            const categoriesData = await categoryService.getUserCategories(user.id);
+            setCategories(categoriesData);
+            
+            // Fetch transactions
+            const transactionsData = await transactionService.getUserTransactions(user.id);
+            dispatch(setTransactions(transactionsData));
+        } catch (err) {
             dispatch(setError(err.message));
-        });
-    }, [dispatch, filters]);
-
-    const fetchCategories = async () => {
-        dispatch(setLoading(true));
-        try {
-            if (!user?.id) {
-                throw new Error('User Not Authenticated');
-            }
-            const fetchedCategories = await categoryService.getUserCategories(user.id);
-            const categories = Array.isArray(fetchedCategories) ? fetchedCategories : [];
-            setCategories(categories);
-        } catch (error) {
-            dispatch(setError(error.message));
-        }
-    };
-
-    const fetchTransactions = async () => {
-        dispatch(setLoading(true));
-        try {
-            if (!user?.id) {
-                throw new Error('User Not Authenticated');
-            }
-            const allTransactions = await transactionService.getAllUserTransactions(user.id, filters);
-            dispatch(setTransactions(allTransactions));
-        } catch (error) {
-            dispatch(setError(error.message));
-        }
-    };
-
-    const fetchWallets = async () => {
-        try {
-            if (!user?.id) {
-                throw new Error('User Not Authenticated');
-            }
-            const response = await walletService.getAllWallets(user.id);
-            dispatch(setWallets(response));
-        } catch (error) {
-            dispatch(setError(error.message));
-        }
-    };
-
-    const fetchSavingsAccount = async () => {
-        try {
-            if (!user?.id) {
-                throw new Error('User Not Authenticated');
-            }
-            await savingsAccountService.getSavingsAccount(user.id);
-        } catch (error) {
-            dispatch(setError(error.message));
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 
     const handleTransactionCreated = () => {
         setIsModalOpen(false);
-        fetchTransactions();
-        fetchWallets();
-        fetchSavingsAccount();
+        fetchInitialData();
     };
 
     const handleEditSubmit = async (updatedTransaction) => {
         try {
             await transactionService.updateTransaction(updatedTransaction._id, updatedTransaction);
-            fetchTransactions();
-            fetchWallets();
-            fetchSavingsAccount();
+            fetchInitialData();
             setIsEditModalOpen(false);
             setEditingTransaction(null);
         } catch (error) {
@@ -117,29 +77,44 @@ const TransactionManager = () => {
     const handleTransactionDelete = async (transactionId) => {
         try {
             await transactionService.deleteTransaction(transactionId);
-            fetchTransactions();
-            fetchWallets();
-            fetchSavingsAccount();
+            fetchInitialData();
         } catch (error) {
             dispatch(setError(error.message));
         }
     };
 
-    const handleWalletSelect = (walletId) => {
-        setFilters(prev => ({
-            ...prev,
-            walletId,
-            source: 'wallet'
-        }));
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
     };
 
-    const handleSavingsSelect = () => {
-        setFilters(prev => ({
-            ...prev,
-            walletId: '',
-            source: 'savings'
-        }));
+    const handleEditTransaction = (transaction) => {
+        setEditingTransaction(transaction);
+        setIsEditModalOpen(true);
     };
+
+    const handleDeleteTransaction = (transactionId) => {
+        handleTransactionDelete(transactionId);
+    };
+
+    const handleCreateTransaction = () => {
+        handleTransactionCreated();
+    };
+
+    const handleUpdateTransaction = (updatedTransaction) => {
+        handleEditSubmit(updatedTransaction);
+    };
+
+    const filteredTransactions = transactions.filter((transaction) => {
+        return (
+            (filters.minAmount === '' || transaction.amount >= filters.minAmount) &&
+            (filters.maxAmount === '' || transaction.amount <= filters.maxAmount) &&
+            (filters.category === '' || transaction.category === filters.category) &&
+            (filters.wallet === '' || transaction.wallet === filters.wallet) &&
+            (filters.startDate === '' || transaction.date >= filters.startDate) &&
+            (filters.endDate === '' || transaction.date <= filters.endDate) &&
+            (filters.type === '' || transaction.type === filters.type)
+        );
+    });
 
     if (loading) {
         return <div>Loading...</div>;
@@ -154,60 +129,46 @@ const TransactionManager = () => {
             <div className="transaction-header">
                 <h2>Transactions</h2>
                 <button 
-                    onClick={() => setIsModalOpen(true)}
-                    className="new-transaction-button"
+                    onClick={() => {
+                        setEditingTransaction(null);
+                        setIsModalOpen(true);
+                    }}
+                    className="create-transaction-btn"
                 >
-                    New Transaction
+                    Create Transaction
                 </button>
             </div>
 
-            <FilterTransactions
-                filters={filters}
-                setFilters={setFilters}
-                wallets={wallets}
-                onWalletSelect={handleWalletSelect}
-                onSavingsSelect={handleSavingsSelect}
+            <FilterTransactions 
+                filters={filters} 
+                onFilterChange={handleFilterChange}
                 categories={categories}
-                onCategorySelect={(category) => setFilters(prev => ({ ...prev, category }))}
+                wallets={wallets}
             />
 
-            <div className="transaction-content">
-                <div className="transaction-list">
-                    <TransactionList
-                        transactions={transactions}
-                        onEdit={(transaction) => {
-                            setEditingTransaction(transaction);
-                            setIsEditModalOpen(true);
-                        }}
-                        onDelete={handleTransactionDelete}
-                    />
-                </div>
-                <CategoryPanel transactions={transactions} categories={categories} />
-            </div>
+            {error && <div className="error-message">{error}</div>}
 
-            {isModalOpen && (
-                <CreateTransactionModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onTransactionCreated={handleTransactionCreated}
-                    wallets={wallets}
-                    categories={categories}
-                    savingsAccount={savingsAccount}
-                />
-            )}
+            <TransactionList 
+                transactions={filteredTransactions}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+                loading={loading}
+                wallets={wallets}
+                categories={categories}
+            />
 
-            {isEditModalOpen && editingTransaction && (
+            {(isModalOpen || isEditModalOpen) && (
                 <CreateTransactionModal
-                    isOpen={isEditModalOpen}
                     onClose={() => {
+                        setIsModalOpen(false);
                         setIsEditModalOpen(false);
                         setEditingTransaction(null);
                     }}
-                    onTransactionCreated={handleTransactionCreated}
+                    onCreateTransaction={handleCreateTransaction}
+                    onUpdateTransaction={handleUpdateTransaction}
+                    transaction={editingTransaction}
                     wallets={wallets}
                     categories={categories}
-                    savingsAccount={savingsAccount}
-                    initialData={editingTransaction}
                 />
             )}
         </div>

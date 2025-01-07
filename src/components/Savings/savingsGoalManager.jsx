@@ -8,7 +8,8 @@ import {
     Typography,
     IconButton,
     Box,
-    CircularProgress
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import savingsGoalService from '../../services/savingsGoalService';
@@ -28,26 +29,56 @@ const SavingsGoalManager = () => {
     const [selectedGoal, setSelectedGoal] = useState(null);
 
     useEffect(() => {
-        const fetchSavingsGoals = async () => {
-            if (!user?.id) return;
-            
-            dispatch(setLoading(true));
-            try {
-                const data = await savingsGoalService.getSavingsGoals(user.id);
-                dispatch(setSavingsGoals(data));
-            } catch (err) {
-                dispatch(setError(err.message));
-            } finally {
-                dispatch(setLoading(false));
-            }
-        };
+        if (user?.id) {
+            const fetchSavingsGoals = async () => {
+                dispatch(setLoading(true));
+                try {
+                    const data = await savingsGoalService.getSavingsGoals(user.id);
+                    dispatch(setSavingsGoals(data));
+                } catch (err) {
+                    console.error('Error fetching savings goals:', err);
+                    dispatch(setError('Unable to fetch savings goals. Please try again later.'));
+                } finally {
+                    dispatch(setLoading(false));
+                }
+            };
 
-        fetchSavingsGoals();
+            fetchSavingsGoals();
+        }
     }, [dispatch, user]);
 
-    const handleEditGoal = (goal) => {
-        setSelectedGoal(goal);
-        setEditModalOpen(true);
+    const handleCreateGoal = async (goalData) => {
+        dispatch(setLoading(true));
+        try {
+            await savingsGoalService.createSavingsGoal({
+                ...goalData,
+                userId: user.id
+            });
+            setNewGoalModalOpen(false);
+            const data = await savingsGoalService.getSavingsGoals(user.id);
+            dispatch(setSavingsGoals(data));
+        } catch (err) {
+            console.error('Error creating savings goal:', err);
+            dispatch(setError('Failed to create savings goal. Please try again.'));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    const handleUpdateGoal = async (goalId, updatedData) => {
+        dispatch(setLoading(true));
+        try {
+            await savingsGoalService.updateSavingsGoal(goalId, updatedData);
+            setEditModalOpen(false);
+            setSelectedGoal(null);
+            const data = await savingsGoalService.getSavingsGoals(user.id);
+            dispatch(setSavingsGoals(data));
+        } catch (err) {
+            console.error('Error updating savings goal:', err);
+            dispatch(setError('Failed to update savings goal. Please try again.'));
+        } finally {
+            dispatch(setLoading(false));
+        }
     };
 
     const handleDeleteGoal = async (goalId) => {
@@ -55,13 +86,22 @@ const SavingsGoalManager = () => {
             return;
         }
 
+        dispatch(setLoading(true));
         try {
             await savingsGoalService.deleteSavingsGoal(goalId);
             const data = await savingsGoalService.getSavingsGoals(user.id);
             dispatch(setSavingsGoals(data));
         } catch (err) {
-            dispatch(setError(err.message));
+            console.error('Error deleting savings goal:', err);
+            dispatch(setError('Failed to delete savings goal. Please try again.'));
+        } finally {
+            dispatch(setLoading(false));
         }
+    };
+
+    const handleEditGoal = (goal) => {
+        setSelectedGoal(goal);
+        setEditModalOpen(true);
     };
 
     const calculateProgress = (current, target) => {
@@ -70,22 +110,16 @@ const SavingsGoalManager = () => {
 
     if (loading) {
         return (
-            <Box className="savings-goal-manager loading">
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                 <CircularProgress />
-                <Typography>Loading savings goals...</Typography>
             </Box>
         );
     }
 
     return (
-        <motion.div 
-            className="savings-goal-manager"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <Box className="header">
-                <Typography variant="h4" component="h1">
+        <div className="savings-goal-manager">
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h5" component="h2">
                     Savings Goals
                 </Typography>
                 <Button
@@ -99,99 +133,103 @@ const SavingsGoalManager = () => {
             </Box>
 
             {error && (
-                <Typography className="error-message" color="error">
+                <Alert severity="error" sx={{ mb: 2 }}>
                     {error}
-                </Typography>
+                </Alert>
             )}
 
-            {savingsGoals.length === 0 ? (
-                <Card className="empty-state">
+            {!loading && savingsGoals.length === 0 ? (
+                <Card variant="outlined" sx={{ mb: 2 }}>
                     <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            No savings goals yet
+                        <Typography variant="body1" color="text.secondary" align="center">
+                            You haven't set any savings goals yet. Click "New Goal" to get started!
                         </Typography>
-                        <Typography color="textSecondary" paragraph>
-                            Create your first savings goal to start tracking your progress!
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={() => setNewGoalModalOpen(true)}
-                        >
-                            Create First Goal
-                        </Button>
                     </CardContent>
                 </Card>
             ) : (
-                <div className="goals-grid">
+                <motion.div layout className="goals-grid">
                     {savingsGoals.map(goal => (
-                        <Card key={goal._id} className="goal-card">
-                            <CardContent>
-                                <Box className="goal-header">
-                                    <Typography variant="h6">{goal.name}</Typography>
-                                    <Box>
-                                        <IconButton 
-                                            onClick={() => handleEditGoal(goal)}
-                                            size="small"
-                                            color="primary"
-                                        >
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton 
-                                            onClick={() => handleDeleteGoal(goal._id)}
-                                            size="small"
-                                            color="error"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
+                        <motion.div
+                            key={goal._id}
+                            layout
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                        >
+                            <Card className="goal-card">
+                                <CardContent>
+                                    <Box className="goal-header">
+                                        <Typography variant="h6">{goal.name}</Typography>
+                                        <Box>
+                                            <IconButton 
+                                                onClick={() => handleEditGoal(goal)}
+                                                size="small"
+                                                color="primary"
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton 
+                                                onClick={() => handleDeleteGoal(goal._id)}
+                                                size="small"
+                                                color="error"
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Box>
                                     </Box>
-                                </Box>
-                                
-                                <Box className="goal-progress">
-                                    <div 
-                                        className="progress-bar"
-                                        style={{ 
-                                            width: `${calculateProgress(goal.currentAmount, goal.targetAmount)}%`
-                                        }}
-                                    />
-                                    <Typography variant="body2" color="textSecondary" className="progress-text">
-                                        {calculateProgress(goal.currentAmount, goal.targetAmount).toFixed(1)}%
-                                    </Typography>
-                                </Box>
+                                    
+                                    <Box className="goal-progress">
+                                        <div 
+                                            className="progress-bar"
+                                            style={{ 
+                                                width: `${calculateProgress(goal.currentAmount, goal.targetAmount)}%`
+                                            }}
+                                        />
+                                        <Typography variant="body2" color="textSecondary" className="progress-text">
+                                            {calculateProgress(goal.currentAmount, goal.targetAmount).toFixed(1)}%
+                                        </Typography>
+                                    </Box>
 
-                                <Box className="goal-amounts">
-                                    <Typography variant="body1">
-                                        ${goal.currentAmount.toFixed(2)} / ${goal.targetAmount.toFixed(2)}
-                                    </Typography>
-                                </Box>
+                                    <Box className="goal-amounts">
+                                        <Typography variant="body1">
+                                            ${goal.currentAmount.toFixed(2)} / ${goal.targetAmount.toFixed(2)}
+                                        </Typography>
+                                    </Box>
 
-                                {goal.description && (
-                                    <Typography variant="body2" color="textSecondary" className="goal-description">
-                                        {goal.description}
-                                    </Typography>
-                                )}
+                                    {goal.description && (
+                                        <Typography variant="body2" color="textSecondary" className="goal-description">
+                                            {goal.description}
+                                        </Typography>
+                                    )}
 
-                                <Typography variant="caption" color="textSecondary" className="goal-deadline">
-                                    Target Date: {new Date(goal.targetDate).toLocaleDateString()}
-                                </Typography>
-                            </CardContent>
-                        </Card>
+                                    <Typography variant="caption" color="textSecondary" className="goal-deadline">
+                                        Target Date: {new Date(goal.targetDate).toLocaleDateString()}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             )}
-
-            <EditGoalModal
-                open={isEditModalOpen}
-                onClose={() => setEditModalOpen(false)}
-                goal={selectedGoal}
-            />
 
             <NewGoalDialog
                 open={isNewGoalModalOpen}
                 onClose={() => setNewGoalModalOpen(false)}
+                onSubmit={handleCreateGoal}
             />
-        </motion.div>
+
+            {selectedGoal && (
+                <EditGoalModal
+                    open={isEditModalOpen}
+                    goal={selectedGoal}
+                    onClose={() => {
+                        setEditModalOpen(false);
+                        setSelectedGoal(null);
+                    }}
+                    onSubmit={(updatedData) => handleUpdateGoal(selectedGoal._id, updatedData)}
+                />
+            )}
+        </div>
     );
 };
 

@@ -16,6 +16,7 @@ const Sidebar = ({ isAuthenticated }) => {
         { name: 'Savings Goals', link: '/saving-goal', icon: faPiggyBank },
         { name: 'Savings Accounts', link: '/saving-account', icon: faBank }, 
         { name: 'Categories', link: '/category', icon: faChartPie }, 
+        { name: 'My Education Posts', link: '/user-education', icon: faBookOpen },
         { name: 'Education', link: '/education', icon: faBookOpen }, 
         { name: 'Chatbot', link: '/chatbot', icon: faRobot }, 
         { name: 'Settings', link: '/settings', icon: faTools },

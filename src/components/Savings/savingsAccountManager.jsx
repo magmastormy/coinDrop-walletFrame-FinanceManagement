@@ -35,8 +35,9 @@ const SavingsAccountManager = () => {
         initialBalance: '',
         automaticSavings: {
             enabled: false,
-            type: 'percentage',
+            type: 'fixed',
             amount: '',
+            percentage: '',
             frequency: 'monthly'
         }
     });
@@ -64,7 +65,14 @@ const SavingsAccountManager = () => {
             const accountData = {
                 ...formData,
                 userId: user.id,
-                initialBalance: parseFloat(formData.initialBalance)
+                initialBalance: parseFloat(formData.initialBalance),
+                automation: {
+                    type: formData.automaticSavings?.type || 'fixed',
+                    frequency: formData.automaticSavings?.frequency || 'monthly',
+                    amount: parseFloat(formData.automaticSavings?.amount) || 0,
+                    percentage: parseFloat(formData.automaticSavings?.percentage) || 0,
+                    enabled: formData.automaticSavings?.enabled || false
+                }
             };
             
             const response = await savingsAccountService.createSavingsAccount(accountData);
@@ -75,8 +83,9 @@ const SavingsAccountManager = () => {
                 initialBalance: '',
                 automaticSavings: {
                     enabled: false,
-                    type: 'percentage',
+                    type: 'fixed',
                     amount: '',
+                    percentage: '',
                     frequency: 'monthly'
                 }
             });
@@ -210,15 +219,15 @@ const SavingsAccountManager = () => {
                                 </Typography>
                             </Box>
 
-                            {savingsAccount.automaticSavings?.enabled && (
+                            {savingsAccount.automation?.enabled && (
                                 <Box className="automatic-savings-section">
                                     <Typography variant="overline">Automatic Savings</Typography>
                                     <Typography>
-                                        {savingsAccount.automaticSavings.type === 'percentage' 
-                                            ? `${savingsAccount.automaticSavings.amount}% of income` 
-                                            : `$${savingsAccount.automaticSavings.amount}`}
+                                        {savingsAccount.automation.type === 'percentage' 
+                                            ? `${savingsAccount.automation.percentage}% of income` 
+                                            : `$${savingsAccount.automation.amount}`}
                                         {' per '}
-                                        {savingsAccount.automaticSavings.frequency}
+                                        {savingsAccount.automation.frequency}
                                     </Typography>
                                 </Box>
                             )}
@@ -286,7 +295,7 @@ const SavingsAccountManager = () => {
                         name="automaticSavings.amount"
                         label={formData.automaticSavings.type === 'percentage' ? 'Percentage' : 'Amount'}
                         type="number"
-                        value={formData.automaticSavings.amount}
+                        value={formData.automaticSavings.type === 'percentage' ? formData.automaticSavings.percentage : formData.automaticSavings.amount}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"

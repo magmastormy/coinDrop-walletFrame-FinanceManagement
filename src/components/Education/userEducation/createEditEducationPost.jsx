@@ -186,6 +186,13 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
         return true;
     };
 
+    const handleKeyDown = (e) => {
+        // Only prevent Enter key if it's not pressed with Shift
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+        }
+    };
+
     const handleOverlayClick = (e) => {
         if (e.target.className === 'modal-overlay') {
             onClose();
@@ -214,6 +221,7 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter title"
                         className="create-edit-education-title-input"
+                        onKeyDown={handleKeyDown}
                     />
                     <div className="create-edit-education-editor-container">
                         <MenuBar

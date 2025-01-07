@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {setBudgets, setLoading, setError } from '../../slices/budgetSlice';
 import budgetService from '../../services/budgetService';
 import transactionService from '../../services/transactionService';
+import categoryService from '../../services/categoryService';
 import CreateBudgetModal from './createBudgetModal';
 import BudgetList from './budgetList';
 import BudgetTransactionList from './budgetTransactionList';
@@ -27,18 +28,15 @@ const BudgetManager = () =>
     
     useEffect(() => {
         fetchBudgets();
-    }, [dispatch]);
-
-    useEffect(() => {
         fetchCategories();
-    }, []);
+    }, [dispatch]);
 
     const fetchCategories = async () => {
         try {
             const fetchedCategories = await categoryService.getUserCategories(user.id);
             setCategories(fetchedCategories);
         } catch (err) {
-            dispatch(setError(err.message));
+            console.error('Error fetching categories:', err);
         }
     };
 
@@ -91,53 +89,65 @@ const BudgetManager = () =>
    };
 
     return (
-       <div className="budget-manager">
-           <h2>My Budgets</h2>
-           <div className="budget-chart-container">
-                <FontAwesomeIcon icon={faChartLine} size="lg" />
-                <BudgetChart budgets={budgets} />
-                {
-                    selectedBudget && (
-                        <>
-                            <BudgetPerformanceChart performanceData={budgets} />
-                            <TransactionChart transactions={transactions} />
-                        </>
-                    )
-                }
-            </div>
-           <div className="budget-filter">
-                <input
-                    type="text"
-                    name="category"
-                    placeholder="Filter by category"
-                    value={filter.category}
-                    onChange={handleFilterChange}
-                />
+        <div className="budget-manager">
+            <div className="budget-header">
+                <h2>Budget Management</h2>
+                <button onClick={() => {
+                    setEditingBudget(null);
+                    setIsModalOpen(true);
+                }} className="create-budget-btn">
+                    Create Budget
+                </button>
             </div>
 
-           <button onClick={() => setIsModalOpen(true)} className="create-budget-btn">
-               + Create Budget
-           </button>
-           <BudgetList 
-               budgets={budgets} 
-               onBudgetSelect={handleBudgetSelect}
-               onEdit={handleEditBudget} 
-               onDelete={handleDeleteBudget} 
-           />
-           <CreateBudgetModal 
-               isOpen={isModalOpen} 
-               onClose={() => setIsModalOpen(false)}
-               onBudgetCreated={handleBudgetCreated}
-               categories={categories}
-           />
-           {selectedBudget && (
-               <BudgetTransactionList 
-                   transactions={transactions}
-                   budget={selectedBudget}
-               />
-           )}
-       </div>
-   );
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="budget-content">
+                <div className="budget-list-section">
+                    <BudgetList
+                        budgets={budgets}
+                        onEdit={(budget) => {
+                            setEditingBudget(budget);
+                            setIsModalOpen(true);
+                        }}
+                        onDelete={handleDeleteBudget}
+                        onSelect={setSelectedBudget}
+                        selectedBudget={selectedBudget}
+                    />
+                </div>
+
+                <div className="budget-details-section">
+                    {selectedBudget && (
+                        <>
+                            <BudgetTransactionList
+                                budget={selectedBudget}
+                                transactions={transactions}
+                                onFilterChange={handleFilterChange}
+                                filter={filter}
+                            />
+                            <div className="budget-charts">
+                                <BudgetChart budget={selectedBudget} />
+                                <BudgetPerformanceChart budget={selectedBudget} />
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {isModalOpen && (
+                <CreateBudgetModal
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setEditingBudget(null);
+                    }}
+                    onCreateBudget={handleBudgetCreated}
+                    onUpdateBudget={handleEditBudget}
+                    editingBudget={editingBudget}
+                    categories={categories}
+                />
+            )}
+        </div>
+    );
 };
 
 export default BudgetManager;

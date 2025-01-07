@@ -7,9 +7,9 @@ import WalletCard from './walletCard';
 import EmptyState from '../../pages/emptyState';
 import './styles/walletListStyles.css';
 
-const WalletList = ({ wallets, onWalletUpdate, onWalletDelete, onTransfer }) => {
+const WalletList = ({ wallets = [], onWalletUpdate, onWalletDelete, onTransfer }) => {
     const totalBalance = useMemo(() => {
-        return wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+        return Array.isArray(wallets) ? wallets.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0) : 0;
     }, [wallets]);
 
     const formatTotalBalance = (balance) => {
