@@ -14,7 +14,7 @@ const profileService = {
         try {
             console.log(`Fetching profile for user: ${userId}`);
             const response = await axiosInstance.get(`${API_URL}/${userId}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error fetching profile:', error);
             throw new Error(error.response?.data?.error || 'Failed to fetch profile');

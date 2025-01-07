@@ -8,7 +8,7 @@ const settingsService = {
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
         console.log("Settings response.data: ",response.data);
         console.log("Settings response:", response);
-        return response.data;
+        return response;
     },
 
     updateNotificationSettings: async (notifications) => {
@@ -34,7 +34,7 @@ const settingsService = {
     // Profile-related operations
     getProfile: async () => {
         const response = await axiosInstance.get(`${API_URL}/profile`);
-        return response.data;
+        return response;
     },
 
     updateProfile: async (profileData) => {

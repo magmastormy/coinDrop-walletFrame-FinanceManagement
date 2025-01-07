@@ -19,7 +19,7 @@ const SavingsManager = () => {
         const fetchSavingsAccount = async () => {
             try {
                 dispatch(setLoading(true));
-                const data = await savingsAccountService.getSavingsAccount(user._id);
+                const data = await savingsAccountService.getSavingsAccount(user.id);
                 dispatch(setSavingsAccount(data));
             } catch (err) {
                 dispatch(setError(err.message));

@@ -62,7 +62,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/education', educationRoutes);
-app.use('/api/savings-accounts', savingsAccountRoutes);
+app.use('/api/saving-accounts', savingsAccountRoutes);
 app.use('/api/saving-goals', savingsGoalRoutes);
 app.use('/api/zhipuai', zhipuaiRoutes);
 
@@ -95,6 +95,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+console.log('ZHIPU_API_ENDPOINT:', process.env.ZHIPU_API_ENDPOINT);
+console.log('ZHIPU_API_KEY:', process.env.ZHIPU_API_KEY);
 
 const server = app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

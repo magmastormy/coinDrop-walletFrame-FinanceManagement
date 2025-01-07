@@ -17,7 +17,7 @@ export const savingsAccountService = {
     getSavingsAccount: async (accountId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${accountId}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error fetching savings account:', error);
             // Return null instead of throwing error for 404

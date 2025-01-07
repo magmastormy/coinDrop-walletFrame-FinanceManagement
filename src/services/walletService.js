@@ -20,7 +20,7 @@ const walletService = {
     getWalletBudgets: async (walletId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${walletId}/budgets`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error fetching wallet budgets:', error);
             throw error;
@@ -48,7 +48,7 @@ const walletService = {
 
     getWalletStats: async () => {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        return response.data;
+        return response;
     },
 
     transferBetweenWallets: async (fromWalletId, toWalletId, amount) => {

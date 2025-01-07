@@ -46,6 +46,7 @@ const transactionService = {
             });
 
             // Ensure data exists and is an array before mapping
+            //TODO:Just return the data but dont put .data at the end
             const walletData = Array.isArray(walletTransactions?.data) ? walletTransactions.data : [];
             const savingsData = Array.isArray(savingsTransactions?.data) ? savingsTransactions.data : [];
 

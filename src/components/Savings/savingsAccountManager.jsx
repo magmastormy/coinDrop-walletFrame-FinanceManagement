@@ -43,7 +43,7 @@ const SavingsAccountManager = () => {
 
     useEffect(() => {
         const fetchSavingsAccount = async () => {
-            if (!user?.id) return;
+            if (!user.id) return;
             
             dispatch(setLoading(true));
             try {

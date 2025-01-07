@@ -20,7 +20,7 @@ const SavingsGoalList = () => {
         const fetchGoals = async () => {
             try {
                 dispatch(setLoading(true));
-                const data = await savingsGoalService.getSavingsGoals(user._id);
+                const data = await savingsGoalService.getSavingsGoals(user.id);
                 dispatch(setSavingsGoals(data));
             } catch (err) {
                 dispatch(setError(err.message));

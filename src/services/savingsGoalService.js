@@ -17,7 +17,7 @@ export const savingsGoalService = {
     getSavingsGoals: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
-            return response.data;
+            return response;
         } catch (error) {
             throw error;
         }
@@ -27,7 +27,7 @@ export const savingsGoalService = {
     getSavingsGoal: async (goalId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${goalId}`);
-            return response.data;
+            return response;
         } catch (error) {
             throw error;
         }
@@ -67,7 +67,7 @@ export const savingsGoalService = {
     getCompletedGoals: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/completed/${userId}`);
-            return response.data;
+            return response;
         } catch (error) {
             throw error;
         }
