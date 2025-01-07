@@ -1,26 +1,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faDashboard, faTools, faDoorClosed, faWallet, faSackDollar, faUser, faChartPie, faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faDashboard, faTools, faDoorClosed, faWallet, faCreditCard, faUser, faChartPie, faBookOpen, faExchangeAlt, faPiggyBank, faBank, faRobot } from '@fortawesome/free-solid-svg-icons';
 import './styles/sideBarstyle.css';
 
 const Sidebar = ({ isAuthenticated }) => {
-    if (!isAuthenticated) return null; // Do not render if not authenticated
+    if (!isAuthenticated) return null;
 
     const menuItems = [
         { name: 'Home', link: '/', icon: faHome },
-        { name: 'Dashboard', link: '/dashboard', icon: faDashboard },
-        {name: 'Wallet', link: '/wallet', icon: faWallet},
-        {name: 'Budget', link: '/budget', icon: faSackDollar},
-        { name: 'Logout', link: '/logout', icon: faDoorClosed },
-        {name: 'Transaction', link: '/transaction', icon: faSackDollar}, 
-        {name: 'Settings', link: '/settings', icon: faTools},
-        {name: 'Profile', link: '/profile', icon: faUser},
-        {name: 'Categories', link: '/category', icon: faChartPie},
-        {name: 'Education', link: '/education', icon: faBookOpen},
-        {name: 'Savings Goals', link: '/saving-goal', icon: faSackDollar},
-        {name: 'Savings Accounts', link: '/saving-account', icon: faSackDollar},
-    ];
+        { name: 'Dashboard', link: '/dashboard', icon: faDashboard }, 
+        { name: 'Wallet', link: '/wallet', icon: faWallet }, 
+        { name: 'Budget', link: '/budget', icon: faCreditCard }, 
+        { name: 'Transaction', link: '/transaction', icon: faExchangeAlt }, 
+        { name: 'Savings Goals', link: '/saving-goal', icon: faPiggyBank },
+        { name: 'Savings Accounts', link: '/saving-account', icon: faBank }, 
+        { name: 'Categories', link: '/category', icon: faChartPie }, 
+        { name: 'Education', link: '/education', icon: faBookOpen }, 
+        { name: 'Chatbot', link: '/chatbot', icon: faRobot }, 
+        { name: 'Settings', link: '/settings', icon: faTools },
+        { name: 'Profile', link: '/profile', icon: faUser }, 
+        { name: 'Logout', link: '/logout', icon: faDoorClosed }, 
+      ];
 
     return (
         <div className="sidebar">

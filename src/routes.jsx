@@ -14,6 +14,8 @@ import Education from './components/Education/educationManager';
 import UserEducation from './components/Education/userEducation/userEducationManager';
 import SavingGoal from './components/Savings/savingsGoalManager';
 import SavingAccount from './components/Savings/savingsAccountManager';
+import ChatBot from './components/Chatbot/chatbotManager';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
@@ -91,6 +93,12 @@ const AppRoutes = () => {
                 <Route path="/saving-account" element={
                     <ProtectedRoute>
                         <SavingAccount />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/chatbot" element={
+                    <ProtectedRoute>
+                        <ChatBot />
                     </ProtectedRoute>
                 } />
                 
