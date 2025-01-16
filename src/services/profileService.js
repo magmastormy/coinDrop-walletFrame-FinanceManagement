@@ -55,6 +55,26 @@ const profileService = {
         }
     },
 
+    uploadProfileImage: async (file, type = 'profile') => {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await axiosInstance.post(
+                `${API_URL}/upload-image?type=${type}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     /**
      * Get user's followers
      * @param {string} userId - The user's ID
@@ -94,6 +114,15 @@ const profileService = {
         } catch (error) {
             console.error('Error deleting profile:', error);
             throw new Error(error.response?.data?.error || 'Failed to delete profile');
+        }
+    },
+
+    deleteProfileImage: async (type = 'profile') => {
+        try {
+            const response = await axiosInstance.delete(`${API_URL}/image?type=${type}`);
+            return response.data;
+        } catch (error) {
+            throw error;
         }
     }
 };

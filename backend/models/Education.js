@@ -24,13 +24,13 @@ const EducationSchema = new mongoose.Schema({
         default: Date.now
     },
     images: [{
-        url: {
-            type: String,
-            maxlength: 1000000
-        },
-        alt: String,
-        caption: String
-    }],
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Image'
+      }],
+    featuredImage: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Image'
+    },
     contentType: {
         type: String,
         enum: ['markdown', 'tiptap'],
@@ -54,7 +54,12 @@ const EducationSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
+    }],
+    timestamps: true
 });
+
+EducationSchema.index({ author: 1, createdAt: -1 });
+EducationSchema.index({ category: 1 });
+EducationSchema.index({ 'likes': 1 });
 
 module.exports = mongoose.model('Education', EducationSchema);

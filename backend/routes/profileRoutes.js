@@ -2,8 +2,27 @@ const express = require('express');
 const { body } = require('express-validator');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const ProfileController = require('../controllers/profileController');
-
+const multer = require('multer');
 const router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: 'uploads/',
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Not an image! Please upload an image.'), false);
+        }
+    }
+});
 
 // Validation middleware
 const profileValidation = [
@@ -26,9 +45,12 @@ router.use(authMiddleware);
 
 // Profile routes
 router.get('/:userId', ProfileController.getProfile);
-router.put('/:userId', profileValidation, ProfileController.updateProfile);
+router.put('/', authMiddleware, ProfileController.updateProfile);
 router.post('/:userId', profileValidation, ProfileController.createProfile);
 router.get('/:userId/followers', ProfileController.getFollowers);
 router.get('/:userId/following', ProfileController.getFollowing);
 router.delete('/:userId', ProfileController.deleteProfile);
+router.post('/upload-image', authMiddleware, upload.single('image'), ProfileController.uploadProfileImage);
+router.delete('/image', authMiddleware, ProfileController.deleteProfileImage);
+
 module.exports = router;

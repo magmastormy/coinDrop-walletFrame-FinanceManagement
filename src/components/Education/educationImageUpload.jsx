@@ -1,29 +1,36 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
 import imageCompression from 'browser-image-compression';
-import './styles/imageUpload.css';
 
-const ImageUpload = ({ 
-    onImageUpload,
-    onImageRemove,
-    imageType = 'education',
-    currentImage = null,
-    multiple = false,
+const EducationImageUpload = ({ 
+    onImageUpload, 
+    onImageRemove, 
+    currentImages = [], 
     maxImages = 5,
-    className = ''
+    className = '' 
 }) => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
 
     const handleImageUpload = async (file) => {
         if (!file) return;
+        
+        if (currentImages.length >= maxImages) {
+            setError(`Maximum ${maxImages} images allowed`);
+            return;
+        }
+
         setUploading(true);
         setError('');
 
         try {
-            const compressedFile = await compressImage(file);
+            const compressedFile = await imageCompression(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true
+            });
             await onImageUpload(compressedFile);
         } catch (error) {
             setError(error.message);
@@ -34,47 +41,50 @@ const ImageUpload = ({
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
-            if (!multiple && acceptedFiles.length > 1) {
-                setError('Only one image can be uploaded');
-                return;
-            }
             for (const file of acceptedFiles) {
+                if (currentImages.length >= maxImages) break;
                 await handleImageUpload(file);
             }
         },
         accept: {
             'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
         },
-        maxSize: 5242880,
-        multiple
+        maxSize: 5242880, // 5MB
+        multiple: true
     });
 
     return (
-        <div className={`image-upload-container ${className}`}>
-            {currentImage ? (
-                <div className="current-image">
-                    <img src={currentImage.url} alt="Current" />
-                    {onImageRemove && (
-                        <button 
-                            onClick={onImageRemove}
+        <div className={`education-image-upload ${className}`}>
+            <div className="current-images">
+                {currentImages.map((image, index) => (
+                    <div key={index} className="image-preview">
+                        <img src={image.url} alt={`Upload ${index + 1}`} />
+                        <button
+                            onClick={() => onImageRemove(image._id)}
                             className="remove-image"
                             aria-label="Remove image"
                         >
                             <FontAwesomeIcon icon={faTimes} />
                         </button>
-                    )}
-                </div>
-            ) : (
+                    </div>
+                ))}
+            </div>
+
+            {currentImages.length < maxImages && (
                 <div {...getRootProps()} className="dropzone">
                     <input {...getInputProps()} />
                     <FontAwesomeIcon icon={faImage} className="upload-icon" />
-                    <p>{imageType === 'profile' ? 'Upload profile picture' : 'Drop images or click to select'}</p>
+                    <p>Drop images or click to select</p>
+                    <span className="image-limit">
+                        {currentImages.length} / {maxImages} images
+                    </span>
                 </div>
             )}
+            
             {error && <p className="error-message">{error}</p>}
             {uploading && <p className="uploading-message">Uploading...</p>}
         </div>
     );
 };
 
-export default ImageUpload;
+export default EducationImageUpload;

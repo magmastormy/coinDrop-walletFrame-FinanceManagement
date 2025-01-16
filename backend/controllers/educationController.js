@@ -1,5 +1,6 @@
 const Education = require('../models/Education');
 const cloudinary = require('cloudinary').v2;
+const ImageService = require("../../src/services/imageService");
 const fs = require('fs').promises;
 class EducationController {
 
@@ -9,41 +10,43 @@ class EducationController {
                 return res.status(400).json({ error: 'No image provided' });
             }
 
-            const result = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'education',
-                resource_type: 'image',
-                transformation: [
-                    { width: 1200, crop: 'limit' },
-                    { quality: 'auto' }
-                ]
-            });
+            const userId = req.user._id || req.query.userId || req.user.userId;
+            
+            const image = await ImageService.uploadImage(
+                req.file, 
+                userId,
+                'education'
+            );
 
-            // Clean up local file after upload
-            await fs.unlink(req.file.path);
-
-            res.json({ 
-                url: result.secure_url,
-                public_id: result.public_id
+            res.json({
+                url: image.url,
+                public_id: image.publicId,
+                _id: image._id
             });
         } catch (error) {
-            // Clean up local file if upload failed
-            if (req.file) {
-                await fs.unlink(req.file.path).catch(console.error);
-            }
             res.status(400).json({ error: error.message });
         }
     }
+
 
     static async createEducation(req, res) {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
 
+            const { title, details, images, featuredImage } = req.body;
+
             const education = new Education({
-                ...req.body,
+                title,
+                details,
                 author: userId,
+                images: images || [],
+                featuredImage: featuredImage,
                 contentType: 'tiptap'
             });
+
             await education.save();
+            await education.populate('author images featuredImage');
+            
             res.status(201).json(education);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -55,6 +58,8 @@ class EducationController {
         try {
             const educations = await Education.find({})
                 .populate('author', 'username firstName lastName profilePicture')
+                .populate('images')
+                .populate('featuredImage')
                 .sort({ createdAt: -1 });
                 
             res.status(200).json({
@@ -72,6 +77,8 @@ class EducationController {
             const userId = req.params.userId || req.user._id || req.query.userId || req.user.userId;
             const educations = await Education.find({ author: userId })
                 .populate('author', 'username firstName lastName profilePicture')
+                .populate('images')
+                .populate('featuredImage')
                 .sort({ createdAt: -1 });
                 
             res.status(200).json({
@@ -86,7 +93,15 @@ class EducationController {
 
     static async getEducationById(req, res) {
         try {
-            const education = await Education.findById(req.params.id).populate('author', 'username');
+            const education = await Education.findById(req.params.id)
+                .populate('author', 'username firstName lastName profilePicture')
+                .populate('images')
+                .populate('featuredImage')
+                .populate({
+                    path: 'comments.user',
+                    select: 'username profilePicture'
+                });
+
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
             }
@@ -98,11 +113,29 @@ class EducationController {
 
     static async updateEducation(req, res) {
         try {
-            const education = await Education.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            const { title, details, category, images, featuredImage } = req.body;
+            const education = await Education.findById(req.params.id);
+            
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
             }
-            res.status(200).json(education);
+
+            // Handle image deletions if any
+            const oldImages = education.images || [];
+            const newImages = images || [];
+            const imagesToDelete = oldImages.filter(img => !newImages.includes(img.toString()));
+            
+            for (const imageId of imagesToDelete) {
+                await ImageService.deleteImage(imageId);
+            }
+
+            const updatedEducation = await Education.findByIdAndUpdate(
+                req.params.id,
+                { title, details, category, images, featuredImage },
+                { new: true }
+            ).populate('author images featuredImage');
+
+            res.status(200).json(updatedEducation);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
@@ -110,10 +143,23 @@ class EducationController {
 
     static async deleteEducation(req, res) {
         try {
-            const education = await Education.findByIdAndDelete(req.params.id);
+            const education = await Education.findById(req.params.id)
+                .populate('images')
+                .populate('featuredImage');
+                
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
             }
+
+            // Delete associated images
+            const images = [...(education.images || []), education.featuredImage]
+                .filter(Boolean);
+
+            for (const image of images) {
+                await ImageService.deleteImage(image._id);
+            }
+
+            await education.remove();
             res.status(200).json({ message: 'Education post deleted successfully' });
         } catch (error) {
             res.status(400).json({ error: error.message });

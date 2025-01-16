@@ -5,14 +5,30 @@ const EducationController = require('../controllers/educationController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { validationMiddleware } = require('../middleware/validationMiddleware');
 const multer = require('multer');
-const storage = multer.memoryStorage();
-const upload = multer({ 
-    dest: 'uploads/',
-    storage: storage,
-    limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, `${Date.now()}-${file.originalname}`);
     }
- });
+});
+
+
+const upload = multer({ 
+    storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Not an image! Please upload an image.'), false);
+        }
+    }
+});
 
 // Education Validation Middleware
 const educationValidation = [
@@ -36,6 +52,5 @@ router.delete('/:id', EducationController.deleteEducation);
 router.post('/:id/like', EducationController.likeEducation);
 router.post('/:id/comments', body('text').isLength({ min: 1, max: 500 }).withMessage('Comment must be between 1 and 500 characters'), validationMiddleware, EducationController.addComment);
 router.delete('/:id/comments/:commentId', EducationController.deleteComment);
-router.post('/upload-image', upload.single('image'), EducationController.uploadImage
-);
+router.post('/upload-image', authMiddleware, upload.single('image'), EducationController.uploadImage);
 module.exports = router;

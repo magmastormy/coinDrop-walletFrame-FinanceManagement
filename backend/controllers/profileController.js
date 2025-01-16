@@ -1,4 +1,5 @@
 const UserProfile = require('../models/UserProfile');
+const ImageService = require("../../src/services/imageService");
 const { validationResult } = require('express-validator');
 
 class ProfileController {
@@ -31,22 +32,9 @@ class ProfileController {
         }
     }
     
-    // Update user profile
     static async updateProfile(req, res) {
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ 
-                    error: 'Validation failed',
-                    details: errors.array() 
-                });
-            }
-
-            const allowedUpdates = [
-                'bio', 'interests', 'preferences', 
-                'profilePicture', 'coverPhoto', 'phone'
-            ];
-            
+            const allowedUpdates = ['bio', 'interests', 'preferences'];
             const updates = Object.keys(req.body)
                 .filter(key => allowedUpdates.includes(key))
                 .reduce((obj, key) => {
@@ -55,29 +43,21 @@ class ProfileController {
                 }, {});
 
             const profile = await UserProfile.findOneAndUpdate(
-                { user: req.params.userId },
+                { user: req.user._id },
                 { $set: updates },
                 { new: true, runValidators: true }
-            ).populate('user', 'username email profilePicture firstName lastName');
+            )
+            .populate('profilePicture')
+            .populate('coverPhoto')
+            .populate('user', 'username email');
 
             if (!profile) {
-                return res.status(404).json({ 
-                    error: 'Not found',
-                    details: 'Profile not found'
-                });
+                return res.status(404).json({ error: 'Profile not found' });
             }
 
-            res.json({
-                message: 'Profile updated successfully',
-                profile
-            });
-        }
-        catch (error) {
-            console.error('Profile update error:', error);
-            res.status(400).json({ 
-                error: 'Update failed',
-                details: error.message 
-            });
+            res.json({ profile });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
         }
     }
 
@@ -163,6 +143,74 @@ class ProfileController {
                 error: 'Server error',
                 details: 'Could not delete profile'
             });
+        }
+    }
+
+    static async uploadProfileImage(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No image provided' });
+            }
+
+            const userId = req.user._id;
+            const imageType = req.query.type === 'cover' ? 'cover' : 'profile';
+            
+            // If there's an existing image, replace it
+            const profile = await UserProfile.findOne({ user: userId });
+            const existingImageId = imageType === 'cover' ? 
+                profile?.coverPhoto : 
+                profile?.profilePicture;
+
+            const image = await ImageService.replaceImage(
+                existingImageId,
+                req.file,
+                userId,
+                imageType
+            );
+
+            // Update profile with new image
+            const updateField = imageType === 'cover' ? 'coverPhoto' : 'profilePicture';
+            await UserProfile.findOneAndUpdate(
+                { user: userId },
+                { [updateField]: image._id }
+            );
+
+            res.json({
+                url: image.url,
+                public_id: image.publicId,
+                _id: image._id
+            });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async deleteProfileImage(req, res) {
+        try {
+            const userId = req.user._id;
+            const imageType = req.query.type === 'cover' ? 'cover' : 'profile';
+            
+            const profile = await UserProfile.findOne({ user: userId });
+            if (!profile) {
+                return res.status(404).json({ error: 'Profile not found' });
+            }
+
+            const imageId = imageType === 'cover' ? 
+                profile.coverPhoto : 
+                profile.profilePicture;
+
+            if (imageId) {
+                await ImageService.deleteImage(imageId);
+                
+                // Update profile to remove image reference
+                const updateField = imageType === 'cover' ? 'coverPhoto' : 'profilePicture';
+                profile[updateField] = null;
+                await profile.save();
+            }
+
+            res.json({ message: 'Image deleted successfully' });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
         }
     }
 

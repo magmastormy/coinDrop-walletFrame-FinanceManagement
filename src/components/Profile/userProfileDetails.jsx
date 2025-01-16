@@ -126,6 +126,36 @@ const UserProfileDetails = () => {
         }
     };
 
+    const handleProfileImageUpload = async (file) => {
+        try {
+            setLoading(true);
+            const result = await profileService.uploadProfileImage(file);
+            setFormData(prev => ({
+                ...prev,
+                profilePicture: result
+            }));
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleProfileImageRemove = async () => {
+        try {
+            setLoading(true);
+            await profileService.deleteProfileImage();
+            setFormData(prev => ({
+                ...prev,
+                profilePicture: null
+            }));
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Helper function to validate URL
     const isValidUrl = (url) => {
         try {
@@ -142,19 +172,13 @@ const UserProfileDetails = () => {
             {error && <div className="error-message">{error}</div>}
 
             <div className="profile-content">
-            <div className="form-group">
+            <div className="profile-image-section">
                 <ImageUpload 
-                    onImageSelect={(file) => {
-                        //TODO: Handle the file upload here
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            setFormData(prev => ({
-                                ...prev,
-                                profilePicture: reader.result
-                            }));
-                        };
-                        reader.readAsDataURL(file);
-                    }} 
+                    onImageUpload={handleProfileImageUpload}
+                    onImageRemove={handleProfileImageRemove}
+                    imageType="profile"
+                    currentImage={formData.profilePicture}
+                    multiple={false}
                 />
             </div>
                 <div className="profile-header">
