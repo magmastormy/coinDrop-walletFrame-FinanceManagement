@@ -17,8 +17,9 @@ const educationRoutes = require('./routes/educationRoutes');
 const savingsAccountRoutes = require('./routes/savingsAccountRoutes');
 const savingsGoalRoutes = require('./routes/savingsGoalRoutes');
 const zhipuaiRoutes = require('./routes/zhipuaiRoutes');
+const imageRoutes = require('./routes/imageRoutes');
 
-const initCloudinary = require('./config/cloudinary');
+const {initCloudinary} = require('./config/cloudinary');
 const app = express();
 
 // Connect Database
@@ -65,6 +66,7 @@ app.use('/api/education', educationRoutes);
 app.use('/api/saving-accounts', savingsAccountRoutes);
 app.use('/api/saving-goals', savingsGoalRoutes);
 app.use('/api/zhipuai', zhipuaiRoutes);
+app.use('/api/images', imageRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
@@ -95,9 +97,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
-console.log('ZHIPU_API_ENDPOINT:', process.env.ZHIPU_API_ENDPOINT);
-console.log('ZHIPU_API_KEY:', process.env.ZHIPU_API_KEY);
 
 const server = app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

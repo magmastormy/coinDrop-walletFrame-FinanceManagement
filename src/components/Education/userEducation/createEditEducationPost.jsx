@@ -9,78 +9,109 @@ import {
     faImage, faHeading, faQuoteLeft, faUndo, faRedo 
 } from '@fortawesome/free-solid-svg-icons';
 import './styles/createEditEducationPostStyles.css';
-import imageCompression from 'browser-image-compression';
+import EducationImageUpload from '../educationImageUpload';
+import ImageService from '../../../services/imageService';
+import ImageUploadPreview from '../imageUploadPreview';
+import educationService from '../../../services/educationService';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5mb
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1920;
 
 const MenuBar = ({ editor, onImageUpload }) => {
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    if (!editor) return null;
 
-    const handleImageUpload = async (file) => {
-        if (!file) return;
-        setIsUploadingImage(true);
-    
-        try {
-            const compressedFile = await imageCompression(file, {
-                maxSizeMB: 1,
-                maxWidthOrHeight: MAX_DIMENSION,
-                useWebWorker: true
-            });
-            
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (editor) {
-                    editor.chain().focus().setImage({ src: reader.result }).run();
-                }
-            };
-            reader.readAsDataURL(compressedFile);
-        } catch (error) {
-            console.error('Image upload failed:', error);
-            setError('Image upload failed: ' + error.message);
-        } finally {
-            setIsUploadingImage(false);
-        }
+    const fileInputRef = useRef(null);
+
+    const handleImageClick = () => {
+        fileInputRef.current?.click();
     };
 
-    const handleImageClick = (e) => {
-        e.preventDefault(); 
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = (e) => onImageUpload(e.target.files[0]);
-        input.click();
+    const handleFileChange = async (event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const imageUrl = await onImageUpload(file);
+            if (imageUrl) {
+                editor.chain().focus().setImage({ src: imageUrl }).run();
+            }
+        }
+        // Reset input value to allow selecting the same file again
+        event.target.value = '';
     };
 
     return (
         <div className="create-edit-education-menu-bar">
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBold().run()}>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: 'none' }}
+            />
+            <button
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={`create-edit-education-menu-button ${editor.isActive('bold') ? 'is-active' : ''}`}
+                title="Bold"
+            >
                 <FontAwesomeIcon icon={faBold} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleItalic().run()}>
+            <button
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={`create-edit-education-menu-button ${editor.isActive('italic') ? 'is-active' : ''}`}
+                title="Italic"
+            >
                 <FontAwesomeIcon icon={faItalic} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+            <button
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                className={`create-edit-education-menu-button ${editor.isActive('heading') ? 'is-active' : ''}`}
+                title="Heading"
+            >
                 <FontAwesomeIcon icon={faHeading} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBulletList().run()}>
+            <button
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={`create-edit-education-menu-button ${editor.isActive('bulletList') ? 'is-active' : ''}`}
+                title="Bullet List"
+            >
                 <FontAwesomeIcon icon={faList} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+            <button
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                className={`create-edit-education-menu-button ${editor.isActive('codeBlock') ? 'is-active' : ''}`}
+                title="Code Block"
+            >
                 <FontAwesomeIcon icon={faCode} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+            <button
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                className={`create-edit-education-menu-button ${editor.isActive('blockquote') ? 'is-active' : ''}`}
+                title="Quote"
+            >
                 <FontAwesomeIcon icon={faQuoteLeft} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().undo().run()}>
+            <button
+                onClick={handleImageClick}
+                className="create-edit-education-menu-button"
+                title="Insert Image"
+            >
+                <FontAwesomeIcon icon={faImage} />
+            </button>
+            <button
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                className="create-edit-education-menu-button"
+                title="Undo"
+            >
                 <FontAwesomeIcon icon={faUndo} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={() => editor.chain().focus().redo().run()}>
+            <button
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                className="create-edit-education-menu-button"
+                title="Redo"
+            >
                 <FontAwesomeIcon icon={faRedo} />
             </button>
-            <button className="create-edit-education-menu-button" onClick={handleImageClick} disabled={isUploadingImage}>
-                <FontAwesomeIcon icon={faImage} /> {isUploadingImage && <span className="loading-indicator">...</span>}
-            </button> 
         </div>
     );
 };
@@ -90,7 +121,8 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [images, setImages] = useState(initialData?.images || []);
+    const [featuredImage, setFeaturedImage] = useState(initialData?.featuredImage || null);
 
     const editor = useEditor({
         extensions: [
@@ -107,47 +139,53 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
     });
 
     const handleImageUpload = async (file) => {
-        if (!file) return;
-        setIsUploadingImage(true);
-
         try {
-            if (!file.type.startsWith('image/')) {
-                throw new Error('Please select an image file');
+            setIsUploadingImage(true);
+            const uploadedImage = await ImageService.uploadImage(file, 'education');
+            
+            if (!featuredImage) {
+                setFeaturedImage(uploadedImage);
+            } else {
+                setImages(prev => [...prev, uploadedImage]);
             }
-
-            if (file.size > MAX_FILE_SIZE) {
-                const options = {
-                    maxSizeMB: 5,
-                    maxWidthOrHeight: MAX_DIMENSION,
-                    useWebWorker: true,
-                };
-                file = await imageCompression(file, options);
-            }
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (editor) {
-                    editor
-                        .chain()
-                        .focus()
-                        .setImage({ src: reader.result })
-                        .run();
-                }
-            };
-            reader.readAsDataURL(file);
-
+            
+            return uploadedImage.url;
         } catch (error) {
             console.error('Image upload failed:', error);
-            alert(error.message || 'Failed to upload image');
+            setError('Failed to upload image');
+            return null;
         } finally {
             setIsUploadingImage(false);
         }
     };
 
+    const handleImageRemove = async (imageId) => {
+        try {
+            await ImageService.deleteImage(imageId);
+            if (featuredImage?._id === imageId) {
+                setFeaturedImage(null);
+            } else {
+                setImages(prev => prev.filter(img => img._id !== imageId));
+            }
+        } catch (error) {
+            setError('Failed to remove image');
+        }
+    };
+
+    const validateForm = () => {
+        if (!title.trim()) {
+            setError('Title is required');
+            return false;
+        }
+        if (!editor?.getHTML() || editor.getHTML() === '<p></p>') {
+            setError('Content is required');
+            return false;
+        }
+        return true;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        
         if (!validateForm()) return;
 
         try {
@@ -157,62 +195,36 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
             await onCreateEducation({
                 title: title.trim(),
                 details: content,
+                images: images.map(img => img._id),
+                featuredImage: featuredImage?._id,
                 date: new Date().toISOString()
             });
             
-            setTitle('');
-            editor?.commands.setContent('');
             onClose();
-            
         } catch (err) {
-            setError(err.message || 'Failed to create post');
+            setError(err.message);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const validateForm = () => {
-        if (!title || title.trim().length < 5) {
-            setError('Title must be at least 5 characters long');
-            return false;
-        }
-
-        if (!editor || !editor.getText().trim() || editor.getText().trim().length < 10) {
-            setError('Content must be at least 10 characters long');
-            return false;
-        }
-
-        setError('');
-        return true;
-    };
-
     const handleKeyDown = (e) => {
-        // Only prevent Enter key if it's not pressed with Shift
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter') {
             e.preventDefault();
-        }
-    };
-
-    const handleOverlayClick = (e) => {
-        if (e.target.className === 'modal-overlay') {
-            onClose();
+            editor?.commands.focus();
         }
     };
 
     return (
-        <div className="create-edit-education-modal-overlay" onClick={handleOverlayClick}>
-            <div className="create-edit-education-modal">
-                <div className="create-edit-education-modal-header">
-                    <h2 className="create-edit-education-modal-title">{initialData ? 'Edit Post' : 'Create New Post'}</h2>
-                    <button
-                        type="button" 
-                        className="create-edit-education-close-button"
-                        onClick={onClose}
-                        aria-label="Close"
-                    >
-                        ×
-                    </button>
-                </div>
+        <div className="create-edit-education-modal">
+            <div className="create-edit-education-content">
+                <button
+                    className="create-edit-education-close-button"
+                    onClick={onClose}
+                    aria-label="Close"
+                >
+                    ×
+                </button>
                 <form onSubmit={handleSubmit}>
                     {error && <div className="create-edit-education-error-message">{error}</div>}
                     <input
@@ -223,15 +235,26 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                         className="create-edit-education-title-input"
                         onKeyDown={handleKeyDown}
                     />
+                    
+                    <EducationImageUpload
+                        onImageUpload={handleImageUpload}
+                        onImageRemove={handleImageRemove}
+                        currentImages={[...featuredImage ? [featuredImage] : [], ...images]}
+                        maxImages={5}
+                        className="education-image-upload"
+                    />
+
                     <div className="create-edit-education-editor-container">
                         <MenuBar
                             editor={editor}
-                            isUploadingImage={isUploadingImage}
-                            onImageUpload={handleImageUpload} />
+                            onImageUpload={handleImageUpload}
+                        />
                         <EditorContent 
                             editor={editor} 
-                            className="create-edit-education-editor"/>
+                            className="create-edit-education-editor"
+                        />
                     </div>
+
                     <div className="create-edit-education-form-actions">
                         <button
                             type="button" 
@@ -241,26 +264,21 @@ const CreateEditEducationPost = ({ onCreateEducation, onClose, initialData }) =>
                             Cancel
                         </button>
                         <button
-                            type="button" 
-                            className="create-edit-education-preview-btn" onClick={() => setIsPreview(!isPreview)}
+                            type="button"
+                            className="create-edit-education-preview-btn"
+                            onClick={() => setIsPreview(!isPreview)}
                         >
                             {isPreview ? 'Edit' : 'Preview'}
                         </button>
                         <button 
                             type="submit" 
-                            className="submit-btn"
+                            className="create-edit-education-submit-btn"
                             disabled={isLoading}
                         >
                             {isLoading ? 'Creating...' : initialData ? 'Update' : 'Create Post'}
                         </button>
                     </div>
                 </form>
-                {isPreview && (
-                    <div className="create-edit-education-preview-mode">
-                        <h2 className="create-edit-education-preview-title">{title}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: editor?.getHTML() }} />
-                    </div>
-                )}
             </div>
         </div>
     );

@@ -22,7 +22,26 @@ const compressImage = async (file) => {
     }
 };
 
+const uploadImage = async (file) => {
+    try {
+        const formData = new FormData();
+        const compressedImage = await compressImage(file);
+        formData.append('image', compressedImage);
+
+        const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 const educationService = {
+    uploadImage,
+    compressImage,
     getEducations: async () => {
         try {
             const response = await axiosInstance.get(API_URL);
@@ -47,26 +66,20 @@ const educationService = {
 
     createEducation: async (postData) => {
         try {
-            let formData = new FormData();
-            
-            // Handle text data
+            const formData = new FormData();
             formData.append('title', postData.title);
             formData.append('details', postData.details);
             formData.append('category', postData.category);
             
-            // Handle images
-            if (postData.images && postData.images.length > 0) {
-                for (let image of postData.images) {
-                    const compressedImage = await compressImage(image);
-                    formData.append('images', compressedImage);
-                }
+            // Handle image IDs instead of files
+            if (postData.images) {
+                formData.append('images', JSON.stringify(postData.images));
+            }
+            if (postData.featuredImage) {
+                formData.append('featuredImage', postData.featuredImage);
             }
 
-            const response = await axiosInstance.post(API_URL, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const response = await axiosInstance.post(API_URL, formData);
             return response.data;
         } catch (error) {
             throw error;
@@ -75,31 +88,19 @@ const educationService = {
 
     updateEducation: async (id, postData) => {
         try {
-            let formData = new FormData();
-            
-            // Handle text data
+            const formData = new FormData();
             formData.append('title', postData.title);
             formData.append('details', postData.details);
             formData.append('category', postData.category);
             
-            // Handle images
-            if (postData.images && postData.images.length > 0) {
-                for (let image of postData.images) {
-                    // Only compress if it's a new image (File object)
-                    if (image instanceof File) {
-                        const compressedImage = await compressImage(image);
-                        formData.append('images', compressedImage);
-                    } else {
-                        formData.append('existingImages', image);
-                    }
-                }
+            if (postData.images) {
+                formData.append('images', JSON.stringify(postData.images));
+            }
+            if (postData.featuredImage) {
+                formData.append('featuredImage', postData.featuredImage);
             }
 
-            const response = await axiosInstance.put(`${API_URL}/${id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            const response = await axiosInstance.put(`${API_URL}/${id}`, formData);
             return response.data;
         } catch (error) {
             throw error;

@@ -9,12 +9,17 @@ const ImageSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    width: Number,
-    height: Number,
-    format: String,
+    width: {
+        type: Number
+    },
+    height: {
+        type: Number
+    },
+    format: {
+        type: String
+    },
     resourceType: {
         type: String,
-        enum: ['image', 'video'],
         default: 'image'
     },
     uploadedBy: {
@@ -25,12 +30,11 @@ const ImageSchema = new mongoose.Schema({
     imageType: {
         type: String,
         enum: ['education', 'profile', 'cover'],
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+        default: 'education'
     }
-});
+}, { timestamps: true });
+
+ImageSchema.index({ uploadedBy: 1 });
+ImageSchema.index({ imageType: 1 });
 
 module.exports = mongoose.model('Image', ImageSchema);

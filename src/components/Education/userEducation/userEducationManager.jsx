@@ -63,6 +63,16 @@ const UserEducationManager = () => {
         }
     };
 
+    const handleUpdatePost = async (id, postData) => {
+        try {
+            const response = await educationService.updateEducation(id, postData);
+            dispatch(updateEducation(response));
+            setEditingPost(null);
+        } catch (err) {
+            dispatch(setError(err.message));
+        }
+    };
+
     const handleEditPost = async (id, postData) => {
         dispatch(setLoading(true));
         try {

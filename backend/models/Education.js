@@ -26,7 +26,7 @@ const EducationSchema = new mongoose.Schema({
     images: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Image'
-      }],
+    }],
     featuredImage: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Image'
@@ -54,9 +54,8 @@ const EducationSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }],
-    timestamps: true
-});
+    }]
+}, { timestamps: true });
 
 EducationSchema.index({ author: 1, createdAt: -1 });
 EducationSchema.index({ category: 1 });

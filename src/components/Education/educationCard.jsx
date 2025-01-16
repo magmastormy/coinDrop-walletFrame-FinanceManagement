@@ -68,18 +68,45 @@ const EducationCard = ({education, onLike, onComment, onEdit, onDelete }) => {
             role="article"
             aria-label={`Education post: ${education.title}`}
         >
+
+            {education.featuredImage && (
+                <div className="education-card-image-container">
+                    <img 
+                        src={education.featuredImage.url} 
+                        alt={education.title}
+                        className="education-card-featured-image"
+                        loading="lazy"
+                    />
+                </div>
+            )}
+            
             <h3 className="education-card-title">
                 {education.title}
             </h3>
             
-            <div 
-                className="education-card-details"
-                role="region"
-                aria-label="Post content"
-            >
+            <div className="education-card-details">
                 <EducationRenderer content={education.details} maxLength={100} />
             </div>
 
+            {education.images && education.images.length > 0 && (
+                <div className="education-card-gallery">
+                    {education.images.slice(0, 3).map((image, index) => (
+                        <img 
+                            key={image._id}
+                            src={image.url}
+                            alt={`${education.title} - Image ${index + 1}`}
+                            className="education-card-gallery-image"
+                            loading="lazy"
+                        />
+                    ))}
+                    {education.images.length > 3 && (
+                        <div className="education-card-gallery-more">
+                            +{education.images.length - 3}
+                        </div>
+                    )}
+                </div>
+            )}
+            
             <div className="education-card-meta">
                 <span className="education-card-author">
                     <FontAwesomeIcon icon={faUser} aria-hidden="true" />

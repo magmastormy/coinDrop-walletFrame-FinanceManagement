@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
 import imageCompression from 'browser-image-compression';
+import {compressImage} from '../../services/imageService';
 
 const EducationImageUpload = ({ 
     onImageUpload, 
@@ -21,16 +22,12 @@ const EducationImageUpload = ({
             setError(`Maximum ${maxImages} images allowed`);
             return;
         }
-
+    
         setUploading(true);
         setError('');
-
+    
         try {
-            const compressedFile = await imageCompression(file, {
-                maxSizeMB: 1,
-                maxWidthOrHeight: 1920,
-                useWebWorker: true
-            });
+            const compressedFile = await ImageService.compressImage(file);
             await onImageUpload(compressedFile);
         } catch (error) {
             setError(error.message);
