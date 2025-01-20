@@ -69,6 +69,7 @@ app.use('/api/zhipuai', zhipuaiRoutes);
 app.use('/api/images', imageRoutes);
 
 // Health Check Route
+/*
 app.get('/api/health', (req, res) => {
     const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
     res.json({
@@ -76,7 +77,7 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         database: dbStatus
     });
-});
+}); */
 
 // 404 Not Found Handler
 app.use((req, res, next) => {

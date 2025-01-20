@@ -9,7 +9,7 @@ export const getUserCategories = async (userId) => {
             throw new Error('User ID is required');
         }
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-        return response.data;
+        return response;
     } catch (error) {
         console.error('Error fetching categories:', error);
         throw error;

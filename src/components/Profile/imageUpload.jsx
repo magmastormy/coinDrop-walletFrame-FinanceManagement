@@ -1,19 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
-import imageCompression from 'browser-image-compression';
 import './styles/imageUpload.css';
 
-const ImageUpload = ({ 
-    onImageUpload,
-    onImageRemove,
-    imageType = 'education',
-    currentImage = null,
-    multiple = false,
-    maxImages = 5,
-    className = ''
-}) => {
+const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
 
@@ -23,8 +14,7 @@ const ImageUpload = ({
         setError('');
 
         try {
-            const compressedFile = await compressImage(file);
-            await onImageUpload(compressedFile);
+            await onImageUpload(file);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -34,45 +24,50 @@ const ImageUpload = ({
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
-            if (!multiple && acceptedFiles.length > 1) {
+            if (acceptedFiles.length > 1) {
                 setError('Only one image can be uploaded');
                 return;
             }
-            for (const file of acceptedFiles) {
-                await handleImageUpload(file);
+            setUploading(true);
+            try {
+                await handleImageUpload(acceptedFiles[0]);
+            } finally {
+                setUploading(false);
             }
         },
         accept: {
             'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
         },
-        maxSize: 5242880,
-        multiple
+        maxSize: 5242880 // 5MB
     });
 
     return (
-        <div className={`image-upload-container ${className}`}>
-            {currentImage ? (
-                <div className="current-image">
-                    <img src={currentImage.url} alt="Current" />
-                    {onImageRemove && (
-                        <button 
-                            onClick={onImageRemove}
-                            className="remove-image"
-                            aria-label="Remove image"
-                        >
-                            <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                    )}
-                </div>
-            ) : (
+        <div className="image-upload-container">
+            {uploading && <div className="loading-overlay">Uploading...</div>}
+            {error && <p className="error-message">{error}</p>}
+            <div className="current-image-container">
+                {currentImage && (
+                    <div className="current-image">
+                        <img src={currentImage} alt="Current" />
+                        {onImageRemove && (
+                            <button 
+                                onClick={onImageRemove}
+                                className="remove-image"
+                                aria-label="Remove image"
+                            >
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+            <div className="upload-section">
                 <div {...getRootProps()} className="dropzone">
                     <input {...getInputProps()} />
                     <FontAwesomeIcon icon={faImage} className="upload-icon" />
                     <p>{imageType === 'profile' ? 'Upload profile picture' : 'Drop images or click to select'}</p>
                 </div>
-            )}
-            {error && <p className="error-message">{error}</p>}
-            {uploading && <p className="uploading-message">Uploading...</p>}
+            </div>
         </div>
     );
 };

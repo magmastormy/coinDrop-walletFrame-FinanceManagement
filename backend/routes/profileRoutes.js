@@ -19,7 +19,7 @@ const upload = multer({
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Not an image! Please upload an image.'), false);
+            cb(new Error('[ProfileRoute] Not an image! Please upload an image.'), false);
         }
     }
 });
@@ -45,12 +45,15 @@ router.use(authMiddleware);
 
 // Profile routes
 router.get('/:userId', ProfileController.getProfile);
-router.put('/', authMiddleware, ProfileController.updateProfile);
-router.post('/:userId', profileValidation, ProfileController.createProfile);
+router.put('/', ProfileController.updateProfile);
+
+router.post('/:userId', ProfileController.createProfile);
 router.get('/:userId/followers', ProfileController.getFollowers);
 router.get('/:userId/following', ProfileController.getFollowing);
+
 router.delete('/:userId', ProfileController.deleteProfile);
-router.post('/upload-image', authMiddleware, upload.single('image'), ProfileController.uploadProfileImage);
-router.delete('/image', authMiddleware, ProfileController.deleteProfileImage);
+
+router.post('/upload-image', upload.single('image'), ProfileController.uploadProfileImage);
+router.delete('/image', ProfileController.deleteProfileImage);
 
 module.exports = router;

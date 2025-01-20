@@ -1,6 +1,6 @@
-import cloudinary from '../config/cloudinary';
-import Image from '../models/Image';
-import { getUploadOptions } from '../config/cloudinary';
+const cloudinary = require('cloudinary').v2;
+const Image = require('../models/Image');
+const { getUploadOptions } = require('../config/cloudinary');
 
 class ImageController {
     static async uploadImage(req, res) {
@@ -51,4 +51,4 @@ class ImageController {
     }
 }
 
-export default ImageController; 
+module.exports = ImageController;

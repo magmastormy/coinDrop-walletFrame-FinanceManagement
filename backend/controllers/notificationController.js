@@ -4,7 +4,7 @@ const User = require('../models/User');
 // Get user notifications
 exports.getUserNotifications = async (req, res) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.user._id || req.query.userId || req.user.userId;
         const notifications = await Notification.find({ user: userId })
             .sort({ createdAt: -1 })
             .limit(50);
@@ -38,6 +38,7 @@ exports.markAsRead = async (req, res) => {
 // Create notification (internal use)
 exports.createNotification = async (userId, message, type = 'general') => {
     try {
+        
         const notification = new Notification({
             user: userId,
             message,

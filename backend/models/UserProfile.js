@@ -16,6 +16,10 @@ const userProfileSchema = new mongoose.Schema({
         type: String,
         maxLength: 150
     },
+    images: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Image'
+    }],
     profilePicture: String,
     coverPhoto: String,
     interests: [{

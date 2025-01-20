@@ -6,7 +6,7 @@ class CategoryController {
         try {
             const categoryData = {
                 ...req.body,
-                userId: req.user._id || req.query.userId || req.user.userId // Associate the category with the user
+                userId: req.user._id || req.query.userId || req.user.userId
             };
             const category = new Category(categoryData);
             await category.save();
@@ -34,7 +34,6 @@ class CategoryController {
                     details: 'No user ID provided'
             })};
             const categories = await Category.find({ userId});
-            console.log("Categories controller: fetched categories: - ", categories);
 
             res.json(categories);
         } catch (error) {

@@ -32,7 +32,7 @@ export const savingsAccountService = {
     getUserSavingsAccounts: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error fetching user savings accounts:', error);
             // Return empty array instead of throwing error

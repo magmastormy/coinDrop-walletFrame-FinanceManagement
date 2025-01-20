@@ -46,8 +46,9 @@ class BudgetController {
     // Get all budgets for a user withtional filters
     static async getUserBudgets(req, res) {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const budgets = await Budget.find({ 
-                userId: req.user._id 
+                userId: userId 
             })
             .populate('categoryId')
             .sort('-createdAt');
@@ -66,6 +67,7 @@ class BudgetController {
     static async updateBudget(req, res) 
     {
         try {
+            const userId = req.user._id || req.query.userId || req.user.userId;
             const { id } = req.params;
             const { categoryId } = req.body;
 
@@ -73,7 +75,7 @@ class BudgetController {
                 // Validate new category if provided
                 const category = await Category.findOne({
                     _id: categoryId,
-                    userId: req.user._id
+                    userId: userId
                 });
                     
                 if (!category) {
@@ -84,7 +86,7 @@ class BudgetController {
             }
 
             const budget = await Budget.findOneAndUpdate(
-                { _id: id, userId: req.user._id },
+                { _id: id, userId: userId },
                 req.body,
                 { new: true, runValidators: true }
             ).populate('categoryId');

@@ -29,16 +29,13 @@ class WalletController {
     // Get all wallets for a user
     static async getUserWallets(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId; // Use req.user._id directly
-            console.log('Wallet Controller - Fetching wallets for user ID:', userId);
+            const userId = req.user._id || req.query.userId || req.user.userId;
             
             const wallets = await Wallet.find({ 
                 userId, 
                 isActive: true 
             }).sort({ balance: -1 });
-    
-            console.log('Wallet Controller - Fetched wallets:', wallets);
-    
+
             res.json({
                 wallets,
                 totalWallets: wallets.length,
@@ -165,9 +162,6 @@ class WalletController {
             if (!fromWalletId || !toWalletId || !amount) {
                 throw new Error('Missing required fields');
             }
-
-            console.log("Wallet Controller - Transfering balance from wallet:", fromWalletId, "to wallet:", toWalletId, "Amount:", numAmount);
-            console.log("this is the body: ", req.body);
 
             // Validate wallets belong to user
             const fromWallet = await Wallet.findOne({ 

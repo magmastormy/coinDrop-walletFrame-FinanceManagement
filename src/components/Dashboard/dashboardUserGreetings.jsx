@@ -65,7 +65,7 @@ const DashboardUserGreetings = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            <div className="greetings-content">
+            <div className="greetings-header">
                 <motion.div 
                     className={`greeting-icon-wrapper bg-gradient-to-br ${greeting.gradient}`}
                     initial={{ scale: 0.8, rotate: -10 }}
@@ -78,24 +78,23 @@ const DashboardUserGreetings = () => {
                 >
                     <FontAwesomeIcon icon={greeting.icon} className="greeting-icon" />
                 </motion.div>
-                <div className="greeting-text">
-                    <motion.h2
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.3 }}
-                    >
-                        {greeting.text}, {firstName} {lastName}!
-                    </motion.h2>
-                    <motion.p
-                        className="greeting-quote"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.4, delay: 0.4 }}
-                    >
-                        {getRandomMotivationalQuote()}
-                    </motion.p>
-                </div>
+                <motion.h2
+                    className="greeting-title"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                    {greeting.text}, {firstName} {lastName}!
+                </motion.h2>
             </div>
+            <motion.p
+                className="greeting-quote"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+            >
+                {getRandomMotivationalQuote()}
+            </motion.p>
             <motion.div 
                 className="greeting-stats"
                 initial={{ opacity: 0, y: 20 }}

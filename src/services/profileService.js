@@ -2,53 +2,64 @@ import axiosInstance from "../api/userAxios";
 
 const API_URL = '/profile';
 
-/**
- * Service for handling user profile operations
- */
+
 const profileService = {
-    /**
-     * Get user profile by ID
-     * @param {string} userId - The user's ID
-     */
     getUserProfile: async (userId) => {
         try {
-            console.log(`Fetching profile for user: ${userId}`);
+            console.log(`[Profile Service] Fetching profile for user: ${userId}`);
             const response = await axiosInstance.get(`${API_URL}/${userId}`);
             return response;
         } catch (error) {
-            console.error('Error fetching profile:', error);
+            if (error.response?.status === 404) {
+                console.log('[Profile Service] Profile not found, creating new profile...');
+                const newProfileData = {
+                    bio: '',
+                    interests: [],
+                    phone: ''
+                };
+                const createResponse = await profileService.createUserProfile(userId, newProfileData);
+                console.log('[Profile Service] New profile created:', createResponse);
+                return createResponse.data;
+            }
             throw new Error(error.response?.data?.error || 'Failed to fetch profile');
         }
     },
 
-    /**
-     * Update user profile
-     * @param {string} userId - The user's ID
-     * @param {Object} profileData - Profile data to update
-     */
     updateUserProfile: async (userId, profileData) => {
         try {
-            console.log(`Updating profile for user: ${userId}`);
-            const response = await axiosInstance.put(`${API_URL}/${userId}`, profileData);
-            console.log(`[Profile Service] Profile update successful:`, response.data);
-            return response.data;
+            console.log(`[Profile Service] Updating profile for user:`, userId, profileData);
+            
+            // Get current profile to compare changes
+            const currentProfile = await profileService.getUserProfile(userId);
+            
+            // Only include fields that have changed
+            const updates = {};
+            Object.keys(profileData).forEach(key => {
+                if (profileData[key] !== currentProfile?.profile?.[key]) {
+                    updates[key] = profileData[key];
+                }
+            });
+    
+            if (Object.keys(updates).length === 0) {
+                console.log('[Profile Service] No changes detected');
+                return currentProfile;
+            }
+    
+            const response = await axiosInstance.put(`${API_URL}/`, updates);
+            console.log(`[Profile Service] Profile update successful:`, response);
+            return response;
         } catch (error) {
-            console.error('Error updating profile:', error);
+            console.error('[Profile Service] Error updating profile:', error);
             throw new Error(error.response?.data?.error || 'Failed to update profile');
         }
     },
 
-    /**
-     * Create new user profile
-     * @param {string} userId - The user's ID
-     * @param {Object} profileData - Initial profile data
-     */
     createUserProfile: async (userId, profileData) => {
         try {
             console.log(`Creating profile for user: ${userId}`);
             const response = await axiosInstance.post(`${API_URL}/${userId}`, profileData);
-            console.log(`[Profile Service] Profile creation successful:`, response.data);
-            return response.data;
+            console.log(`[Profile Service] Profile creation successful:`, response);
+            return response;
         } catch (error) {
             console.error('Error creating profile:', error);
             throw new Error(error.response?.data?.error || 'Failed to create profile');
@@ -57,28 +68,28 @@ const profileService = {
 
     uploadProfileImage: async (file, type = 'profile') => {
         try {
+            console.log('[Profile Service: uploadProfileImage] Sending image to upload:', file);
             const formData = new FormData();
             formData.append('image', file);
-
+    
+            const config = {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            };
+    
             const response = await axiosInstance.post(
                 `${API_URL}/upload-image?type=${type}`,
                 formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
+                config
             );
+            console.log('[Profile Service: uploadProfileImage] Upload response:', response);
             return response.data;
         } catch (error) {
-            throw error;
+            throw new Error(error.response?.data?.error || '[Profile Service: uploadProfileImage] Failed to upload image');
         }
     },
 
-    /**
-     * Get user's followers
-     * @param {string} userId - The user's ID
-     */
     getUserFollowers: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${userId}/followers`);
@@ -89,10 +100,6 @@ const profileService = {
         }
     },
 
-    /**
-     * Get users being followed
-     * @param {string} userId - The user's ID
-     */
     getUserFollowing: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${userId}/following`);
@@ -103,10 +110,6 @@ const profileService = {
         }
     },
 
-    /**
-     * Delete user profile
-     * @param {string} userId - The user's ID
-     */
     deleteUserProfile: async (userId) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${userId}`);

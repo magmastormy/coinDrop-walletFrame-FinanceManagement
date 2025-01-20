@@ -1,18 +1,16 @@
 .bar-chart-container {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--background-color);
     border-radius: 24px;
-    padding: 1.75rem;
+    padding: 2rem;
     box-shadow: 
-        0 8px 32px 0 rgba(31, 38, 135, 0.15),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      0 8px 32px 0 rgba(31, 38, 135, 0.15),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.18);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-}
-
-.bar-chart-container::before {
+  }
+  
+  .bar-chart-container::before {
     content: '';
     position: absolute;
     top: 0;
@@ -20,76 +18,77 @@
     right: 0;
     height: 80px;
     background: linear-gradient(180deg, 
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0) 100%);
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0) 100%);
     pointer-events: none;
-}
-
-.bar-chart-container:hover {
+  }
+  
+  .bar-chart-container:hover {
     transform: translateY(-4px);
     box-shadow: 
-        0 12px 40px 0 rgba(31, 38, 135, 0.25),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.bar-chart-controls {
+      0 12px 40px 0 rgba(31, 38, 135, 0.25),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  
+  .bar-chart-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.75rem;
+    margin-bottom: 2rem;
     position: relative;
     z-index: 1;
-}
-
-.time-range-selector {
+  }
+  
+  .time-range-selector {
     display: flex;
     gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--background-color);
     padding: 0.35rem;
     border-radius: 12px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.time-range-button {
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  
+  .time-range-button {
     padding: 0.5rem 1.25rem;
     border-radius: 8px;
     border: none;
     background: transparent;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--text-color);
+    font-size: 1rem;
     font-weight: 500;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-}
-
-.time-range-button:hover {
-    background: rgba(255, 255, 255, 0.5);
-    color: rgba(0, 0, 0, 0.8);
-}
-
-.time-range-button.active {
-    background: white;
-    color: rgba(0, 0, 0, 0.8);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .time-range-button:hover {
+    background: var(--secondary-color);
+    color: white;
+  }
+  
+  .time-range-button.active {
+    background: var(--primary-color);
+    color: white;
     box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.chart-actions {
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chart-actions {
     display: flex;
     gap: 0.75rem;
-}
-
-.chart-action-button {
+  }
+  
+  .chart-action-button {
     width: 36px;
     height: 36px;
     border-radius: 10px;
     border: none;
-    background: rgba(255, 255, 255, 0.5);
-    color: rgba(0, 0, 0, 0.6);
+    background: var(--background-color);
+    color: var(--text-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -98,67 +97,29 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.05),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.chart-action-button:hover {
-    background: white;
-    color: rgba(0, 0, 0, 0.8);
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  
+  .chart-action-button:hover {
+    background: var(--secondary-color);
+    color: white;
     transform: translateY(-2px);
     box-shadow: 
-        0 4px 12px rgba(0, 0, 0, 0.1),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.chart-tooltip {
-    background: rgba(255, 255, 255, 0.95);
-    color: rgba(0, 0, 0, 0.8);
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  
+  .chart-tooltip {
+    background: var(--background-color);
+    color: var(--text-color);
     padding: 1rem;
     border-radius: 12px;
     font-size: 0.875rem;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: 
-        0 4px 16px rgba(0, 0, 0, 0.1),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-@media (prefers-color-scheme: dark) {
-    .bar-chart-container {
-        background: rgba(30, 41, 59, 0.7);
-    }
-    
-    .time-range-selector,
-    .chart-action-button {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .time-range-button {
-        color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .time-range-button:hover {
-        background: rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.8);
-    }
-    
-    .time-range-button.active {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-    }
-    
-    .chart-action-button {
-        color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .chart-action-button:hover {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-    }
-    
-    .chart-tooltip {
-        background: rgba(30, 41, 59, 0.95);
-        color: rgba(255, 255, 255, 0.9);
-    }
-}
+      0 4px 16px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+  

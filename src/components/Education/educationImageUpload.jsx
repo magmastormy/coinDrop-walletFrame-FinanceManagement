@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
-import imageCompression from 'browser-image-compression';
-import {compressImage} from '../../services/imageService';
+import { compressImage } from '../../services/imageService';
 
 const EducationImageUpload = ({ 
     onImageUpload, 

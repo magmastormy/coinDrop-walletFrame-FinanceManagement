@@ -27,9 +27,9 @@ export const store = configureStore({
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {
-            console.log('Store.js - Dispatching:', action);
+            //console.log('Store.js - Dispatching:', action);
             const result = next(action);
-            console.log('Store.js - Next State:', store.getState());
+            //console.log('Store.js - Next State:', store.getState());
             return result;
         })
 });

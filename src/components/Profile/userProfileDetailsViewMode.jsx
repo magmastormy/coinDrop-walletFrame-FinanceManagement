@@ -1,10 +1,13 @@
 import React from 'react';
 import './styles/profileStyles.css';
 
+
+
 const UserProfileDetailsViewMode = ({ user, profile }) => {
     return(
         <div>
             <div className="info-group">
+                
                 <label>Name:</label>
                 <span>{`${user?.firstName} ${user?.lastName}`}</span>
             </div>

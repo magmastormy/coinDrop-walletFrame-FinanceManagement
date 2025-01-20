@@ -33,8 +33,19 @@ const UserProfileDetails = () => {
         email: '',
     });
 
+    const allowedInterests = [
+        'investing',
+        'budgeting',
+        'saving',
+        'crypto',
+        'stocks',
+        'real-estate',
+        'retirement',
+        'taxes',
+        'insurance'
+    ];
+
     useEffect(() => {
-        // Update form data when profile or user data changes
         if (profile || user) {
             setFormData({
                 bio: profile?.bio || '',
@@ -53,32 +64,27 @@ const UserProfileDetails = () => {
             if (!user?.id) return;
             
             try {
-              dispatch(fetchProfileStart());
-              const profileData = await profileService.getUserProfile(user.id);
-
-              if (!profileData.profile) {
-                // Profile not found, enable edit mode
-                setIsEditing(true); 
-                dispatch(fetchProfileSuccess(null)); 
-              } else {
-                dispatch(fetchProfileSuccess(profileData.profile));
-              }
+                dispatch(fetchProfileStart());
+                const profileData = await profileService.getUserProfile(user.id);
+                
+                if (profileData.profile) {
+                    dispatch(fetchProfileSuccess(profileData.profile));
+                } else {
+                    setIsEditing(true);
+                    dispatch(fetchProfileSuccess(null));
+                }
             } catch (error) {
-              if (error.response && error.response.status === 404) {
-                // Handle 404 (profile not found) - enable edit mode
-                setIsEditing(true); 
-                dispatch(fetchProfileSuccess(null)); 
-              } else {
-                // Handle other errors
-                dispatch(fetchProfileFailure(error.message)); 
-              }
+                if (error.response && error.response.status === 404) {
+                    setIsEditing(true);
+                    dispatch(fetchProfileSuccess(null));
+                } else {
+                    dispatch(fetchProfileFailure(error.message)); 
+                }
             }
         };
 
-        if (user?.id && !profile) {
-            fetchUserProfile();
-        }
-    }, [dispatch, user?.id, profile]);
+        fetchUserProfile();
+    }, [dispatch, user?.id]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -96,6 +102,15 @@ const UserProfileDetails = () => {
         }
     };
 
+    const handleCheckboxChange = (interest) => {
+        setFormData(prev => {
+            const interests = prev.interests.includes(interest)
+                ? prev.interests.filter(i => i !== interest)
+                : [...prev.interests, interest];
+            return { ...prev, interests };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -104,7 +119,13 @@ const UserProfileDetails = () => {
                 throw new Error('Profile picture must be a valid URL');
             }
 
-            console.log('Submitting form data:', formData);
+            // Validate interests
+            const invalidInterests = formData.interests.filter(interest => !allowedInterests.includes(interest));
+            if (invalidInterests.length > 0) {
+                throw new Error(`Invalid interests: ${invalidInterests.join(', ')}`);
+            }
+
+            console.log('[userProfileDetails] Submitting form data:', formData);
             if (!profile) {
                 dispatch(createProfileStart());
                 const result = await profileService.createUserProfile(user.id, formData);
@@ -116,43 +137,45 @@ const UserProfileDetails = () => {
             }
             setIsEditing(false);
         } catch (err) {
-            console.error('Profile operation error:', err);
+            console.error('[userProfileDetails] Profile operation error:', err);
             const action = profile ? updateProfileFailure : createProfileFailure;
-            dispatch(action(
-                err.response?.status === 401 
-                    ? 'Your session has expired. Please log in again.'
-                    : err.message || 'Operation failed. Please try again.'
-            ));
+            dispatch(action(err.message || 'Operation failed. Please try again.'));
         }
     };
 
     const handleProfileImageUpload = async (file) => {
         try {
-            setLoading(true);
+            console.log('[UserProfileDetails] Starting image upload:', file);
             const result = await profileService.uploadProfileImage(file);
-            setFormData(prev => ({
-                ...prev,
-                profilePicture: result
-            }));
+            console.log('[UserProfileDetails] Upload Image result:', result);
+
+            if (result && result.profile) {
+                setFormData(prev => ({
+                    ...prev,
+                    profilePicture: {
+                        url: result.profile.profilePicture,
+                        publicId: result.profile.publicId
+                    }
+                }));
+            } else {
+                throw new Error('Image upload failed. Please try again.');
+            }
         } catch (error) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
+            console.error('[UserProfileDetails] Image upload error:', error);
+            const errorMessage = error.response?.data?.error || error.message || 'An unknown error occurred';
+            dispatch(updateProfileFailure(errorMessage));
         }
     };
 
     const handleProfileImageRemove = async () => {
         try {
-            setLoading(true);
             await profileService.deleteProfileImage();
             setFormData(prev => ({
                 ...prev,
                 profilePicture: null
             }));
         } catch (error) {
-            setError(error.message);
-        } finally {
-            setLoading(false);
+            dispatch(updateProfileFailure(error.message));
         }
     };
 
@@ -172,43 +195,32 @@ const UserProfileDetails = () => {
             {error && <div className="error-message">{error}</div>}
 
             <div className="profile-content">
-            <div className="profile-image-section">
-                <ImageUpload 
-                    onImageUpload={handleProfileImageUpload}
-                    onImageRemove={handleProfileImageRemove}
-                    imageType="profile"
-                    currentImage={formData.profilePicture}
-                    multiple={false}
-                />
-            </div>
-                <div className="profile-header">
+                <div className="profile-image-section">
+                    {isEditing && (
+                        <ImageUpload 
+                            onImageUpload={handleProfileImageUpload}
+                            onImageRemove={handleProfileImageRemove}
+                            currentImage={formData.profilePicture?.url || 'https://placeholder.pics/svg/150'}
+                            imageType="profile"
+                        />
+                    )}
+                </div>
                 <div className="profile-header">
                     <h2>{user?.username}'s Profile</h2>
-                    {/* Show Edit button if there's a profile and not in edit mode */}
-                    {!isEditing && profile && (
-                        <button 
-                            onClick={() => setIsEditing(true)} 
-                            className="btn-edit"
-                        >
-                            Edit Profile
-                        </button>
-                    )}
-                    {/* Show Create Profile button if there's no profile and not in edit mode */}
-                    {!isEditing && !profile && (
-                        <button 
-                            onClick={() => setIsEditing(true)} 
-                            className="btn-edit"
-                        >
-                            Create Profile
-                        </button>
-                    )}
+                    <button 
+                        onClick={() => setIsEditing(true)} 
+                        className="btn-edit"
+                    >
+                        {profile ? 'Edit Profile' : 'Create Profile'}
+                    </button>
                 </div>
 
                 <div className="profile-display">
-                    <div className="profile-picture">
+                    <div className="profile-picture" style={{ width: '150px', height: '150px' }}>
                         <img 
-                            src={profile?.profilePicture || 'default-avatar.png'} 
+                            src={formData.profilePicture?.url || 'https://placeholder.pics/svg/150'} 
                             alt={`${user?.username}'s profile`} 
+                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
                         />
                     </div>
 
@@ -254,21 +266,23 @@ const UserProfileDetails = () => {
                                 </div>
                                 <div className="form-group">
                                     <label>Interests:</label>
-                                    <input
-                                        type="text"
-                                        name="interests"
-                                        value={Array.isArray(formData.interests) ? formData.interests.join(', ') : ''}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter interests separated by commas"
-                                    />
+                                    {allowedInterests.map(interest => (
+                                        <div key={interest}>
+                                            <input
+                                                type="checkbox"
+                                                id={interest}
+                                                checked={formData.interests.includes(interest)}
+                                                onChange={() => handleCheckboxChange(interest)}
+                                            />
+                                            <label htmlFor={interest}>{interest}</label>
+                                        </div>
+                                    ))}
                                 </div>
-
 
                                 <div className="edit-actions">
                                     <button type="submit" className="btn-save">
                                         {profile ? 'Save Changes' : 'Create Profile'}
                                     </button>
-                                    {/* Only show Cancel if we have an existing profile */}
                                     {profile && (
                                         <button 
                                             type="button" 
@@ -286,7 +300,6 @@ const UserProfileDetails = () => {
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     );
 };
