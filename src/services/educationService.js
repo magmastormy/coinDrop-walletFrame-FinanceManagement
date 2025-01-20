@@ -4,7 +4,7 @@ import imageCompression from 'browser-image-compression';
 const API_URL = '/education';
 
 const compressImage = async (file) => {
-    if (!file || !file.type.startsWith('image/')) return file;
+    if (!file ||!file.type.startsWith('image/')) return file;
 
     const options = {
         maxSizeMB: 1, // Max file size of 1MB
@@ -15,9 +15,10 @@ const compressImage = async (file) => {
 
     try {
         const compressedFile = await imageCompression(file, options);
+        console.log('compressImage: Image compressed successfully', compressedFile);
         return compressedFile;
     } catch (error) {
-        console.error('Error compressing image:', error);
+        console.error('compressImage: Error compressing image:', error);
         return file;
     }
 };
@@ -33,8 +34,10 @@ const uploadImage = async (file) => {
                 'Content-Type': 'multipart/form-data'
             }
         });
+        console.log('uploadImage: Image uploaded successfully', response.data);
         return response.data;
     } catch (error) {
+        console.error('uploadImage: Error uploading image:', error);
         throw error;
     }
 };
@@ -49,6 +52,7 @@ const educationService = {
             console.log('Education Service - getEducations - Response data:', response.data);
             return response;
         } catch (error) {
+            console.error('Education Service - getEducations: Error fetching educations:', error);
             throw error;
         }
     },
@@ -60,6 +64,7 @@ const educationService = {
             console.log('Education Service - getUserEducations - Response data:', response.data);
             return response;
         } catch (error) {
+            console.error('Education Service - getUserEducations: Error fetching user educations:', error);
             throw error;
         }
     },
@@ -80,8 +85,10 @@ const educationService = {
             }
 
             const response = await axiosInstance.post(API_URL, formData);
+            console.log('createEducation: Education created successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('createEducation: Error creating education:', error);
             throw error;
         }
     },
@@ -101,8 +108,10 @@ const educationService = {
             }
 
             const response = await axiosInstance.put(`${API_URL}/${id}`, formData);
+            console.log('updateEducation: Education updated successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('updateEducation: Error updating education:', error);
             throw error;
         }
     },
@@ -110,8 +119,10 @@ const educationService = {
     deleteEducation: async (id) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
+            console.log('deleteEducation: Education deleted successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('deleteEducation: Error deleting education:', error);
             throw error;
         }
     },
@@ -119,8 +130,10 @@ const educationService = {
     likeEducation: async (id) => {
         try {
             const response = await axiosInstance.post(`${API_URL}/${id}/like`);
+            console.log('likeEducation: Education liked successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('likeEducation: Error liking education:', error);
             throw error;
         }
     },
@@ -128,8 +141,10 @@ const educationService = {
     unlikeEducation: async (id) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${id}/like`);
+            console.log('unlikeEducation: Education unliked successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('unlikeEducation: Error unliking education:', error);
             throw error;
         }
     },
@@ -137,8 +152,10 @@ const educationService = {
     addComment: async (id, comment) => {
         try {
             const response = await axiosInstance.post(`${API_URL}/${id}/comments`, { content: comment });
+            console.log('addComment: Comment added successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('addComment: Error adding comment:', error);
             throw error;
         }
     },
@@ -146,8 +163,10 @@ const educationService = {
     deleteComment: async (educationId, commentId) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${educationId}/comments/${commentId}`);
+            console.log('deleteComment: Comment deleted successfully', response.data);
             return response.data;
         } catch (error) {
+            console.error('deleteComment: Error deleting comment:', error);
             throw error;
         }
     }

@@ -2,13 +2,20 @@ const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
+const { Wallet } = require('@mui/icons-material');
 
 class BudgetController {
     // Create a new budget
     static async createBudget(req, res) {
         try {
-            const { name, amount, categoryId } = req.body;
+            const { name, amount, categoryId, walletId } = req.body;
             const userId = req.user._id || req.query.userId || req.user.userId;
+
+            if (!name || !amount || !categoryId || !walletId) {
+                return res.status(400).json({
+                    error: '[BudgetController] All fields are required: name, amount, categoryId, walletId'
+                });
+            }
 
             // Validate category exists and belongs to user
             const category = await Category.findOne({
@@ -18,13 +25,25 @@ class BudgetController {
 
             if (!category) {
                 return res.status(400).json({
-                    error: 'Invalid category'
+                    error: '[BudgetController] Invalid category'
+                });
+            }
+
+            const wallet = await Wallet.findOne({
+                _id: walletId,
+                userId: userId
+            });
+
+            if(!wallet)
+            {
+                return res.status(400).json({
+                    error: '[BudgetController] Invalid wallet'
                 });
             }
 
             const budgetData = {
                 ...req.body,
-                userId: req.user._id || req.query.userId || req.user.userId,
+                userId: userId,
             };
 
             const budget = new Budget(budgetData);
@@ -32,12 +51,12 @@ class BudgetController {
             await budget.populate('categoryId');
 
             res.status(201).json({
-                message: 'Budget created successfully',
+                message: '[BudgetController] Budget created successfully',
                 budget
             });
         } catch (error) {
             res.status(400).json({
-                error: 'Budget creation failed',
+                error: '[BudgetController] Budget creation failed',
                 details: error.message
             });
         }
@@ -56,7 +75,7 @@ class BudgetController {
             res.json({ budgets });
         } catch (error) {
             res.status(500).json({
-                error: 'Failed to retrieve budgets',
+                error: '[BudgetController] Failed to retrieve budgets',
                 details: error.message
             });
         }
@@ -80,7 +99,7 @@ class BudgetController {
                     
                 if (!category) {
                     return res.status(400).json({
-                        error: 'Invalid category'
+                        error: '[BudgetController] Invalid category'
                     });
                 }
             }
@@ -93,14 +112,14 @@ class BudgetController {
 
                 if (!budget) {
                     return res.status(404).json({
-                        error: 'Budget not found'
+                        error: '[BudgetController] Budget not found'
                     });
                 }
 
                 res.json({ budget });
         } catch (error) {
             res.status(400).json({
-                error: 'Budget update failed',
+                error: '[BudgetController] Budget update failed',
                 details: error.message
             });
         }
@@ -120,17 +139,17 @@ class BudgetController {
 
             if (!budget) {
                 return res.status(404).json({ 
-                    error: 'Budget not found or unauthorized' 
+                    error: '[BudgetController] Budget not found or unauthorized' 
                 });
             }
 
             res.json({
-                message: 'Budget deleted successfully',
+                message: '[BudgetController] Budget deleted successfully',
                 budget
             });
         } catch (error) {
             res.status(500).json({
-                error: 'Budget deletion failed',
+                error: '[BudgetController] Budget deletion failed',
                 details: error.message
             });
         }
@@ -200,7 +219,7 @@ class BudgetController {
             res.json({ statusStats: stats, budgetHealth });
         } catch (error) {
             res.status(500).json({
-                error: 'Failed to retrieve budget statistics',
+                error: '[BudgetController] Failed to retrieve budget statistics',
                 details: error.message
             });
         }
@@ -268,7 +287,7 @@ class BudgetController {
             });
         } catch (error) {
             res.status(500).json({
-                error: 'Failed to analyze budget performance',
+                error: '[BudgetController] Failed to analyze budget performance',
                 details: error.message
             });
         }

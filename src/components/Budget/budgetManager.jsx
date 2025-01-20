@@ -4,6 +4,7 @@ import {setBudgets, setLoading, setError } from '../../slices/budgetSlice';
 import budgetService from '../../services/budgetService';
 import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
+import walletService from '../../services/walletService';
 import CreateBudgetModal from './createBudgetModal';
 import BudgetList from './budgetList';
 import BudgetTransactionList from './budgetTransactionList';
@@ -25,10 +26,12 @@ const BudgetManager = () =>
     const [transactions, setTransactions] = useState([]);
     const [categories, setCategories] = useState([]);
     const [filter, setFilter] = useState({ category: '', dateRange: '' });
+    const [wallets, setWallets] = useState([]);
     
     useEffect(() => {
         fetchBudgets();
         fetchCategories();
+        fetchWallets();
     }, [dispatch]);
 
     const fetchCategories = async () => {
@@ -36,7 +39,7 @@ const BudgetManager = () =>
             const fetchedCategories = await categoryService.getUserCategories(user.id);
             setCategories(fetchedCategories);
         } catch (err) {
-            console.error('Error fetching categories:', err);
+            console.error('[BudgetManager] Error fetching categories:', err);
         }
     };
 
@@ -55,9 +58,19 @@ const BudgetManager = () =>
         }
     };
     
+    const fetchWallets = async () => {
+        try {
+            const fetchedWallets = await walletService.getUserWallets(user.id);
+            setWallets(fetchedWallets);
+        } catch (err) {
+            console.error('[BudgetManager] Error fetching wallets:', err);
+        }
+    };
+
     const handleBudgetSelect = async (budget) => {
         try {
             const data = await transactionService.getBudgetTransactions(budget._id);
+            console.log('[BudgetManager: handleBudgetSelect] response data: ', data);
             setTransactions(data.transactions);
             setSelectedBudget(budget);
         } catch (err) {
@@ -134,18 +147,16 @@ const BudgetManager = () =>
                 </div>
             </div>
 
-            {isModalOpen && (
-                <CreateBudgetModal
-                    onClose={() => {
-                        setIsModalOpen(false);
-                        setEditingBudget(null);
-                    }}
-                    onCreateBudget={handleBudgetCreated}
-                    onUpdateBudget={handleEditBudget}
-                    editingBudget={editingBudget}
-                    categories={categories}
-                />
-            )}
+            <CreateBudgetModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingBudget(null);
+                }}
+                onCreateBudget={handleBudgetCreated}
+                categories={categories}
+                wallets={wallets}
+            />
         </div>
     );
 };

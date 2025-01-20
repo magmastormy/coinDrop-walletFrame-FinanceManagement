@@ -1,4 +1,3 @@
-
 import axiosInstance from '../api/userAxios';
 const API_URL = '/saving-goals';
 
@@ -7,8 +6,10 @@ export const savingsGoalService = {
     createSavingsGoal: async (goalData) => {
         try {
             const response = await axiosInstance.post(API_URL, goalData);
+            console.log("[savingsGoalService - createSavingsGoal] Savings goal created successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsGoalService - createSavingsGoal] Error creating savings goal:", error);
             throw error;
         }
     },
@@ -17,8 +18,10 @@ export const savingsGoalService = {
     getSavingsGoals: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
+            console.log("[savingsGoalService - getSavingsGoals] Savings goals fetched successfully:", response);
             return response;
         } catch (error) {
+            console.error("[savingsGoalService - getSavingsGoals] Error fetching savings goals:", error);
             throw error;
         }
     },
@@ -27,8 +30,10 @@ export const savingsGoalService = {
     getSavingsGoal: async (goalId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${goalId}`);
+            console.log("[savingsGoalService - getSavingsGoal] Savings goal fetched successfully:", response);
             return response;
         } catch (error) {
+            console.error("[savingsGoalService - getSavingsGoal] Error fetching savings goal:", error);
             throw error;
         }
     },
@@ -37,8 +42,10 @@ export const savingsGoalService = {
     updateSavingsGoal: async (goalId, updateData) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/${goalId}`, updateData);
+            console.log("[savingsGoalService - updateSavingsGoal] Savings goal updated successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsGoalService - updateSavingsGoal] Error updating savings goal:", error);
             throw error;
         }
     },
@@ -47,8 +54,10 @@ export const savingsGoalService = {
     deleteSavingsGoal: async (goalId) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${goalId}`);
+            console.log("[savingsGoalService - deleteSavingsGoal] Savings goal deleted successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsGoalService - deleteSavingsGoal] Error deleting savings goal:", error);
             throw error;
         }
     },
@@ -57,8 +66,10 @@ export const savingsGoalService = {
     trackGoalProgress: async (goalId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${goalId}/progress`);
+            console.log("[savingsGoalService - trackGoalProgress] Goal progress tracked successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsGoalService - trackGoalProgress] Error tracking goal progress:", error);
             throw error;
         }
     },
@@ -67,8 +78,10 @@ export const savingsGoalService = {
     getCompletedGoals: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/completed/${userId}`);
+            console.log("[savingsGoalService - getCompletedGoals] Completed goals fetched successfully:", response);
             return response;
         } catch (error) {
+            console.error("[savingsGoalService - getCompletedGoals] Error fetching completed goals:", error);
             throw error;
         }
     }

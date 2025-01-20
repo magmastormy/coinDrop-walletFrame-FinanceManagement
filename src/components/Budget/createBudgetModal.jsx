@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import budgetService from '../../services/budgetService';
 import './styles/budgetCreateStyles.css';
 
-const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated, categories }) => {
+const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets }) => {
     const [budgetData, setBudgetData] = useState({
         name: '',
         amount: 0,
         type: 'monthly',
         categoryId: '',
+        walletId: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
         metadata: {
@@ -23,21 +24,38 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated, categories }) => 
 
         try {
             if (!budgetData.categoryId) {
-                throw new Error('Please select a category');
+                throw new Error('[BudgetCreateModal] Please select a category');
             }
 
             const amount = parseFloat(budgetData.amount);
             if (isNaN(amount) || amount <= 0) {
-                throw new Error('Please enter a valid amount');
+                throw new Error('[BudgetCreateModal] Please enter a valid amount');
             }
 
+            console.log('[BudgetCreateModal] budget data: ', budgetData);
             await budgetService.createBudget(budgetData);
-            onBudgetCreated();
-            setBudgetData({ name: '', amount: 0, type: 'monthly', category: '', startDate: '', endDate: '', metadata: { icon: 'budget', color: '#007bff' } });
+            onCreateBudget(); // Notify parent to refresh budgets
+            resetForm();
             onClose();
         } catch (err) {
             setError(err.message);
         }
+    };
+
+    const resetForm = () => {
+        setBudgetData({
+            name: '',
+            amount: 0,
+            type: 'monthly',
+            categoryId: '',
+            walletId: '',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: '',
+            metadata: {
+                icon: 'budget',
+                color: '#007bff'
+            }
+        });
     };
 
     if (!isOpen) return null;
@@ -97,6 +115,22 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated, categories }) => 
                         </select>
                     </div>
                     <div className="form-group">
+                        <label htmlFor="walletId">Wallet</label>
+                        <select
+                            id="walletId"
+                            value={budgetData.walletId}
+                            onChange={e => setBudgetData({ ...budgetData, walletId: e.target.value })}
+                            required
+                        >
+                            <option value="">Select Wallet</option>
+                            {wallets.map(wallet => (
+                                <option key={wallet._id} value={wallet._id}>
+                                    {wallet.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
                         <label htmlFor="startDate">Start Date</label>
                         <input
                             id="startDate"
@@ -134,8 +168,10 @@ const CreateBudgetModal = ({ isOpen, onClose, onBudgetCreated, categories }) => 
                             {/* Add more icons as needed */}
                         </select>
                     </div>
-                    <button type="submit">Create Budget</button>
-                    <button type="button" onClick={onClose}>Cancel</button>
+                    <div className="modal-actions">
+                        <button type="submit">Create Budget</button>
+                        <button type="button" onClick={onClose}>Cancel</button>
+                    </div>
                 </form>
             </div>
         </div>

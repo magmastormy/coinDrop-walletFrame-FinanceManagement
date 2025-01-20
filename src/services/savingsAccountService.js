@@ -6,9 +6,10 @@ export const savingsAccountService = {
     createSavingsAccount: async (accountData) => {
         try {
             const response = await axiosInstance.post(API_URL, accountData);
+            console.log("[savingsAccountService - createSavingsAccount] Savings account created successfully:", response.data);
             return response.data;
         } catch (error) {
-            console.error('Error creating savings account:', error);
+            console.error("[savingsAccountService - createSavingsAccount] Error creating savings account:", error);
             throw error;
         }
     },
@@ -17,11 +18,13 @@ export const savingsAccountService = {
     getSavingsAccount: async (accountId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${accountId}`);
+            console.log("[savingsAccountService - getSavingsAccount] Savings account fetched successfully:", response);
             return response;
         } catch (error) {
-            console.error('Error fetching savings account:', error);
+            console.error("[savingsAccountService - getSavingsAccount] Error fetching savings account:", error);
             // Return null instead of throwing error for 404
             if (error.response?.status === 404) {
+                console.log("[savingsAccountService - getSavingsAccount] Savings account not found for ID:", accountId);
                 return null;
             }
             throw error;
@@ -32,11 +35,13 @@ export const savingsAccountService = {
     getUserSavingsAccounts: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
+            console.log("[savingsAccountService - getUserSavingsAccounts] User savings accounts fetched successfully:", response);
             return response;
         } catch (error) {
-            console.error('Error fetching user savings accounts:', error);
+            console.error("[savingsAccountService - getUserSavingsAccounts] Error fetching user savings accounts:", error);
             // Return empty array instead of throwing error
             if (error.response?.status === 404) {
+                console.log("[savingsAccountService - getUserSavingsAccounts] No savings accounts found for user ID:", userId);
                 return [];
             }
             throw error;
@@ -52,8 +57,10 @@ export const savingsAccountService = {
                 sourceWalletId,
                 transferType // 'manual', 'automatic-amount', 'automatic-percentage'
             });
+            console.log("[savingsAccountService - transferToSavings] Transfer to savings completed successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsAccountService - transferToSavings] Error transferring to savings:", error);
             throw error;
         }
     },
@@ -66,8 +73,10 @@ export const savingsAccountService = {
                 amount,
                 targetWalletId
             });
+            console.log("[savingsAccountService - withdrawFromSavings] Withdrawal from savings completed successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsAccountService - withdrawFromSavings] Error withdrawing from savings:", error);
             throw error;
         }
     },
@@ -77,10 +86,12 @@ export const savingsAccountService = {
         try {
             const response = await axiosInstance.post(`${API_URL}/automatic-setup`, {
                 userId,
-                ...config // frequency, amount/percentage, sourceWalletId
+               ...config // frequency, amount/percentage, sourceWalletId
             });
+            console.log("[savingsAccountService - setupAutomaticSavings] Automatic savings setup completed successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsAccountService - setupAutomaticSavings] Error setting up automatic savings:", error);
             throw error;
         }
     },
@@ -91,8 +102,10 @@ export const savingsAccountService = {
             const response = await axiosInstance.get(`${API_URL}/transactions/${userId}`, {
                 params: { page, limit }
             });
-            return response.data;
+            console.log("[savingsAccountService - getSavingsTransactions] Savings transactions fetched successfully:", response);
+            return response;
         } catch (error) {
+            console.error("[savingsAccountService - getSavingsTransactions] Error fetching savings transactions:", error);
             throw error;
         }
     },
@@ -102,10 +115,12 @@ export const savingsAccountService = {
         try {
             const response = await axiosInstance.put(`${API_URL}/automatic-settings`, {
                 userId,
-                ...config
+               ...config
             });
+            console.log("[savingsAccountService - updateAutomaticSavings] Automatic savings settings updated successfully:", response.data);
             return response.data;
         } catch (error) {
+            console.error("[savingsAccountService - updateAutomaticSavings] Error updating automatic savings settings:", error);
             throw error;
         }
     },
@@ -114,9 +129,10 @@ export const savingsAccountService = {
     updateSavingsAccount: async (accountId, updateData) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/${accountId}`, updateData);
+            console.log("[savingsAccountService - updateSavingsAccount] Savings account updated successfully:", response.data);
             return response.data;
         } catch (error) {
-            console.error('Error updating savings account:', error);
+            console.error("[savingsAccountService - updateSavingsAccount] Error updating savings account:", error);
             throw error;
         }
     },
@@ -127,12 +143,14 @@ export const savingsAccountService = {
             // First fetch the account to check if it's the default "Savings" account
             const account = await axiosInstance.get(`${API_URL}/${accountId}`);
             if (account.data.name === "Savings") {
+                console.error("[savingsAccountService - deleteSavingsAccount] Cannot delete the default 'Savings' account");
                 throw new Error("Cannot delete the default 'Savings' account");
             }
             const response = await axiosInstance.delete(`${API_URL}/${accountId}`);
+            console.log("[savingsAccountService - deleteSavingsAccount] Savings account deleted successfully:", response.data);
             return response.data;
         } catch (error) {
-            console.error('Error deleting savings account:', error);
+            console.error("[savingsAccountService - deleteSavingsAccount] Error deleting savings account:", error);
             throw error;
         }
     },
