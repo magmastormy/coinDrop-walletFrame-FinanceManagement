@@ -53,7 +53,7 @@ router.get('/:userId/following', ProfileController.getFollowing);
 
 router.delete('/:userId', ProfileController.deleteProfile);
 
-router.post('/upload-image', upload.single('image'), ProfileController.uploadProfileImage);
-router.delete('/image', ProfileController.deleteProfileImage);
+router.post('/:userId/upload-image', upload.single('image'), ProfileController.uploadProfileImage);
+router.delete('/:userId/delete-image', ProfileController.deleteProfileImage);
 
 module.exports = router;

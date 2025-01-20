@@ -66,7 +66,7 @@ const profileService = {
         }
     },
 
-    uploadProfileImage: async (file, type = 'profile') => {
+    uploadProfileImage: async (userId, file, type = 'profile') => {
         try {
             console.log('[Profile Service: uploadProfileImage] Sending image to upload:', file);
             const formData = new FormData();
@@ -79,7 +79,7 @@ const profileService = {
             };
     
             const response = await axiosInstance.post(
-                `${API_URL}/upload-image?type=${type}`,
+                `${API_URL}/${userId}/upload-image?type=${type}`,
                 formData,
                 config
             );
@@ -112,7 +112,7 @@ const profileService = {
 
     deleteUserProfile: async (userId) => {
         try {
-            const response = await axiosInstance.delete(`${API_URL}/${userId}`);
+            const response = await axiosInstance.delete(`${API_URL}/${userId}/delete-image`);
             return response.data;
         } catch (error) {
             console.error('Error deleting profile:', error);

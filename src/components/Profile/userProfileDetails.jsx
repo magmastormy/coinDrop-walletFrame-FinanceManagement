@@ -66,6 +66,7 @@ const UserProfileDetails = () => {
             try {
                 dispatch(fetchProfileStart());
                 const profileData = await profileService.getUserProfile(user.id);
+                console.log('[Profile] Profile data:', profileData);
                 
                 if (profileData.profile) {
                     dispatch(fetchProfileSuccess(profileData.profile));
@@ -146,7 +147,7 @@ const UserProfileDetails = () => {
     const handleProfileImageUpload = async (file) => {
         try {
             console.log('[UserProfileDetails] Starting image upload:', file);
-            const result = await profileService.uploadProfileImage(file);
+            const result = await profileService.uploadProfileImage(user.id, file);
             console.log('[UserProfileDetails] Upload Image result:', result);
 
             if (result && result.profile) {
@@ -200,7 +201,7 @@ const UserProfileDetails = () => {
                         <ImageUpload 
                             onImageUpload={handleProfileImageUpload}
                             onImageRemove={handleProfileImageRemove}
-                            currentImage={formData.profilePicture?.url || 'https://placeholder.pics/svg/150'}
+                            currentImage={formData.profilePicture || 'https://placeholder.pics/svg/150'}
                             imageType="profile"
                         />
                     )}
@@ -218,7 +219,7 @@ const UserProfileDetails = () => {
                 <div className="profile-display">
                     <div className="profile-picture" style={{ width: '150px', height: '150px' }}>
                         <img 
-                            src={formData.profilePicture?.url || 'https://placeholder.pics/svg/150'} 
+                            src={formData.profilePicture || 'https://placeholder.pics/svg/150'} 
                             alt={`${user?.username}'s profile`} 
                             style={{ width: '100%', height: '100%', borderRadius: '50%' }}
                         />

@@ -1,3 +1,4 @@
+const cloudinary = require('cloudinary').v2; 
 const UserProfile = require('../models/UserProfile');
 const ImageService = require("../../src/services/imageService");
 const User = require("../models/User");
