@@ -1,29 +1,8 @@
 .new-goal-dialog {
-    min-width: 400px;
+    border-radius: 8px;
 }
 
-.new-goal-dialog .MuiDialogContent-root {
-    padding: 20px;
-}
-
-.new-goal-dialog .MuiTextField-root {
-    margin-bottom: 16px;
-}
-
-.new-goal-dialog .error-message {
-    color: #f44336;
-    margin-top: 8px;
-    font-size: 0.875rem;
-}
-
-.new-goal-dialog .MuiDialogActions-root {
-    padding: 16px;
-}
-
-.new-goal-dialog .MuiButton-contained {
-    background-color: var(--primary-color);
-}
-
-.new-goal-dialog .MuiButton-contained:hover {
-    background-color: var(--primary-color-dark);
+.error-message {
+    color: red;
+    font-weight: bold;
 }

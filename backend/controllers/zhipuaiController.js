@@ -1,60 +1,33 @@
-const axios = require('axios');
-require('dotenv').config();
+const { spawn } = require('child_process');
+const path = require('path');
 
-const API_ENDPOINT = process.env.ZHIPU_API_ENDPOINT;
-const API_KEY = process.env.ZHIPU_API_KEY;
-
-
-if (!API_ENDPOINT) {
-    console.error('Error: ZHIPU_API_ENDPOINT is not defined in environment variables');
-}
-if (!API_KEY) {
-    console.error('Error: ZHIPU_API_KEY is not defined in environment variables');
-}
-
-exports.sendMessage = async (req, res) => {
+exports.sendMessage = async (req, res, next) => {
     try {
-        if (!API_ENDPOINT || !API_KEY) {
-            throw new Error('ZhipuAI API configuration is missing. Please check your environment variables.');
-        }
-
         const { messages } = req.body;
-        
-        console.log('ZhipuAI Controller - Received messages:', messages);
+        const model = 'glm-4-0520';
+        const messagesJson = JSON.stringify(messages);
 
-        const response = await axios.post(API_ENDPOINT, messages, {
-            headers: {
-                'Authorization': `Bearer ${API_KEY}`,
-                'Content-Type': 'application/json'
+        const pythonScriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');
+        const pythonProcess = spawn('python', [pythonScriptPath, model, messagesJson]);
+
+        let output = '';
+        pythonProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`Python script error: ${data.toString()}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                const responseData = JSON.parse(output);
+                res.json(responseData);
+            } else {
+                next(new Error(`Python script exited with code ${code}`));
             }
         });
-
-        console.log('ZhipuAI Controller - Response:', response.data);
-        res.json(response.data);
     } catch (error) {
-        console.error('ZhipuAI Controller - Error:', error);
-        res.status(500).json({ 
-            error: 'Failed to send message to ZhipuAI',
-            details: error.message 
-        });
-    }
-};
-
-exports.getHistory = async (req, res) => {
-    try {
-        const { userId } = req.query;
-        if (!userId) {
-            return res.status(400).json({ error: 'User ID is required' });
-        }
-
-        // Here you would typically fetch chat history from your database
-        // For now, returning empty array as placeholder
-        res.json({ history: [] });
-    } catch (error) {
-        console.error('ZhipuAI Controller - Error fetching history:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch chat history',
-            details: error.message 
-        });
+        next(error);
     }
 };

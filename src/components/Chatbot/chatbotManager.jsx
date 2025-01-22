@@ -32,6 +32,7 @@ const ChatbotManager = () => {
         if (!message) return;
 
         try {
+            dispatch(setError(""));
             dispatch(setLoading(true));
             dispatch(addToChatHistory({
                 role: 'user',
@@ -46,9 +47,11 @@ const ChatbotManager = () => {
                 { role: 'user', content: message }
             ]);
 
+            const assistantMessage = response.map(item => item.content).join(' ');
+
             dispatch(addToChatHistory({
                 role: 'assistant',
-                content: response.content,
+                content: assistantMessage,
                 timestamp: new Date().toISOString()
             }));
         } catch (error) {
