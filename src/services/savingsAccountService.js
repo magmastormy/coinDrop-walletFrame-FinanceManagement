@@ -5,6 +5,7 @@ export const savingsAccountService = {
     // Create a new savings account
     createSavingsAccount: async (accountData) => {
         try {
+            console.log("[savingsAccountService - createSavingsAccount] Savings account data:", accountData);
             const response = await axiosInstance.post(API_URL, accountData);
             console.log("[savingsAccountService - createSavingsAccount] Savings account created successfully:", response.data);
             return response.data;
@@ -34,12 +35,17 @@ export const savingsAccountService = {
     // Get user savings accounts
     getUserSavingsAccounts: async (userId) => {
         try {
-            const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/userId=${userId}`);
             console.log("[savingsAccountService - getUserSavingsAccounts] User savings accounts fetched successfully:", response);
             return response;
         } catch (error) {
             console.error("[savingsAccountService - getUserSavingsAccounts] Error fetching user savings accounts:", error);
             // Return empty array instead of throwing error
+            if (error.response) {
+                // Log the error response for debugging
+                console.error("Error response data:", error.response.data);
+                console.error("Error response status:", error.response.status);
+            }
             if (error.response?.status === 404) {
                 console.log("[savingsAccountService - getUserSavingsAccounts] No savings accounts found for user ID:", userId);
                 return [];

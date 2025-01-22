@@ -43,13 +43,13 @@ const BudgetManager = () =>
         }
     };
 
-    const fetchBudgets = async () => {
+    const fetchBudgets = async (page = 1, limit = 10) => {
         dispatch(setLoading(true));
         try {
             if (!user || !user.id) {
                 throw new Error('User not authenticated');
             }
-            const data = await budgetService.getUserBudgets(user.id);
+            const data = await budgetService.getUserBudgets(user.id, { page, limit });
             dispatch(setBudgets(data.budgets || []));
         } catch (err) {
             dispatch(setError(err.message));
@@ -60,8 +60,8 @@ const BudgetManager = () =>
     
     const fetchWallets = async () => {
         try {
-            const fetchedWallets = await walletService.getUserWallets(user.id);
-            setWallets(fetchedWallets);
+            const fetchedWallets = await walletService.getAllWallets(user.id);
+            setWallets(fetchedWallets || []);
         } catch (err) {
             console.error('[BudgetManager] Error fetching wallets:', err);
         }
@@ -156,6 +156,8 @@ const BudgetManager = () =>
                 onCreateBudget={handleBudgetCreated}
                 categories={categories}
                 wallets={wallets}
+                userId={user.id}
+                budgetData={editingBudget}
             />
         </div>
     );

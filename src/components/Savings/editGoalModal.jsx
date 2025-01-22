@@ -72,7 +72,8 @@ const EditGoalModal = ({ open, onClose, goal }) => {
         try {
             const updatedGoal = await savingsGoalService.updateSavingsGoal(goal._id, {
                 ...formData,
-                targetDate: formData.targetDate.toISOString()
+                targetDate: formData.targetDate.toISOString(),
+                deadline: formData.targetDate.toISOString()
             });
             dispatch(updateSavingsGoal(updatedGoal));
             onClose();

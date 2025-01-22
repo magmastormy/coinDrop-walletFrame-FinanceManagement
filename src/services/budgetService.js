@@ -26,7 +26,7 @@ export const getBudgetStats = async () => {
 };
 
 const budgetService = {
-    createBudget: async (budgetData) => {
+    createBudget: async (userId, budgetData) => {
         try {
             const response = await axiosInstance.post(`${API_URL}?userId=${userId}`, budgetData);
             console.log('[BudgetService - createBudget] Successfully created budget:', response.data);

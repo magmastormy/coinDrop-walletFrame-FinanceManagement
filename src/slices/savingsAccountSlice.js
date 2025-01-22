@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const savingsAccountSlice = createSlice({
     name: 'savingsAccount',
     initialState: {
-        account: null,
+        account: [],
         transactions: [],
         automaticSettings: null,
         loading: false,

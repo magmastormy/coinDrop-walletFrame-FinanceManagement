@@ -6,12 +6,11 @@ import {
     Card, 
     CardContent, 
     Typography,
-    IconButton,
     Box,
     CircularProgress,
     Alert
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import savingsGoalService from '../../services/savingsGoalService';
 import { setSavingsGoals, setLoading, setError } from '../../slices/savingsGoalSlice';
 import './styles/savingsGoalManagerStyles.css';
@@ -20,7 +19,7 @@ import NewGoalDialog from './newGoalDialog';
 
 const SavingsGoalManager = () => {
     const dispatch = useDispatch();
-    const savingsGoals = useSelector(state => state.savingsGoal.savingsGoals) || [];
+    const savingsGoals = useSelector(state => state.savingsGoal.goals || []);
     const loading = useSelector(state => state.savingsGoal.loading);
     const error = useSelector(state => state.savingsGoal.error);
     const user = useSelector(state => state.auth.user);
@@ -34,6 +33,7 @@ const SavingsGoalManager = () => {
                 dispatch(setLoading(true));
                 try {
                     const data = await savingsGoalService.getSavingsGoals(user.id);
+                    console.log('[SavingsGoalManager] Savings goals fetched successfully:', data);
                     dispatch(setSavingsGoals(data));
                 } catch (err) {
                     console.error('Error fetching savings goals:', err);
@@ -46,6 +46,10 @@ const SavingsGoalManager = () => {
             fetchSavingsGoals();
         }
     }, [dispatch, user]);
+
+    useEffect(() => {
+        console.log('Current savings goals:', savingsGoals);
+    }, [savingsGoals]);
 
     const handleCreateGoal = async (goalData) => {
         dispatch(setLoading(true));
@@ -104,10 +108,6 @@ const SavingsGoalManager = () => {
         setEditModalOpen(true);
     };
 
-    const calculateProgress = (current, target) => {
-        return Math.min((current / target) * 100, 100);
-    };
-
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -147,69 +147,21 @@ const SavingsGoalManager = () => {
                     </CardContent>
                 </Card>
             ) : (
-                <motion.div layout className="goals-grid">
-                    {savingsGoals.map(goal => (
-                        <motion.div
-                            key={goal._id}
-                            layout
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                        >
-                            <Card className="goal-card">
-                                <CardContent>
-                                    <Box className="goal-header">
-                                        <Typography variant="h6">{goal.name}</Typography>
-                                        <Box>
-                                            <IconButton 
-                                                onClick={() => handleEditGoal(goal)}
-                                                size="small"
-                                                color="primary"
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            <IconButton 
-                                                onClick={() => handleDeleteGoal(goal._id)}
-                                                size="small"
-                                                color="error"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Box>
-                                    </Box>
-                                    
-                                    <Box className="goal-progress">
-                                        <div 
-                                            className="progress-bar"
-                                            style={{ 
-                                                width: `${calculateProgress(goal.currentAmount, goal.targetAmount)}%`
-                                            }}
-                                        />
-                                        <Typography variant="body2" color="textSecondary" className="progress-text">
-                                            {calculateProgress(goal.currentAmount, goal.targetAmount).toFixed(1)}%
-                                        </Typography>
-                                    </Box>
-
-                                    <Box className="goal-amounts">
-                                        <Typography variant="body1">
-                                            ${goal.currentAmount.toFixed(2)} / ${goal.targetAmount.toFixed(2)}
-                                        </Typography>
-                                    </Box>
-
-                                    {goal.description && (
-                                        <Typography variant="body2" color="textSecondary" className="goal-description">
-                                            {goal.description}
-                                        </Typography>
-                                    )}
-
-                                    <Typography variant="caption" color="textSecondary" className="goal-deadline">
-                                        Target Date: {new Date(goal.targetDate).toLocaleDateString()}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </motion.div>
+                savingsGoals.map(goal => (
+                    <motion.div key={goal._id}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6">{goal.name}</Typography>
+                                <Typography variant="body2">Target Amount: {goal.targetAmount}</Typography>
+                                <Typography variant="body2">Current Amount: {goal.currentAmount}</Typography>
+                                <Typography variant="body2">Deadline: {new Date(goal.deadline).toLocaleDateString()}</Typography>
+                                <Typography variant="body2">Description: {goal.description}</Typography>
+                                <Button onClick={() => handleEditGoal(goal)}>Edit</Button>
+                                <Button onClick={() => handleDeleteGoal(goal._id)}>Delete</Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                ))
             )}
 
             <NewGoalDialog

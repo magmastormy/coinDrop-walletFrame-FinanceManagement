@@ -25,6 +25,10 @@ const SavingsGoalSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    description: {
+        type: String,
+        default: '' 
     }
 }, {
     timestamps: true

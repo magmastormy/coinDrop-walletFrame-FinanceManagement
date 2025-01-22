@@ -6,7 +6,7 @@ export const savingsGoalService = {
     createSavingsGoal: async (goalData) => {
         try {
             const response = await axiosInstance.post(API_URL, goalData);
-            console.log("[savingsGoalService - createSavingsGoal] Savings goal created successfully:", response.data);
+            console.log("[savingsGoalService - createSavingsGoal] Savings goal created successfully:", response);
             return response.data;
         } catch (error) {
             console.error("[savingsGoalService - createSavingsGoal] Error creating savings goal:", error);
@@ -17,7 +17,7 @@ export const savingsGoalService = {
     // Get all savings goals for a user
     getSavingsGoals: async (userId) => {
         try {
-            const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/${userId}`);
             console.log("[savingsGoalService - getSavingsGoals] Savings goals fetched successfully:", response);
             return response;
         } catch (error) {

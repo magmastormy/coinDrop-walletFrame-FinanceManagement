@@ -6,7 +6,7 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 router.use(authMiddleware);
 
 // Get all savings goals for a user
-router.get('/', SavingsGoalController.getUserSavingsGoals);
+router.get('/:userId', SavingsGoalController.getUserSavingsGoals);
 
 // Create a new savings goal
 router.post('/', SavingsGoalController.createSavingsGoal);

@@ -7,6 +7,7 @@ const { Wallet } = require('@mui/icons-material');
 class BudgetController {
     // Create a new budget
     static async createBudget(req, res) {
+        console.log("Budget Controller - createBudget - req.body: ", req.body);
         try {
             const { name, amount, categoryId, walletId } = req.body;
             const userId = req.user._id || req.query.userId || req.user.userId;

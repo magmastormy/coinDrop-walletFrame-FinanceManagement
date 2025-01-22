@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './styles/editTransactionModalStyles.css';
 
 const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate }) => {
+    if (!isOpen || !transaction) return null;
+
     const [amount, setAmount] = useState(transaction.amount);
     const [type, setType] = useState(transaction.type);
     const [description, setDescription] = useState(transaction.description);
@@ -11,8 +13,6 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate }) => {
         onUpdate({ ...transaction, amount, type, description });
         onClose();
     };
-
-    if (!isOpen) return null;
 
     return (
         <div className="modal-overlay">

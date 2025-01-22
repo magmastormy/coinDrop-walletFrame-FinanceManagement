@@ -6,16 +6,23 @@ class SavingsAccountController {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
 
-            const { name, automation } = req.body;
+            const { name, initialBalance, automation } = req.body;
+
+            if (initialBalance === undefined || isNaN(initialBalance)) {
+                return res.status(400).json({ error: 'Initial balance is required and must be a number.' });
+            }
+            console.log("SavingsAccountController - createSavingsAccount - redf.body: ", req.body);
+
             const savingsAccount = new SavingsAccount({
                 userId: userId,
                 name,
+                balance: initialBalance,
                 automation
             });
             await savingsAccount.save();
             res.status(201).json(savingsAccount);
         } catch (error) {
-            res.status(400).json({ error: 'Failed to create savings account', details: error.message });
+            res.status(400).json({ error: '[SavingsAccountController - createSavingsAccount] Failed to create savings account', details: error.message });
         }
     }
 
@@ -50,7 +57,8 @@ class SavingsAccountController {
             const accounts = await SavingsAccount.find({ userId: userId });
             res.json(accounts);
         } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch savings accounts' });
+            console.log("[SavingsAccountController - getUserSavingsAccounts] Error:", error);
+            res.status(500).json({ error: '[SavingsAccountController - getUserSavingsAccounts] Failed to get user\'s savings accounts', details: error.message });
         }
     }
 

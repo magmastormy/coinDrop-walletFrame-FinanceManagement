@@ -18,6 +18,7 @@ class SavingsGoalController {
             await newGoal.save();
             res.status(201).json(newGoal);
         } catch (error) {
+            console.error('[SavingsGoalController] Error creating savings goal:', error);
             res.status(400).json({ error: 'Failed to create savings goal' });
         }
     }

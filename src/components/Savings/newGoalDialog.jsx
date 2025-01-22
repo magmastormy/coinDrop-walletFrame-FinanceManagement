@@ -71,7 +71,8 @@ const NewGoalDialog = ({ open, onClose }) => {
             const goalData = {
                 ...formData,
                 userId: user.id,
-                targetDate: formData.targetDate.toISOString()
+                targetDate: formData.targetDate.toISOString(),
+                deadline: formData.targetDate.toISOString()
             };
 
             const response = await savingsGoalService.createSavingsGoal(goalData);

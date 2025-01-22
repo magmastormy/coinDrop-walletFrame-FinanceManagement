@@ -23,12 +23,14 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/ico
 import savingsAccountService from '../../services/savingsAccountService';
 import SavingsAccountTransactionTable from './savingsAccountTransactionTable';
 import { setSavingsAccount, setLoading, setError } from '../../slices/savingsAccountSlice';
+import SavingsCard from './savingsCard';
+import TransferDialog from './TransferDialog';
 import './styles/savingsAccountManagerStyles.css';
 
 const SavingsAccountManager = () => {
     const dispatch = useDispatch();
     const { user } = useSelector(state => state.auth);
-    const { account: savingsAccount, loading, error } = useSelector(state => state.savingsAccount);
+    const { account: savingsAccounts = [], loading, error } = useSelector(state => state.savingsAccount);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -41,23 +43,25 @@ const SavingsAccountManager = () => {
             frequency: 'monthly'
         }
     });
+    const [showTransferDialog, setShowTransferDialog] = useState(false);
 
     useEffect(() => {
-        const fetchSavingsAccount = async () => {
-            if (!user.id) return;
-            
-            dispatch(setLoading(true));
-            try {
-                const data = await savingsAccountService.getUserSavingsAccounts(user.id);
-                dispatch(setSavingsAccount(data[0]));
-            } catch (err) {
-                dispatch(setError(err.message));
-            } finally {
-                dispatch(setLoading(false));
+        const fetchSavingsAccounts = async () => {
+            if (user) {
+                dispatch(setLoading(true));
+                try {
+                    const accounts = await savingsAccountService.getUserSavingsAccounts(user.id);
+                    dispatch(setSavingsAccount(accounts));
+                } catch (err) {
+                    console.log("[SavingsAccountManager] Error fetching savings accounts", err);
+                    dispatch(setError(err.message));
+                } finally {
+                    dispatch(setLoading(false));
+                }
             }
         };
 
-        fetchSavingsAccount();
+        fetchSavingsAccounts();
     }, [dispatch, user]);
 
     const handleCreateAccount = async () => {
@@ -65,7 +69,7 @@ const SavingsAccountManager = () => {
             const accountData = {
                 ...formData,
                 userId: user.id,
-                initialBalance: parseFloat(formData.initialBalance),
+                initialBalance: parseFloat(formData.initialBalance) || 0,
                 automation: {
                     type: formData.automaticSavings?.type || 'fixed',
                     frequency: formData.automaticSavings?.frequency || 'monthly',
@@ -75,8 +79,10 @@ const SavingsAccountManager = () => {
                 }
             };
             
+            console.log("Creating savings account with data:", accountData);
+
             const response = await savingsAccountService.createSavingsAccount(accountData);
-            dispatch(setSavingsAccount(response.data));
+            dispatch(setSavingsAccount(response));
             setCreateModalOpen(false);
             setFormData({
                 name: '',
@@ -90,7 +96,12 @@ const SavingsAccountManager = () => {
                 }
             });
         } catch (err) {
-            dispatch(setError(err.message));
+            console.error("[SavingsAccountManager] Error creating savings account:", err);
+            if (err.response && err.response.data) {
+                dispatch(setError(err.response.data.message || "An error occurred while creating the account."));
+            } else {
+                dispatch(setError(err.message || "An unknown error occurred."));
+            }
         }
     };
 
@@ -121,7 +132,7 @@ const SavingsAccountManager = () => {
         try {
             await savingsAccountService.deleteSavingsAccount(accountId);
             const data = await savingsAccountService.getUserSavingsAccounts(user.id);
-            dispatch(setSavingsAccount(data[0]));
+            dispatch(setSavingsAccount(data));
         } catch (err) {
             dispatch(setError(err.message));
         }
@@ -132,17 +143,54 @@ const SavingsAccountManager = () => {
             await savingsAccountService.updateTransaction(updatedTransaction);
             // Refetch the account to get updated data
             const data = await savingsAccountService.getUserSavingsAccounts(user.id);
-            dispatch(setSavingsAccount(data[0]));
+            dispatch(setSavingsAccount(data));
         } catch (err) {
             dispatch(setError(err.message));
         }
+    };
+
+    const handleTransfer = () => {
+        setShowTransferDialog(true);
+    };
+
+    const handleTransferComplete = () => {
+        setShowTransferDialog(false);
     };
 
     if (loading) {
         return (
             <Box className="savings-account-manager loading">
                 <CircularProgress />
-                <Typography>Loading savings account...</Typography>
+                <Typography>Loading savings accounts...</Typography>
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box className="savings-account-manager error">
+                <Typography color="error">Error: {error}</Typography>
+            </Box>
+        );
+    }
+
+    if (savingsAccounts.length === 0) {
+        return (
+            <Box className="savings-account-manager empty">
+                <Typography variant="h6" gutterBottom>
+                    No Savings Accounts
+                </Typography>
+                <Typography color="textSecondary" paragraph>
+                    Create a savings account to start managing your savings and setting up automatic savings rules.
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateModalOpen(true)}
+                >
+                    Create Savings Account
+                </Button>
             </Box>
         );
     }
@@ -156,95 +204,25 @@ const SavingsAccountManager = () => {
         >
             <Box className="header">
                 <Typography variant="h4" component="h1">
-                    Savings Account
+                    Savings Accounts
                 </Typography>
-                {!savingsAccount && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={() => setCreateModalOpen(true)}
-                    >
-                        Create Account
-                    </Button>
-                )}
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateModalOpen(true)}
+                >
+                    Create Savings Account
+                </Button>
             </Box>
 
-            {error && (
-                <Typography className="error-message" color="error">
-                    {error}
-                </Typography>
-            )}
-
-            {!savingsAccount ? (
-                <Card className="empty-state">
-                    <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                            No Savings Account
-                        </Typography>
-                        <Typography color="textSecondary" paragraph>
-                            Create a savings account to start managing your savings and setting up automatic savings rules.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={() => setCreateModalOpen(true)}
-                        >
-                            Create Savings Account
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="account-content">
-                    <Card className="account-overview">
-                        <CardContent>
-                            <Box className="account-header">
-                                <Typography variant="h6">{savingsAccount.name}</Typography>
-                                {savingsAccount.name !== 'Primary Savings' && (
-                                    <IconButton
-                                        onClick={() => handleDeleteAccount(savingsAccount._id)}
-                                        size="small"
-                                        color="error"
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                )}
-                            </Box>
-                            
-                            <Box className="balance-section">
-                                <Typography variant="overline">Current Balance</Typography>
-                                <Typography variant="h4" className="balance">
-                                    ${savingsAccount.balance.toFixed(2)}
-                                </Typography>
-                            </Box>
-
-                            {savingsAccount.automation?.enabled && (
-                                <Box className="automatic-savings-section">
-                                    <Typography variant="overline">Automatic Savings</Typography>
-                                    <Typography>
-                                        {savingsAccount.automation.type === 'percentage' 
-                                            ? `${savingsAccount.automation.percentage}% of income` 
-                                            : `$${savingsAccount.automation.amount}`}
-                                        {' per '}
-                                        {savingsAccount.automation.frequency}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="transactions-section">
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>Recent Transactions</Typography>
-                            <SavingsAccountTransactionTable 
-                                transactions={savingsAccount.transactions || []}
-                                onUpdateTransaction={handleUpdateTransaction}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+            {savingsAccounts.map(account => (
+                <SavingsCard 
+                    key={account._id}
+                    account={account}
+                    onTransfer={() => setShowTransferDialog(true)}
+                />
+            ))}
 
             <Dialog 
                 open={isCreateModalOpen} 
@@ -327,6 +305,14 @@ const SavingsAccountManager = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {showTransferDialog && (
+                <TransferDialog
+                    open={showTransferDialog}
+                    onClose={() => setShowTransferDialog(false)}
+                    onComplete={handleTransferComplete}
+                />
+            )}
         </motion.div>
     );
 };

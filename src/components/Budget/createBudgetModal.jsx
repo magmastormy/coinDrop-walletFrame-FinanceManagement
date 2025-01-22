@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import budgetService from '../../services/budgetService';
 import './styles/budgetCreateStyles.css';
 
-const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets }) => {
-    const [budgetData, setBudgetData] = useState({
+const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets = [], userId, budgetData }) => {
+    const [budgetFormData, setBudgetFormData] = useState({
         name: '',
         amount: 0,
         type: 'monthly',
@@ -17,33 +17,60 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         }
     });
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // Update budgetFormData when budgetData changes
+    useEffect(() => {
+        if (budgetData) {
+            setBudgetFormData({
+                name: budgetData.name,
+                amount: budgetData.amount,
+                type: budgetData.type,
+                categoryId: budgetData.categoryId,
+                walletId: budgetData.walletId,
+                startDate: budgetData.startDate ? budgetData.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
+                endDate: budgetData.endDate ? budgetData.endDate.split('T')[0] : '',
+                metadata: {
+                    icon: (budgetData.metadata && budgetData.metadata.icon) ? budgetData.metadata.icon : 'budget',
+                    color: (budgetData.metadata && budgetData.metadata.color) ? budgetData.metadata.color : '#007bff'
+                }
+            });
+        }
+    }, [budgetData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
 
         try {
-            if (!budgetData.categoryId) {
-                throw new Error('[BudgetCreateModal] Please select a category');
+            if (!budgetFormData.categoryId || !budgetFormData.walletId) {
+                throw new Error('[BudgetCreateModal] Please select a category and a wallet');
             }
 
-            const amount = parseFloat(budgetData.amount);
+            const amount = parseFloat(budgetFormData.amount);
             if (isNaN(amount) || amount <= 0) {
                 throw new Error('[BudgetCreateModal] Please enter a valid amount');
             }
 
-            console.log('[BudgetCreateModal] budget data: ', budgetData);
-            await budgetService.createBudget(budgetData);
-            onCreateBudget(); // Notify parent to refresh budgets
+            if (budgetData) {
+                await budgetService.updateBudget(budgetData._id, budgetFormData);
+            } else {
+                await budgetService.createBudget(userId, budgetFormData);
+            }
+
+            onCreateBudget();
             resetForm();
             onClose();
         } catch (err) {
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     const resetForm = () => {
-        setBudgetData({
+        setBudgetFormData({
             name: '',
             amount: 0,
             type: 'monthly',
@@ -63,16 +90,17 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
     return (
         <div className="modal-overlay">
             <div className="modal">
-                <h2>Create New Budget</h2>
+                <h2>{budgetData ? 'Edit Budget' : 'Create New Budget'}</h2>
                 {error && <div className="error-message">{error}</div>}
+                {loading && <div className="loading-message">Creating budget...</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label htmlFor="budgetName">Budget Name</label>
                         <input
                             id="budgetName"
                             type="text"
-                            value={budgetData.name}
-                            onChange={e => setBudgetData({ ...budgetData, name: e.target.value })}
+                            value={budgetFormData.name}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })}
                             required
                         />
                     </div>
@@ -81,8 +109,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <input
                             id="budgetAmount"
                             type="number"
-                            value={budgetData.amount}
-                            onChange={e => setBudgetData({ ...budgetData, amount: e.target.value })}
+                            value={budgetFormData.amount}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })}
                             required
                         />
                     </div>
@@ -90,8 +118,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <label htmlFor="budgetType">Type</label>
                         <select
                             id="budgetType"
-                            value={budgetData.type}
-                            onChange={e => setBudgetData({ ...budgetData, type: e.target.value })}
+                            value={budgetFormData.type}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
                         >
                             <option value="monthly">Monthly</option>
                             <option value="yearly">Yearly</option>
@@ -102,8 +130,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <label htmlFor="budgetCategory">Category</label>
                         <select
                             id="budgetCategory"
-                            value={budgetData.categoryId}
-                            onChange={e => setBudgetData({ ...budgetData, categoryId: e.target.value })}
+                            value={budgetFormData.categoryId}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
                             required
                         >
                             <option value="">Select Category</option>
@@ -118,12 +146,12 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <label htmlFor="walletId">Wallet</label>
                         <select
                             id="walletId"
-                            value={budgetData.walletId}
-                            onChange={e => setBudgetData({ ...budgetData, walletId: e.target.value })}
+                            value={budgetFormData.walletId}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
                             required
                         >
                             <option value="">Select Wallet</option>
-                            {wallets.map(wallet => (
+                            {wallets.wallets.map(wallet => (
                                 <option key={wallet._id} value={wallet._id}>
                                     {wallet.name}
                                 </option>
@@ -135,8 +163,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <input
                             id="startDate"
                             type="date"
-                            value={budgetData.startDate}
-                            onChange={e => setBudgetData({ ...budgetData, startDate: e.target.value })}
+                            value={budgetFormData.startDate}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
                         />
                     </div>
                     <div className="form-group">
@@ -144,8 +172,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <input
                             id="endDate"
                             type="date"
-                            value={budgetData.endDate}
-                            onChange={e => setBudgetData({ ...budgetData, endDate: e.target.value })}
+                            value={budgetFormData.endDate}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
                             required
                         />
                     </div>
@@ -153,11 +181,11 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         <label htmlFor="budgetIcon">Icon</label>
                         <select
                             id="budgetIcon"
-                            value={budgetData.metadata.icon}
-                            onChange={e => setBudgetData({
-                                ...budgetData,
+                            value={budgetFormData.metadata.icon}
+                            onChange={e => setBudgetFormData({
+                                ...budgetFormData,
                                 metadata: {
-                                    ...budgetData.metadata,
+                                    ...budgetFormData.metadata,
                                     icon: e.target.value
                                 }
                             })}
@@ -169,7 +197,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         </select>
                     </div>
                     <div className="modal-actions">
-                        <button type="submit">Create Budget</button>
+                        <button type="submit">{budgetData ? 'Update Budget' : 'Create Budget'}</button>
                         <button type="button" onClick={onClose}>Cancel</button>
                     </div>
                 </form>
