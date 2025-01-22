@@ -32,7 +32,6 @@ const FilterTransactions = ({
         });
     };
 
-    // Ensure wallets is always an array
     const safeWallets = Array.isArray(wallets) ? wallets : [];
 
     return (
@@ -49,22 +48,16 @@ const FilterTransactions = ({
                 <h4>Sources</h4>
                 <div className="source-buttons">
                     {safeWallets.map(wallet => (
-                        <button
-                            key={wallet._id}
-                            className={`source-button ${filters.source === 'wallet' && filters.walletId === wallet._id ? 'active' : ''}`}
-                            onClick={() => onWalletSelect(wallet._id)}
-                        >
+                        <div key={wallet._id} className="source-card" onClick={() => onWalletSelect(wallet._id)}>
                             <FontAwesomeIcon icon={faWallet} />
-                            {wallet.name}
-                        </button>
+                            <h5>{wallet.name}</h5>
+                            <p>Balance: ${wallet.balance.toFixed(2)}</p>
+                        </div>
                     ))}
-                    <button
-                        className={`source-button ${filters.source === 'savings' ? 'active' : ''}`}
-                        onClick={onSavingsSelect}
-                    >
+                    <div className="source-card" onClick={onSavingsSelect}>
                         <FontAwesomeIcon icon={faPiggyBank} />
-                        Savings Account
-                    </button>
+                        <h5>Savings Account</h5>
+                    </div>
                 </div>
             </div>
 

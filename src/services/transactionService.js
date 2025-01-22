@@ -20,7 +20,6 @@ export const getUserTransactions = async (userId, filters = {}) => {
 
 const transactionService = {
     getUserTransactions: async (userId, filters = {}) => {
-        console.log("[transactionService - getUserTransactions] userId Received: ", userId);
         try {
             const queryParams = new URLSearchParams({
                 userId,
@@ -39,7 +38,6 @@ const transactionService = {
     getAllUserTransactions: async (userId, filters = {}) => {
         try {
             console.log("[transactionService - getAllUserTransactions] Fetching all transactions for userId:", userId);
-            // Get both wallet and savings transactions
             const [walletTransactions, savingsTransactions] = await Promise.all([
                 axiosInstance.get(`${API_URL}?${new URLSearchParams({ userId, type: 'wallet',...filters }).toString()}`),
                 axiosInstance.get(`${API_URL}?${new URLSearchParams({ userId, type: 'savings',...filters }).toString()}`)
@@ -65,15 +63,13 @@ const transactionService = {
             return allTransactions;
         } catch (error) {
             console.error("[transactionService - getAllUserTransactions] Error fetching all user transactions:", error);
-            return []; // Return empty array instead of throwing
+            return [];
         }
     },
 
     createTransaction: async (transactionData) => {
         try {
-            console.log("[transactionService - createTransaction] Creating transaction with data:", transactionData);
             const response = await axiosInstance.post(API_URL, transactionData);
-            console.log("[transactionService - createTransaction] Transaction created successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[transactionService - createTransaction] Error creating transaction:", error);

@@ -15,6 +15,7 @@ import './styles/walletManagerStyles.css';
 const WalletManager = () => {
     const dispatch = useDispatch();
     const { wallets, loading, error } = useSelector(state => state.wallet);
+    cons
     const { user } = useSelector(state => state.auth);
     const [activeView, setActiveView] = useState('wallets');
     const [selectedWallet, setSelectedWallet] = useState(null);
@@ -32,10 +33,8 @@ const WalletManager = () => {
             if (!user || !user.id) {
                 throw new Error('User not authenticated');
             }
-
-            const data = await walletService.getAllWallets(user.id);
-            console.log("Wallet Manager - fetchWallets - Data:", data);
-            dispatch(setWallets(data.wallets || []));
+            const walletdata = await walletService.getAllWallets(user.id);
+            dispatch(setWallets(walletdata.wallets || []));
         } catch (error) {
             dispatch(setError(error.message));
         } finally {
