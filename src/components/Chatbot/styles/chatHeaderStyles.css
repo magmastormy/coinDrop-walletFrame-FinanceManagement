@@ -1,21 +1,64 @@
+/* chatHeaderStyles.css */
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    background-color: #fff;
-    border-bottom: 1px solid #eee;
+    padding: 1rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.chat-header h3 {
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-title h3 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    color: #2c3e50;
+    font-weight: 600;
 }
 
-.header-actions button {
+.status-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #28a745;
+}
+
+.status-indicator::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.header-button {
     background: none;
     border: none;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 1.2rem;
-    padding: 5px;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.header-button:hover {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+.header-button.active {
+    background: #e3f2fd;
+    color: #007bff;
 }

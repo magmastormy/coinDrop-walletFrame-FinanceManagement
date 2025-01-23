@@ -10,12 +10,15 @@ const ChatMessages = ({ chatHistory, error }) => {
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
             className={`message ${message.role === 'user' ? 'user-message' : 'bot-message'}`}
         >
             {message.role === 'assistant' && (
-                <FontAwesomeIcon icon={faRobot} className="bot-icon" />
+                <div className="bot-avatar">
+                    <FontAwesomeIcon icon={faRobot} />
+                </div>
             )}
-            <div className="message-content">
+            <div className="message-bubble">
                 <p>{message.content}</p>
                 <span className="timestamp">
                     {new Date(message.timestamp).toLocaleTimeString()}
@@ -27,18 +30,26 @@ const ChatMessages = ({ chatHistory, error }) => {
     return (
         <div className="chat-messages">
             {chatHistory.length === 0 ? (
-                <div className="welcome-message">
+                <motion.div 
+                    className="welcome-message"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
                     <FontAwesomeIcon icon={faRobot} className="welcome-icon" />
-                    <h4>Hello! I'm your CoinDrip AI assistant.</h4>
-                    <p>How can I help you today?</p>
-                </div>
+                    <h4>Welcome to CoinDrip AI Assistant</h4>
+                    <p>How can I help you manage your finances today?</p>
+                </motion.div>
             ) : (
                 chatHistory.map(renderMessage)
             )}
             {error && (
-                <div className="error-message">
+                <motion.div 
+                    className="error-message"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                >
                     {error}
-                </div>
+                </motion.div>
             )}
         </div>
     );

@@ -1,33 +1,79 @@
+/* chatHistoryPanelStyles.css */
 .chat-history-panel {
-    position: absolute; /* Or fixed, depending on your layout */
-    top: 50px; /* Adjust as needed */
-    right: 10px; /* Adjust as needed */
-    background-color: white;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    padding: 10px;
-    max-height: 300px;
+    width: 300px;
+    height: 100%;
+    background: white;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.history-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.history-header h3 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+}
+
+.history-search {
+    position: relative;
+}
+
+.history-search input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.history-search svg {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.history-content {
+    flex: 1;
     overflow-y: auto;
-    z-index: 1000; /* Ensure it's on top */
+    padding: 1rem;
 }
 
-.history-list {
-    margin-top: 10px;
+.history-group {
+    margin-bottom: 1.5rem;
 }
 
-.history-item {
-    margin-bottom: 5px;
-    padding: 5px;
-    border-bottom: 1px solid #eee;
+.date-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
 }
 
-.history-item .message {
+.history-message {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+    margin-bottom: 0.5rem;
+}
+
+.message-role {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #007bff;
+    margin-bottom: 0.25rem;
     display: block;
 }
 
-.history-item .message .timestamp {
-    display: block;
-    text-align: right;
-    font-size: smaller;
+.history-message p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
 }
