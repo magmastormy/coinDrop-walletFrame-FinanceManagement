@@ -15,7 +15,6 @@ import './styles/walletManagerStyles.css';
 const WalletManager = () => {
     const dispatch = useDispatch();
     const { wallets, loading, error } = useSelector(state => state.wallet);
-    cons
     const { user } = useSelector(state => state.auth);
     const [activeView, setActiveView] = useState('wallets');
     const [selectedWallet, setSelectedWallet] = useState(null);

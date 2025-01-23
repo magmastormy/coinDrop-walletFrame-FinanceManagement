@@ -1,0 +1,33 @@
+.chat-history-panel {
+    position: absolute; /* Or fixed, depending on your layout */
+    top: 50px; /* Adjust as needed */
+    right: 10px; /* Adjust as needed */
+    background-color: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000; /* Ensure it's on top */
+}
+
+.history-list {
+    margin-top: 10px;
+}
+
+.history-item {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.history-item .message {
+    display: block;
+}
+
+.history-item .message .timestamp {
+    display: block;
+    text-align: right;
+    font-size: smaller;
+}

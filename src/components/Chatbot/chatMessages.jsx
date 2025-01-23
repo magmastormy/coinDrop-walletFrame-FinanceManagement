@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRobot } from '@fortawesome/free-solid-svg-icons';
+import './styles/chatMessagesStyles.css';
 
 const ChatMessages = ({ chatHistory, error }) => {
     const renderMessage = (message, index) => (

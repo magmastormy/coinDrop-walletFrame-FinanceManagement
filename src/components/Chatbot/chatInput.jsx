@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import './styles/chatInputStyles.css';
 
 const ChatInput = ({ onSubmit, isLoading }) => {
     const [message, setMessage] = useState('');

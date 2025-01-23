@@ -1,0 +1,48 @@
+.message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+    clear: both; /* Prevents messages from overlapping */
+    display: flex;
+    align-items: flex-start; /* Align icon and content */
+}
+
+.user-message {
+    background-color: #e0f2f7; /* Light blue for user */
+    align-self: flex-end; /* Align user messages to the right */
+}
+
+.bot-message {
+    background-color: #fff; /* White for bot */
+    align-self: flex-start; /* Align bot messages to the left */
+}
+
+.message-content {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.bot-icon {
+    font-size: 1.5rem;
+    color: #007bff; /* Example blue */
+    margin-right: 5px;
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+}
+.welcome-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.error-message {
+    background-color: #f8d7da; /* Light red for errors */
+    color: #721c24; /* Dark red text */
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
