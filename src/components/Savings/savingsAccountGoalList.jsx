@@ -1,6 +1,6 @@
 import React from 'react';
 import SavingsAccountCard from './savingsAccountCard';
-import SavingsGoalCard from './savingsGoalCard';
+import SavingsGoalCard from '../SavingsGoal/savingsGoalCard';
 import './styles/savingsGoalsListStyles.css';
 
 const SavingsAccountGoalList = ({ accounts, goals }) => {

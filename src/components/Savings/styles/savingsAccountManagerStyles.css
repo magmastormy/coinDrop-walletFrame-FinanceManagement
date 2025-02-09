@@ -2,6 +2,7 @@
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    margin-top: 2rem;
 }
 
 .savings-accounts-container h2 {
@@ -13,20 +14,15 @@
 .loading-spinner {
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 20px;
-    color: var(--primary);
+    padding: 2rem;
 }
 
 .error-message {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background-color: var(--error-light);
-    color: var(--error);
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
+    padding: 1rem;
+    background-color: var(--error-background);
+    color: var(--error-color);
+    border-radius: 4px;
+    margin: 1rem 0;
 }
 
 .error-message .fa-exclamation-triangle {
@@ -149,18 +145,11 @@
 }
 
 .transactions-section {
-    background-color: var(--card-background);
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--background-light);
     border-radius: 8px;
     box-shadow: var(--box-shadow);
-    margin-top: 2rem;
-}
-
-.error-message {
-    margin: 1rem 0;
-    padding: 1rem;
-    background-color: var(--error-background);
-    border-radius: 4px;
-    color: var(--error-color);
 }
 
 .create-account-dialog {

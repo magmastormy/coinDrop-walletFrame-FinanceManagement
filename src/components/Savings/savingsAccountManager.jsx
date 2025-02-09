@@ -23,7 +23,7 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/ico
 import savingsAccountService from '../../services/savingsAccountService';
 import SavingsAccountTransactionTable from './savingsAccountTransactionTable';
 import { setSavingsAccount, setLoading, setError } from '../../slices/savingsAccountSlice';
-import SavingsCard from './savingsCard';
+import SavingsCard from './savingsAccountCard';
 import TransferDialog from './TransferDialog';
 import './styles/savingsAccountManagerStyles.css';
 
@@ -44,6 +44,7 @@ const SavingsAccountManager = () => {
         }
     });
     const [showTransferDialog, setShowTransferDialog] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState(null);
 
     useEffect(() => {
         const fetchSavingsAccounts = async () => {
@@ -157,6 +158,10 @@ const SavingsAccountManager = () => {
         setShowTransferDialog(false);
     };
 
+    const handleAccountSelect = (accountId) => {
+        setSelectedAccountId(selectedAccountId === accountId ? null : accountId);
+    };
+
     if (loading) {
         return (
             <Box className="savings-account-manager loading">
@@ -216,13 +221,22 @@ const SavingsAccountManager = () => {
                 </Button>
             </Box>
 
-            {savingsAccounts.map(account => (
-                <SavingsCard 
-                    key={account._id}
-                    account={account}
-                    onTransfer={() => setShowTransferDialog(true)}
-                />
-            ))}
+            <div className="savings-accounts-container">
+                {savingsAccounts.map(account => (
+                    <div key={account._id}>
+                        <SavingsCard 
+                            account={account}
+                            onTransfer={() => setShowTransferDialog(true)}
+                            onSelect={handleAccountSelect}
+                        />
+                        {selectedAccountId === account._id && (
+                            <div className="transactions-section">
+                                <SavingsAccountTransactionTable accountId={account._id} />
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
 
             <Dialog 
                 open={isCreateModalOpen} 

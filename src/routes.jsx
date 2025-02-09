@@ -12,7 +12,7 @@ import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
 import Education from './components/Education/educationManager';
 import UserEducation from './components/Education/userEducation/userEducationManager';
-import SavingGoal from './components/Savings/savingsGoalManager';
+import SavingGoal from './components/SavingsGoal/savingsGoalManager';
 import SavingAccount from './components/Savings/savingsAccountManager';
 import ChatBot from './components/Chatbot/chatbotManager';
 
