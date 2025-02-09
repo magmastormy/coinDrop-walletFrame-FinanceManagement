@@ -1,12 +1,15 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter, faWallet, faPiggyBank } from '@fortawesome/free-solid-svg-icons';
+import TransactionWalletCard from './transactionWalletCard';
+import TransactionSavingsAccountCard from './transactionSavingsAccountCard';
 import './styles/filterTransactionsStyles.css';
 
 const FilterTransactions = ({ 
     filters, 
     setFilters, 
     wallets = [], 
+    savingsAccounts = [],
     onWalletSelect,
     onSavingsSelect,
     categories = [], 
@@ -28,11 +31,10 @@ const FilterTransactions = ({
             startDate: '',
             endDate: '',
             walletId: '',
-            source: ''
+            source: '',
+            savingsAccountId: ''
         });
     };
-
-    const safeWallets = Array.isArray(wallets) ? wallets : [];
 
     return (
         <div className="filter-container">
@@ -46,18 +48,21 @@ const FilterTransactions = ({
 
             <div className="filter-section">
                 <h4>Sources</h4>
-                <div className="source-buttons">
-                    {safeWallets.map(wallet => (
-                        <div key={wallet._id} className="source-card" onClick={() => onWalletSelect(wallet._id)}>
-                            <FontAwesomeIcon icon={faWallet} />
-                            <h5>{wallet.name}</h5>
-                            <p>Balance: ${wallet.balance.toFixed(2)}</p>
-                        </div>
+                <div className="source-buttons-scroll">
+                    {wallets.map(wallet => (
+                        <TransactionWalletCard 
+                            key={wallet._id} 
+                            wallet={wallet} 
+                            onSelect={onWalletSelect} 
+                        />
                     ))}
-                    <div className="source-card" onClick={onSavingsSelect}>
-                        <FontAwesomeIcon icon={faPiggyBank} />
-                        <h5>Savings Account</h5>
-                    </div>
+                    {savingsAccounts.map(account => (
+                        <TransactionSavingsAccountCard 
+                            key={account._id} 
+                            savingsAccount={account} 
+                            onSelect={onSavingsSelect} 
+                        />
+                    ))}
                 </div>
             </div>
 

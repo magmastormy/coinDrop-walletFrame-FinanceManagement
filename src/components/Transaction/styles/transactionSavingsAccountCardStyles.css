@@ -1,0 +1,31 @@
+.savings-account-card {
+    background-color: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    min-width: 200px;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.savings-account-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.savings-account-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.savings-account-name {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.savings-account-balance {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--primary);
+}

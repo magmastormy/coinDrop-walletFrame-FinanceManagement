@@ -1,40 +1,45 @@
 /* chatbotManagerStyles.css */
 .chatbot-container {
     display: flex;
-    height: 100vh;
-    background: #f8f9fa;
-    position: relative;
+    flex-direction: column;
+    height: 100%; /* Adjust height as needed */
+    width: 100%; /* Full width */
+    border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f8f9fa;
 }
 
-.chat-main {
-    flex: 1;
+.chat-body {
+    display: flex;
+    flex-direction: row; /* Align messages and input horizontally */
+    flex-grow: 1;
+}
+
+.chat-messages {
+    flex: 1; /* Take remaining space */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 15px;
     display: flex;
     flex-direction: column;
+    background: #ffffff; /* White background for messages */
+    max-height: calc(100vh - 150px); /* Adjust height to fit within the chatbot container */
+}
+
+.chat-input {
+    border-top: 1px solid #ddd; /* Divider for input */
+    padding: 10px;
+    background: #f1f1f1; /* Light background for input */
+}
+
+.chat-history-panel {
+    width: 300px; /* Fixed width for history panel */
+    height: 100%; /* Full height */
     background: white;
-    transition: all 0.3s ease;
-}
-
-.chat-content {
-    flex: 1;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-}
-
-.chat-with-history {
-    margin-right: 300px;
-}
-
-@media (max-width: 768px) {
-    .chat-main {
-        width: 100%;
-    }
-
-    .chat-with-history {
-        margin-right: 0;
-        transform: translateX(-300px);
-    }
+    padding: 10px; /* Padding for history panel */
 }
 
 /* Animations */

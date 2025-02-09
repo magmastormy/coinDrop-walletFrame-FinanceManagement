@@ -114,7 +114,9 @@
 
 .filter-group input[type="number"] {
     -moz-appearance: textfield;
-}
+    -webkit-appearance: textfield;
+    appearance: textfield; /* For other browsers */
+  }
 
 .filter-group input[type="number"]::-webkit-outer-spin-button,
 .filter-group input[type="number"]::-webkit-inner-spin-button {

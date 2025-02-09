@@ -5,7 +5,7 @@ const TransactionWalletCard = ({ wallet, onSelect }) => {
     return (
         <div className="wallet-card" onClick={() => onSelect(wallet._id)}>
             <div className="wallet-card-header">
-                <h3>{wallet.name}</h3>
+                <h3 className="wallet-name">{wallet.name}</h3>
                 <div className="wallet-balance">${wallet.balance.toFixed(2)}</div>
             </div>
         </div>

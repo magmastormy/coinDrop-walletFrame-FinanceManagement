@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import transactionService from '../../services/transactionService';
 import './styles/transactionCreateNewStyles.css';
 
-const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets=[], categories=[], initialData }) => {
+const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets=[], categories=[], budgets=[], savingsAccounts=[], initialData }) => {
     if (!isOpen) return null;
     
     const [error, setError] = useState('');
@@ -14,7 +14,9 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         category: '',
         description: '',
         date: new Date().toISOString().split('T')[0],
-        walletId: ''
+        walletId: '',
+        savingsAccountId: '',
+        budgetId: ''
     });
 
     const handleEscapeKey = useCallback((event) => {
@@ -39,8 +41,8 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         setIsSubmitting(true);
         
         try {
-            if (!transactionData.walletId || !transactionData.category) {
-                throw new Error('Please select both wallet and category');
+            if (!transactionData.walletId && !transactionData.savingsAccountId) {
+                throw new Error('Please select either a wallet or a savings account');
             }
             
             if (parseFloat(transactionData.amount) <= 0) {
@@ -53,7 +55,9 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                 category: transactionData.category,
                 description: transactionData.description || '',
                 date: transactionData.date || new Date().toISOString().split('T')[0],
-                walletId: transactionData.walletId
+                walletId: transactionData.walletId || undefined,
+                savingsAccountId: transactionData.savingsAccountId || undefined,
+                budgetId: transactionData.budgetId || undefined
             };
     
             const response = await transactionService.createTransaction(cleanTransactionData);
@@ -146,13 +150,42 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                         <select
                             id="wallet"
                             value={transactionData.walletId}
-                            onChange={e => setTransactionData({ ...transactionData, walletId: e.target.value })}
-                            required
+                            onChange={e => setTransactionData({ ...transactionData, walletId: e.target.value, savingsAccountId: '' })}
                         >
                             <option value="">Select a wallet</option>
                             {Array.isArray(wallets) && wallets.map(wallet => (
                                 <option key={wallet._id} value={wallet._id}>
                                     {wallet.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="savingsAccount">Savings Account</label>
+                        <select
+                            id="savingsAccount"
+                            value={transactionData.savingsAccountId}
+                            onChange={e => setTransactionData({ ...transactionData, savingsAccountId: e.target.value, walletId: '' })}
+                        >
+                            <option value="">Select a savings account</option>
+                            {Array.isArray(savingsAccounts) && savingsAccounts.map(account => (
+                                <option key={account._id} value={account._id}>
+                                    {account.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="budget">Budget</label>
+                        <select
+                            id="budget"
+                            value={transactionData.budgetId}
+                            onChange={e => setTransactionData({ ...transactionData, budgetId: e.target.value })}
+                        >
+                            <option value="">Select a budget</option>
+                            {budgets.map(budget => (
+                                <option key={budget._id} value={budget._id}>
+                                    {budget.name}
                                 </option>
                             ))}
                         </select>

@@ -29,6 +29,19 @@ const ChatbotManager = () => {
     }
   }, [chatHistory]);
 
+  useEffect(() => {
+    // Prevent body scroll when chatbot is open
+    if (isHistoryPanelOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isHistoryPanelOpen]);
+
   const handleSubmit = async (message) => {
     if (!message) return;
 
@@ -64,11 +77,15 @@ const ChatbotManager = () => {
   return (
     <div className="chatbot-container">
       <ChatHeader onToggleChat={toggleChat} onOpenHistory={toggleHistoryPanel} />
-      <div className="chat-messages" ref={chatContainerRef}>
-        <ChatMessages chatHistory={chatHistory} error={error} />
+      <div className="chat-body">
+        <div className="chat-messages" ref={chatContainerRef}>
+          <ChatMessages chatHistory={chatHistory} error={error} />
+        </div>
+        <ChatInput onSubmit={handleSubmit} isLoading={isLoading} />
+        <AnimatePresence>
+          {isHistoryPanelOpen && <ChatHistoryPanel chatHistory={chatHistory} />}
+        </AnimatePresence>
       </div>
-      <ChatInput onSubmit={handleSubmit} isLoading={isLoading} />
-      {isHistoryPanelOpen && <ChatHistoryPanel chatHistory={chatHistory} />}
     </div>
   );
 };

@@ -1,26 +1,27 @@
 .filter-container {
     background-color: var(--background-color);
     border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 15px;
+    margin-bottom: 15px;
     box-shadow: var(--box-shadow);
 }
 
 .filter-header {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     gap: 10px;
 }
 
 .filter-header h3 {
     margin: 0;
     color: var(--text-color);
+    font-size: 1.2rem;
 }
 
 .clear-filters {
     margin-left: auto;
-    padding: 8px 16px;
+    padding: 6px 12px;
     border: none;
     background-color: var(--secondary-color);
     color: var(--text-color);
@@ -34,35 +35,37 @@
 }
 
 .filter-section {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .filter-section h4 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     color: var(--text-color);
+    font-weight: bold;
 }
 
 .source-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .source-button {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 8px 12px;
     border: 1px solid var(--border-color);
     background-color: var(--background-color);
     color: var(--text-color);
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background-color 0.2s;
 }
 
 .source-button:hover {
-    background-color: var(--hover-color);
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .source-button.active {
@@ -95,7 +98,7 @@
 
 select {
     width: 100%;
-    padding: 8px;
+    padding: 6px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background-color: var(--input-background);
@@ -120,4 +123,24 @@ select {
     .source-button {
         width: 100%;
     }
+}
+
+.source-buttons-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 0;
+    gap: 10px;
+}
+
+.source-buttons-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.source-buttons-scroll::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.source-buttons-scroll::-webkit-scrollbar-track {
+    background: var(--background-color);
 }

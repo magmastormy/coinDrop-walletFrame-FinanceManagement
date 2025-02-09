@@ -13,6 +13,7 @@ import { getUserTransactions } from '../../services/transactionService';
 import walletService from '../../services/walletService';
 import { getUserBudgets } from '../../services/budgetService';
 import './styles/dashboardUserShortAnalyticsStyles.css';
+import { Box, Tooltip } from '@mui/material';
 
 const DashboardUserShortAnalytics = () => {
     const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ const DashboardUserShortAnalytics = () => {
                     ]);
 
                     // Initialize variables with safe defaults
-                    const wallets = walletResponse?.data || [];
+                    const wallets = walletResponse?.wallets || [];
                     const budgets = budgetResponse?.data || [];
                     const transactions = transactionResponse?.data || [];
 
@@ -241,12 +242,19 @@ const DashboardUserShortAnalytics = () => {
                 </div>
             ) : (
                 analyticsItems.map((item, index) => (
-                    <motion.div
+                    <Box 
                         key={item.title}
                         className="analytics-card"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
+                        sx={{ 
+                            '&:hover': {
+                                transform: 'scale(1.02)',
+                                boxShadow: 3
+                            },
+                            transition: 'all 0.2s ease'
+                        }}
                     >
                         <div className="analytics-card-header">
                             <h3 className="analytics-card-header-text">
@@ -266,7 +274,7 @@ const DashboardUserShortAnalytics = () => {
                                 />
                             </div>
                         </div>
-                    </motion.div>
+                    </Box>
                 ))
             )}
         </div>

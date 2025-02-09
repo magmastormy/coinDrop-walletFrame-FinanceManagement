@@ -1,8 +1,6 @@
 // ChatHistoryPanel.jsx
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendar, faSearch } from '@fortawesome/free-solid-svg-icons';
 import './styles/chatHistoryPanelStyles.css';
 
 const ChatHistoryPanel = ({ chatHistory }) => {
@@ -33,35 +31,23 @@ const ChatHistoryPanel = ({ chatHistory }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
-            <div className="history-header">
-                <h3>Conversation History</h3>
-                <div className="history-search">
-                    <FontAwesomeIcon icon={faSearch} />
-                    <input type="text" placeholder="Search conversations..." />
-                </div>
-            </div>
-            <div className="history-content">
-                {Object.entries(groupedHistory).map(([date, messages]) => (
-                    <div key={date} className="history-group">
-                        <div className="date-divider">
-                            <FontAwesomeIcon icon={faCalendar} />
-                            <span>{date}</span>
+            <h3>Chat History</h3>
+            <div className="history-list">
+                {Object.keys(groupedHistory).length === 0 ? (
+                    <p>No chat history yet.</p>
+                ) : (
+                    Object.keys(groupedHistory).map(date => (
+                        <div key={date}>
+                            <h4>{date}</h4>
+                            {groupedHistory[date].map((message, index) => (
+                                <div key={index} className={`history-item ${message.role}`}>
+                                    <p>{message.content}</p>
+                                    <span className="timestamp">{formatDate(message.timestamp)}</span>
+                                </div>
+                            ))}
                         </div>
-                        {messages.map((message, index) => (
-                            <motion.div
-                                key={index}
-                                className="history-message"
-                                initial={{ x: -20 }}
-                                animate={{ x: 0 }}
-                            >
-                                <span className="message-role">
-                                    {message.role === 'user' ? 'You' : 'AI'}
-                                </span>
-                                <p>{message.content}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
         </motion.div>
     );

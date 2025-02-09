@@ -5,21 +5,15 @@ import walletService from '../../services/walletService';
 import savingsAccountService from '../../services/savingsAccountService';
 import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
+import budgetService from '../../services/budgetService';
 import CreateTransactionModal from './createTransactionModal';
 import TransactionList from './transactionList';
 import FilterTransactions from './filterTransactions';
+import TransactionSavingsAccountCard from './transactionSavingsAccountCard';
+import TransactionWalletCard from './transactionWalletCard';
 import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
 import './styles/transactionManagerStyles.css';
 
-/**
- * TransactionManager Component
- * 
- * Manages the display and operations of transactions including:
- * - Fetching and displaying transactions
- * - Creating new transactions
- * - Filtering transactions
- * - Managing transaction-related state
- */
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions = [], loading, error } = useSelector(state => state.transaction || {});
@@ -29,12 +23,13 @@ const TransactionManager = () => {
     const [categories, setCategories] = useState([]);
     const [wallets, setLocalWallets] = useState([]);
     const [savingsAccounts, setSavingsAccounts] = useState([]);
+    const [budgets, setBudgets] = useState([]);
     const [filters, setFilters] = useState({
         minAmount: '',
         maxAmount: '',
         category: '',
         walletId: '',
-        savingsAccount: '',
+        savingsAccountId: '',
         startDate: '',
         endDate: '',
         type: ''
@@ -43,13 +38,12 @@ const TransactionManager = () => {
     useEffect(() => {
         if (user?.id) {
             fetchInitialData();
+            fetchBudgets();
+            fetchSavingsAccounts();
         }
     }, [user]);
 
-    /**
-     * Fetches all initial data required for the transaction manager
-     * Including transactions, wallets, and categories
-     */
+
     const fetchInitialData = async () => {
         if (!user?.id) return;
         
@@ -75,6 +69,32 @@ const TransactionManager = () => {
         } catch (err) {
             console.error('Error fetching initial data:', err);
             dispatch(setError('Unable to fetch transaction data. Please try again later.'));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    const fetchBudgets = async () => {
+        dispatch(setLoading(true));
+        try {
+            const budgetsResponse = await budgetService.getUserBudgets(user.id);
+            setBudgets(budgetsResponse.budgets || []);
+        } catch (err) {
+            console.error('Error fetching budgets:', err);
+            dispatch(setError('Unable to fetch budgets. Please try again later.'));
+        } finally {
+            dispatch(setLoading(false));
+        }
+    };
+
+    const fetchSavingsAccounts = async () => {
+        dispatch(setLoading(true));
+        try {
+            const savingsAccountsResponse = await savingsAccountService.getUserSavingsAccounts(user.id);
+            setSavingsAccounts(savingsAccountsResponse || []);
+        } catch (err) {
+            console.error('Error fetching savings accounts:', err);
+            dispatch(setError('Unable to fetch savings accounts. Please try again later.'));
         } finally {
             dispatch(setLoading(false));
         }
@@ -138,9 +158,9 @@ const TransactionManager = () => {
         setFilters(prev => ({ ...prev, walletId }));
     };
 
-    const handleSavingsSelect = () => {
-        console.log("Selected Savings Account");
-        setFilters(prev => ({ ...prev, savingsAccount: null }));
+    const handleSavingsSelect = (savingsAccountId) => {
+        console.log("Selected Savings Account:", savingsAccountId);
+        setFilters(prev => ({ ...prev, savingsAccountId }));
     };
 
     const handleCategorySelect = (category) => {
@@ -207,6 +227,7 @@ const TransactionManager = () => {
                 filters={filters}
                 setFilters={setFilters}
                 wallets={wallets}
+                savingsAccounts={savingsAccounts}
                 onWalletSelect={handleWalletSelect}
                 onSavingsSelect={handleSavingsSelect}
                 categories={categories}
@@ -231,17 +252,19 @@ const TransactionManager = () => {
 
             {(isModalOpen || editingTransaction) && (
                 <CreateTransactionModal
-                    open={isModalOpen || !!editingTransaction}
+                    isOpen={isModalOpen || !!editingTransaction}
                     onClose={() => {
                         setIsModalOpen(false);
                         setEditingTransaction(null);
                     }}
-                    onSubmit={editingTransaction ? 
+                    onTransactionCreated={editingTransaction ? 
                         (data) => handleUpdateTransaction(editingTransaction._id, data) : 
                         handleCreateTransaction}
-                    transaction={editingTransaction}
+                    initialData={editingTransaction}
                     categories={categories}
                     wallets={wallets}
+                    budgets={budgets}
+                    savingsAccounts={savingsAccounts}
                 />
             )}
         </div>
