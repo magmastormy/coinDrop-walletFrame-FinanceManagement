@@ -24,22 +24,12 @@ const TransactionManager = () => {
     const [wallets, setLocalWallets] = useState([]);
     const [savingsAccounts, setSavingsAccounts] = useState([]);
     const [budgets, setBudgets] = useState([]);
-    const [filters, setFilters] = useState({
-        minAmount: '',
-        maxAmount: '',
-        category: '',
-        walletId: '',
-        savingsAccountId: '',
-        startDate: '',
-        endDate: '',
-        type: ''
-    });
+    const [filters, setFilters] = useState({});
 
     useEffect(() => {
         if (user?.id) {
             fetchInitialData();
             fetchBudgets();
-            fetchSavingsAccounts();
         }
     }, [user]);
 
@@ -51,23 +41,22 @@ const TransactionManager = () => {
         try {
             // Fetch wallets
             const walletsResponse = await walletService.getAllWallets(user.id);
-            console.log('[transactionManagerManager] fetchInitialData walletsResponse', walletsResponse);
             setLocalWallets(walletsResponse.wallets || []);
 
             //Fetch Savings Accounts
             const savingsAccountsResponse = await savingsAccountService.getUserSavingsAccounts(user.id);
-            console.log('[transactionManagerManager] fetchInitialData savingsAccountsResponse', savingsAccountsResponse);
-            setSavingsAccounts(savingsAccountsResponse.accounts || []);
+            setSavingsAccounts(savingsAccountsResponse || []);
             
             // Fetch categories
             const categoriesData = await categoryService.getUserCategories(user.id);
             setCategories(categoriesData || []);
+            console.log("[TransactionManager] Categories fetched successfully:", categoriesData);
             
             // Fetch transactions
             const transactionsResponse = await transactionService.getUserTransactions(user.id, filters);
-            dispatch(setTransactions(transactionsResponse || []));
+            dispatch(setTransactions(transactionsResponse.transactions || []));
+            console.log("[TransactionManager] Transactions fetched successfully:", transactionsResponse);
         } catch (err) {
-            console.error('Error fetching initial data:', err);
             dispatch(setError('Unable to fetch transaction data. Please try again later.'));
         } finally {
             dispatch(setLoading(false));
@@ -82,19 +71,6 @@ const TransactionManager = () => {
         } catch (err) {
             console.error('Error fetching budgets:', err);
             dispatch(setError('Unable to fetch budgets. Please try again later.'));
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
-
-    const fetchSavingsAccounts = async () => {
-        dispatch(setLoading(true));
-        try {
-            const savingsAccountsResponse = await savingsAccountService.getUserSavingsAccounts(user.id);
-            setSavingsAccounts(savingsAccountsResponse || []);
-        } catch (err) {
-            console.error('Error fetching savings accounts:', err);
-            dispatch(setError('Unable to fetch savings accounts. Please try again later.'));
         } finally {
             dispatch(setLoading(false));
         }
@@ -155,7 +131,10 @@ const TransactionManager = () => {
 
     const handleWalletSelect = (walletId) => {
         console.log("Selected Wallet ID:", walletId);
-        setFilters(prev => ({ ...prev, walletId }));
+        setFilters(prev => ({ 
+            ...prev, 
+            walletId: walletId._id || walletId 
+        }));
     };
 
     const handleSavingsSelect = (savingsAccountId) => {
@@ -181,15 +160,22 @@ const TransactionManager = () => {
     // Filter transactions based on current filters
     const filteredTransactions = Array.isArray(transactions) ? transactions.filter(transaction => {
         return (
-            (!filters.minAmount || transaction.amount >= parseFloat(filters.minAmount)) &&
-            (!filters.maxAmount || transaction.amount <= parseFloat(filters.maxAmount)) &&
             (!filters.category || transaction.category === filters.category) &&
-            (!filters.walletId || transaction.wallet === filters.walletId) &&
+            (!filters.walletId || (transaction.walletId && transaction.walletId._id === filters.walletId)) &&
+            (!filters.savingsAccountId || transaction.savingsAccount === filters.savingsAccountId) &&
             (!filters.startDate || new Date(transaction.date) >= new Date(filters.startDate)) &&
             (!filters.endDate || new Date(transaction.date) <= new Date(filters.endDate)) &&
             (!filters.type || transaction.type === filters.type)
         );
     }) : [];
+
+    console.log('Raw transactions:', transactions);
+    console.log('Filtered transactions:', filteredTransactions);
+
+    const data = React.useMemo(() =>
+        Array.isArray(transactions) ? transactions : [],
+        [transactions]
+    );
 
     if (loading) {
         return (
@@ -245,8 +231,8 @@ const TransactionManager = () => {
                     transactions={filteredTransactions}
                     onEdit={setEditingTransaction}
                     onDelete={handleDeleteTransaction}
-                    categories={categories}
                     wallets={wallets}
+                    savingsAccounts={savingsAccounts}
                 />
             )}
 

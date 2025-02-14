@@ -3,14 +3,33 @@ import React from 'react';
 import { useTable, useSortBy } from 'react-table';
 import './styles/transactionListStyles.css';
 
-const TransactionList = ({ transactions = [], handleEdit, handleDelete }) => {
-    const data = React.useMemo(() =>
-        Array.isArray(transactions) ? transactions : [],
+const TransactionList = ({ transactions = [], onEdit, onDelete, wallets = [], savingsAccounts = [] }) => {
+    const data = React.useMemo(() => 
+        Array.isArray(transactions) ? transactions.map(t => ({
+            ...t,
+            date: t.date ? new Date(t.date) : new Date() // Ensure date is Date object
+        })) : [],
         [transactions]
     );
 
     const columns = React.useMemo(
         () => [
+            {
+                Header: 'Source',
+                accessor: 'source',
+                Cell: ({ row }) => {
+                    const transaction = row.original;
+                    const sourceName = transaction.walletId ? 
+                        (wallets.find(w => w._id === transaction.walletId)?.name || 'Wallet') :
+                        (savingsAccounts.find(s => s._id === transaction.savingsAccountId)?.name || 'Savings Account');
+                    
+                    return (
+                        <div className="transaction-source">
+                            {sourceName}
+                        </div>
+                    );
+                }
+            },
             {
                 Header: 'Description',
                 accessor: 'description',
@@ -41,16 +60,23 @@ const TransactionList = ({ transactions = [], handleEdit, handleDelete }) => {
             {
                 Header: 'Date',
                 accessor: 'date',
-                Cell: ({ value }) => (
-                    <div className="transaction-date">
-                        {new Date(value).toLocaleDateString(undefined, {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        })}
-                    </div>
-                ),
-                sortType: 'datetime'
+                Cell: ({ value }) => {
+                    const dateObj = new Date(value);
+                    return (
+                        <div className="transaction-date">
+                            {isNaN(dateObj) ? 'Invalid date' : dateObj.toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </div>
+                    );
+                },
+                sortType: (a, b) => {
+                    const dateA = new Date(a.values.date);
+                    const dateB = new Date(b.values.date);
+                    return isNaN(dateA) ? 1 : isNaN(dateB) ? -1 : dateB - dateA;
+                }
             },
             {
                 Header: 'Actions',
@@ -59,7 +85,7 @@ const TransactionList = ({ transactions = [], handleEdit, handleDelete }) => {
                     <div className="transaction-actions">
                         <button
                             className="action-btn edit"
-                            onClick={() => handleEdit(row.original)}
+                            onClick={() => onEdit(row.original)}
                             aria-label={`Edit transaction: ${row.original.description || 'No description'}`}
                         >
                             <span className="action-icon">✎</span>
@@ -69,7 +95,7 @@ const TransactionList = ({ transactions = [], handleEdit, handleDelete }) => {
                             className="action-btn delete"
                             onClick={() => {
                                 if (window.confirm('Are you sure you want to delete this transaction?')) {
-                                    handleDelete(row.original._id);
+                                    onDelete(row.original._id);
                                 }
                             }}
                             aria-label={`Delete transaction: ${row.original.description || 'No description'}`}
@@ -81,7 +107,7 @@ const TransactionList = ({ transactions = [], handleEdit, handleDelete }) => {
                 ),
             },
         ],
-        [handleEdit, handleDelete]
+        [onEdit, onDelete, wallets, savingsAccounts]
     );
 
     const {

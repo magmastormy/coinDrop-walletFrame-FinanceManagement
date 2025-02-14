@@ -18,7 +18,7 @@ const transactionSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        required: true
+        required: false
     },
     subcategory: String,
     description: {
@@ -38,15 +38,18 @@ const transactionSchema = new mongoose.Schema({
     walletId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Wallet',
-        required: true
+        required: function() { return !this.savingsAccountId; }
+    },
+    savingsAccountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SavingsAccount',
+        required: function() { return !this.walletId; }
     },
 
     budgetId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Budget',
-        required: function() {
-            return this.type !== 'transfer'; // Only required for non-transfer transactions
-        }
+        required: false
     },
     fromWalletId: {
         type: mongoose.Schema.Types.ObjectId,

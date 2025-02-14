@@ -41,25 +41,30 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         setIsSubmitting(true);
         
         try {
-            if (!transactionData.walletId && !transactionData.savingsAccountId) {
-                throw new Error('Please select either a wallet or a savings account');
-            }
-            
-            if (parseFloat(transactionData.amount) <= 0) {
-                throw new Error('Amount must be greater than 0');
-            }
-
             const cleanTransactionData = {
-                amount: transactionData.amount,
+                amount: parseFloat(transactionData.amount),
                 type: transactionData.type,
-                category: transactionData.category,
+                category: transactionData.category || undefined,
                 description: transactionData.description || '',
                 date: transactionData.date || new Date().toISOString().split('T')[0],
-                walletId: transactionData.walletId || undefined,
-                savingsAccountId: transactionData.savingsAccountId || undefined,
+                walletId: transactionData.walletId || null,
+                savingsAccountId: transactionData.savingsAccountId || null,
                 budgetId: transactionData.budgetId || undefined
             };
-    
+
+            // Validate required fields
+            if (!cleanTransactionData.amount || isNaN(cleanTransactionData.amount)) {
+                throw new Error('Amount must be a valid number');
+            }
+
+            if (!cleanTransactionData.type) {
+                throw new Error('Transaction type is required');
+            }
+
+            if (!cleanTransactionData.walletId && !cleanTransactionData.savingsAccountId) {
+                throw new Error('Please select either a wallet or a savings account');
+            }
+
             const response = await transactionService.createTransaction(cleanTransactionData);
             onTransactionCreated(response);
             onClose();

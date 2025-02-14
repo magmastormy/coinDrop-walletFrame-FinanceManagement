@@ -69,7 +69,13 @@ const transactionService = {
 
     createTransaction: async (transactionData) => {
         try {
-            const response = await axiosInstance.post(API_URL, transactionData);
+            const payload = {
+                ...transactionData,
+                walletId: transactionData.walletId || null,
+                savingsAccountId: transactionData.savingsAccountId || null
+            };
+            
+            const response = await axiosInstance.post(API_URL, payload);
             return response.data;
         } catch (error) {
             console.error("[transactionService - createTransaction] Error creating transaction:", error);

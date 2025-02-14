@@ -25,23 +25,28 @@ const FilterTransactions = ({
 
     const clearFilters = () => {
         setFilters({
-            minAmount: '',
-            maxAmount: '',
-            category: '',
-            startDate: '',
-            endDate: '',
-            walletId: '',
-            source: '',
-            savingsAccountId: ''
+            minAmount: undefined,
+            maxAmount: undefined,
+            category: undefined,
+            startDate: undefined,
+            endDate: undefined,
+            walletId: undefined,
+            source: undefined,
+            savingsAccountId: undefined
         });
     };
+
+    console.log('Savings Accounts:', savingsAccounts);
 
     return (
         <div className="filter-container">
             <div className="filter-header">
                 <FontAwesomeIcon icon={faFilter} />
                 <h3>Filters</h3>
-                <button onClick={clearFilters} className="clear-filters">
+                <button 
+                    onClick={() => setFilters({})}
+                    disabled={Object.keys(filters).length === 0}
+                >
                     Clear Filters
                 </button>
             </div>
