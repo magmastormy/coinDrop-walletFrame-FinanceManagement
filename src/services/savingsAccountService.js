@@ -160,6 +160,31 @@ export const savingsAccountService = {
             throw error;
         }
     },
+
+    depositToSavings: async ({ accountId, walletId, amount }) => {
+        const response = await axiosInstance.post(`${API_URL}/${accountId}/deposit`, {
+            walletId,
+            amount: parseFloat(amount)
+        });
+        return response.data;
+    },
+
+    withdrawFromSavings: async ({ accountId, walletId, amount }) => {
+        const response = await axiosInstance.post(`${API_URL}/${accountId}/withdraw`, {
+            walletId,
+            amount: parseFloat(amount)
+        });
+        return response.data;
+    },
+
+    createSavingsTransaction: async ({ accountId, amount, description, category }) => {
+        const response = await axiosInstance.post(`${API_URL}/${accountId}/transactions`, {
+            amount: parseFloat(amount),
+            description,
+            category
+        });
+        return response.data;
+    },
 };
 
 export default savingsAccountService;

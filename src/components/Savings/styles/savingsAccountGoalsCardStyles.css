@@ -1,3 +1,89 @@
+.savings-account-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.savings-account-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.account-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.account-balance {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #6366f1;
+    margin: 0.5rem 0;
+}
+
+.account-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.account-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.action-button {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #1f2937;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-button.primary {
+    background: #6366f1;
+    color: white;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .savings-account-goal-card {
     margin-bottom: 1rem;
     transition: transform 0.2s ease-in-out;

@@ -3,8 +3,8 @@ import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { store } from './slices/store';
 import AppRoutes from './routes';
-import 'react-toastify/dist/ReactToastify.css';
 import DataManager from './components/userDataComponent';
+import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
 function App() {
@@ -13,6 +13,9 @@ function App() {
       <DataManager>
         <Router>
           <div className="app">
+            <div className="theme-toggle-container">
+              <ThemeToggle />
+            </div>
             <div className="content-wrapper">
               <AppRoutes />
             </div>

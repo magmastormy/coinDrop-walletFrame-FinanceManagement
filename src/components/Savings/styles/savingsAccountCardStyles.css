@@ -1,0 +1,224 @@
+/* Light Mode Defaults */
+:root {
+    --background: #ffffff;
+    --surface: #f8f9fa;
+    --surface-variant: #e9ecef;
+    --text: #1a202c;
+    --text-secondary: #4a5568;
+    --primary: #4e73df;
+    --primary-dark: #224abe;
+    --success: #34c759;
+    --error: #dc3545;
+    --border: #dee2e6;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #1a202c;
+        --surface: #2d3748;
+        --surface-variant: #4a5568;
+        --text: #e2e8f0;
+        --text-secondary: #a0aec0;
+        --primary: #667eea;
+        --primary-dark: #4c51bf;
+        --success: #48bb78;
+        --error: #f56565;
+        --border: #4a5568;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.savings-account-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    width: 100%;
+    max-width: 300px;
+    margin: var(--spacing-md);
+}
+
+.savings-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.savings-icon-container {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(145deg, #4e73df, #224abe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.savings-icon {
+    font-size: 1.5rem;
+}
+
+.options-btn {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-full);
+    transition: all var(--transition-fast);
+}
+
+.options-btn:hover {
+    background: var(--surface-variant);
+}
+
+.options-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.options-menu {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 8px 0;
+    min-width: 160px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.option-item:hover {
+    background: var(--surface-variant);
+}
+
+.option-item.danger {
+    color: #dc3545;
+}
+
+.option-item.danger:hover {
+    background: #fff5f5;
+}
+
+.savings-card-content {
+    margin-bottom: var(--spacing-md);
+}
+
+.savings-name {
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.savings-balance-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.savings-balance {
+    color: var(--text);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.automation-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.savings-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.action-btn {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+}
+
+.action-btn.deposit {
+    background: var(--success);
+    color: white;
+}
+
+.action-btn.deposit:hover {
+    background: var(--success-dark);
+}
+
+.action-btn.withdraw {
+    background: var(--error);
+    color: white;
+}
+
+.action-btn.withdraw:hover {
+    background: var(--error-dark);
+}
+
+@media (max-width: 768px) {
+    .savings-account-card {
+        max-width: 100%;
+        margin: var(--spacing-sm) 0;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .savings-account-card {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .options-menu {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .option-item {
+        color: #e2e8f0;
+    }
+    
+    .option-item:hover {
+        background: #4a5568;
+    }
+    
+    .savings-name,
+    .savings-balance {
+        color: #e2e8f0;
+    }
+}

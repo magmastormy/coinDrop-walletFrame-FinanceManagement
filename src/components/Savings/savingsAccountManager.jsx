@@ -26,13 +26,24 @@ import { setSavingsAccount, setLoading, setError } from '../../slices/savingsAcc
 import SavingsCard from './savingsAccountCard';
 import TransferDialog from './TransferDialog';
 import './styles/savingsAccountManagerStyles.css';
+import { fetchWallets, setWallets } from '../../slices/walletSlice';
+import { useNavigate } from 'react-router-dom';
+import walletService from '../../services/walletService';
 
 const SavingsAccountManager = () => {
     const dispatch = useDispatch();
     const { user } = useSelector(state => state.auth);
     const { account: savingsAccounts = [], loading, error } = useSelector(state => state.savingsAccount);
+    const { wallets = [] } = useSelector(state => state.wallet);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-    const [formData, setFormData] = useState({
+    const [showTransferDialog, setShowTransferDialog] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState(null);
+    const [isDepositModalOpen, setDepositModalOpen] = useState(false);
+    const [isWithdrawModalOpen, setWithdrawModalOpen] = useState(false);
+    const [selectedAccountForTransaction, setSelectedAccountForTransaction] = useState(null);
+    const [transactionAmount, setTransactionAmount] = useState(0);
+    const [selectedWallet, setSelectedWallet] = useState('');
+    const [formState, setFormState] = useState({
         name: '',
         initialBalance: '',
         automaticSavings: {
@@ -43,18 +54,25 @@ const SavingsAccountManager = () => {
             frequency: 'monthly'
         }
     });
-    const [showTransferDialog, setShowTransferDialog] = useState(false);
-    const [selectedAccountId, setSelectedAccountId] = useState(null);
+    const [selectedAccount, setSelectedAccount] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchSavingsAccounts = async () => {
+        const fetchData = async () => {
             if (user) {
-                dispatch(setLoading(true));
                 try {
+                    dispatch(setLoading(true));
+
                     const accounts = await savingsAccountService.getUserSavingsAccounts(user.id);
+                    const wallets = await walletService.getAllWallets(user.id);
+                    console.log("SavingsAccountManager - fetchData - savingsaccounts:", accounts);
+                    console.log("SavingsAccountManager - fetchData - wallets:", wallets);
+                    
                     dispatch(setSavingsAccount(accounts));
+                    dispatch(setWallets(wallets.wallets));
+                    
                 } catch (err) {
-                    console.log("[SavingsAccountManager] Error fetching savings accounts", err);
+                    console.error("Error loading data:", err);
                     dispatch(setError(err.message));
                 } finally {
                     dispatch(setLoading(false));
@@ -62,21 +80,27 @@ const SavingsAccountManager = () => {
             }
         };
 
-        fetchSavingsAccounts();
+        fetchData();
+    }, [dispatch, user]);
+
+    useEffect(() => {
+        if (user?.id) {
+            dispatch(fetchWallets(user.id));
+        }
     }, [dispatch, user]);
 
     const handleCreateAccount = async () => {
         try {
             const accountData = {
-                ...formData,
+                ...formState,
                 userId: user.id,
-                initialBalance: parseFloat(formData.initialBalance) || 0,
+                initialBalance: parseFloat(formState.initialBalance) || 0,
                 automation: {
-                    type: formData.automaticSavings?.type || 'fixed',
-                    frequency: formData.automaticSavings?.frequency || 'monthly',
-                    amount: parseFloat(formData.automaticSavings?.amount) || 0,
-                    percentage: parseFloat(formData.automaticSavings?.percentage) || 0,
-                    enabled: formData.automaticSavings?.enabled || false
+                    type: formState.automaticSavings?.type || 'fixed',
+                    frequency: formState.automaticSavings?.frequency || 'monthly',
+                    amount: parseFloat(formState.automaticSavings?.amount) || 0,
+                    percentage: parseFloat(formState.automaticSavings?.percentage) || 0,
+                    enabled: formState.automaticSavings?.enabled || false
                 }
             };
             
@@ -85,7 +109,7 @@ const SavingsAccountManager = () => {
             const response = await savingsAccountService.createSavingsAccount(accountData);
             dispatch(setSavingsAccount(response));
             setCreateModalOpen(false);
-            setFormData({
+            setFormState({
                 name: '',
                 initialBalance: '',
                 automaticSavings: {
@@ -110,7 +134,7 @@ const SavingsAccountManager = () => {
         const { name, value } = e.target;
         if (name.startsWith('automaticSavings.')) {
             const field = name.split('.')[1];
-            setFormData(prev => ({
+            setFormState(prev => ({
                 ...prev,
                 automaticSavings: {
                     ...prev.automaticSavings,
@@ -118,7 +142,7 @@ const SavingsAccountManager = () => {
                 }
             }));
         } else {
-            setFormData(prev => ({
+            setFormState(prev => ({
                 ...prev,
                 [name]: value
             }));
@@ -139,27 +163,63 @@ const SavingsAccountManager = () => {
         }
     };
 
-    const handleUpdateTransaction = async (updatedTransaction) => {
-        try {
-            await savingsAccountService.updateTransaction(updatedTransaction);
-            // Refetch the account to get updated data
-            const data = await savingsAccountService.getUserSavingsAccounts(user.id);
-            dispatch(setSavingsAccount(data));
-        } catch (err) {
-            dispatch(setError(err.message));
-        }
-    };
-
-    const handleTransfer = () => {
-        setShowTransferDialog(true);
-    };
-
     const handleTransferComplete = () => {
         setShowTransferDialog(false);
     };
 
     const handleAccountSelect = (accountId) => {
         setSelectedAccountId(selectedAccountId === accountId ? null : accountId);
+    };
+
+    const handleDeposit = async (accountId) => {
+        if (wallets.length === 0) {
+            dispatch(setError('No wallets available for deposit'));
+            return;
+        }
+        try {
+            await savingsAccountService.depositToSavings({
+                accountId,
+                walletId: selectedWallet,
+                amount: transactionAmount
+            });
+            // Refresh accounts after deposit
+            dispatch(fetchWallets(user.id));
+            setDepositModalOpen(false);
+        } catch (error) {
+            dispatch(setError(error.message));
+        }
+    };
+
+    const handleWithdraw = async (accountId) => {
+        if (wallets.length === 0) {
+            dispatch(setError('No wallets available for withdrawal'));
+            return;
+        }
+        try {
+            await savingsAccountService.withdrawFromSavings({
+                accountId,
+                walletId: selectedWallet,
+                amount: transactionAmount
+            });
+            // Refresh accounts after withdraw
+            dispatch(fetchWallets(user.id));
+            setWithdrawModalOpen(false);
+        } catch (error) {
+            dispatch(setError(error.message));
+        }
+    };
+
+    const handleCreateTransaction = async (accountId, transactionData) => {
+        try {
+            await savingsAccountService.createSavingsTransaction({
+                accountId,
+                ...transactionData
+            });
+            // Refresh accounts after transaction
+            dispatch(fetchWallets(user.id));
+        } catch (error) {
+            dispatch(setError(error.message));
+        }
     };
 
     if (loading) {
@@ -221,22 +281,45 @@ const SavingsAccountManager = () => {
                 </Button>
             </Box>
 
-            <div className="savings-accounts-container">
-                {savingsAccounts.map(account => (
-                    <div key={account._id}>
-                        <SavingsCard 
-                            account={account}
-                            onTransfer={() => setShowTransferDialog(true)}
-                            onSelect={handleAccountSelect}
-                        />
-                        {selectedAccountId === account._id && (
-                            <div className="transactions-section">
-                                <SavingsAccountTransactionTable accountId={account._id} />
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+            {wallets.length === 0 && (
+                <div className="no-wallets-warning">
+                    <p>No wallets found. Please create a wallet first to manage savings accounts.</p>
+                    <Button 
+                        variant="contained" 
+                        color="primary"
+                        onClick={() => navigate('/wallets')}
+                    >
+                        Create Wallet
+                    </Button>
+                </div>
+            )}
+            
+            {wallets.length > 0 && (
+                <div className="savings-accounts-container">
+                    {savingsAccounts.map(account => (
+                        <div key={account._id}>
+                            <SavingsCard 
+                                account={account}
+                                onTransfer={() => setShowTransferDialog(true)}
+                                onSelect={handleAccountSelect}
+                                onDeposit={() => {
+                                    setSelectedAccountForTransaction(account._id);
+                                    setDepositModalOpen(true);
+                                }}
+                                onWithdraw={() => {
+                                    setSelectedAccountForTransaction(account._id);
+                                    setWithdrawModalOpen(true);
+                                }}
+                            />
+                            {selectedAccountId === account._id && (
+                                <div className="transactions-section">
+                                    <SavingsAccountTransactionTable accountId={account._id} />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <Dialog 
                 open={isCreateModalOpen} 
@@ -248,7 +331,7 @@ const SavingsAccountManager = () => {
                     <TextField
                         name="name"
                         label="Account Name"
-                        value={formData.name}
+                        value={formState.name}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
@@ -257,7 +340,7 @@ const SavingsAccountManager = () => {
                         name="initialBalance"
                         label="Initial Balance"
                         type="number"
-                        value={formData.initialBalance}
+                        value={formState.initialBalance}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
@@ -274,7 +357,7 @@ const SavingsAccountManager = () => {
                         <InputLabel>Type</InputLabel>
                         <Select
                             name="automaticSavings.type"
-                            value={formData.automaticSavings.type}
+                            value={formState.automaticSavings.type}
                             onChange={handleInputChange}
                             label="Type"
                         >
@@ -285,14 +368,14 @@ const SavingsAccountManager = () => {
                     
                     <TextField
                         name="automaticSavings.amount"
-                        label={formData.automaticSavings.type === 'percentage' ? 'Percentage' : 'Amount'}
+                        label={formState.automaticSavings.type === 'percentage' ? 'Percentage' : 'Amount'}
                         type="number"
-                        value={formData.automaticSavings.type === 'percentage' ? formData.automaticSavings.percentage : formData.automaticSavings.amount}
+                        value={formState.automaticSavings.type === 'percentage' ? formState.automaticSavings.percentage : formState.automaticSavings.amount}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                         InputProps={{
-                            startAdornment: <span>{formData.automaticSavings.type === 'percentage' ? '%' : '$'}</span>
+                            startAdornment: <span>{formState.automaticSavings.type === 'percentage' ? '%' : '$'}</span>
                         }}
                     />
                     
@@ -300,7 +383,7 @@ const SavingsAccountManager = () => {
                         <InputLabel>Frequency</InputLabel>
                         <Select
                             name="automaticSavings.frequency"
-                            value={formData.automaticSavings.frequency}
+                            value={formState.automaticSavings.frequency}
                             onChange={handleInputChange}
                             label="Frequency"
                         >
@@ -326,6 +409,92 @@ const SavingsAccountManager = () => {
                     onClose={() => setShowTransferDialog(false)}
                     onComplete={handleTransferComplete}
                 />
+            )}
+
+            {isDepositModalOpen && (
+                <Dialog open={isDepositModalOpen} onClose={() => setDepositModalOpen(false)}>
+                    <DialogTitle>Deposit to Savings</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Amount"
+                            type="number"
+                            value={transactionAmount}
+                            onChange={(e) => setTransactionAmount(e.target.value)}
+                            fullWidth
+                            margin="normal"
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Select Wallet</InputLabel>
+                            <Select
+                                value={selectedWallet || ''}
+                                onChange={(e) => setSelectedWallet(e.target.value)}
+                                label="Select Wallet"
+                            >
+                                {wallets.map(wallet => (
+                                    <MenuItem 
+                                        key={wallet._id} 
+                                        value={wallet._id}
+                                    >
+                                        {wallet.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setDepositModalOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={() => handleDeposit(selectedAccountForTransaction)} 
+                            variant="contained" 
+                            color="primary"
+                        >
+                            Deposit
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
+
+            {isWithdrawModalOpen && (
+                <Dialog open={isWithdrawModalOpen} onClose={() => setWithdrawModalOpen(false)}>
+                    <DialogTitle>Withdraw from Savings</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Amount"
+                            type="number"
+                            value={transactionAmount}
+                            onChange={(e) => setTransactionAmount(e.target.value)}
+                            fullWidth
+                            margin="normal"
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Select Wallet</InputLabel>
+                            <Select
+                                value={selectedWallet || ''}
+                                onChange={(e) => setSelectedWallet(e.target.value)}
+                                label="Select Wallet"
+                            >
+                                {wallets.map(wallet => (
+                                    <MenuItem 
+                                        key={wallet._id} 
+                                        value={wallet._id}
+                                    >
+                                        {wallet.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setWithdrawModalOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={() => handleWithdraw(selectedAccountForTransaction)} 
+                            variant="contained" 
+                            color="primary"
+                        >
+                            Withdraw
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             )}
         </motion.div>
     );

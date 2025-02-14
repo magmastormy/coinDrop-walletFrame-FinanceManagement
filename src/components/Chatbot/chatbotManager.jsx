@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faTimes, faEllipsisH } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faTimes, faEllipsisH, faDatabase } from '@fortawesome/free-solid-svg-icons';
 import {
   setLoading,
   addToChatHistory,
@@ -22,6 +22,8 @@ const ChatbotManager = () => {
   const { isLoading, chatHistory, error } = useSelector(state => state.zhipuaiModel);
   const chatContainerRef = useRef(null);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  const [useContext, setUseContext] = useState(false);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -48,20 +50,47 @@ const ChatbotManager = () => {
     try {
       dispatch(setError(""));
       dispatch(setLoading(true));
-      dispatch(addToChatHistory({
+      
+      // Create message with context meta
+      const userMessage = {
         role: 'user',
         content: message,
         timestamp: new Date().toISOString(),
-      }));
+        meta: useContext ? {
+          context: {
+            wallets: wallets.slice(0, 3).map(w => ({
+              name: w.name,
+              balance: w.balance
+            })),
+            lastTransaction: transactions[0] ? {
+              amount: transactions[0].amount,
+              category: transactions[0].category
+            } : null,
+            savingsBalance: savingsAccounts.reduce((acc, curr) => acc + curr.balance, 0)
+          }
+        } : null
+      };
 
-      const response = await zhipuaiModelService.sendMessage([...chatHistory, { role: 'user', content: message }]);
-      const assistantMessage = response.map(item => item.content).join(' ');
+      dispatch(addToChatHistory(userMessage));
 
-      dispatch(addToChatHistory({
+      // Get AI response with context
+      const response = await zhipuaiModelService.sendMessage(
+        [...chatHistory, userMessage],
+        useContext ? {
+          wallets,
+          savingsAccounts,
+          transactions: transactions.slice(0, 10) // Last 10 transactions
+        } : null
+      );
+
+      const assistantMessage = {
         role: 'assistant',
-        content: assistantMessage,
+        content: response.map(item => item.content).join(' '),
         timestamp: new Date().toISOString(),
-      }));
+        contextUsed: useContext // Flag for UI indication
+      };
+
+      dispatch(addToChatHistory(assistantMessage));
     } catch (error) {
       dispatch(setError('Failed to send message'));
       console.error('Error sending message:', error);
@@ -74,9 +103,24 @@ const ChatbotManager = () => {
     setIsHistoryPanelOpen(!isHistoryPanelOpen);
   };
 
+  const toggleContext = () => {
+    setUseContext(!useContext);
+    setIsContextMenuOpen(false);
+  };
+
   return (
-    <div className="chatbot-container">
-      <ChatHeader onToggleChat={toggleChat} onOpenHistory={toggleHistoryPanel} />
+    <motion.div 
+      className="chatbot-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <ChatHeader 
+        onToggleChat={toggleChat}
+        onOpenHistory={toggleHistoryPanel}
+        onToggleContext={() => setIsContextMenuOpen(!isContextMenuOpen)}
+        useContext={useContext}
+      />
       <div className="chat-body">
         <div className="chat-messages" ref={chatContainerRef}>
           <ChatMessages chatHistory={chatHistory} error={error} />
@@ -86,7 +130,30 @@ const ChatbotManager = () => {
           {isHistoryPanelOpen && <ChatHistoryPanel chatHistory={chatHistory} />}
         </AnimatePresence>
       </div>
-    </div>
+
+      <AnimatePresence>
+        {isContextMenuOpen && (
+          <motion.div 
+            className="context-menu"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+          >
+            <label className="context-option">
+              <input
+                type="checkbox"
+                checked={useContext}
+                onChange={toggleContext}
+              />
+              Use My Financial Data
+            </label>
+            <div className="context-info">
+              {useContext && `Including: ${wallets.length} wallets, ${transactions.length} transactions`}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

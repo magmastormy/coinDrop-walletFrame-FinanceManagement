@@ -1,29 +1,28 @@
 /* chatbotManagerStyles.css */
 .chatbot-container {
+    height: calc(100vh - 80px); /* Account for header */
     display: flex;
     flex-direction: column;
-    height: 100%; /* Adjust height as needed */
-    width: 100%; /* Full width */
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    background-color: #f8f9fa;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-left: 280px; /* Sidebar width */
+    margin-right: 2rem;  /* Added right spacing */
+    padding: 1.5rem;
+    width: calc(100% - 320px);  /* Adjusted from 300px */
 }
 
 .chat-body {
-    display: flex;
-    flex-direction: row; /* Align messages and input horizontally */
-    flex-grow: 1;
+    flex: 1;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1rem;
 }
 
 .chat-messages {
-    flex: 1; /* Take remaining space */
-    overflow-y: auto; /* Enable vertical scrolling */
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    background: #ffffff; /* White background for messages */
-    max-height: calc(100vh - 150px); /* Adjust height to fit within the chatbot container */
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    height: calc(100vh - 180px); /* Adjust for input and header */
 }
 
 .chat-input {
@@ -77,4 +76,56 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+.context-menu {
+    position: absolute;
+    top: 40px;  /* Adjusted from 60px */
+    right: 0;
+    width: 220px;
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+}
+
+.context-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.context-option:hover {
+    background: #f8f9fa;
+}
+
+.context-info {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #666;
+    padding: 0 0.75rem;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+    .chatbot-container {
+        margin-left: 0;
+        max-width: 100%;
+        height: calc(100vh - 60px);
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .chatbot-container {
+        padding: 0.5rem;
+    }
+    
+    .chat-messages {
+        height: calc(100vh - 160px);
+    }
 }

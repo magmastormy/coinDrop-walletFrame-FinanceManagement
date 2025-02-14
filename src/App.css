@@ -1,13 +1,14 @@
 /* App.css & App.jsx Layout */
 .app {
-  display: flex;
-  min-height: 100vh;
-  background-color: var(--background-color);
+  @apply min-h-screen flex flex-col;
+  background-color: var(--background);
+  color: var(--text);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Content Layout */
 .content-wrapper {
-  flex: 1;
+  @apply flex-1;
   margin-left: var(--sidebar-width, 250px); /* Push content right by sidebar width */
   padding: var(--spacing-lg);
   max-width: calc(100% - var(--sidebar-width, 250px)); /* Ensure content doesn't overlap sidebar */
@@ -24,6 +25,34 @@
   height: 100vh;
   z-index: var(--z-sidebar);
   background-color: var(--surface-color);
+}
+
+.theme-toggle-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+}
+
+.theme-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-toggle:hover {
+  background: var(--surface-variant);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Responsive Layout */
@@ -71,3 +100,6 @@
   transform: translateY(-10px);
   transition: opacity 300ms, transform 300ms;
 }
+
+/* Import react-toastify styles */
+@import 'react-toastify/dist/ReactToastify.css';

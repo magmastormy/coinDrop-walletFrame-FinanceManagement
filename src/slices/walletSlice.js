@@ -1,4 +1,18 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import walletService from '../services/walletService';
+
+// Add this thunk action
+export const fetchWallets = createAsyncThunk(
+    'wallet/fetchWallets',
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await walletService.getAllWallets(userId);
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 const initialState = {
     wallets: [],
@@ -46,6 +60,21 @@ const walletSlice = createSlice({
         setWalletStats: (state, action) => {
             state.stats = action.payload;
         }
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchWallets.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchWallets.fulfilled, (state, action) => {
+                state.wallets = action.payload;
+                state.loading = false;
+            })
+            .addCase(fetchWallets.rejected, (state, action) => {
+                state.error = action.payload;
+                state.loading = false;
+            });
     }
 });
 

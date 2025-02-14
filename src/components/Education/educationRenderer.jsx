@@ -2,8 +2,13 @@
 import React from 'react';
 import DOMPurify from 'dompurify';
 
-const EducationRenderer = ({ content }) => {
-    const sanitizedContent = DOMPurify.sanitize(content, {
+const EducationRenderer = ({ content, maxLength }) => {
+    let displayContent = content;
+    if (maxLength && content.length > maxLength) {
+        displayContent = content.substring(0, maxLength) + '...';
+    }
+
+    const sanitizedContent = DOMPurify.sanitize(displayContent, {
         ADD_TAGS: ['img'],
         ADD_ATTR: ['src', 'alt', 'class']
     });

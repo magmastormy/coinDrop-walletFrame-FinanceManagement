@@ -1,15 +1,17 @@
 // chatHeader.jsx
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faCog, faHistory, faDatabase } from '@fortawesome/free-solid-svg-icons';
 import './styles/chatHeaderStyles.css';
 
-const ChatHeader = ({ onToggleHistory, showHistory }) => {
+const ChatHeader = ({ onToggleHistory, showHistory, onToggleContext, useContext }) => {
     return (
         <div className="chat-header">
             <div className="header-title">
-                <h3>CoinDrip AI Assistant</h3>
-                <span className="status-indicator">Online</span>
+                <h3>Financial Assistant</h3>
+                <div className="context-indicator">
+                    {useContext && <span>Using Context</span>}
+                </div>
             </div>
             <div className="header-actions">
                 <button 
@@ -24,6 +26,12 @@ const ChatHeader = ({ onToggleHistory, showHistory }) => {
                     title="Settings"
                 >
                     <FontAwesomeIcon icon={faCog} />
+                </button>
+                <button 
+                    className={`context-button ${useContext ? 'active' : ''}`}
+                    onClick={onToggleContext}
+                >
+                    <FontAwesomeIcon icon={faDatabase} />
                 </button>
             </div>
         </div>
