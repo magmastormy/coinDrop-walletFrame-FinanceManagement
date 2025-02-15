@@ -12,12 +12,14 @@ import FilterTransactions from './filterTransactions';
 import TransactionSavingsAccountCard from './transactionSavingsAccountCard';
 import TransactionWalletCard from './transactionWalletCard';
 import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
+import { useTheme } from '../../theme/ThemeContext';
 import './styles/transactionManagerStyles.css';
 
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions = [], loading, error } = useSelector(state => state.transaction || {});
     const { user } = useSelector(state => state.auth || {});
+    const { theme } = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [categories, setCategories] = useState([]);
@@ -179,14 +181,28 @@ const TransactionManager = () => {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                <CircularProgress />
+            <Box 
+                display="flex" 
+                justifyContent="center" 
+                alignItems="center" 
+                minHeight="200px"
+                style={{ color: theme.text.primary }}
+            >
+                <CircularProgress style={{ color: theme.button.base }} />
             </Box>
         );
     }
 
     return (
-        <div className="transaction-manager">
+        <div 
+            className="transaction-manager"
+            style={{
+                backgroundColor: theme.background.primary,
+                color: theme.text.primary,
+                transition: theme.transition,
+                padding: '20px'
+            }}
+        >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                 <Typography variant="h5" component="h2">
                     Transactions
@@ -194,6 +210,7 @@ const TransactionManager = () => {
                 <Button
                     variant="contained"
                     color="primary"
+                    style={{ backgroundColor: theme.button.base, color: theme.button.text }}
                     onClick={() => {
                         setEditingTransaction(null);
                         setIsModalOpen(true);

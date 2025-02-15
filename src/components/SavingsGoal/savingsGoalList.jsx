@@ -8,7 +8,7 @@ import { savingsGoalService } from '../../services/savingsGoalService';
 import SavingsGoalCard from './savingsGoalCard';
 import NewGoalDialog from './newGoalDialog';
 import EmptyState from '../../pages/emptyState';
-import './styles/savingsGoalListStyles.css';
+import './styles/savingsGoalsListStyles.css';
 
 const SavingsGoalList = () => {
     const dispatch = useDispatch();

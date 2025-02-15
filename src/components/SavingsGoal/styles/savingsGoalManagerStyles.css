@@ -1,7 +1,36 @@
 .savings-goal-manager {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
 }
 
 h5 {
     margin-bottom: 20px;
+}
+
+.goal-card {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: var(--background-secondary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.goal-card:hover {
+    transform: scale(1.02);
+}
+
+.goal-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.goal-progress {
+    margin-top: 10px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--background-primary);
 }

@@ -1,184 +1,160 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
-import { 
-    Button, 
-    Card, 
-    CardContent, 
-    Typography,
-    Box,
-    CircularProgress,
-    Alert
-} from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import savingsGoalService from '../../services/savingsGoalService';
-import { setSavingsGoals, setLoading, setError } from '../../slices/savingsGoalSlice';
-import './styles/savingsGoalManagerStyles.css';
-import EditGoalModal from './editGoalModal';
+import { Grid, Box, Button, CircularProgress } from '@mui/material';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../theme/ThemeContext';
+import SavingsGoalList from './savingsGoalList';
 import NewGoalDialog from './newGoalDialog';
+import EditGoalModal from './editGoalModal';
+import savingsGoalService from '../../services/savingsGoalService';
+import './styles/savingsGoalManagerStyles.css';
 
 const SavingsGoalManager = () => {
-    const dispatch = useDispatch();
-    const savingsGoals = useSelector(state => state.savingsGoal.goals || []);
-    const loading = useSelector(state => state.savingsGoal.loading);
-    const error = useSelector(state => state.savingsGoal.error);
-    const user = useSelector(state => state.auth.user);
-    const [isEditModalOpen, setEditModalOpen] = useState(false);
-    const [isNewGoalModalOpen, setNewGoalModalOpen] = useState(false);
-    const [selectedGoal, setSelectedGoal] = useState(null);
+    const { user } = useAuth();
+    const { theme, isDarkMode } = useTheme();
+    const [goals, setGoals] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [isNewGoalDialogOpen, setIsNewGoalDialogOpen] = useState(false);
+    const [editingGoal, setEditingGoal] = useState(null);
 
     useEffect(() => {
         if (user?.id) {
-            const fetchSavingsGoals = async () => {
-                dispatch(setLoading(true));
-                try {
-                    const data = await savingsGoalService.getSavingsGoals(user.id);
-                    console.log('[SavingsGoalManager] Savings goals fetched successfully:', data);
-                    dispatch(setSavingsGoals(data));
-                } catch (err) {
-                    console.error('Error fetching savings goals:', err);
-                    dispatch(setError('Unable to fetch savings goals. Please try again later.'));
-                } finally {
-                    dispatch(setLoading(false));
-                }
-            };
-
-            fetchSavingsGoals();
+            fetchGoals();
         }
-    }, [dispatch, user]);
+    }, [user]);
 
-    useEffect(() => {
-        console.log('Current savings goals:', savingsGoals);
-    }, [savingsGoals]);
-
-    const handleCreateGoal = async (goalData) => {
-        dispatch(setLoading(true));
+    const fetchGoals = async () => {
         try {
-            await savingsGoalService.createSavingsGoal({
-                ...goalData,
+            setIsLoading(true);
+            const response = await savingsGoalService.getSavingsGoals(user.id);
+            setGoals(response || []);
+        } catch (error) {
+            console.error('Failed to fetch goals:', error);
+            setError('Failed to load savings goals. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCreateGoal = async (newGoal) => {
+        try {
+            await savingsGoalService.createGoal({
+                ...newGoal,
                 userId: user.id
             });
-            setNewGoalModalOpen(false);
-            const data = await savingsGoalService.getSavingsGoals(user.id);
-            dispatch(setSavingsGoals(data));
-        } catch (err) {
-            console.error('Error creating savings goal:', err);
-            dispatch(setError('Failed to create savings goal. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
+            await fetchGoals();
+            setIsNewGoalDialogOpen(false);
+        } catch (error) {
+            console.error('Failed to create goal:', error);
+            setError('Failed to create savings goal. Please try again later.');
         }
     };
 
     const handleUpdateGoal = async (goalId, updatedData) => {
-        dispatch(setLoading(true));
         try {
-            await savingsGoalService.updateSavingsGoal(goalId, updatedData);
-            setEditModalOpen(false);
-            setSelectedGoal(null);
-            const data = await savingsGoalService.getSavingsGoals(user.id);
-            dispatch(setSavingsGoals(data));
-        } catch (err) {
-            console.error('Error updating savings goal:', err);
-            dispatch(setError('Failed to update savings goal. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
+            await savingsGoalService.updateGoal(goalId, updatedData);
+            await fetchGoals();
+            setEditingGoal(null);
+        } catch (error) {
+            console.error('Failed to update goal:', error);
+            setError('Failed to update savings goal. Please try again later.');
         }
     };
 
     const handleDeleteGoal = async (goalId) => {
-        if (!window.confirm('Are you sure you want to delete this savings goal?')) {
-            return;
-        }
-
-        dispatch(setLoading(true));
-        try {
-            await savingsGoalService.deleteSavingsGoal(goalId);
-            const data = await savingsGoalService.getSavingsGoals(user.id);
-            dispatch(setSavingsGoals(data));
-        } catch (err) {
-            console.error('Error deleting savings goal:', err);
-            dispatch(setError('Failed to delete savings goal. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
+        if (window.confirm('Are you sure you want to delete this savings goal?')) {
+            try {
+                await savingsGoalService.deleteGoal(goalId);
+                await fetchGoals();
+            } catch (error) {
+                console.error('Failed to delete goal:', error);
+                setError('Failed to delete savings goal. Please try again later.');
+            }
         }
     };
 
-    const handleEditGoal = (goal) => {
-        setSelectedGoal(goal);
-        setEditModalOpen(true);
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                <CircularProgress />
+            <Box 
+                display="flex" 
+                justifyContent="center" 
+                alignItems="center" 
+                minHeight="200px"
+                style={{ color: theme.text.primary }}
+            >
+                <CircularProgress style={{ color: theme.button.base }} />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box 
+                display="flex" 
+                justifyContent="center" 
+                alignItems="center" 
+                minHeight="200px"
+                style={{ color: theme.text.primary }}
+            >
+                {error}
             </Box>
         );
     }
 
     return (
-        <div className="savings-goal-manager">
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5" component="h2">
-                    Savings Goals
-                </Typography>
+        <div 
+            className="savings-goal-manager"
+            style={{
+                backgroundColor: theme.background.primary,
+                color: theme.text.primary,
+                transition: theme.transition,
+                padding: '20px'
+            }}
+        >
+            <Box 
+                display="flex" 
+                justifyContent="space-between" 
+                alignItems="center" 
+                mb={3}
+            >
+                <h2 style={{ color: theme.text.heading }}>Savings Goals</h2>
                 <Button
                     variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={() => setNewGoalModalOpen(true)}
+                    onClick={() => setIsNewGoalDialogOpen(true)}
+                    style={{
+                        backgroundColor: theme.button.base,
+                        color: theme.text.primary,
+                        '&:hover': {
+                            backgroundColor: theme.button.hover
+                        }
+                    }}
                 >
-                    New Goal
+                    Create New Goal
                 </Button>
             </Box>
 
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                </Alert>
-            )}
-
-            {!loading && savingsGoals.length === 0 ? (
-                <Card variant="outlined" sx={{ mb: 2 }}>
-                    <CardContent>
-                        <Typography variant="body1" color="text.secondary" align="center">
-                            You haven't set any savings goals yet. Click "New Goal" to get started!
-                        </Typography>
-                    </CardContent>
-                </Card>
-            ) : (
-                savingsGoals.map(goal => (
-                    <motion.div key={goal._id}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6">{goal.name}</Typography>
-                                <Typography variant="body2">Target Amount: {goal.targetAmount}</Typography>
-                                <Typography variant="body2">Current Amount: {goal.currentAmount}</Typography>
-                                <Typography variant="body2">Deadline: {new Date(goal.deadline).toLocaleDateString()}</Typography>
-                                <Typography variant="body2">Description: {goal.description}</Typography>
-                                <Button onClick={() => handleEditGoal(goal)}>Edit</Button>
-                                <Button onClick={() => handleDeleteGoal(goal._id)}>Delete</Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ))
-            )}
+            <Grid container spacing={3}>
+                <Grid item xs={12}>
+                    <SavingsGoalList
+                        goals={goals}
+                        onEdit={setEditingGoal}
+                        onDelete={handleDeleteGoal}
+                    />
+                </Grid>
+            </Grid>
 
             <NewGoalDialog
-                open={isNewGoalModalOpen}
-                onClose={() => setNewGoalModalOpen(false)}
-                onSubmit={handleCreateGoal}
+                open={isNewGoalDialogOpen}
+                onClose={() => setIsNewGoalDialogOpen(false)}
+                onCreate={handleCreateGoal}
             />
 
-            {selectedGoal && (
+            {editingGoal && (
                 <EditGoalModal
-                    open={isEditModalOpen}
-                    goal={selectedGoal}
-                    onClose={() => {
-                        setEditModalOpen(false);
-                        setSelectedGoal(null);
-                    }}
-                    onSubmit={(updatedData) => handleUpdateGoal(selectedGoal._id, updatedData)}
+                    open={!!editingGoal}
+                    goal={editingGoal}
+                    onClose={() => setEditingGoal(null)}
+                    onSave={(updatedData) => handleUpdateGoal(editingGoal._id, updatedData)}
                 />
             )}
         </div>
