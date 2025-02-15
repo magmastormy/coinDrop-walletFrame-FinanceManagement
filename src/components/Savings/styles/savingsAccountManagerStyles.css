@@ -179,9 +179,9 @@
 }
 
 .savings-manager-container {
+    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
 }
 
 .savings-header {
@@ -238,6 +238,51 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.options-menu {
+    min-width: 160px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.option-item {
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    transition: background-color 0.2s;
+}
+
+.option-item:hover {
+    background-color: var(--background-hover);
+}
+
+.option-item.delete {
+    color: var(--error-color);
+}
+
+.option-item.delete:hover {
+    background-color: var(--error-background);
+}
+
+.add-savings-fab {
+    position: fixed !important;
+    bottom: 32px !important;
+    right: 32px !important;
+    background-color: var(--primary) !important;
+}
+
+.add-savings-fab:hover {
+    background-color: var(--primary-dark) !important;
 }
 
 @media (max-width: 768px) {

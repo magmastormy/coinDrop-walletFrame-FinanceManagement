@@ -95,6 +95,54 @@ class SavingsAccountController {
             res.status(400).json({ error: 'Failed to update transaction' });
         }
     }
+
+    static async depositToSavings(req, res) {
+        try {
+            const { walletId, amount } = req.body;
+            const accountId = req.params.accountId;
+            
+            const account = await SavingsAccount.findById(accountId);
+            const wallet = await Wallet.findById(walletId);
+
+            if (!wallet || wallet.balance < amount) {
+                return res.status(400).json({ error: 'Insufficient funds in wallet' });
+            }
+
+            wallet.balance -= amount;
+            account.balance += amount;
+
+            await wallet.save();
+            await account.save();
+
+            res.json({ message: 'Deposit successful', account });
+        } catch (error) {
+            res.status(500).json({ error: 'Deposit failed', details: error.message });
+        }
+    }
+
+    static async withdrawFromSavings(req, res) {
+        try {
+            const { walletId, amount } = req.body;
+            const accountId = req.params.accountId;
+            
+            const account = await SavingsAccount.findById(accountId);
+            const wallet = await Wallet.findById(walletId);
+
+            if (!wallet || account.balance < amount) {
+                return res.status(400).json({ error: 'Insufficient funds in account' });
+            }
+
+            wallet.balance += amount;
+            account.balance -= amount;
+
+            await wallet.save();
+            await account.save();
+
+            res.json({ message: 'Withdrawal successful', account });
+        } catch (error) {
+            res.status(500).json({ error: 'Withdrawal failed', details: error.message });
+        }
+    }
 }
 
 module.exports = SavingsAccountController;

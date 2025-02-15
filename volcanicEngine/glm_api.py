@@ -3,12 +3,41 @@ import json
 from zhipuai import ZhipuAI
 from dotenv import load_dotenv
 import os
+from pathlib import Path
 
-load_dotenv()
+# Load .env from the backend directory
+backend_env_path = Path(__file__).parent.parent / 'backend' / '.env'
+print(f"Looking for .env file at: {backend_env_path}")
+print(f"File exists: {backend_env_path.exists()}")
+
+if backend_env_path.exists():
+    with open(backend_env_path, 'r') as f:
+        print("Contents of .env file:")
+        print(f.read())
+
+load_dotenv(backend_env_path)
+print(f"Environment variables after loading:")
+print(f"ZHIPU_API_KEY present: {'ZHIPU_API_KEY' in os.environ}")
+
 # Get the API key, model, and messages from command - line arguments
 api_key = os.getenv('ZHIPU_API_KEY')
+
+if len(sys.argv) < 2:
+    print("Usage: python glm_api.py <model_name>")
+    print("Example: python glm_api.py glm-4")
+    sys.exit(1)
+
 model = sys.argv[1]
-messages = json.loads(sys.argv[2])
+
+# Use a hardcoded message for testing
+messages = [{"role": "user", "content": "Hello"}]
+
+if not api_key:
+    print("Error: ZHIPU_API_KEY environment variable is not set")
+    print(f"Environment file path: {backend_env_path}")
+    print("Please ensure the API key is properly set in your backend/.env file")
+    print("Format should be: ZHIPU_API_KEY=your_api_key_here")
+    sys.exit(1)
 
 client = ZhipuAI(api_key=api_key)
 response = client.chat.completions.create(

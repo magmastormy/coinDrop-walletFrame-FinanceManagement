@@ -20,4 +20,8 @@ router.delete('/:id', SavingsAccountController.deleteSavingsAccount);
 // Update a transaction in a savings account
 router.put('/transactions/:id', SavingsAccountController.updateTransaction);
 
+// Add deposit/withdraw routes
+router.post('/:accountId/deposit', SavingsAccountController.depositToSavings);
+router.post('/:accountId/withdraw', SavingsAccountController.withdrawFromSavings);
+
 module.exports = router;

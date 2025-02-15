@@ -230,10 +230,21 @@ input:focus, textarea:focus, select:focus {
 
 @layer base {
     :root {
+        /* Light theme */
+        --text: var(--text-primary);
+        --surface: var(--background);
+        --border: var(--border-color);
         --background-color: #ffffff;
         --text-color: #1a1a1a;
         --sidebar-width: 250px;
         --spacing-lg: 1.5rem;
+    }
+
+    [data-theme="dark"] {
+        /* Dark theme */
+        --text: var(--dark-text);
+        --surface: var(--dark-surface);
+        --border: var(--dark-border);
     }
 }
 
@@ -244,5 +255,19 @@ input:focus, textarea:focus, select:focus {
     
     .btn-secondary {
         @apply bg-transparent text-gray-800 px-4 py-2 rounded-lg font-semibold border-2 border-gray-200 hover:border-primary hover:text-primary transition-colors;
+    }
+
+    .component {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+
+    [data-theme="dark"] .quick-nav-container {
+        background: var(--dark-surface);
+    }
+
+    [data-theme="dark"] .quick-nav-header h3 {
+        color: var(--dark-text);
     }
 }
