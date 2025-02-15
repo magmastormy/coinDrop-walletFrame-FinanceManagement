@@ -1,30 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
-import { motion } from 'framer-motion';
+import React from 'react';
+import { IconButton } from '@mui/material';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { useTheme } from '../theme/ThemeContext';
 
 const ThemeToggle = () => {
-    const [isDark, setIsDark] = useState(() => {
-        const savedTheme = localStorage.getItem('theme');
-        return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    });
+  const { isDarkMode, toggleTheme, theme } = useTheme();
 
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }, [isDark]);
+  if (!theme) return null; // Don't render if theme is not available yet
 
-    return (
-        <motion.button
-            className="theme-toggle"
-            onClick={() => setIsDark(!isDark)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-        >
-            <FontAwesomeIcon icon={isDark ? faSun : faMoon} />
-        </motion.button>
-    );
+  return (
+    <IconButton
+      onClick={toggleTheme}
+      style={{
+        color: theme.text.primary,
+        backgroundColor: theme.background.secondary,
+        transition: 'all 0.3s ease-in-out',
+        padding: '8px',
+        margin: '8px',
+      }}
+      sx={{
+        '&:hover': {
+          backgroundColor: isDarkMode ? theme.button.hover : theme.button.base,
+          transform: 'scale(1.1)',
+        },
+      }}
+    >
+      {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+    </IconButton>
+  );
 };
 
 export default ThemeToggle;

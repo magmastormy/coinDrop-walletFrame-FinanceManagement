@@ -1,11 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome, faDashboard, faTools, faDoorClosed, faWallet, faCreditCard, faUser, faChartPie, faBookOpen, faExchangeAlt, faPiggyBank, faBank, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { useSidebar } from './SidebarContext';
 import './styles/sideBarstyle.css';
 
 const Sidebar = ({ isAuthenticated }) => {
     if (!isAuthenticated) return null;
+
+    const { isOpen, isMobile } = useSidebar();
+    const location = useLocation();
 
     const menuItems = [
         { name: 'Home', link: '/', icon: faHome },
@@ -22,20 +26,28 @@ const Sidebar = ({ isAuthenticated }) => {
         { name: 'Settings', link: '/settings', icon: faTools },
         { name: 'Profile', link: '/profile', icon: faUser }, 
         { name: 'Logout', link: '/logout', icon: faDoorClosed }, 
-      ];
+    ];
+
+    const sidebarClass = `sidebar ${isOpen ? 'open' : ''} ${isMobile ? 'mobile' : ''}`;
 
     return (
-        <div className="sidebar">
-            <h1>WalletFrame</h1>
-            <nav>
+        <aside className={sidebarClass} role="navigation" aria-label="Main Navigation">
+            <div className="sidebar-header">
+                <h1>WalletFrame</h1>
+            </div>
+            <nav className="sidebar-nav">
                 {menuItems.map(item => (
-                    <Link key={item.link} to={item.link}>
+                    <Link 
+                        key={item.link} 
+                        to={item.link}
+                        className={location.pathname === item.link ? 'active' : ''}
+                    >
                         <FontAwesomeIcon icon={item.icon} />
-                        {item.name}
+                        <span className="nav-text">{item.name}</span>
                     </Link>
                 ))}
             </nav>
-        </div>
+        </aside>
     );
 };
 

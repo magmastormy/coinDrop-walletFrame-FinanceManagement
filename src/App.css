@@ -4,6 +4,9 @@
   background-color: var(--background);
   color: var(--text);
   transition: background-color var(--transition-normal), color var(--transition-normal);
+  display: flex;
+  min-height: 100vh;
+  position: relative;
 }
 
 /* Content Layout */
@@ -14,6 +17,14 @@
   max-width: calc(100% - var(--sidebar-width, 250px)); /* Ensure content doesn't overlap sidebar */
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  margin-left: var(--sidebar-width-desktop);
+  min-height: 100vh;
+  transition: margin-left var(--transition-speed) ease;
 }
 
 /* Sidebar Wrapper */
@@ -55,21 +66,75 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* Responsive Layout */
+/* Responsive Layout Adjustments */
+@media (max-width: 1200px) {
+  .main-content {
+    margin-left: var(--sidebar-width-laptop);
+    padding: 1.75rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    margin-left: var(--sidebar-width-tablet);
+    padding: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1.25rem;
+  }
+
   .app {
-    display: block; /*  Change to block on smaller screens */
+    overflow-x: hidden;
   }
+}
 
-  .content-wrapper {
-    margin-left: 0; /* Remove margin on mobile */
-    max-width: 100%; /* Allow full width on mobile */
-    padding: var(--spacing-md);
+@media (max-width: 576px) {
+  .main-content {
+    padding: 1rem;
   }
+}
 
-  .sidebar-wrapper {
-    transform: translateX(-100%); /* Hide sidebar by default on mobile */
-    transition: transform 0.3s ease;
+/* Touch-friendly scrolling */
+@media (hover: none) and (pointer: coarse) {
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Utility Classes */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Prevent body scroll when mobile menu is open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--primary, #1a73e8);
+  outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (forced-colors: active) {
+  .sidebar,
+  .sidebar-toggle,
+  .main-content {
+    border: 1px solid CanvasText;
   }
 }
 
@@ -77,28 +142,6 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-/* Utility Classes */
-.page-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.page-exit {
-  opacity: 1;
-}
-
-.page-exit-active {
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 300ms, transform 300ms;
 }
 
 /* Import react-toastify styles */
