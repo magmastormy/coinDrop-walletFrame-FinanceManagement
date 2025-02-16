@@ -185,6 +185,15 @@ export const savingsAccountService = {
         });
         return response.data;
     },
+
+    transferBetweenSavings: async ({ fromAccountId, toAccountId, amount }) => {
+        const response = await axiosInstance.post(`${API_URL}/transfer-between`, {
+            fromAccountId,
+            toAccountId,
+            amount: parseFloat(amount)
+        });
+        return response.data;
+    },
 };
 
 export default savingsAccountService;

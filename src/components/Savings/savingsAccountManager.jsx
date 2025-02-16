@@ -234,13 +234,9 @@ const SavingsAccountManager = () => {
                 onClose={() => setModalState(prev => ({ ...prev, transfer: { open: false } }))}
                 onTransfer={async (targetAccountId, amount) => {
                     try {
-                        await savingsAccountService.withdrawFromSavings({
-                            accountId: selectedAccount,
-                            amount: Number(amount)
-                        });
-
-                        await savingsAccountService.depositToSavings({
-                            accountId: targetAccountId,
+                        await savingsAccountService.transferBetweenSavings({
+                            fromAccountId: selectedAccount,
+                            toAccountId: targetAccountId,
                             amount: Number(amount)
                         });
 

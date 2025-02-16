@@ -143,6 +143,28 @@ class SavingsAccountController {
             res.status(500).json({ error: 'Withdrawal failed', details: error.message });
         }
     }
+
+    static async transferBetweenSavings(req, res) {
+        try {
+            const { amount, fromAccountId, toAccountId } = req.body;
+            const fromAccount = await SavingsAccount.findById(fromAccountId);
+            const toAccount = await SavingsAccount.findById(toAccountId);
+
+            if (fromAccount.balance < amount) {
+                return res.status(400).json({ error: 'Insufficient funds in account' });
+            }
+
+            fromAccount.balance -= amount;
+            toAccount.balance += amount;
+
+            await fromAccount.save();
+            await toAccount.save();
+
+            res.json({ message: 'Transfer successful', fromAccount, toAccount });
+        } catch (error) {
+            res.status(500).json({ error: 'Transfer failed', details: error.message });
+        }
+    }
 }
 
 module.exports = SavingsAccountController;
