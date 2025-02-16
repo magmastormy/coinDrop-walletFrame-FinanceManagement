@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
@@ -9,13 +9,13 @@ import Sidebar from './components/Sidebar/sideBar';
 import SidebarToggle from './components/Sidebar/SidebarToggle';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
 import { SidebarProvider } from './components/Sidebar/SidebarContext';
+import { useAuth } from './contexts/authContext';
 import './App.css';
 
 // Temporary wrapper until styled-components is installed
 const StyledComponentsWrapper = ({ children }) => {
   const { theme } = useTheme();
   
-  // Apply theme to body
   React.useEffect(() => {
     if (!theme) return;
     
@@ -29,6 +29,45 @@ const StyledComponentsWrapper = ({ children }) => {
   return children;
 };
 
+const AppLayout = () => {
+  const { isAuthenticated } = useAuth();
+  const mainContentClass = useMemo(() => 
+    `main-content ${isAuthenticated ? 'with-sidebar' : 'full-width'}`,
+    [isAuthenticated]
+  );
+
+  return (
+    <div className="app">
+      {isAuthenticated && (
+        <>
+          <Sidebar />
+          <SidebarToggle />
+        </>
+      )}
+      <main className={mainContentClass}>
+        <AppRoutes />
+      </main>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </div>
+  );
+};
+
+const AppContent = () => {
+  // Wrap the layout in its own component to ensure consistent hook order
+  return <AppLayout />;
+};
+
 function App() {
   return (
     <ThemeProvider>
@@ -37,25 +76,7 @@ function App() {
           <Provider store={store}>
             <DataManager>
               <Router>
-                <div className="app">
-                  <Sidebar isAuthenticated={true} />
-                  <SidebarToggle />
-                  <main className="main-content">
-                    <AppRoutes />
-                  </main>
-                  <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="light"
-                  />
-                </div>
+                <AppContent />
               </Router>
             </DataManager>
           </Provider>

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Login from './components/Auth/userLoginForm';
 import Register from './components/Auth/userRegistrationForm';
@@ -7,7 +7,6 @@ import Wallet from './components/Wallet/walletManager';
 import Budget from './components/Budget/budgetManager';
 import Transaction from './components/Transaction/transactionManager';
 import Home from './pages/Home';
-import Sidebar from './components/Sidebar/sideBar';
 import Profile from './components/Profile/profileManager';
 import Category from './components/Category/categoryManager';
 import Education from './components/Education/educationManager';
@@ -19,23 +18,55 @@ import ChatBot from './components/Chatbot/chatbotManager';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
+    const location = useLocation();
     
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+        // Save the attempted URL for redirection after login
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    
+    return children;
+};
+
+// Public Route Component - redirects to dashboard if already authenticated
+const PublicRoute = ({ children }) => {
+    const { isAuthenticated } = useSelector(state => state.auth);
+    const location = useLocation();
+    
+    // If user is authenticated and tries to access public routes like login/register
+    if (isAuthenticated) {
+        // Don't redirect if they're already on the home page
+        if (location.pathname === '/') {
+            return children;
+        }
+        return <Navigate to="/dashboard" replace />;
     }
     
     return children;
 };
 
 const AppRoutes = () => {
-    const {isAuthenticated} = useSelector(state => state.auth);
     return (
         <div className="app-container">
-            {isAuthenticated && <Sidebar isAuthenticated={isAuthenticated} />}
             <Routes>
                 {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/" element={
+                    <PublicRoute>
+                        <Home />
+                    </PublicRoute>
+                } />
+                
+                <Route path="/login" element={
+                    <PublicRoute>
+                        <Login />
+                    </PublicRoute>
+                } />
+                
+                <Route path="/register" element={
+                    <PublicRoute>
+                        <Register />
+                    </PublicRoute>
+                } />
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
@@ -49,11 +80,13 @@ const AppRoutes = () => {
                         <Wallet />
                     </ProtectedRoute>
                 } />
+                
                 <Route path="/budget" element={
                     <ProtectedRoute>
                         <Budget />
                     </ProtectedRoute>
                 } />
+                
                 <Route path="/transaction" element={
                     <ProtectedRoute>
                         <Transaction />
@@ -102,14 +135,11 @@ const AppRoutes = () => {
                     </ProtectedRoute>
                 } />
                 
-                {/* Home Route */}
-                <Route path="/" element={<Home />} />
-                
-                {/* Catch all route */}
+                {/* Catch all route - redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </div>
     );
 };
 
-export default AppRoutes; 
+export default AppRoutes;
