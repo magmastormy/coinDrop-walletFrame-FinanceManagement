@@ -1,8 +1,8 @@
 :root {
-  --sidebar-width-desktop: 20vw;
-  --sidebar-width-laptop: 25vw;
-  --sidebar-width-tablet: 30vw;
-  --sidebar-width-mobile: 85vw;
+  --sidebar-width-desktop: 16vw;
+  --sidebar-width-laptop: 20vw;
+  --sidebar-width-tablet: 25vw;
+  --sidebar-width-mobile: 75vw;
   --header-height: 4rem;
   --transition-speed: 0.3s;
 }

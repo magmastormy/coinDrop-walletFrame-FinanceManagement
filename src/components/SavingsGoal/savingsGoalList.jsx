@@ -24,6 +24,8 @@ const SavingsGoalList = () => {
                 dispatch(setSavingsGoals(data));
             } catch (err) {
                 dispatch(setError(err.message));
+            } finally {
+                dispatch(setLoading(false));
             }
         };
 

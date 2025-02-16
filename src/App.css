@@ -1,3 +1,6 @@
+/* Import react-toastify styles */
+@import 'react-toastify/dist/ReactToastify.css';
+
 /* App.css & App.jsx Layout */
 .app {
   @apply min-h-screen flex flex-col;
@@ -144,5 +147,3 @@ body.sidebar-open {
   to { opacity: 1; }
 }
 
-/* Import react-toastify styles */
-@import 'react-toastify/dist/ReactToastify.css';
