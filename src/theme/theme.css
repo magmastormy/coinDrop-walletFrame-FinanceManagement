@@ -1,0 +1,175 @@
+:root {
+  /* Base Colors */
+  --primary-50: #E8F9FD;
+  --primary-100: #E0F7FA;
+  --primary-200: #A4D7E1;
+  --primary-300: #B2E0E6;
+  --primary-400: #2C3E50;
+  --primary-500: #C4F1F4;
+  
+  /* Dark Mode Colors */
+  --dark-primary-50: #0F0F0F;
+  --dark-primary-100: #232D3F;
+  --dark-primary-200: #005B41;
+  --dark-primary-300: #008170;
+  --dark-primary-400: #E5E5E5;
+  --dark-primary-500: #00A389;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --background-primary: var(--primary-50);
+  --background-secondary: var(--primary-100);
+  --background-tertiary: var(--primary-200);
+  
+  --text-primary: var(--primary-400);
+  --text-secondary: var(--primary-300);
+  --text-heading: var(--primary-500);
+  
+  --button-base: var(--primary-200);
+  --button-hover: var(--primary-300);
+  
+  --border-color: var(--primary-200);
+  --surface-color: white;
+  --surface-hover: var(--primary-100);
+  
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --background-primary: var(--dark-primary-50);
+  --background-secondary: var(--dark-primary-100);
+  --background-tertiary: var(--dark-primary-200);
+  
+  --text-primary: var(--dark-primary-400);
+  --text-secondary: var(--dark-primary-300);
+  --text-heading: var(--dark-primary-500);
+  
+  --button-base: var(--dark-primary-200);
+  --button-hover: var(--dark-primary-300);
+  
+  --border-color: var(--dark-primary-200);
+  --surface-color: var(--dark-primary-100);
+  --surface-hover: var(--dark-primary-200);
+  
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Base Styles */
+body {
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Button Styles */
+.button {
+  background-color: var(--button-base);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+}
+
+.button:hover {
+  background-color: var(--button-hover);
+}
+
+/* Input Styles */
+.input {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.input:focus {
+  border-color: var(--button-base);
+  box-shadow: 0 0 0 2px var(--button-hover);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Sidebar Styles */
+.sidebar {
+  background-color: var(--surface-color);
+  border-right: 1px solid var(--border-color);
+}
+
+.sidebar-nav a {
+  color: var(--text-primary);
+}
+
+.sidebar-nav a:hover {
+  background-color: var(--surface-hover);
+}
+
+.sidebar-nav a.active {
+  background-color: var(--button-base);
+  color: var(--text-primary);
+}
+
+/* Modal Styles */
+.modal {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+}
+
+/* Table Styles */
+.table {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.table th {
+  background-color: var(--background-secondary);
+}
+
+.table td {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table tr:hover {
+  background-color: var(--surface-hover);
+}

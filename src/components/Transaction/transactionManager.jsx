@@ -19,7 +19,7 @@ const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions = [], loading, error } = useSelector(state => state.transaction || {});
     const { user } = useSelector(state => state.auth || {});
-    const { theme } = useTheme();
+    const { isDarkMode } = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [categories, setCategories] = useState([]);
@@ -34,7 +34,6 @@ const TransactionManager = () => {
             fetchBudgets();
         }
     }, [user]);
-
 
     const fetchInitialData = async () => {
         if (!user?.id) return;
@@ -159,7 +158,6 @@ const TransactionManager = () => {
         }
     };
 
-    // Filter transactions based on current filters
     const filteredTransactions = Array.isArray(transactions) ? transactions.filter(transaction => {
         return (
             (!filters.category || transaction.category === filters.category) &&
@@ -181,49 +179,36 @@ const TransactionManager = () => {
 
     if (loading) {
         return (
-            <Box 
-                display="flex" 
-                justifyContent="center" 
-                alignItems="center" 
-                minHeight="200px"
-                style={{ color: theme.text.primary }}
-            >
-                <CircularProgress style={{ color: theme.button.base }} />
+            <Box className="loading-container">
+                <CircularProgress className="progress-indicator" />
             </Box>
         );
     }
 
     return (
-        <div 
-            className="transaction-manager"
-            style={{
-                backgroundColor: theme.background.primary,
-                color: theme.text.primary,
-                transition: theme.transition,
-                padding: '20px'
-            }}
-        >
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5" component="h2">
+        <div className="transaction-manager">
+            <Box className="header-section">
+                <Typography variant="h5" className="page-title">
                     Transactions
                 </Typography>
                 <Button
                     variant="contained"
-                    color="primary"
-                    style={{ backgroundColor: theme.button.base, color: theme.button.text }}
                     onClick={() => {
                         setEditingTransaction(null);
                         setIsModalOpen(true);
                     }}
+                    className="new-transaction-button"
                 >
                     New Transaction
                 </Button>
             </Box>
 
             {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                </Alert>
+                <Box className="error-container">
+                    <Alert severity="error" className="error-alert">
+                        {error}
+                    </Alert>
+                </Box>
             )}
 
             <FilterTransactions 

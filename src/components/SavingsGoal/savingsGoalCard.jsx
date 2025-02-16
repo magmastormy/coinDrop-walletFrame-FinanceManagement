@@ -7,23 +7,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import './styles/savingsGoalsCardStyles.css';
 
 const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
-    const { theme, isDarkMode } = useTheme();
-
-    const cardStyle = {
-        backgroundColor: theme.background.secondary,
-        color: theme.text.primary,
-        transition: theme.transition,
-        marginBottom: '1rem',
-        borderRadius: '8px',
-    };
-
-    const buttonStyle = {
-        backgroundColor: theme.button.base,
-        color: theme.text.primary,
-        '&:hover': {
-            backgroundColor: theme.button.hover,
-        }
-    };
+    const { isDarkMode } = useTheme();
 
     const progressPercentage = (goal.currentAmount / goal.targetAmount) * 100;
     
@@ -47,67 +31,55 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 300 }}
+            className="goal-card-wrapper"
         >
-            <Card style={cardStyle}>
+            <Card className="savings-goal-card">
                 <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                        <Box>
+                    <Box className="card-header">
+                        <Box className="title-section">
                             <FontAwesomeIcon icon={faBullseye} className="goal-icon" />
-                            <Typography 
-                                variant="h6" 
-                                style={{ color: theme.text.heading }}
-                            >
-                                {goal.name}
-                            </Typography>
-                            <Typography 
-                                variant="body2"
-                                style={{ color: theme.text.secondary }}
-                            >
-                                Target Date: {formatDate(goal.deadline)}
-                            </Typography>
+                            <div className="title-content">
+                                <Typography variant="h6" className="goal-title">
+                                    {goal.name}
+                                </Typography>
+                                <Typography variant="body2" className="goal-deadline">
+                                    Target Date: {formatDate(goal.deadline)}
+                                </Typography>
+                            </div>
                         </Box>
-                        <Box>
+                        <Box className="action-buttons">
                             <IconButton 
                                 onClick={() => onEdit(goal)}
-                                style={buttonStyle}
+                                className="edit-button"
                                 size="small"
                             >
                                 <FontAwesomeIcon icon={faEdit} />
                             </IconButton>
                             <IconButton 
                                 onClick={() => onDelete(goal._id)}
-                                style={buttonStyle}
+                                className="delete-button"
                                 size="small"
-                                sx={{ ml: 1 }}
                             >
                                 <FontAwesomeIcon icon={faTrash} />
                             </IconButton>
                         </Box>
                     </Box>
 
-                    <Box mt={2}>
-                        <Typography variant="body2" style={{ color: theme.text.primary }}>
+                    <Box className="progress-section">
+                        <Typography variant="body2" className="progress-text">
                             Progress: {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
                         </Typography>
                         <LinearProgress 
                             variant="determinate" 
                             value={progressPercentage}
-                            sx={{
-                                mt: 1,
-                                height: 8,
-                                borderRadius: 4,
-                                backgroundColor: theme.background.primary,
-                                '& .MuiLinearProgress-bar': {
-                                    backgroundColor: theme.button.base
-                                }
-                            }}
+                            className="progress-bar"
                         />
                     </Box>
 
                     {goal.description && (
                         <Typography 
                             variant="body2" 
-                            style={{ color: theme.text.secondary }}
+                            className="goal-description"
                             sx={{ mt: 2 }}
                         >
                             {goal.description}

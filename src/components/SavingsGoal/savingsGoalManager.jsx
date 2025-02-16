@@ -10,7 +10,7 @@ import './styles/savingsGoalManagerStyles.css';
 
 const SavingsGoalManager = () => {
     const { user } = useAuth();
-    const { theme, isDarkMode } = useTheme();
+    const { isDarkMode } = useTheme();
     const [goals, setGoals] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -75,65 +75,34 @@ const SavingsGoalManager = () => {
 
     if (isLoading) {
         return (
-            <Box 
-                display="flex" 
-                justifyContent="center" 
-                alignItems="center" 
-                minHeight="200px"
-                style={{ color: theme.text.primary }}
-            >
-                <CircularProgress style={{ color: theme.button.base }} />
+            <Box className="loading-container">
+                <CircularProgress className="progress-indicator" />
             </Box>
         );
     }
 
     if (error) {
         return (
-            <Box 
-                display="flex" 
-                justifyContent="center" 
-                alignItems="center" 
-                minHeight="200px"
-                style={{ color: theme.text.primary }}
-            >
+            <Box className="error-container">
                 {error}
             </Box>
         );
     }
 
     return (
-        <div 
-            className="savings-goal-manager"
-            style={{
-                backgroundColor: theme.background.primary,
-                color: theme.text.primary,
-                transition: theme.transition,
-                padding: '20px'
-            }}
-        >
-            <Box 
-                display="flex" 
-                justifyContent="space-between" 
-                alignItems="center" 
-                mb={3}
-            >
-                <h2 style={{ color: theme.text.heading }}>Savings Goals</h2>
+        <div className="savings-goal-manager">
+            <Box className="header-section">
+                <h2>Savings Goals</h2>
                 <Button
                     variant="contained"
+                    className="new-goal-button"
                     onClick={() => setIsNewGoalDialogOpen(true)}
-                    style={{
-                        backgroundColor: theme.button.base,
-                        color: theme.text.primary,
-                        '&:hover': {
-                            backgroundColor: theme.button.hover
-                        }
-                    }}
                 >
-                    Create New Goal
+                    New Goal
                 </Button>
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} className="goals-grid">
                 <Grid item xs={12}>
                     <SavingsGoalList
                         goals={goals}

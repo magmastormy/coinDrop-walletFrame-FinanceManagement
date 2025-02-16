@@ -7,27 +7,11 @@ import AppRoutes from './routes';
 import DataManager from './components/userDataComponent';
 import Sidebar from './components/Sidebar/sideBar';
 import SidebarToggle from './components/Sidebar/SidebarToggle';
-import { ThemeProvider, useTheme } from './theme/ThemeContext';
+import { ThemeProvider } from './theme/ThemeContext';
 import { SidebarProvider } from './components/Sidebar/SidebarContext';
 import { useAuth } from './contexts/authContext';
 import './App.css';
-
-// Temporary wrapper until styled-components is installed
-const StyledComponentsWrapper = ({ children }) => {
-  const { theme } = useTheme();
-  
-  React.useEffect(() => {
-    if (!theme) return;
-    
-    document.body.style.backgroundColor = theme.background.primary;
-    document.body.style.color = theme.text.primary;
-    document.body.style.transition = 'all 0.3s ease-in-out';
-  }, [theme]);
-
-  if (!theme) return null;
-
-  return children;
-};
+import 'react-toastify/dist/ReactToastify.css';
 
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -57,31 +41,29 @@ const AppLayout = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme="colored"
+        className="toast-theme-aware"
       />
     </div>
   );
 };
 
 const AppContent = () => {
-  // Wrap the layout in its own component to ensure consistent hook order
   return <AppLayout />;
 };
 
 function App() {
   return (
     <ThemeProvider>
-      <StyledComponentsWrapper>
-        <SidebarProvider>
-          <Provider store={store}>
-            <DataManager>
-              <Router>
-                <AppContent />
-              </Router>
-            </DataManager>
-          </Provider>
-        </SidebarProvider>
-      </StyledComponentsWrapper>
+      <SidebarProvider>
+        <Provider store={store}>
+          <DataManager>
+            <Router>
+              <AppContent />
+            </Router>
+          </DataManager>
+        </Provider>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

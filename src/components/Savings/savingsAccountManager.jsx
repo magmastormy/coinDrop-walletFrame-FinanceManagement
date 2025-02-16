@@ -143,7 +143,7 @@ const SavingsAccountManager = () => {
 
     if (isLoading) {
         return (
-            <div className="loading-container" style={{ color: theme.text.primary }}>
+            <div className="loading-container">
                 Loading...
             </div>
         );
@@ -151,7 +151,7 @@ const SavingsAccountManager = () => {
 
     if (error) {
         return (
-            <div className="error-message" style={{ color: theme.text.primary }}>
+            <div className="error-message">
                 {error}
             </div>
         );
@@ -160,11 +160,6 @@ const SavingsAccountManager = () => {
     return (
         <div 
             className="savings-account-manager"
-            style={{
-                backgroundColor: theme.background.primary,
-                color: theme.text.primary,
-                transition: theme.transition
-            }}
         >
             <SavingsAnalytics accounts={accounts} />
             

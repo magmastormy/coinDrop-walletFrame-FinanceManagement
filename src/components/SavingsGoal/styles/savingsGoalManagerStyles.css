@@ -1,9 +1,105 @@
 .savings-goal-manager {
-    padding: 20px;
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    transition: all 0.3s ease-in-out;
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+.loading-container,
+.error-container {
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: auto;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    width: 100%;
+}
+
+.loading-container .progress-indicator {
+    color: var(--primary-color);
+}
+
+.error-container {
+    color: var(--error-color);
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.header-section h2 {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.new-goal-button {
+    background-color: var(--primary-color) !important;
+    color: var(--text-on-primary) !important;
+    padding: 0.5rem 1.5rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    border-radius: var(--border-radius) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.new-goal-button:hover {
+    background-color: var(--primary-color-hover) !important;
+    transform: translateY(-2px);
+}
+
+.goals-grid {
+    padding: 1rem;
+}
+
+/* Dark mode specific styles */
+[data-theme='dark'] .savings-goal-manager {
+    background-color: var(--dark-background-primary);
+}
+
+[data-theme='dark'] .header-section h2 {
+    color: var(--dark-text-primary);
+}
+
+/* Material-UI overrides */
+.MuiDialog-paper {
+    background-color: var(--background-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+.MuiDialog-paper .MuiDialogTitle-root {
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.MuiDialog-paper .MuiDialogContent-root {
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
+}
+
+.MuiDialog-paper .MuiDialogActions-root {
+    background-color: var(--background-primary);
+    padding: 1rem !important;
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+    .header-section {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .new-goal-button {
+        width: 100%;
+    }
 }
 
 h5 {
