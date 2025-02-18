@@ -1,24 +1,23 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPiggyBank, faChartPie } from '@fortawesome/free-solid-svg-icons';
+import { faPiggyBank, faChartPie, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from '../../theme/ThemeContext';
 import BudgetCard from './budgetCard';
 import './styles/budgetListStyles.css';
 
 const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
-    const budgetStats = useMemo(() => {
-        if (!Array.isArray(budgets)) return null;
-        
-        return budgets.reduce((stats, budget) => {
-            const spent = budget.spent || 0;
-            return {
-                totalBudget: stats.totalBudget + budget.amount,
-                totalSpent: stats.totalSpent + spent,
-                count: stats.count + 1,
-                overBudgetCount: stats.overBudgetCount + (spent > budget.amount ? 1 : 0)
-            };
-        }, { totalBudget: 0, totalSpent: 0, count: 0, overBudgetCount: 0 });
-    }, [budgets]);
+    const { theme } = useTheme();
+
+    const budgetStats = budgets.reduce((stats, budget) => {
+        const spent = budget.spent || 0;
+        return {
+            totalBudget: stats.totalBudget + budget.amount,
+            totalSpent: stats.totalSpent + spent,
+            count: stats.count + 1,
+            overBudgetCount: stats.overBudgetCount + (spent > budget.amount ? 1 : 0)
+        };
+    }, { totalBudget: 0, totalSpent: 0, count: 0, overBudgetCount: 0 });
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
@@ -45,32 +44,32 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     }
 
     return (
-        <div className="budget-container">
+        <div className="budget-container" style={{ backgroundColor: theme.background.secondary }}>
             {budgetStats && (
                 <div className="budget-summary" role="region" aria-label="Budget summary">
                     <div className="summary-header">
                         <h2>
-                            <FontAwesomeIcon icon={faChartPie} aria-hidden="true" />
+                            <FontAwesomeIcon icon={faChartPie} aria-hidden="true" style={{ color: theme.button.base }} />
                             Budget Overview
                         </h2>
                     </div>
                     <div className="summary-stats">
                         <div className="stat-item">
-                            <span className="stat-label">Total Budget</span>
-                            <span className="stat-value">{formatCurrency(budgetStats.totalBudget)}</span>
+                            <span className="stat-label" style={{ color: theme.text.secondary }}>Total Budget</span>
+                            <span className="stat-value" style={{ color: theme.text.primary }}>{formatCurrency(budgetStats.totalBudget)}</span>
                         </div>
                         <div className="stat-item">
-                            <span className="stat-label">Total Spent</span>
-                            <span className="stat-value">{formatCurrency(budgetStats.totalSpent)}</span>
+                            <span className="stat-label" style={{ color: theme.text.secondary }}>Total Spent</span>
+                            <span className="stat-value" style={{ color: theme.text.primary }}>{formatCurrency(budgetStats.totalSpent)}</span>
                         </div>
                         <div className="stat-item">
-                            <span className="stat-label">Active Budgets</span>
-                            <span className="stat-value">{budgetStats.count}</span>
+                            <span className="stat-label" style={{ color: theme.text.secondary }}>Active Budgets</span>
+                            <span className="stat-value" style={{ color: theme.text.primary }}>{budgetStats.count}</span>
                         </div>
                         {budgetStats.overBudgetCount > 0 && (
                             <div className="stat-item warning">
-                                <span className="stat-label">Over Budget</span>
-                                <span className="stat-value">{budgetStats.overBudgetCount}</span>
+                                <span className="stat-label" style={{ color: theme.text.secondary }}>Over Budget</span>
+                                <span className="stat-value" style={{ color: theme.error }}>{budgetStats.overBudgetCount}</span>
                             </div>
                         )}
                     </div>
@@ -92,11 +91,16 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
                             exit={{ opacity: 0, scale: 0.9 }}
                             transition={{ duration: 0.2 }}
                             role="listitem"
+                            style={{
+                                backgroundColor: theme.background.primary,
+                                borderColor: theme.button.base + '20'
+                            }}
                         >
                             <BudgetCard
                                 budget={budget}
                                 onEdit={onEdit}
                                 onDelete={onDelete}
+                                theme={theme}
                             />
                         </motion.div>
                     ))}

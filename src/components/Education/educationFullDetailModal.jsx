@@ -1,17 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faHeart, faComment } from '@fortawesome/free-solid-svg-icons';
 import EducationRenderer from './educationRenderer';
+import EducationImageGallery from './educationImageGallery';
 import './styles/educationModalStyles.css';
 
 const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
+  const [showGallery, setShowGallery] = useState(false);
+  const [initialImageIndex, setInitialImageIndex] = useState(0);
+
   if (!isOpen) return null;
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const openGallery = (index = 0) => {
+    setInitialImageIndex(index);
+    setShowGallery(true);
   };
 
   return (
@@ -37,9 +46,29 @@ const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
             </button>
           </div>
 
-          {education.featuredImage && (
-            <div className="modal-image">
-              <img src={education.featuredImage.url} alt={education.title} />
+          {education.images && education.images.length > 0 && (
+            <div className="modal-images">
+              <div className="main-image" onClick={() => openGallery(0)}>
+                <img src={education.images[0].url} alt={education.title} />
+              </div>
+              {education.images.length > 1 && (
+                <div className="image-grid">
+                  {education.images.slice(1, 4).map((image, index) => (
+                    <div 
+                      key={index} 
+                      className="grid-image"
+                      onClick={() => openGallery(index + 1)}
+                    >
+                      <img src={image.url} alt={`${education.title} ${index + 2}`} />
+                      {index === 2 && education.images.length > 4 && (
+                        <div className="more-images-overlay">
+                          <span>+{education.images.length - 4}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -92,6 +121,14 @@ const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
             )}
           </div>
         </motion.div>
+
+        {showGallery && (
+          <EducationImageGallery
+            images={education.images}
+            initialIndex={initialImageIndex}
+            onClose={() => setShowGallery(false)}
+          />
+        )}
       </motion.div>
     </AnimatePresence>
   );

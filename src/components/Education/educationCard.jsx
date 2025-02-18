@@ -1,131 +1,147 @@
 import React, { useState } from 'react';
+import { Card, CardContent, CardMedia, Typography, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faComment, faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faComment, faShare } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from '../../theme/ThemeContext';
 import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
 import './styles/educationCardStyles.css';
 
 const EducationCard = ({ education }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState(education.isLiked);
-  const [isHovered, setIsHovered] = useState(false);
+    const { theme } = useTheme();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLiked, setIsLiked] = useState(education.isLiked);
 
-  const handleLike = (e) => {
-    e.stopPropagation();
-    setIsLiked(!isLiked);
-  };
+    const cardStyle = {
+        backgroundColor: theme.background.secondary,
+        color: theme.text.primary,
+        transition: theme.transition,
+        borderRadius: '12px',
+        overflow: 'hidden',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+    };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const formatDate = (date) => {
+        return new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
 
-    if (diffDays < 1) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+    const handleLike = (e) => {
+        e.stopPropagation();
+        setIsLiked(!isLiked);
+    };
 
-  return (
-    <>
-      <motion.div
-        className="education-card"
-        onClick={() => setIsModalOpen(true)}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -5 }}
-        transition={{ duration: 0.2 }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {education.featuredImage && (
-          <div className="card-image-container">
-            <img 
-              src={education.featuredImage.url} 
-              alt={education.title} 
-              className="card-image"
-            />
-            <div className="image-overlay">
-              <FontAwesomeIcon icon={faBookOpen} />
-            </div>
-          </div>
-        )}
-        
-        <div className="card-content">
-          <div className="card-meta">
-            <div className="author">
-              {education.author.profileImage ? (
-                <img 
-                  src={education.author.profileImage} 
-                  alt={education.author.username} 
-                  className="author-avatar"
-                />
-              ) : (
-                <div className="author-initial">
-                  {education.author.username.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span>{education.author.username}</span>
-            </div>
-            <span className="date">{formatDate(education.date)}</span>
-          </div>
-
-          <motion.h3 
-            className="card-title"
-            animate={{ scale: isHovered ? 1.01 : 1 }}
-          >
-            {education.title}
-          </motion.h3>
-          
-          <div className="card-excerpt">
-            <EducationRenderer content={education.details} maxLength={100} />
-          </div>
-
-          <div className="card-footer">
-            <div className="interaction-stats">
-              <motion.button 
-                className={`stat-button ${isLiked ? 'liked' : ''}`}
-                onClick={handleLike}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <FontAwesomeIcon icon={faHeart} />
-                <span>{education.likes?.length || 0}</span>
-              </motion.button>
-              <div className="stat-item">
-                <FontAwesomeIcon icon={faComment} />
-                <span>{education.comments?.length || 0}</span>
-              </div>
-            </div>
-            
-            <motion.button
-              className="read-more-button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsModalOpen(true);
-              }}
+    return (
+        <>
+            <Card 
+                component={motion.div}
+                whileHover={{ 
+                    scale: 1.02,
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                }}
+                style={cardStyle}
+                onClick={() => setIsModalOpen(true)}
             >
-              Read More
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
+                {education.images && education.images.length > 0 && (
+                    <CardMedia
+                        component="img"
+                        height="200"
+                        image={education.images[0].url}
+                        alt={education.title}
+                        style={{ objectFit: 'cover' }}
+                    />
+                )}
+                
+                <CardContent>
+                    <Typography 
+                        variant="h6" 
+                        gutterBottom
+                        style={{ color: theme.text.heading }}
+                    >
+                        {education.title}
+                    </Typography>
 
-      <EducationFullDetailModal
-        education={education}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onLike={handleLike}
-      />
-    </>
-  );
+                    <Box 
+                        style={{ 
+                            color: theme.text.secondary,
+                            marginBottom: '1rem'
+                        }}
+                    >
+                        <EducationRenderer content={education.details} maxLength={100} />
+                    </Box>
+
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mt: 2
+                        }}
+                    >
+                        <Typography 
+                            variant="caption"
+                            style={{ color: theme.text.secondary }}
+                        >
+                            {formatDate(education.date)}
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton 
+                                size="small"
+                                style={{ 
+                                    color: isLiked ? '#e91e63' : theme.button.base,
+                                    backgroundColor: theme.button.base + '10'
+                                }}
+                                onClick={handleLike}
+                            >
+                                <FontAwesomeIcon icon={faHeart} />
+                                {education.likes?.length > 0 && (
+                                    <Typography 
+                                        variant="caption" 
+                                        component="span"
+                                        sx={{ ml: 0.5 }}
+                                    >
+                                        {education.likes.length}
+                                    </Typography>
+                                )}
+                            </IconButton>
+                            <IconButton 
+                                size="small"
+                                style={{ 
+                                    color: theme.button.base,
+                                    backgroundColor: theme.button.base + '10'
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faComment} />
+                                {education.comments?.length > 0 && (
+                                    <Typography 
+                                        variant="caption" 
+                                        component="span"
+                                        sx={{ ml: 0.5 }}
+                                    >
+                                        {education.comments.length}
+                                    </Typography>
+                                )}
+                            </IconButton>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            <EducationFullDetailModal
+                education={education}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onLike={handleLike}
+            />
+        </>
+    );
 };
 
 export default EducationCard;

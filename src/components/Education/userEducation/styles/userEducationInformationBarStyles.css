@@ -1,13 +1,13 @@
 .user-education-information-bar {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: space-between; /* Distribute space between user info and stats */
-    background-color: #fff;
-    padding: 1.25rem 1.5rem; /* Increased padding */
-    border-radius: 0.5rem;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    background-color: var(--background-color);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem; /* Consistent margin */
-    border: 1px solid #eee; /* Subtle border */
 }
 
 .user-info {
@@ -17,7 +17,7 @@
 
 .user-icon {
     font-size: 1.5rem;
-    color: #007bff; /* Primary blue color */
+    color: var(--primary-color); /* Primary blue color */
     margin-right: 1rem;
 }
 
@@ -29,23 +29,24 @@
 .user-name {
     font-weight: 600;
     font-size: 1rem;
-    color: #333;
+    color: var(--text-color);
 }
 
 .user-email {
     font-size: 0.875rem;
-    color: #777;
+    color: var(--secondary-text-color);
 }
 
 .post-stats {
     display: flex;
     align-items: center;
-    color: #555;
+    color: var(--text-color);
 }
+
 .post-icon{
     font-size: 1.2rem;
     margin-right: 0.75rem;
-    color: #007bff;
+    color: var(--primary-color);
 }
 
 .total-posts {
@@ -57,7 +58,8 @@
     .user-education-information-bar {
         flex-direction: column; /* Stack user info and stats vertically */
         align-items: flex-start; /* Align to the left on smaller screens */
-        gap: 1rem; /* Add some space between stacked elements */
+        gap: 16px; /* Add some space between stacked elements */
+        padding: 16px;
     }
     .post-stats{
         margin-top: 0.5rem;

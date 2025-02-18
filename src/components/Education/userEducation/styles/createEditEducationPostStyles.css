@@ -1,174 +1,252 @@
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
 .create-edit-education-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
     z-index: 1000;
-  }
-  
-  .create-edit-education-modal {
-    background-color: #fff;
+}
+
+.create-edit-education-modal {
+    background-color: var(--surface);
     border-radius: 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    padding: 30px;
-    max-width: 800px;
+    padding: 24px;
     width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
-  }
-  
-  .create-edit-education-modal-header {
+    z-index: 1001;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.create-edit-education-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-  }
-  
-  .create-edit-education-modal-title {
-    font-size: 2rem;
-    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.create-edit-education-modal-header h2 {
     margin: 0;
-    color: #333;
-  }
-  
-  .create-edit-education-close-button {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.create-edit-education-close-button {
     background: none;
     border: none;
-    font-size: 1.8rem;
+    color: var(--text-secondary);
     cursor: pointer;
-    color: #666;
-    transition: color 0.3s ease;
-  }
-  
-  .create-edit-education-close-button:hover {
-    color: #333;
-  }
-  
-  .create-edit-education-title-input {
+    padding: 8px;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+}
+
+.create-edit-education-close-button:hover {
+    color: var(--text-primary);
+}
+
+.create-edit-education-error {
+    background-color: var(--error-light);
+    color: var(--error);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.create-edit-education-form-group {
+    margin-bottom: 16px;
+}
+
+.create-edit-education-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.create-edit-education-title-input {
     width: 100%;
     padding: 12px;
-    margin-bottom: 20px;
-    border: 1px solid #ddd;
+    border: 2px solid var(--border);
     border-radius: 6px;
     font-size: 1rem;
-  }
-  
-  .create-edit-education-editor-container {
-    position: relative;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    min-height: 300px;
-    margin-top: 5px;
-  }
-  .create-edit-education-editor{
-    padding-top: 40px;
-    min-height: calc(1.5rem * 10);
-    overflow-y: auto;
-  }
-  
-  .create-edit-education-menu-bar {
+    background-color: var(--surface-variant);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.create-edit-education-title-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.create-edit-education-editor-container {
+    margin-bottom: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.create-edit-education-menu-bar {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--surface-variant);
     display: flex;
-    align-items: center;
-    background-color: #f8f8f8;
-    padding: 10px 15px;
-    border-bottom: 1px solid #ddd;
-    border-radius: 8px 8px 0 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-  }
-  
-  .create-edit-education-menu-button {
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.create-edit-education-menu-bar button {
+    padding: 6px 10px;
     background: none;
     border: none;
-    padding: 8px;
-    margin: 0 10px;
-    font-size: 1.3rem;
+    border-radius: 4px;
+    color: var(--text-secondary);
     cursor: pointer;
-    color: #333;
-    transition: color 0.3s ease;
-  }
-  
-  .create-edit-education-menu-button:hover {
-    color: #666;
-  }
-  
-  .create-edit-education-error-message {
-    color: red;
-    margin-bottom: 15px;
-    font-size: 0.9rem;
-  }
-  
-  .create-edit-education-form-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 30px;
-  }
-  
-  .create-edit-education-cancel-btn,
-  .create-edit-education-preview-btn,
-  .submit-btn {
-    padding: 10px 20px;
-    border: none;
+    transition: all 0.2s;
+}
+
+.create-edit-education-menu-bar button:hover {
+    background-color: var(--hover);
+    color: var(--text-primary);
+}
+
+.create-edit-education-menu-bar button.is-active {
+    background-color: var(--primary);
+    color: white;
+}
+
+.create-edit-education-editor {
+    border: 2px solid var(--border);
     border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .create-edit-education-cancel-btn {
-    background-color: #ddd;
-    color: #333;
-  }
-  
-  .create-edit-education-cancel-btn:hover {
-    background-color: #ccc;
-  }
-  
-  .create-edit-education-preview-btn {
-    background-color: #007bff;
-    color: #fff;
-   }
-  
-  .create-edit-education-preview-btn:hover {
-    background-color: #0056b3;
-  }
-  
-  .submit-btn {
-    background-color: #28a745;
-    color: #fff;
-  }
-  
-  .submit-btn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-  
-  .create-edit-education-preview-mode {
-    margin-top: 25px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-  }
-  
-  .create-edit-education-preview-title {
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin-bottom: 15px;
-    color: #333;
-  }
-  
-  .education-post-image {
+    min-height: 400px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.create-edit-education-editor:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.create-edit-education-editor p {
+    margin: 0 0 1em 0;
+}
+
+.create-edit-education-editor h2 {
+    font-size: 1.5em;
+    margin: 1.5em 0 0.5em;
+}
+
+.create-edit-education-editor ul {
+    margin: 1em 0;
+    padding-left: 1.5em;
+}
+
+.create-edit-education-editor blockquote {
+    border-left: 3px solid var(--primary);
+    margin: 1em 0;
+    padding-left: 1em;
+    color: var(--text-secondary);
+}
+
+.create-edit-education-editor pre {
+    background-color: var(--background-primary);
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.create-edit-education-editor img {
     max-width: 100%;
     height: auto;
-    display: block;
-    margin: 15px 0;
-  }
+    border-radius: 8px;
+    margin: 1em 0;
+}
+
+.create-edit-education-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.create-edit-education-cancel-button,
+.create-edit-education-submit-button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.create-edit-education-cancel-button {
+    background: none;
+    border: 2px solid var(--border);
+    color: var(--text-primary);
+}
+
+.create-edit-education-cancel-button:hover {
+    background-color: var(--hover);
+}
+
+.create-edit-education-submit-button {
+    background-color: var(--primary);
+    border: none;
+    color: white;
+}
+
+.create-edit-education-submit-button:hover {
+    background-color: var(--primary-dark);
+}
+
+.create-edit-education-submit-button:disabled,
+.create-edit-education-cancel-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .create-edit-education-modal {
+        width: 95%;
+        padding: 16px;
+    }
+
+    .create-edit-education-menu-bar {
+        padding: 6px;
+    }
+
+    .create-edit-education-menu-bar button {
+        padding: 4px 8px;
+    }
+
+    .create-edit-education-actions {
+        flex-direction: column-reverse;
+    }
+
+    .create-edit-education-cancel-button,
+    .create-edit-education-submit-button {
+        width: 100%;
+    }
+}

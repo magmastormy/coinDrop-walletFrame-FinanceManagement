@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { 
     Box,
     Typography,
@@ -10,6 +8,9 @@ import {
     Alert,
     Container
 } from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../theme/ThemeContext';
 import educationService from '../../services/educationService';
 import { 
     setEducations, 
@@ -18,15 +19,17 @@ import {
 } from '../../slices/educationSlice';
 import EducationCard from './educationCard';
 import './styles/educationManagerStyles.css';
+import { motion } from 'framer-motion';
 
 const EducationManager = () => {
     const dispatch = useDispatch();
     const { educations, loading, error } = useSelector(state => state.education);
-    const { user } = useSelector(state => state.auth);
+    const { user } = useAuth();
+    const { theme, isDarkMode } = useTheme();
 
     useEffect(() => {
         fetchEducationPosts();
-    }, []);
+    }, [dispatch, user]);
 
     const fetchEducationPosts = async () => {
         dispatch(setLoading(true));
@@ -62,20 +65,34 @@ const EducationManager = () => {
 
     if (loading) {
         return (
-            <Box className="education-manager loading">
-                <CircularProgress />
+            <Box 
+                display="flex" 
+                justifyContent="center" 
+                alignItems="center" 
+                minHeight="200px"
+                style={{ color: theme.text.primary }}
+            >
+                <CircularProgress style={{ color: theme.button.base }} />
             </Box>
         );
     }
 
     return (
-        <Container maxWidth="xl" className="education-manager" sx={{ 
-            height: 'calc(100vh - 64px)', // Subtract header height
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            py: 3
-        }}>
+        <Container 
+            maxWidth="xl" 
+            className="education-manager" 
+            style={{
+                backgroundColor: theme.background.primary,
+                color: theme.text.primary,
+                transition: theme.transition,
+                padding: '20px',
+                height: 'calc(100vh - 64px)', // Subtract header height
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                py: 3
+            }}
+        >
             <Box className="header" sx={{ mb: 3 }}>
                 <Typography variant="h4" component="h1">
                     Education Posts

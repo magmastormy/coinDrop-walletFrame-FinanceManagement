@@ -71,13 +71,17 @@ const educationService = {
 
     createEducation: async (postData) => {
         try {
+            if (!postData.title || !postData.details || !postData.category) {
+                throw new Error('Title, details, and category are required');
+            }
+
             const formData = new FormData();
             formData.append('title', postData.title);
             formData.append('details', postData.details);
             formData.append('category', postData.category);
             
             // Handle image IDs instead of files
-            if (postData.images) {
+            if (postData.images && postData.images.length > 0) {
                 formData.append('images', JSON.stringify(postData.images));
             }
             if (postData.featuredImage) {
@@ -86,9 +90,12 @@ const educationService = {
 
             const response = await axiosInstance.post(API_URL, formData);
             console.log('createEducation: Education created successfully', response.data);
-            return response.data;
+            return response.data.data || response.data; // Handle both response formats
         } catch (error) {
             console.error('createEducation: Error creating education:', error);
+            if (error.response?.data?.details) {
+                throw new Error(error.response.data.details[0]?.message || 'Validation failed');
+            }
             throw error;
         }
     },

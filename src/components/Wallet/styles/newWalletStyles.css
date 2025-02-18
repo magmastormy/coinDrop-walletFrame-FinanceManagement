@@ -22,7 +22,18 @@
     box-shadow: 0 0 0 2px var(--primary-light);
 }
 
-/* Modal */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
 .wallet-modal-overlay {
     position: fixed;
     top: 0;
@@ -32,46 +43,38 @@
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .wallet-modal {
+    position: relative;
     background-color: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    width: 100%;
+    width: 90%;
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    margin: 0;
     z-index: 1001;
+    padding: var(--spacing-lg);
 }
 
-/* Modal Header */
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--spacing-lg);
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 1.25rem;
-    color: var(--dark);
+    color: var(--text-primary);
 }
 
 .close-btn {
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-full);
+    border-radius: 50%;
     border: none;
     background: none;
     color: var(--text-secondary);
@@ -83,20 +86,15 @@
 }
 
 .close-btn:hover {
-    background-color: var(--background);
-    color: var(--dark);
-}
-
-/* Form */
-form {
-    padding: var(--spacing-lg);
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
 }
 
 .error-message {
     margin-bottom: var(--spacing-md);
     padding: var(--spacing-sm) var(--spacing-md);
-    background-color: var(--danger-light);
-    color: var(--danger);
+    background-color: var(--error-light);
+    color: var(--error);
     border-radius: var(--radius-md);
     font-size: 0.9rem;
 }
@@ -108,7 +106,7 @@ form {
 .form-group label {
     display: block;
     margin-bottom: var(--spacing-xs);
-    color: var(--dark);
+    color: var(--text-primary);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -120,7 +118,7 @@ form {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     font-size: 0.95rem;
-    color: var(--dark);
+    color: var(--text-primary);
     background-color: white;
     transition: all var(--transition-fast);
 }
@@ -141,46 +139,6 @@ form {
     color: var(--text-secondary);
 }
 
-/* Icon Options */
-.icon-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-}
-
-.icon-option {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--radius-md);
-    border: 2px solid transparent;
-    background-color: var(--background);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.icon-option:hover {
-    background-color: var(--background-dark);
-}
-
-.icon-option.selected {
-    border-color: var(--primary);
-    background-color: var(--primary-light);
-}
-
-.icon-option svg {
-    font-size: 1.5rem;
-    color: var(--dark);
-}
-
-.icon-option.selected svg {
-    color: var(--primary);
-}
-
-/* Modal Actions */
 .modal-actions {
     display: flex;
     gap: var(--spacing-sm);
@@ -208,37 +166,146 @@ form {
 }
 
 .create-btn:disabled {
-    background-color: var(--border);
+    background-color: var(--disabled);
     cursor: not-allowed;
 }
 
 .cancel-btn {
-    background-color: var(--background);
-    color: var(--dark);
+    background-color: var(--background-secondary);
+    color: var(--text-primary);
     border: 1px solid var(--border);
 }
 
 .cancel-btn:hover {
-    background-color: var(--background-dark);
+    background-color: var(--background-hover);
 }
 
-/* Responsive Adjustments */
+.wallet-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-input {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.form-select {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.submit-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-top: var(--spacing-md);
+}
+
+.submit-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.submit-btn:disabled {
+    background-color: var(--disabled);
+    cursor: not-allowed;
+}
+
+/* Loading state */
+.loading-spinner {
+    border: 2px solid var(--background-secondary);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Icon selection */
+.icon-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.icon-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    background-color: var(--background-secondary);
+}
+
+.icon-option:hover {
+    background-color: var(--background-hover);
+}
+
+.icon-option.selected {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.icon-option svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-primary);
+}
+
 @media (max-width: 480px) {
     .wallet-modal {
-        margin: 0;
+        width: 100%;
+        height: 100%;
         max-height: 100vh;
         border-radius: 0;
-    }
-
-    .modal-header {
+        margin: 0;
         padding: var(--spacing-md);
     }
 
-    form {
-        padding: var(--spacing-md);
-    }
-
-    .icon-options {
+    .icon-selection {
         grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
     }
 

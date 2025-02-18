@@ -102,7 +102,7 @@ const CreateNewWallet = ({ onWalletCreated }) => {
 
             <AnimatePresence>
                 {isModalOpen && (
-                    <>
+                    <div className="modal-container">
                         <motion.div 
                             className="wallet-modal-overlay"
                             initial={{ opacity: 0 }}
@@ -114,10 +114,9 @@ const CreateNewWallet = ({ onWalletCreated }) => {
                             className="wallet-modal"
                             role="dialog"
                             aria-labelledby="modal-title"
-                            aria-describedby="modal-description"
-                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="modal-header">
@@ -201,34 +200,30 @@ const CreateNewWallet = ({ onWalletCreated }) => {
                                     />
                                 </div>
 
-                                <WalletIconOptions
+                                <WalletIconOptions 
                                     selectedIcon={walletData.icon}
-                                    onSelectIcon={handleIconSelect}
+                                    onSelect={handleIconSelect}
                                 />
 
                                 <div className="modal-actions">
-                                    <motion.button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="create-btn"
                                         disabled={isLoading}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
                                     >
                                         {isLoading ? 'Creating...' : 'Create Wallet'}
-                                    </motion.button>
-                                    <motion.button 
-                                        type="button" 
+                                    </button>
+                                    <button
+                                        type="button"
                                         className="cancel-btn"
                                         onClick={handleClose}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
                                     >
                                         Cancel
-                                    </motion.button>
+                                    </button>
                                 </div>
                             </form>
                         </motion.div>
-                    </>
+                    </div>
                 )}
             </AnimatePresence>
         </>

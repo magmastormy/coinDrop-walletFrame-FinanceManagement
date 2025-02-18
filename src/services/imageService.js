@@ -34,23 +34,21 @@ class ImageService {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            console.log("[ImageService] Upload response:", response);
-            console.log("[ImageService] Upload response data:", response.data);
-            if (response.data && response.data.profile) {
-                return response.data;
-            } else {
-                throw new Error('[ImageService] Invalid response format from server');
-            }
+
+            return response.data;
         } catch (error) {
-            throw new Error(`[ImageService] Failed to upload image: ${error.message}`);
+            console.error('[ImageService] Upload error:', error);
+            throw new Error(`Failed to upload image: ${error.message}`);
         }
     }
 
     static async deleteImage(imageId) {
         try {
-            await axiosInstance.delete(`/images/${imageId}`);
+            const response = await axiosInstance.delete(`/images/${imageId}`);
+            return response.data;
         } catch (error) {
-            throw new Error(`[ImageService] Failed to delete image: ${error.message}`);
+            console.error('[ImageService] Delete error:', error);
+            throw new Error(`Failed to delete image: ${error.message}`);
         }
     }
 }

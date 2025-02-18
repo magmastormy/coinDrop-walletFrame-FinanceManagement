@@ -27,15 +27,16 @@ const icons = [
     { icon: faDollarSign, name: 'Dollar' }
 ];
 
-const CreateNewWalletIconOptions = ({ selectedIcon, onSelectIcon }) => {
+const CreateNewWalletIconOptions = ({ selectedIcon, onSelect }) => {
     return (
         <div className="icon-options-grid">
             {icons.map((item, index) => (
                 <button
                     key={index}
                     className={`icon-option ${selectedIcon === item.icon ? 'selected' : ''}`}
-                    onClick={() => onSelectIcon(item.icon)} // This should work now
+                    onClick={() => onSelect(item.icon)}
                     type="button"
+                    aria-label={`Select ${item.name} icon`}
                 >
                     <FontAwesomeIcon icon={item.icon} />
                     <span className="icon-name">{item.name}</span>

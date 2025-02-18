@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Box,
     Typography,
@@ -12,6 +12,7 @@ import {
     Fab
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import { useTheme } from '../../../theme/ThemeContext';
 import educationService from '../../../services/educationService';
 import { 
     setEducations, 
@@ -22,7 +23,8 @@ import {
     deleteEducation
 } from '../../../slices/educationSlice';
 import CreateEditEducationPost from './createEditEducationPost';
-import EducationCard from '../educationCard';
+import UserEducationPostCard from './userEducationPostCard';
+import UserEducationInformationBar from './userEducationInformationBar';
 import './styles/userEducationManagerStyles.css';
 
 const UserEducationManager = () => {
@@ -31,6 +33,7 @@ const UserEducationManager = () => {
     const { user } = useSelector(state => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         fetchUserEducationPosts();
@@ -42,7 +45,7 @@ const UserEducationManager = () => {
         dispatch(setLoading(true));
         try {
             const response = await educationService.getUserEducations(user.id);
-            dispatch(setEducations(response.data.data));
+            dispatch(setEducations(response));
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -56,6 +59,8 @@ const UserEducationManager = () => {
             const response = await educationService.createEducation(postData);
             dispatch(addEducation(response));
             setShowCreateModal(false);
+            // Refresh the list to ensure we have the latest data
+            fetchUserEducationPosts();
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -70,19 +75,6 @@ const UserEducationManager = () => {
             setEditingPost(null);
         } catch (err) {
             dispatch(setError(err.message));
-        }
-    };
-
-    const handleEditPost = async (id, postData) => {
-        dispatch(setLoading(true));
-        try {
-            const response = await educationService.updateEducation(id, postData);
-            dispatch(updateEducation(response));
-            setEditingPost(null);
-        } catch (err) {
-            dispatch(setError(err.message));
-        } finally {
-            dispatch(setLoading(false));
         }
     };
 
@@ -117,63 +109,56 @@ const UserEducationManager = () => {
 
     if (loading) {
         return (
-            <Box className="user-education-manager loading">
-                <CircularProgress />
+            <Box 
+                className="user-education-loading" 
+                style={{ 
+                    backgroundColor: theme.background.primary,
+                    color: theme.text.primary 
+                }}
+            >
+                <CircularProgress style={{ color: theme.button.base }} />
             </Box>
         );
     }
 
     return (
-        <Container maxWidth="xl" className="user-education-manager" sx={{ 
-            height: 'calc(100vh - 64px)', // Subtract header height
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            py: 3
-        }}>
-            <Box className="header" sx={{ 
-                mb: 3,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-                <Typography variant="h4" component="h1">
-                    My Education Posts
-                </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={() => setShowCreateModal(true)}
-                >
-                    Create Post
-                </Button>
-            </Box>
+        <Container 
+            maxWidth="xl" 
+            className="user-education-manager"
+            style={{
+                backgroundColor: theme.background.primary,
+                color: theme.text.primary,
+                transition: theme.transition
+            }}
+        >
+            <UserEducationInformationBar onCreateClick={() => setShowCreateModal(true)} />
 
             {error && (
-                <Alert severity="error" className="error-alert" sx={{ mb: 2 }}>
+                <Alert 
+                    severity="error" 
+                    className="error-alert"
+                    style={{
+                        backgroundColor: `${theme.error}20`,
+                        color: theme.error
+                    }}
+                >
                     {error}
                 </Alert>
             )}
 
-            <Box sx={{ 
-                flex: 1,
-                overflowY: 'auto',
-                pb: 3
-            }}>
+            <Box className="education-content">
                 {educations?.length === 0 ? (
-                    <Box className="empty-state" sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '100%',
-                        gap: 2
-                    }}>
-                        <Typography variant="h6">
+                    <Box 
+                        className="empty-state"
+                        style={{
+                            backgroundColor: theme.background.secondary,
+                            color: theme.text.secondary
+                        }}
+                    >
+                        <Typography variant="h6" style={{ color: theme.text.primary }}>
                             You haven't created any education posts yet
                         </Typography>
-                        <Typography color="textSecondary" paragraph>
+                        <Typography style={{ color: theme.text.secondary }}>
                             Share your knowledge with the community
                         </Typography>
                         <Button
@@ -181,52 +166,63 @@ const UserEducationManager = () => {
                             color="primary"
                             startIcon={<AddIcon />}
                             onClick={() => setShowCreateModal(true)}
+                            style={{
+                                backgroundColor: theme.button.base,
+                                color: theme.button.text
+                            }}
                         >
                             Create Your First Post
                         </Button>
                     </Box>
                 ) : (
                     <Grid container spacing={3} className="posts-grid">
-                        {educations?.map(post => (
+                        {educations?.map(post => post && post._id ? (
                             <Grid item xs={12} sm={6} md={4} key={post._id}>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <EducationCard
-                                        education={post}
+                                    <UserEducationPostCard
+                                        post={post}
                                         onLike={() => handleLike(post._id)}
                                         onComment={handleComment}
                                         onEdit={() => setEditingPost(post)}
                                         onDelete={() => handleDeletePost(post._id)}
                                         currentUser={user}
-                                        showActions={true}
                                     />
                                 </motion.div>
                             </Grid>
-                        ))}
+                        ) : null)}
                     </Grid>
                 )}
             </Box>
 
-            {(showCreateModal || editingPost) && (
-                <CreateEditEducationPost
-                    open={true}
-                    onClose={() => {
-                        setShowCreateModal(false);
-                        setEditingPost(null);
-                    }}
-                    onSubmit={editingPost ? handleEditPost : handleCreatePost}
-                    post={editingPost}
-                />
-            )}
+            <AnimatePresence>
+                {(showCreateModal || editingPost) && (
+                    <CreateEditEducationPost
+                        onClose={() => {
+                            setShowCreateModal(false);
+                            setEditingPost(null);
+                        }}
+                        onSubmit={editingPost ? 
+                            (data) => handleUpdatePost(editingPost._id, data) : 
+                            handleCreatePost
+                        }
+                        initialData={editingPost}
+                    />
+                )}
+            </AnimatePresence>
 
             <Fab
                 color="primary"
                 aria-label="add"
                 className="mobile-add-button"
                 onClick={() => setShowCreateModal(true)}
+                style={{
+                    backgroundColor: theme.button.base,
+                    color: theme.button.text
+                }}
             >
                 <AddIcon />
             </Fab>

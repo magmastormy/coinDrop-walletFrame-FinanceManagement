@@ -65,7 +65,8 @@ const FilterTransactions = ({
                         <TransactionSavingsAccountCard 
                             key={account._id} 
                             savingsAccount={account} 
-                            onSelect={onSavingsSelect} 
+                            onSelect={onSavingsSelect}
+                            selectedId={filters.savingsAccountId}
                         />
                     ))}
                 </div>

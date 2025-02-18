@@ -9,12 +9,12 @@ const EducationRenderer = ({ content, maxLength }) => {
     }
 
     const sanitizedContent = DOMPurify.sanitize(displayContent, {
-        ADD_TAGS: ['img'],
-        ADD_ATTR: ['src', 'alt', 'class']
+        ADD_TAGS: ['img', 'span', 'br'],
+        ADD_ATTR: ['src', 'alt', 'class', 'style']
     });
 
     return (
-        <div 
+        <span 
             className="education-renderer-content"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         />

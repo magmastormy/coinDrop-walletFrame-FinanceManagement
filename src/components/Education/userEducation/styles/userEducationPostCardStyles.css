@@ -1,49 +1,47 @@
 /* styles/userEducationPostCardStyles.css */
 
 .user-education-post-card {
-  background-color: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
-  padding: 1.5rem;
+  background-color: var(--white);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--box-shadow-sm);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-lg);
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   display: flex; /* Make the card a flex container */
   flex-direction: column; /* Stack header, content, and footer vertically */
   min-height: 0; /* Important: Prevents content from pushing footer out*/
+  border: 1px solid var(--gray-200);
 }
 
 .user-education-post-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--box-shadow-md);
 }
 
 .user-education-post-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .user-education-post-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
 }
 
 .user-education-post-meta {
-  color: #718096;
-  font-size: 0.875rem;
+  color: var(--gray-500);
+  font-size: var(--font-size-sm);
   white-space: nowrap;
 }
 
 .user-education-post-card-content {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-md);
   overflow: hidden;
   flex-grow: 1; /* Allow content to take up available space */
-}
-
-.user-education-post-content-preview {
-  line-height: 1.6;
+  line-height: var(--line-height-md);
 }
 
 .user-education-post-card-footer {
@@ -56,32 +54,32 @@
 .user-education-post-interaction-stats {
   display: flex;
   align-items: center;
-  color: #718096;
-  font-size: 0.875rem;
+  color: var(--gray-500);
+  font-size: var(--font-size-sm);
 }
 
 .user-education-post-interaction-stats span {
-  margin-right: 1rem;
+  margin-right: var(--spacing-sm);
 }
 
 .user-education-post-action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .user-education-post-action-buttons button {
-  background-color: #edf2f7;
+  background-color: var(--gray-100);
   border: none;
-  border-radius: 0.375rem;
-  color: #4a5568;
-  padding: 0.375rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  color: var(--gray-700);
+  padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
 }
 
 .user-education-post-action-buttons button:hover {
-  background-color: #e2e8f0;
+  background-color: var(--gray-200);
   transform: scale(1.05);
 }
 
@@ -96,14 +94,14 @@
   }
 
   .user-education-post-meta {
-      margin-top: 0.5rem;
+      margin-top: var(--spacing-sm);
   }
 
   .user-education-post-card-footer {
       flex-direction: column;
       align-items: flex-start;
-      gap: 0.5rem;
-      margin-top: 1rem; /* Added margin for better mobile layout */
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-md); /* Added margin for better mobile layout */
   }
   .user-education-post-interaction-stats {
       margin-right: 0;

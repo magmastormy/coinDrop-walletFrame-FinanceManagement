@@ -1,54 +1,59 @@
 /* chatInputStyles.css */
 .chat-input-container {
     background: white;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 1rem;
+    padding: 16px;
+    border-radius: 16px;
+    margin: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
 }
 
 .chat-input-form {
     display: flex;
-    gap: 0.5rem;
-    align-items: flex-end;
-    background: #f8f9fa;
-    border-radius: 1rem;
-    padding: 0.75rem;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .chat-textarea {
-    flex: 1;
-    border: none;
-    background: transparent;
+    width: 100%;
+    min-height: 60px;
+    max-height: 150px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid transparent;
     resize: none;
-    padding: 0.5rem;
     font-size: 1rem;
     line-height: 1.5;
-    max-height: 120px;
-    outline: none;
+    transition: all 0.2s ease;
 }
 
 .chat-textarea:focus {
     outline: none;
+    border-color: #007bff;
+}
+
+.chat-textarea::placeholder {
+    color: #6c757d;
 }
 
 .input-actions {
     display: flex;
-    gap: 0.5rem;
     align-items: center;
+    gap: 12px;
 }
 
 .action-button {
-    background: none;
+    width: 40px;
+    height: 40px;
     border: none;
-    padding: 0.5rem;
-    border-radius: 50%;
-    cursor: pointer;
-    color: #007bff;
-    transition: all 0.2s ease;
-    width: 2.5rem;
-    height: 2.5rem;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+    color: #007bff;
 }
 
 .action-button:hover:not(:disabled) {
@@ -57,11 +62,21 @@
 }
 
 .action-button:disabled {
-    color: #ccc;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
 .send-button {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
     background: #007bff;
     color: white;
 }
@@ -69,6 +84,11 @@
 .send-button:hover:not(:disabled) {
     background: #0056b3;
     color: white;
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .voice-button {
@@ -82,4 +102,23 @@
 
 .fa-spin {
     animation: spin 1s linear infinite;
+}
+
+@media (max-width: 768px) {
+    .chat-input-container {
+        margin: 12px;
+        padding: 12px;
+    }
+
+    .chat-textarea {
+        font-size: 0.95rem;
+        min-height: 50px;
+    }
+
+    .action-button,
+    .send-button {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
 }

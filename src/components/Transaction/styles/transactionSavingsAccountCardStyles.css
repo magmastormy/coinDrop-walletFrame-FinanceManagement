@@ -1,31 +1,66 @@
-.savings-account-card {
-    background-color: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
-    min-width: 200px;
+.transaction-savings-card {
+    padding: 16px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 200ms ease;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid transparent;
+    background-color: var(--surface);
 }
 
-.savings-account-card:hover {
+.savings-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.savings-info {
+    flex: 1;
+}
+
+.savings-info h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.savings-balance {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.transaction-savings-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
 
-.savings-account-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+@media (max-width: 768px) {
+    .transaction-savings-card {
+        padding: 12px;
+    }
 
-.savings-account-name {
-    font-size: var(--font-size-base);
-    color: var(--text-primary);
-    margin: 0;
-}
+    .savings-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
 
-.savings-account-balance {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--primary);
+    .savings-info h3 {
+        font-size: 0.9rem;
+    }
+
+    .savings-balance {
+        font-size: 0.8rem;
+    }
 }
