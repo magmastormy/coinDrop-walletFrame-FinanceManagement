@@ -26,9 +26,7 @@ import './styles/userEducationPostCardStyles.css';
 const UserEducationPostCard = ({ 
     post, 
     onLike, 
-    onComment, 
-    onEdit, 
-    onDelete,
+    onComment,
     currentUser 
 }) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -39,6 +37,29 @@ const UserEducationPostCard = ({
     if (!post) {
         return null;
     }
+
+    const renderImage = (imageUrl) => {
+        if (!imageUrl?.url) return null;
+        
+        return (
+            <Box 
+                component="img"
+                src={imageUrl.url}
+                alt="Post content"
+                onError={(e) => {
+                    console.error('Image failed to load:', imageUrl.url);
+                    e.target.style.display = 'none';
+                }}
+                sx={{
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'cover',
+                    maxHeight: '300px',
+                    borderRadius: '4px'
+                }}
+            />
+        );
+    };
 
     const handleMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -62,14 +83,16 @@ const UserEducationPostCard = ({
 
     return (
         <Card 
-            className="education-post-card"
-            style={{
-                backgroundColor: theme.background.secondary,
-                color: theme.text.primary,
-                borderColor: theme.border
+            sx={{ 
+                backgroundColor: theme.backgroundAlt,
+                color: theme.text,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative'
             }}
         >
-            <CardContent>
+            <CardContent sx={{ flex: 1 }}>
                 <Box className="post-header">
                     <Box className="author-info">
                         <Avatar 
@@ -121,7 +144,7 @@ const UserEducationPostCard = ({
                                 <MenuItem 
                                     onClick={() => {
                                         handleMenuClose();
-                                        onEdit();
+                                        // onEdit();
                                     }}
                                     style={{ color: theme.text.primary }}
                                 >
@@ -131,7 +154,7 @@ const UserEducationPostCard = ({
                                 <MenuItem 
                                     onClick={() => {
                                         handleMenuClose();
-                                        onDelete();
+                                        // onDelete();
                                     }}
                                     style={{ color: theme.error }}
                                 >
@@ -151,79 +174,75 @@ const UserEducationPostCard = ({
                     {post.title}
                 </Typography>
 
+                {post.images && post.images.map((image, index) => (
+                    <Box key={`${post.id}-image-${index}`}>
+                        {renderImage(image)}
+                    </Box>
+                ))}
+
                 <div 
                     className="post-content"
                     style={{ color: theme.text.secondary }}
                     dangerouslySetInnerHTML={{ __html: postDetails }}
                 />
-
-                {post.imageUrl && (
-                    <Box 
-                        component="img"
-                        src={post.imageUrl}
-                        alt={post.title}
-                        className="post-image"
-                        style={{ borderColor: theme.border }}
-                    />
-                )}
             </CardContent>
 
-            <CardActions className="post-actions">
-                <Box className="action-buttons">
-                    <Tooltip title={isLiked ? "Unlike" : "Like"}>
-                        <IconButton 
-                            onClick={onLike}
-                            style={{ 
-                                color: isLiked ? theme.button.base : theme.text.secondary 
-                            }}
-                        >
-                            <ThumbUpIcon />
-                            <Typography 
-                                variant="caption" 
-                                className="action-count"
-                                style={{ color: theme.text.secondary }}
-                            >
-                                {Array.isArray(post.likes) ? post.likes.length : 0}
-                            </Typography>
-                        </IconButton>
-                    </Tooltip>
-                    
-                    <Tooltip title="Comment">
-                        <IconButton 
-                            onClick={() => setShowComments(!showComments)}
-                            style={{ color: theme.text.secondary }}
-                        >
-                            <CommentIcon />
-                            <Typography 
-                                variant="caption" 
-                                className="action-count"
-                                style={{ color: theme.text.secondary }}
-                            >
-                                {Array.isArray(post.comments) ? post.comments.length : 0}
-                            </Typography>
-                        </IconButton>
-                    </Tooltip>
+            <CardActions sx={{ justifyContent: 'space-between', padding: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                        size="small"
+                        startIcon={<ThumbUpIcon />}
+                        onClick={onLike}
+                        sx={{
+                            color: isLiked ? theme.primary : theme.text
+                        }}
+                    >
+                        {Array.isArray(post.likes) ? post.likes.length : 0}
+                    </Button>
+                    <Button
+                        size="small"
+                        startIcon={<CommentIcon />}
+                        onClick={() => setShowComments(!showComments)}
+                        sx={{ color: theme.text }}
+                    >
+                        {Array.isArray(post.comments) ? post.comments.length : 0}
+                    </Button>
                 </Box>
             </CardActions>
 
             {showComments && (
-                <Box 
-                    className="comments-section"
-                    style={{ borderTopColor: theme.border }}
-                >
-                    <form onSubmit={handleCommentSubmit} className="comment-form">
+                <Box sx={{ p: 2, borderTop: `1px solid ${theme.border}` }}>
+                    {post.comments?.map((comment, index) => (
+                        <Box key={`${post.id}-comment-${index}`} sx={{ mb: 2 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                {comment.author?.username}
+                            </Typography>
+                            <Typography variant="body2">
+                                {comment.content}
+                            </Typography>
+                        </Box>
+                    ))}
+                    <Box component="form" onSubmit={handleCommentSubmit} sx={{ mt: 2 }}>
                         <TextField
                             fullWidth
                             size="small"
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                             placeholder="Add a comment..."
-                            variant="outlined"
-                            InputProps={{
-                                style: {
-                                    backgroundColor: theme.background.primary,
-                                    color: theme.text.primary,
-                                    borderColor: theme.border
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': {
+                                        borderColor: theme.border,
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: theme.primary,
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: theme.primary,
+                                    },
+                                    '& input': {
+                                        color: theme.text
+                                    }
                                 }
                             }}
                         />
@@ -239,37 +258,6 @@ const UserEducationPostCard = ({
                         >
                             Post
                         </Button>
-                    </form>
-
-                    <Box className="comments-list">
-                        {Array.isArray(post.comments) && post.comments.map((comment, index) => (
-                            <Box 
-                                key={comment._id || index} 
-                                className="comment-item"
-                                style={{ borderBottomColor: theme.border }}
-                            >
-                                <Box className="comment-header">
-                                    <Typography 
-                                        variant="subtitle2"
-                                        style={{ color: theme.text.primary }}
-                                    >
-                                        {comment.author?.username || 'Unknown User'}
-                                    </Typography>
-                                    <Typography 
-                                        variant="caption"
-                                        style={{ color: theme.text.secondary }}
-                                    >
-                                        {new Date(comment.createdAt).toLocaleDateString()}
-                                    </Typography>
-                                </Box>
-                                <Typography 
-                                    variant="body2"
-                                    style={{ color: theme.text.secondary }}
-                                >
-                                    {comment.content}
-                                </Typography>
-                            </Box>
-                        ))}
                     </Box>
                 </Box>
             )}

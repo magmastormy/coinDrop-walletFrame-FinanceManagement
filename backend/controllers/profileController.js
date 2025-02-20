@@ -1,6 +1,6 @@
 const cloudinary = require('cloudinary').v2; 
 const UserProfile = require('../models/UserProfile');
-const ImageService = require("../../src/services/imageService");
+const ImageService = require("../services/imageService");
 const User = require("../models/User");
 const { validationResult } = require('express-validator');
 
@@ -193,15 +193,15 @@ class ProfileController {
                 });
             }
 
-            console.log('[ProfileController: uploadImage] Uploading image to Cloudinary...', req.file.path);
-            const result = await cloudinary.uploader.upload(req.file.path, {
+            console.log('[ProfileController: uploadImage] Uploading image to Image Service...', req.file.path);
+            const result = await ImageService.uploadImage(req.file.path, {
                 folder: `coinDrop_${imageType}`,
                 transformation: [
                     { quality: 'auto:good' },
                     { fetch_format: 'auto' }
                 ]
             });
-            console.log('[ProfileController: uploadImage] Image uploaded to Cloudinary:', result);
+            console.log('[ProfileController: uploadImage] Image uploaded to Image Service:', result);
 
             profile[imageType === 'cover' ? 'coverPhoto' : 'profilePicture'] = result.secure_url;
             await profile.save();

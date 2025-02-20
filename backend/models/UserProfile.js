@@ -73,7 +73,6 @@ const userProfileSchema = new mongoose.Schema({
 });
 
 // Indexes for better query performance
-userProfileSchema.index({ username: 1 });
 userProfileSchema.index({ 'activity.lastActive': -1 });
 
 // Instance methods

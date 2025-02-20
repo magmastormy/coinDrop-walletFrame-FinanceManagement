@@ -1,7 +1,7 @@
 const Education = require('../models/Education');
 const cloudinary = require('cloudinary').v2;
 const Image = require('../models/Image');
-const ImageService = require("../../src/services/imageService");
+const ImageService = require("../services/imageService");
 const fs = require('fs').promises;
 class EducationController {
 

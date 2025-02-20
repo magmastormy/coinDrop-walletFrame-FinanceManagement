@@ -1,35 +1,30 @@
-import axiosInstance from "../api/userAxios.js";
+import axiosInstance from '../api/userAxios';
 import imageCompression from 'browser-image-compression';
 
-export const compressImage = async (file) => {
-    if (!file || !file.type.startsWith('image/')) return file;
-    console.log("[ImageService] Compressing image:", file);
-    const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        fileType: 'image/jpeg'
-    };
+const API_URL = '/images';
 
-    try {
-        return await imageCompression(file, options);
-    } catch (error) {
-        console.error('Error compressing image:', error);
-        return file;
-    }
-};
-
-class ImageService {
-    static async uploadImage(file, imageType = 'education') {
+const imageService = {
+    uploadImage: async (file, imageType = 'education') => {
         try {
-            const compressedFile = await compressImage(file);
-            console.log("[ImageService] Compressed file:", compressedFile);
+            // Compress image before upload
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+                fileType: 'image/jpeg'
+            };
 
+            const compressedFile = await imageCompression(file, options);
             const formData = new FormData();
             formData.append('image', compressedFile);
             formData.append('imageType', imageType);
 
-            const response = await axiosInstance.post('/images/upload', formData, {
+            // Always use Cloudinary for education posts
+            if (imageType === 'education') {
+                formData.append('storage', 'cloudinary');
+            }
+
+            const response = await axiosInstance.post(`${API_URL}/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -37,20 +32,20 @@ class ImageService {
 
             return response.data;
         } catch (error) {
-            console.error('[ImageService] Upload error:', error);
-            throw new Error(`Failed to upload image: ${error.message}`);
+            console.error('Error uploading image:', error);
+            throw error;
         }
-    }
+    },
 
-    static async deleteImage(imageId) {
+    deleteImage: async (imageId) => {
         try {
-            const response = await axiosInstance.delete(`/images/${imageId}`);
+            const response = await axiosInstance.delete(`${API_URL}/${imageId}`);
             return response.data;
         } catch (error) {
-            console.error('[ImageService] Delete error:', error);
-            throw new Error(`Failed to delete image: ${error.message}`);
+            console.error('Error deleting image:', error);
+            throw error;
         }
     }
-}
+};
 
-export default ImageService;
+export default imageService;

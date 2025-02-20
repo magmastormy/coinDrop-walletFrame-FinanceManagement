@@ -1,56 +1,15 @@
 import axiosInstance from '../api/userAxios';
 import imageCompression from 'browser-image-compression';
+import ImageService from './imageService';
 
 const API_URL = '/education';
 
-const compressImage = async (file) => {
-    if (!file ||!file.type.startsWith('image/')) return file;
-
-    const options = {
-        maxSizeMB: 1, // Max file size of 1MB
-        maxWidthOrHeight: 1920, // Max width/height of 1920px
-        useWebWorker: true,
-        fileType: 'image/jpeg' // Convert all images to JPEG for consistency
-    };
-
-    try {
-        const compressedFile = await imageCompression(file, options);
-        console.log('compressImage: Image compressed successfully', compressedFile);
-        return compressedFile;
-    } catch (error) {
-        console.error('compressImage: Error compressing image:', error);
-        return file;
-    }
-};
-
-const uploadImage = async (file) => {
-    try {
-        const formData = new FormData();
-        const compressedImage = await compressImage(file);
-        formData.append('image', compressedImage);
-
-        const response = await axiosInstance.post(`${API_URL}/upload-image`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-        console.log('uploadImage: Image uploaded successfully', response.data);
-        return response.data;
-    } catch (error) {
-        console.error('uploadImage: Error uploading image:', error);
-        throw error;
-    }
-};
-
 const educationService = {
-    uploadImage,
-    compressImage,
     getEducations: async () => {
         try {
             const response = await axiosInstance.get(API_URL);
             console.log('Education Service - getEducations - Response:', response);
-            console.log('Education Service - getEducations - Response data:', response.data);
-            return response;
+            return response.data;
         } catch (error) {
             console.error('Education Service - getEducations: Error fetching educations:', error);
             throw error;
@@ -61,8 +20,7 @@ const educationService = {
         try {
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
             console.log('Education Service - getUserEducations - Response:', response);
-            console.log('Education Service - getUserEducations - Response data:', response.data);
-            return response;
+            return response.data;
         } catch (error) {
             console.error('Education Service - getUserEducations: Error fetching user educations:', error);
             throw error;
@@ -75,22 +33,46 @@ const educationService = {
                 throw new Error('Title, details, and category are required');
             }
 
+            // First create the post without images
+            const { images, ...postDataWithoutImages } = postData;
             const formData = new FormData();
-            formData.append('title', postData.title);
-            formData.append('details', postData.details);
-            formData.append('category', postData.category);
             
-            // Handle image IDs instead of files
-            if (postData.images && postData.images.length > 0) {
-                formData.append('images', JSON.stringify(postData.images));
-            }
-            if (postData.featuredImage) {
-                formData.append('featuredImage', postData.featuredImage);
+            // Append post data
+            Object.keys(postDataWithoutImages).forEach(key => {
+                formData.append(key, postDataWithoutImages[key]);
+            });
+
+            // Handle image uploads if present
+            if (images && images.length > 0) {
+                const imageUrls = await Promise.all(
+                    images.map(async (file, index) => {
+                        try {
+                            const imageResponse = await ImageService.uploadImage(file);
+                            console.log(`Image ${index + 1} uploaded successfully:`, imageResponse);
+                            return imageResponse.url;
+                        } catch (error) {
+                            console.error(`Failed to upload image ${index + 1}:`, error);
+                            return null;
+                        }
+                    })
+                );
+
+                // Filter out any failed uploads
+                const successfulUrls = imageUrls.filter(url => url !== null);
+                if (successfulUrls.length > 0) {
+                    formData.append('images', JSON.stringify(successfulUrls));
+                }
             }
 
-            const response = await axiosInstance.post(API_URL, formData);
-            console.log('createEducation: Education created successfully', response.data);
-            return response.data.data || response.data; // Handle both response formats
+            // Create the post with all data
+            const response = await axiosInstance.post(API_URL, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            console.log('createEducation: Post created successfully', response.data);
+            return response.data;
         } catch (error) {
             console.error('createEducation: Error creating education:', error);
             if (error.response?.data?.details) {
@@ -102,20 +84,45 @@ const educationService = {
 
     updateEducation: async (id, postData) => {
         try {
-            const formData = new FormData();
-            formData.append('title', postData.title);
-            formData.append('details', postData.details);
-            formData.append('category', postData.category);
+            const { images, ...postDataWithoutImages } = postData;
             
-            if (postData.images) {
-                formData.append('images', JSON.stringify(postData.images));
-            }
-            if (postData.featuredImage) {
-                formData.append('featuredImage', postData.featuredImage);
+            // First update the post data
+            const formData = new FormData();
+            
+            // Append post data
+            Object.keys(postDataWithoutImages).forEach(key => {
+                formData.append(key, postDataWithoutImages[key]);
+            });
+
+            // Handle image uploads if present
+            if (images && images.length > 0) {
+                const imageUrls = await Promise.all(
+                    images.map(async (file, index) => {
+                        try {
+                            const imageResponse = await ImageService.uploadImage(file);
+                            console.log(`Image ${index + 1} uploaded successfully:`, imageResponse);
+                            return imageResponse.url;
+                        } catch (error) {
+                            console.error(`Failed to upload image ${index + 1}:`, error);
+                            return null;
+                        }
+                    })
+                );
+
+                // Filter out any failed uploads
+                const successfulUrls = imageUrls.filter(url => url !== null);
+                if (successfulUrls.length > 0) {
+                    formData.append('images', JSON.stringify(successfulUrls));
+                }
             }
 
-            const response = await axiosInstance.put(`${API_URL}/${id}`, formData);
-            console.log('updateEducation: Education updated successfully', response.data);
+            const response = await axiosInstance.patch(`${API_URL}/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            console.log('updateEducation: Post updated successfully', response.data);
             return response.data;
         } catch (error) {
             console.error('updateEducation: Error updating education:', error);

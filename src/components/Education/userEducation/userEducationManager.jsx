@@ -9,9 +9,17 @@ import {
     Button,
     Alert,
     Container,
-    Fab
+    Fab,
+    IconButton,
+    Menu,
+    MenuItem
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { 
+    Add as AddIcon,
+    MoreVert as MoreVertIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon 
+} from '@mui/icons-material';
 import { useTheme } from '../../../theme/ThemeContext';
 import educationService from '../../../services/educationService';
 import { 
@@ -33,6 +41,8 @@ const UserEducationManager = () => {
     const { user } = useSelector(state => state.auth);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [selectedPost, setSelectedPost] = useState(null);
     const { theme } = useTheme();
 
     useEffect(() => {
@@ -107,6 +117,28 @@ const UserEducationManager = () => {
         }
     };
 
+    const handleMenuOpen = (event, post) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedPost(post);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+        setSelectedPost(null);
+    };
+
+    const handleEditClick = () => {
+        setEditingPost(selectedPost);
+        handleMenuClose();
+    };
+
+    const handleDeleteClick = () => {
+        if (selectedPost) {
+            handleDeletePost(selectedPost.id);
+        }
+        handleMenuClose();
+    };
+
     if (loading) {
         return (
             <Box 
@@ -122,81 +154,88 @@ const UserEducationManager = () => {
     }
 
     return (
-        <Container 
-            maxWidth="xl" 
-            className="user-education-manager"
-            style={{
-                backgroundColor: theme.background.primary,
-                color: theme.text.primary,
-                transition: theme.transition
-            }}
-        >
-            <UserEducationInformationBar onCreateClick={() => setShowCreateModal(true)} />
-
-            {error && (
-                <Alert 
-                    severity="error" 
-                    className="error-alert"
-                    style={{
-                        backgroundColor: `${theme.error}20`,
-                        color: theme.error
-                    }}
-                >
-                    {error}
-                </Alert>
-            )}
-
-            <Box className="education-content">
-                {educations?.length === 0 ? (
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            
+            <Box sx={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: '24px',
+                padding: '24px'
+            }}>
+                {educations.map((post, index) => (
                     <Box 
-                        className="empty-state"
-                        style={{
-                            backgroundColor: theme.background.secondary,
-                            color: theme.text.secondary
+                        key={`education-post-${post.id || index}`}
+                        sx={{
+                            position: 'relative',
+                            height: 'fit-content'
                         }}
                     >
-                        <Typography variant="h6" style={{ color: theme.text.primary }}>
-                            You haven't created any education posts yet
-                        </Typography>
-                        <Typography style={{ color: theme.text.secondary }}>
-                            Share your knowledge with the community
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<AddIcon />}
-                            onClick={() => setShowCreateModal(true)}
-                            style={{
-                                backgroundColor: theme.button.base,
-                                color: theme.button.text
-                            }}
-                        >
-                            Create Your First Post
-                        </Button>
+                        <UserEducationPostCard 
+                            key={`post-card-${post.id || index}`}
+                            post={post}
+                            onLike={() => handleLike(post.id)}
+                            onComment={(comment) => handleComment(post.id, comment)}
+                        />
+                        {post.userId === user.id && (
+                            <IconButton
+                                key={`menu-button-${post.id || index}`}
+                                size="small"
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    backgroundColor: theme.backgroundAlt,
+                                    '&:hover': {
+                                        backgroundColor: theme.primary
+                                    }
+                                }}
+                                onClick={(e) => handleMenuOpen(e, post)}
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                        )}
                     </Box>
-                ) : (
-                    <Grid container spacing={3} className="posts-grid">
-                        {educations?.map(post => post && post._id ? (
-                            <Grid item xs={12} sm={6} md={4} key={post._id}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <UserEducationPostCard
-                                        post={post}
-                                        onLike={() => handleLike(post._id)}
-                                        onComment={handleComment}
-                                        onEdit={() => setEditingPost(post)}
-                                        onDelete={() => handleDeletePost(post._id)}
-                                        currentUser={user}
-                                    />
-                                </motion.div>
-                            </Grid>
-                        ) : null)}
-                    </Grid>
-                )}
+                ))}
             </Box>
+
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                PaperProps={{
+                    sx: {
+                        backgroundColor: theme.backgroundAlt,
+                        color: theme.text
+                    }
+                }}
+            >
+                <MenuItem onClick={handleEditClick} sx={{ color: theme.text }}>
+                    <EditIcon sx={{ mr: 1 }} />
+                    Edit
+                </MenuItem>
+                <MenuItem onClick={handleDeleteClick} sx={{ color: theme.error }}>
+                    <DeleteIcon sx={{ mr: 1 }} />
+                    Delete
+                </MenuItem>
+            </Menu>
+
+            <Fab
+                color="primary"
+                aria-label="add"
+                onClick={() => setShowCreateModal(true)}
+                sx={{
+                    position: 'fixed',
+                    bottom: 16,
+                    right: 16,
+                    backgroundColor: theme.primary,
+                    '&:hover': {
+                        backgroundColor: theme.primaryDark
+                    }
+                }}
+            >
+                <AddIcon />
+            </Fab>
 
             <AnimatePresence>
                 {(showCreateModal || editingPost) && (
@@ -206,26 +245,13 @@ const UserEducationManager = () => {
                             setEditingPost(null);
                         }}
                         onSubmit={editingPost ? 
-                            (data) => handleUpdatePost(editingPost._id, data) : 
+                            (data) => handleUpdatePost(editingPost.id, data) : 
                             handleCreatePost
                         }
                         initialData={editingPost}
                     />
                 )}
             </AnimatePresence>
-
-            <Fab
-                color="primary"
-                aria-label="add"
-                className="mobile-add-button"
-                onClick={() => setShowCreateModal(true)}
-                style={{
-                    backgroundColor: theme.button.base,
-                    color: theme.button.text
-                }}
-            >
-                <AddIcon />
-            </Fab>
         </Container>
     );
 };

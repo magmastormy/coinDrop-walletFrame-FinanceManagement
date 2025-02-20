@@ -1,10 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faChartLine, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { motion } from 'framer-motion';
+import { useSelector } from 'react-redux';
+import { 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogContentText, 
+  DialogActions, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel,
+  Box
+} from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
+import savingsGoalService from '../../services/savingsGoalService';
+import savingsRuleService from '../../services/savingsRuleService';
 import './styles/budgetCardStyles.css';
 
 const BudgetCard = ({ budget, onEdit, onDelete }) => {
+  const { user } = useSelector(state => state.auth);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [savingsGoals, setSavingsGoals] = useState([]);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+
+  useEffect(() => {
+    fetchSavingsGoals();
+  }, [user.id]);
+
+  const fetchSavingsGoals = async () => {
+    try {
+      const goals = await savingsGoalService.getSavingsGoals(user.id);
+      setSavingsGoals(goals);
+    } catch (error) {
+      console.error('Failed to fetch savings goals:', error);
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -33,6 +68,41 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
     if (progress >= 90) return 'var(--error)';
     if (progress >= 70) return 'var(--warning)';
     return 'var(--accent-2)';
+  };
+
+  const calculateSavings = () => {
+    const spent = budget.spent || 0;
+    return Math.max(0, budget.amount - spent);
+  };
+
+  const handleSaveToGoal = async () => {
+    if (!selectedGoal) return;
+    
+    try {
+      const savings = calculateSavings();
+      
+      // First check if there are any automated rules for this goal
+      const rules = await savingsRuleService.getUserRules(user.id);
+      const goalRules = rules.filter(rule => rule.goalId === selectedGoal.id);
+      
+      // If there's a rule with saveBudgetUnderflow enabled, use that percentage
+      const saveBudgetRule = goalRules.find(rule => rule.saveBudgetUnderflow);
+      const savingsAmount = saveBudgetRule 
+          ? (savings * saveBudgetRule.savePercentage / 100)
+          : savings;
+
+      // Contribute to the goal
+      await savingsGoalService.contributeToGoal(selectedGoal.id, {
+        amount: savingsAmount,
+        sourceType: 'budget',
+        sourceId: budget.id
+      });
+
+      setShowSaveDialog(false);
+      setSelectedGoal(null);
+    } catch (error) {
+      console.error('Failed to save to goal:', error);
+    }
   };
 
   return (
@@ -110,6 +180,53 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
           Delete
         </button>
       </div>
+
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={() => setShowSaveDialog(true)}
+          disabled={calculateSavings() <= 0}
+        >
+          Save Surplus to Goal (${calculateSavings().toFixed(2)})
+        </Button>
+      </Box>
+
+      <Dialog open={showSaveDialog} onClose={() => setShowSaveDialog(false)}>
+        <DialogTitle>Save Budget Surplus</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            You have ${calculateSavings().toFixed(2)} available to save. Choose a goal:
+          </DialogContentText>
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Savings Goal</InputLabel>
+            <Select
+              value={selectedGoal?.id || ''}
+              onChange={(e) => {
+                const goal = savingsGoals.find(g => g.id === e.target.value);
+                setSelectedGoal(goal);
+              }}
+            >
+              {savingsGoals.map((goal) => (
+                <MenuItem key={goal.id} value={goal.id}>
+                  {goal.name} (${goal.currentAmount} / ${goal.targetAmount})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSaveDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleSaveToGoal} 
+            disabled={!selectedGoal}
+            variant="contained"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </motion.div>
   );
 };

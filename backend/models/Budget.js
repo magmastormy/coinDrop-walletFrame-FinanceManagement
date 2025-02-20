@@ -1,128 +1,155 @@
 const mongoose = require('mongoose');
-const validator = require('validator');
 
-const BudgetSchema = new mongoose.Schema({
+const budgetSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: [true, 'User ID is required']
+        required: true
     },
     name: {
         type: String,
-        required: [true, 'Budget name is required'],
-        trim: true,
-        minlength: [2, 'Budget name must be at least 2 characters long'],
-        maxlength: [50, 'Budget name cannot exceed 50 characters']
-    },
-    type: {
-        type: String,
-        enum: {
-            values: ['monthly', 'yearly', 'custom'],
-            message: '{VALUE} is not a valid budget type'
-        },
-        default: 'monthly'
-    },
-    categoryId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: [true, 'Category is required']
+        required: true
     },
     amount: {
         type: Number,
-        required: [true, 'Budget amount is required'],
-        min: [0, 'Budget amount must be a positive number']
+        required: true,
+        min: [0, 'Budget amount must be positive']
+    },
+    type: {
+        type: String,
+        enum: ['expense', 'income', 'savings'],
+        required: true
+    },
+    period: {
+        type: String,
+        enum: ['daily', 'weekly', 'monthly', 'yearly'],
+        required: true
     },
     startDate: {
         type: Date,
-        default: Date.now,
-        validate: {
-            validator: function(value) {
-                return value <= this.endDate;
-            },
-            message: 'Start date must be before or equal to end date'
-        }
-    },
-    endDate: {
-        type: Date,
-        required: [true, 'End date is required']
-    },
-    isRecurring: {
-        type: Boolean,
-        default: false
-    },
-    walletId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Wallet',
         required: true
     },
-    totalSpent: {
+    endDate: Date,
+    // Link to category
+    categoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: true
+    },
+    // Allow subcategories
+    includeSubcategories: {
+        type: Boolean,
+        default: true
+    },
+    // Track actual spent amount
+    spent: {
         type: Number,
         default: 0,
-        min: [0, 'Total spent must be a positive number']
+        min: 0
+    },
+    // Track committed amount (planned transactions)
+    committed: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    rollover: {
+        enabled: {
+            type: Boolean,
+            default: false
+        },
+        amount: {
+            type: Number,
+            default: 0,
+            min: 0
+        }
     }
 }, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    timestamps: true
 });
 
-// Virtual for total spent
-BudgetSchema.virtual('calculatedTotalSpent', {
-    ref: 'Transaction',
-    localField: '_id',
-    foreignField: 'budgetId',
-    pipeline: [
-        { 
-            $match: { 
-                type: 'expense' 
-            } 
-        },
-        { 
-            $group: { 
-                _id: null, 
-                total: { $sum: '$amount' } 
-            } 
+// Ensure unique budget names per user
+budgetSchema.index({ userId: 1, name: 1 }, { unique: true });
+
+// Pre-save middleware to validate category type matches budget type
+budgetSchema.pre('save', async function(next) {
+    if (this.isModified('categoryId') || this.isModified('type')) {
+        const Category = mongoose.model('Category');
+        const category = await Category.findById(this.categoryId);
+        
+        if (!category) {
+            next(new Error('Category not found'));
+            return;
         }
-    ],
-    justOne: true,
-    get: function(result) {
-        return result ? result.total : 0;
+
+        if (!category.budgetTypes.includes(this.type)) {
+            next(new Error(`Category ${category.name} does not support budget type ${this.type}`));
+            return;
+        }
     }
+    next();
 });
 
-// Method to update total spent
-BudgetSchema.methods.updateTotalSpent = async function(amount) {
-    this.totalSpent += amount;
-    await this.save();
-    return this.totalSpent;
+// Static method to update budget spent amount
+budgetSchema.statics.updateBudgetSpent = async function(budgetId) {
+    const budget = await this.findById(budgetId);
+    if (!budget) return;
+
+    const Transaction = mongoose.model('Transaction');
+    
+    // Build category query
+    const categoryQuery = [budget.categoryId];
+    if (budget.includeSubcategories) {
+        const Category = mongoose.model('Category');
+        const category = await Category.findById(budget.categoryId);
+        if (category) {
+            const subcategories = await category.getAllSubcategories();
+            categoryQuery.push(...subcategories.map(sub => sub._id));
+        }
+    }
+
+    // Calculate total spent
+    const totalSpent = await Transaction.aggregate([
+        {
+            $match: {
+                budgetId: budget._id,
+                category: { $in: categoryQuery },
+                affectsBudget: true,
+                date: { 
+                    $gte: budget.startDate,
+                    $lte: budget.endDate || new Date()
+                }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$amount' }
+            }
+        }
+    ]);
+
+    budget.spent = totalSpent[0]?.total || 0;
+    await budget.save();
+    
+    return budget;
 };
 
-// Static method to get user's budgets
-BudgetSchema.statics.getUserBudgets = async function(userId) {
-    return this.find({ userId })
-        .populate('walletId')
-        .sort({ startDate: 1 });
+// Get remaining budget amount
+budgetSchema.methods.getRemainingAmount = function() {
+    const total = this.amount + (this.rollover.enabled ? this.rollover.amount : 0);
+    return Math.max(0, total - this.spent - this.committed);
 };
 
 // Static method to get user's budgets with total spent
-BudgetSchema.statics.getUserBudgetsWithTotalSpent = async function(userId) {
-    return this.aggregate([
-        { $match: { userId: mongoose.Types.ObjectId(userId) } },
-        {
-            $lookup: {
-                from: 'transactions',
-                let: { budgetId: '$_id' },
-                pipeline: [
-                    { $match: { $expr: { $eq: ['$budgetId', '$$budgetId'] } } },
-                    { $group: { _id: null, total: { $sum: '$amount' } } }
-                ],
-                as: 'totalSpent'
-            }
-        },
-        { $project: { name: 1, type: 1, category: 1, amount: 1, startDate: 1, endDate: 1, currency: 1, isRecurring: 1, walletId: 1, totalSpent: { $arrayElemAt: ['$totalSpent.total', 0] } } }
-    ]);
+budgetSchema.statics.getUserBudgetsWithTotalSpent = async function(userId) {
+    return this.find({ userId })
+        .populate('categoryId')
+        .sort({ startDate: -1 });
 };
 
-const Budget = mongoose.model('Budget', BudgetSchema);
-
-module.exports = Budget;
+module.exports = mongoose.model('Budget', budgetSchema);

@@ -6,9 +6,28 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 // Protect all category routes
 router.use(authMiddleware);
 
+// Basic CRUD operations
 router.post('/', CategoryController.createCategory);
 router.get('/', CategoryController.getUserCategories);
 router.put('/:id', CategoryController.updateCategory);
 router.delete('/:id', CategoryController.deleteCategory);
+
+// New hierarchy endpoints
+router.get('/hierarchy', CategoryController.getCategoryHierarchy);
+router.get('/:id/subcategories', CategoryController.getSubcategories);
+router.post('/:id/subcategories', CategoryController.addSubcategory);
+router.put('/:id/parent', CategoryController.updateParentCategory);
+
+// Budget integration endpoints
+router.get('/:id/budgets', CategoryController.getCategoryBudgets);
+router.get('/:id/transactions', CategoryController.getCategoryTransactions);
+router.get('/:id/stats', CategoryController.getCategoryStats);
+
+// Auto-categorization endpoints
+router.get('/patterns', CategoryController.getCategoryPatterns);
+router.post('/patterns', CategoryController.updateCategoryPatterns);
+router.post('/suggest', CategoryController.suggestCategory);
+router.post('/train', CategoryController.trainCategoryModel);
+router.post('/batch-categorize', CategoryController.batchCategorizeTransactions);
 
 module.exports = router;
