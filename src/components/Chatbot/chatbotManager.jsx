@@ -59,15 +59,6 @@ const ChatbotManager = () => {
         } catch (error) {
             console.error('Failed to send message:', error);
             setError(error.message);
-            
-            // Add error message to chat
-            const errorMessage = {
-                role: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.',
-                timestamp: new Date().toISOString(),
-                isError: true
-            };
-            setMessages(prevMessages => [...prevMessages, errorMessage]);
         } finally {
             setLoading(false);
         }

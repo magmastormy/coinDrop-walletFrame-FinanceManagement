@@ -13,15 +13,9 @@ const ChatContainer = ({ messages, onSendMessage, loading }) => {
     return (
         <div className="chat-container">
             <div className="chat-header">
-                <div className="chat-header-avatar">
-                    <i className="fas fa-robot"></i>
-                </div>
-                <div className="chat-header-info">
-                    <h2>CoinDrip AI Assistant</h2>
-                    <p>Ask me about your finances</p>
-                </div>
+                <h2>CoinDrip AI Assistant</h2>
             </div>
-            <div className="chat-messages-wrapper">
+            <div className="chat-body">
                 <ChatMessages messages={messages} />
             </div>
             <ChatInput 
