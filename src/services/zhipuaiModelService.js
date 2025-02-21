@@ -25,10 +25,10 @@ const zhipuaiModelService = {
         }
     },
 
-    async getFinancialAdvice() {
+    async getFinancialAdvice(userFinancialData) {
         try {
-            console.log('ZhipuAI Service - Getting financial advice');
-            const response = await axiosInstance.get(`${API_URL}/financial-advice`);
+            console.log('ZhipuAI Service - Getting financial advice with data:', userFinancialData);
+            const response = await axiosInstance.post(`${API_URL}/financial-advice`, userFinancialData);
             console.log('ZhipuAI Service - Financial advice response:', response.data);
             
             if (!response?.advice) {

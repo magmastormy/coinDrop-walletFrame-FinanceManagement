@@ -3,11 +3,15 @@ const path = require('path');
 
 class AIAdvisorService {
     async getFinancialAdvice(userData) {
-        console.log('Getting financial advice for user data:', JSON.stringify(userData, null, 2));
+        console.log('Getting financial advice for:', userData.userId);
         
         const message = {
             role: 'user',
-            content: this._formatUserContext(userData)
+            content: `User financial profile: 
+                Monthly Income: ${userData.income || 'Not provided'},
+                Monthly Expenses: ${userData.expenses || 'Not provided'}, 
+                Financial Goals: ${userData.financialGoals?.join(', ') || 'Not specified'}. 
+                Original query: ${this._formatUserContext(userData)}`
         };
         
         console.log('Formatted AI message:', JSON.stringify([message], null, 2));

@@ -34,8 +34,13 @@ const ChatbotManager = () => {
 
             let response;
             if (isFinancialQuery) {
-                // Get financial advice
-                const advice = await zhipuaiModelService.getFinancialAdvice();
+                // Get financial advice with user context
+                const advice = await zhipuaiModelService.getFinancialAdvice({
+                    userId: user.id,
+                    income: user.monthlyIncome,
+                    expenses: user.monthlyExpenses,
+                    financialGoals: user.financialGoals
+                });
                 response = { response: advice };
             } else {
                 // Regular chat response
