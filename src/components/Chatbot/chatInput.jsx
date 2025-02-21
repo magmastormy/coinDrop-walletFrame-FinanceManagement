@@ -60,33 +60,6 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
                 
                 <div className="chat-actions">
                     <motion.button
-                        type="button"
-                        className="action-button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        style={{
-                            backgroundColor: theme.button.base + '20',
-                            color: theme.button.base
-                        }}
-                    >
-                        <FontAwesomeIcon icon={faImage} />
-                    </motion.button>
-
-                    <motion.button
-                        type="button"
-                        className={`action-button ${isRecording ? 'recording' : ''}`}
-                        onClick={() => setIsRecording(!isRecording)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        style={{
-                            backgroundColor: isRecording ? theme.error + '20' : theme.button.base + '20',
-                            color: isRecording ? theme.error : theme.button.base
-                        }}
-                    >
-                        <FontAwesomeIcon icon={faMicrophone} />
-                    </motion.button>
-
-                    <motion.button
                         type="submit"
                         className="send-button"
                         disabled={!message.trim() || isLoading}
@@ -101,23 +74,6 @@ const ChatInput = ({ onSendMessage, isLoading }) => {
                     </motion.button>
                 </div>
             </form>
-
-            <AnimatePresence>
-                {isRecording && (
-                    <motion.div 
-                        className="recording-indicator"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        style={{
-                            backgroundColor: theme.error + '20',
-                            color: theme.error
-                        }}
-                    >
-                        Recording... Click microphone to stop
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </motion.div>
     );
 };

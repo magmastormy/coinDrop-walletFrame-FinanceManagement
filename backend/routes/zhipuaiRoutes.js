@@ -8,11 +8,19 @@ console.log('Controller methods:', Object.keys(controller));
 console.log('sendMessage:', controller.sendMessage);
 console.log('getHistory:', controller.getHistory);
 console.log('processVideo:', controller.processVideo);
+console.log('getFinancialAdvice:', controller.getFinancialAdvice);
 
 // Send message to ZhipuAI
 router.post('/send', (req, res, next) => {
     authMiddleware(req, res, () => {
         controller.sendMessage(req, res, next);
+    });
+});
+
+// Get financial advice
+router.get('/financial-advice', (req, res, next) => {
+    authMiddleware(req, res, () => {
+        controller.getFinancialAdvice(req, res, next);
     });
 });
 
