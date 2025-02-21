@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import ChatContainer from './ChatContainer';
+import ChatContainer from './chatContainer';
 import zhipuaiModelService from '../../services/zhipuaiModelService';
 import './styles/chatbotManagerStyles.css';
 
