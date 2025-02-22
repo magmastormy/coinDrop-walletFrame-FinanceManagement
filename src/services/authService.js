@@ -58,15 +58,22 @@ const formatErrorMessage = (error) => {
 };
 
 // Save user data in browser storage
-const storeUserData = (token, user) => {
-    console.log('Saving user data...', { user });
+const storeUserData = (token, userData) => {
     try {
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        console.log('💾 Saving user data...', { user: userData });
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Update Redux store
+        store.dispatch(loginSuccess({
+            user: userData,
+            accessToken: token
+        }));
+        
         console.log('✅ User data saved successfully');
     } catch (error) {
-        console.error('❌ Failed to save user data:', error);
-        throw new Error('Could not save your login information');
+        console.error('❌ Error saving user data:', error);
+        throw error;
     }
 };
 
@@ -87,16 +94,20 @@ export const loginUser = async (credentials) => {
     try {
         const response = await axiosInstance.post('/auth/login', credentials);
         
-        if (!response.data.accessToken) {
-            throw new Error('Authentication failed: No access token received');
+        // Directly access the response data structure
+        if (!response?.accessToken) {
+            throw new Error(response?.error || 'Authentication failed');
         }
 
-        const { accessToken, user } = response.data;
-        storeUserData(accessToken, user);
-        
-        return response.data;
+        storeUserData(response.accessToken, response.user);
+        return response;
+
     } catch (error) {
         const formattedError = formatErrorMessage(error);
+        console.error('Login error:', {
+            rawError: error,
+            formattedError
+        });
         throw formattedError;
     }
 };
@@ -200,4 +211,11 @@ export const changePassword = async(oldPassword, newPassword) => {
     } catch (error) {
         throw new Error(error.response?.data?.message || 'Failed to change password.');
     }
+};
+
+export const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    store.dispatch(logoutAction());
+    window.location.href = '/login';
 };

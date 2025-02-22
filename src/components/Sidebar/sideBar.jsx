@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-    faHome, 
     faDashboard, 
     faTools, 
     faDoorClosed, 
@@ -54,7 +53,6 @@ const Sidebar = () => {
     }
 
     const menuItems = [
-        { name: 'Home', link: '/', icon: faHome },
         { name: 'Dashboard', link: '/dashboard', icon: faDashboard }, 
         { name: 'Wallet', link: '/wallet', icon: faWallet }, 
         { name: 'Budget', link: '/budget', icon: faCreditCard }, 
@@ -67,7 +65,6 @@ const Sidebar = () => {
         { name: 'Chatbot', link: '/chatbot', icon: faRobot }, 
         { name: 'Settings', link: '/settings', icon: faTools },
         { name: 'Profile', link: '/profile', icon: faUser },
-        { name: 'Logout', link: '/logout', icon: faSignOut }
     ];
 
     const sidebarClass = `sidebar ${isOpen ? 'open' : ''} ${isMobile ? 'mobile' : ''}`;

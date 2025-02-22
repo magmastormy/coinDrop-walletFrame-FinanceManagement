@@ -228,7 +228,7 @@ class AuthController {
             // Generate tokens using the static method
             const { accessToken, refreshToken } = AuthController.generateTokens(user._id, user.role);
 
-            // Send complete authentication response
+            // Return success response
             res.json({
                 accessToken,
                 refreshToken,
@@ -237,7 +237,8 @@ class AuthController {
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
-                    role: user.role
+                    role: user.role,
+                    username: user.username
                 }
             });
 

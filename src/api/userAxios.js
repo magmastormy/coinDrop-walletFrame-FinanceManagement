@@ -10,19 +10,25 @@ const axiosInstance = axios.create({
 
 // Function to check if the token is expired
 const isTokenExpired = (token) => {
-    if (!token) return true;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const currentTime = Date.now() / 1000; // Current time in seconds
-    return payload.exp < currentTime; // Check if the token is expired
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
+        if (!payload.exp) return true;
+        return payload.exp * 1000 < Date.now();
+    } catch (error) {
+        console.error('Token validation error:', error);
+        return true;
+    }
 };
 
 // Function to refresh the token
 const refreshToken = async () => {
-    const refreshToken = localStorage.getItem('refreshToken'); // Assuming you store refresh token
+    const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token available');
 
-    const response = await axios.post('/auth/refresh-token', { refreshToken });
-    return response.data.token; // Assuming the new token is returned in this format
+    const response = await axiosInstance.post('/auth/refresh-token', { refreshToken });
+    return response.accessToken; // Match backend response structure
 };
 
 

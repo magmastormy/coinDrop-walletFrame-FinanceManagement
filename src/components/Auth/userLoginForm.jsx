@@ -28,8 +28,9 @@ const UserLogin = () => {
             console.log('🔒 Login attempt with:', formData.email);
             
             const response = await loginUser(formData);
+            console.log('[userLoginForm] Login Response:', response);
             
-            if (response?.accessToken) {
+            if (response.accessToken) {
                 console.log('✅ Login successful, redirecting...');
                 navigate('/dashboard');
             } else {
