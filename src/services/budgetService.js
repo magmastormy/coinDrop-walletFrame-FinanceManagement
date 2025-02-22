@@ -26,14 +26,17 @@ export const getBudgetStats = async () => {
 };
 
 const budgetService = {
-    createBudget: async (userId, budgetData) => {
+    createBudget: async (budgetData) => {
         try {
-            const response = await axiosInstance.post(`${API_URL}?userId=${userId}`, budgetData);
-            console.log('[BudgetService - createBudget] Successfully created budget:', response.data);
+            const response = await axiosInstance.post(API_URL, {
+                ...budgetData,
+                amount: parseFloat(budgetData.amount),
+                currency: 'USD' // Default currency
+            });
             return response.data;
         } catch (error) {
-            console.error('[BudgetService - createBudget] Error creating budget:', error);
-            throw error;
+            const serverMessage = error.response?.data?.message;
+            throw new Error(serverMessage || 'Budget validation failed');
         }
     },
 

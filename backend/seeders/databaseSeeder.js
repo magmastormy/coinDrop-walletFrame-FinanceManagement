@@ -620,7 +620,8 @@ const seedDatabase = async () => {
             
             // Create user with plain password (no hashing)
             const user = await User.create({
-                ...userData
+                ...userData,
+                isVerified: true // Add verification status
             });
 
             // Create user profile

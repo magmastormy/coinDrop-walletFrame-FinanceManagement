@@ -10,9 +10,9 @@ import NewGoalDialog from './newGoalDialog';
 import EmptyState from '../../pages/emptyState';
 import './styles/savingsGoalsListStyles.css';
 
-const SavingsGoalList = () => {
+const SavingsGoalList = ({ goals, onEdit, onDelete, isLoading, error, onNewGoal }) => {
     const dispatch = useDispatch();
-    const { goals, loading, error } = useSelector((state) => state.savingsGoal);
+    const { goals: reduxGoals, loading, error: reduxError } = useSelector((state) => state.savingsGoal);
     const { user } = useSelector((state) => state.auth);
     const [showNewGoalDialog, setShowNewGoalDialog] = useState(false);
 
@@ -40,6 +40,7 @@ const SavingsGoalList = () => {
 
     const handleGoalCreated = () => {
         setShowNewGoalDialog(false);
+        onNewGoal();
     };
 
     if (loading) {
@@ -59,7 +60,7 @@ const SavingsGoalList = () => {
                 action={
                     <button 
                         className="add-goal-button"
-                        onClick={handleAddGoal}
+                        onClick={onNewGoal}
                         aria-label="Create new savings goal"
                     >
                         <FontAwesomeIcon icon={faPlus} />

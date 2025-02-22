@@ -85,6 +85,17 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         });
     };
 
+    const validateBudget = (budget) => {
+        const amount = parseFloat(budget.amount);
+        if (isNaN(amount) || amount <= 0) {
+            return 'Amount must be a positive number';
+        }
+        if (!budget.category) {
+            return 'Category is required';
+        }
+        return null;
+    };
+
     if (!isOpen) return null;
 
     return (

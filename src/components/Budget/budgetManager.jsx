@@ -43,16 +43,14 @@ const BudgetManager = () =>
         }
     };
 
-    const fetchBudgets = async (page = 1, limit = 10) => {
+    const fetchBudgets = async () => {
         dispatch(setLoading(true));
         try {
-            if (!user || !user.id) {
-                throw new Error('User not authenticated');
-            }
-            const data = await budgetService.getUserBudgets(user.id, { page, limit });
-            dispatch(setBudgets(data.budgets || []));
-        } catch (err) {
-            dispatch(setError(err.message));
+            const fetchedBudgets = await budgetService.getUserBudgets(user.id);
+            console.log('[BudgetManager] Budgets fetched:', fetchedBudgets);
+            dispatch(setBudgets(fetchedBudgets));
+        } catch (error) {
+            dispatch(setError(`Budget fetch failed: ${error.message}`));
         } finally {
             dispatch(setLoading(false));
         }
@@ -100,6 +98,20 @@ const BudgetManager = () =>
     const handleFilterChange = (e) => {
        setFilter({ ...filter, [e.target.name]: e.target.value });
    };
+
+    const handleCreateBudget = async (newBudget) => {
+        try {
+            if (editingBudget) {
+                await budgetService.updateBudget(editingBudget._id, newBudget);
+            } else {
+                await budgetService.createBudget(newBudget);
+            }
+            await fetchBudgets();
+            setIsModalOpen(false);
+        } catch (error) {
+            dispatch(setError(`Budget save failed: ${error.message}`));
+        }
+    };
 
     return (
         <div className="budget-manager">

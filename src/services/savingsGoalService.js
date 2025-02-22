@@ -7,7 +7,7 @@ export const savingsGoalService = {
         try {
             const response = await axiosInstance.post(API_URL, goalData);
             console.log("[savingsGoalService - createSavingsGoal] Savings goal created successfully:", response);
-            return response.data;
+            return response;
         } catch (error) {
             console.error("[savingsGoalService - createSavingsGoal] Error creating savings goal:", error);
             throw error;

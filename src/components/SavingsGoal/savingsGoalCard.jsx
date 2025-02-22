@@ -124,6 +124,7 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                                 onClick={() => onEdit(goal)}
                                 className="edit-button"
                                 size="small"
+                                aria-label="Edit goal"
                             >
                                 <FontAwesomeIcon icon={faEdit} />
                             </IconButton>
@@ -131,6 +132,7 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                                 onClick={() => onDelete(goal._id)}
                                 className="delete-button"
                                 size="small"
+                                aria-label="Delete goal"
                             >
                                 <FontAwesomeIcon icon={faTrash} />
                             </IconButton>

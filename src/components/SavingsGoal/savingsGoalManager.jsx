@@ -27,6 +27,7 @@ const SavingsGoalManager = () => {
         try {
             setIsLoading(true);
             const response = await savingsGoalService.getSavingsGoals(user.id);
+            console.log("SavingsGoalManager - fetchGoals - Response:", response);
             setGoals(response || []);
         } catch (error) {
             console.error('Failed to fetch goals:', error);
@@ -108,6 +109,9 @@ const SavingsGoalManager = () => {
                         goals={goals}
                         onEdit={setEditingGoal}
                         onDelete={handleDeleteGoal}
+                        isLoading={isLoading}
+                        error={error}
+                        onNewGoal={() => setIsNewGoalDialogOpen(true)}
                     />
                 </Grid>
             </Grid>

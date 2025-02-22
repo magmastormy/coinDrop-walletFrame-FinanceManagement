@@ -191,8 +191,7 @@ class AuthController {
 
             // Add password normalization for existing seeded users
             const isLegacyPassword = user.password.startsWith('$2a$10$hVNyxBKkgZv8EeNHz.r0ku');
-            const isValidPassword = user.password === password || 
-                (isLegacyPassword && await bcrypt.compare(password, user.password));
+            const isValidPassword = await bcrypt.compare(password, user.password);
 
             console.log("AuthController.login - Password check:", {
                 isLegacyPassword,

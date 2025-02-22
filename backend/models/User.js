@@ -72,6 +72,8 @@ UserSchema.pre('save', async function(next) {
     // Only hash the password if it has been modified
     if (!this.isModified('password')) return next();
 
+    if (this.password.startsWith('$2a$')) return next(); // Skip already hashed
+
     try {
         // Generate a salt
         const salt = await bcrypt.genSalt(10);
