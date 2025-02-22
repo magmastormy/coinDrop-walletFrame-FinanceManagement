@@ -84,54 +84,20 @@ const updateAppState = (action) => {
 
 // Login function
 export const loginUser = async (credentials) => {
-    console.log('🔒 Login attempt with:', credentials.email);
     try {
-        const response = await axiosInstance.post("/auth/login", credentials);
-        console.log('Server response:', response);
-
-        if (!response || !response.token || !response.user) {
-            console.error('❌ Invalid server response:', response);
-            throw new Error('Login failed - invalid server response');
+        const response = await axiosInstance.post('/auth/login', credentials);
+        
+        if (!response.data.accessToken) {
+            throw new Error('Authentication failed: No access token received');
         }
 
-        console.log('✅ Login successful');
-
-        //now i want to fetch the users data from the database to sort this bug where components have missing data
-        //lets get everything wallets, budgets, categories
-        //i think transactions are not necessary for now, maybe for the dashboard but not yet.
-        /*const userId = response.user.id || response.user._id || response.user.userId || response.user._userId;
-        console.log("Login userId:", userId);
-
-        const userWallets = await walletService.getAllWallets(userId);
-        console.log('userWallets:', userWallets);
-
-        const userBudgets = await budgetService.getUserBudgets(userId);
-        console.log('userBudgets:', userBudgets);
-
-        const userCategories = await categoryService.getUserCategories(userId);
-        console.log('userCategories:', userCategories);
-
-        const userTransactions = await transactionService.getUserTransactions(userId);
-        console.log('userTransactions:', userTransactions);
-
-        updateAppState(setWallets(userWallets || []));
-        updateAppState(setBudgets(userBudgets || []));
-        updateAppState(setCategories(userCategories || []));
-        updateAppState(setTransactions(userTransactions || [])); */
-
-        storeUserData(response.token, response.user);
-        updateAppState(loginSuccess({ 
-            token: response.token, 
-            user: response.user 
-        }));
-        return response;
+        const { accessToken, user } = response.data;
+        storeUserData(accessToken, user);
+        
+        return response.data;
     } catch (error) {
-        console.error('❌ Login error:', error);
-        const errorMessage = error.response?.status === 401 
-            ? AUTH_ERRORS.INVALID_LOGIN 
-            : AUTH_ERRORS.SERVER_ERROR;
-        updateAppState(loginFailure(errorMessage));
-        throw new Error(errorMessage);
+        const formattedError = formatErrorMessage(error);
+        throw formattedError;
     }
 };
 

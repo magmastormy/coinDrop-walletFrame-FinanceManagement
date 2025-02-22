@@ -31,7 +31,7 @@ const budgetSchema = new mongoose.Schema({
     },
     endDate: Date,
     // Link to category
-    categoryId: {
+    category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
         required: true
@@ -77,9 +77,9 @@ budgetSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 // Pre-save middleware to validate category type matches budget type
 budgetSchema.pre('save', async function(next) {
-    if (this.isModified('categoryId') || this.isModified('type')) {
+    if (this.isModified('category') || this.isModified('type')) {
         const Category = mongoose.model('Category');
-        const category = await Category.findById(this.categoryId);
+        const category = await Category.findById(this.category);
         
         if (!category) {
             next(new Error('Category not found'));
@@ -102,10 +102,10 @@ budgetSchema.statics.updateBudgetSpent = async function(budgetId) {
     const Transaction = mongoose.model('Transaction');
     
     // Build category query
-    const categoryQuery = [budget.categoryId];
+    const categoryQuery = [budget.category];
     if (budget.includeSubcategories) {
         const Category = mongoose.model('Category');
-        const category = await Category.findById(budget.categoryId);
+        const category = await Category.findById(budget.category);
         if (category) {
             const subcategories = await category.getAllSubcategories();
             categoryQuery.push(...subcategories.map(sub => sub._id));
@@ -148,7 +148,7 @@ budgetSchema.methods.getRemainingAmount = function() {
 // Static method to get user's budgets with total spent
 budgetSchema.statics.getUserBudgetsWithTotalSpent = async function(userId) {
     return this.find({ userId })
-        .populate('categoryId')
+        .populate('category')
         .sort({ startDate: -1 });
 };
 

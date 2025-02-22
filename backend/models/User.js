@@ -105,18 +105,7 @@ UserSchema.methods.generateAuthToken = function() {
 // Method to compare password
 UserSchema.methods.comparePassword = async function(candidatePassword) {
     try {
-        console.log('Candidate Password:', candidatePassword);
-        console.log('Stored Hash:', this.password);
-        
-        const isMatch = await bcrypt.compare(candidatePassword, this.password);
-        
-        console.log('Is Password Match:', isMatch);
-        
-        // If not matching, try re-hashing the candidate password
-        const hashedAttempt = await bcrypt.hash(candidatePassword, 10);
-        console.log('Re-hashed Candidate:', hashedAttempt);
-        
-        return isMatch;
+        return await bcrypt.compare(candidatePassword, this.password);
     } catch (error) {
         console.error('Password comparison error:', error);
         return false;

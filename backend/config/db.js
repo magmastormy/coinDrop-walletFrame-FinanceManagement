@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
     try {
         // Use environment variable for connection string, fallback to local if not available
-        const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/coinDrop';
+        const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/coinDrop';
 
         // Connection options
         const options = {

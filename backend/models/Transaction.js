@@ -16,37 +16,32 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         min: [0, 'Amount must be a positive number']
     },
-    // Update category to reference Category model
     category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
+        ref: 'Category'
     },
-    // Optional subcategory (child category)
     subcategory: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category'
     },
     description: {
         type: String,
+        default: '',
         maxlength: [200, 'Description cannot exceed 200 characters']
     },
     date: {
         type: Date,
         default: Date.now
     },
-    // Budget reference
     budgetId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Budget',
         required: false
     },
-    // Track if this transaction was auto-categorized
     autoCategorized: {
         type: Boolean,
         default: false
     },
-    // Track if this transaction affects budget
     affectsBudget: {
         type: Boolean,
         default: true

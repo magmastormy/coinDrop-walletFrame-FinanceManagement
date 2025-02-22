@@ -5,10 +5,10 @@ import zhipuaiModelService from '../../services/zhipuaiModelService';
 import './styles/chatbotManagerStyles.css';
 
 const ChatbotManager = () => {
+    const { user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { user } = useAuth();
 
     const handleSendMessage = async (message) => {
         try {
@@ -22,7 +22,6 @@ const ChatbotManager = () => {
                 timestamp: new Date().toISOString()
             };
 
-            // Update messages immediately with user's message
             setMessages(prevMessages => [...prevMessages, userMessage]);
 
             // Check if it's a financial query
@@ -33,44 +32,35 @@ const ChatbotManager = () => {
                                    message.toLowerCase().includes('saving');
 
             let response;
-            if (isFinancialQuery) {
-                // Get financial advice with user context
-                const advice = await zhipuaiModelService.getFinancialAdvice({
-                    userId: user.id,
-                    income: user.monthlyIncome,
-                    expenses: user.monthlyExpenses,
-                    financialGoals: user.financialGoals
-                });
-                response = { response: advice };
+            if (isFinancialQuery && user?.id) {
+                // Get financial advice using user ID
+                const advice = await zhipuaiModelService.getFinancialAdvice(user.id);
+                response = advice;
             } else {
                 // Regular chat response
-                response = await zhipuaiModelService.sendMessage([...messages, userMessage]);
-            }
-
-            if (!response || !response.response) {
-                throw new Error('Invalid response from AI service');
+                const chatResponse = await zhipuaiModelService.sendMessage([...messages, userMessage]);
+                response = chatResponse.response;
             }
 
             // Add AI response
             const botResponse = {
                 role: 'assistant',
-                content: response.response,
+                content: response,
                 timestamp: new Date().toISOString()
             };
 
-            // Update messages with AI response
             setMessages(prevMessages => [...prevMessages, botResponse]);
 
         } catch (error) {
             console.error('Failed to send message:', error);
-            setError(error.message);
+            setError('Failed to get response from AI. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="chatbot-manager">
+        <div className="chatbot-wrapper">
             <ChatContainer
                 messages={messages}
                 onSendMessage={handleSendMessage}

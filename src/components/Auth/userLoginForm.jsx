@@ -26,12 +26,18 @@ const UserLogin = () => {
             setError('');
             setLoading(true);
             console.log('🔒 Login attempt with:', formData.email);
-            await loginUser(formData);
-            console.log('✅ Login successful, redirecting...');
-            navigate('/dashboard');
+            
+            const response = await loginUser(formData);
+            
+            if (response?.accessToken) {
+                console.log('✅ Login successful, redirecting...');
+                navigate('/dashboard');
+            } else {
+                throw new Error('Authentication failed: No tokens received');
+            }
         } catch (err) {
             console.error('❌ Login failed:', err);
-            setError(err.message || 'Failed to sign in');
+            setError(err.details || err.message || 'Failed to sign in');
         } finally {
             setLoading(false);
         }
