@@ -603,6 +603,7 @@ const generateUserProfile = (userId, username) => {
 const seedDatabase = async () => {
     try {
         // Clear existing data
+/**
         await User.deleteMany({});
         await Budget.deleteMany({});
         await Transaction.deleteMany({});
@@ -613,7 +614,8 @@ const seedDatabase = async () => {
         await SavingsGoal.deleteMany({});
         await SavingsRule.deleteMany({});
         await UserProfile.deleteMany({});
-
+ 
+ **/
         // Create users and their related data
         for (let i = 0; i < users.length; i++) {
             const userData = users[i];

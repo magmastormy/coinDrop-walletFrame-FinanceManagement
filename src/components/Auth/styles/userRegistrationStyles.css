@@ -1,224 +1,155 @@
-.register-container {
-    max-width: 500px;
-    width: 90%;
-    margin: 2rem auto;
-    padding: var(--spacing-lg);
+/* userRegistrationStyles.css */
+
+.registration-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 2rem;
+}
+
+.registration-card {
     background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 3rem;
+    width: 100%;
+    max-width: 500px;
+    transition: transform 0.3s ease;
 }
 
-.register-header {
+.registration-card:hover {
+    transform: translateY(-5px);
+}
+
+.registration-header {
     text-align: center;
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: 2.5rem;
 }
 
-.register-header h2 {
-    font-size: 1.8rem;
-    color: var(--dark);
-    margin: 0 0 var(--spacing-xs);
+.registration-title {
+    color: #2c3e50;
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
 }
 
-.register-header p {
-    color: var(--text-secondary);
-    margin: 0;
-}
-
-.error-message {
-    background: var(--danger-light);
-    color: var(--danger);
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--spacing-lg);
+.registration-subtitle {
+    color: #7f8c8d;
     font-size: 0.95rem;
 }
 
-.register-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.input-group {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-icon {
-    position: absolute;
-    left: var(--spacing-md);
-    color: var(--text-secondary);
-    font-size: 1rem;
-}
-
-.input-group input {
-    width: 100%;
-    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) calc(var(--spacing-md) * 2 + 1rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    font-size: 1rem;
-    color: var(--text);
-    background: var(--background);
-    transition: all var(--transition-fast);
-}
-
-.input-group input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: white;
-}
-
-.password-toggle {
-    position: absolute;
-    right: var(--spacing-md);
+.auth-link {
+    color: #3498db;
     background: none;
     border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
     padding: 0;
-    font-size: 1rem;
-    transition: color var(--transition-fast);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s ease;
 }
 
-.password-toggle:hover {
-    color: var(--text);
+.auth-link:hover {
+    color: #2980b9;
 }
 
-.error-text {
-    color: var(--danger);
-    font-size: 0.85rem;
-    margin-left: var(--spacing-xs);
-}
-
-.password-strength {
-    margin-top: var(--spacing-xs);
-}
-
-.strength-meter {
-    display: flex;
-    gap: 4px;
-    margin-bottom: var(--spacing-xs);
-}
-
-.strength-segment {
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    transition: background var(--transition-fast);
-}
-
-.strength-segment.active {
-    background: var(--primary);
-}
-
-.strength-segment.active:nth-child(-n+2) {
-    background: var(--danger);
-}
-
-.strength-segment.active:nth-child(3) {
-    background: var(--warning);
-}
-
-.strength-segment.active:nth-child(n+4) {
-    background: var(--success);
-}
-
-.strength-feedback {
+.registration-form {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: 1.5rem;
 }
 
-.feedback-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    color: var(--text-secondary);
-    font-size: 0.85rem;
+.registration-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 
-.feedback-icon {
-    color: var(--danger);
+.form-field {
+    position: relative;
 }
 
-.register-button {
+.form-input {
     width: 100%;
-    padding: var(--spacing-md);
-    background: var(--primary);
+    padding: 0.9rem 1.2rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.form-input::placeholder {
+    color: #95a5a6;
+    opacity: 1;
+}
+
+.password-requirements {
+    display: block;
+    margin-top: 0.5rem;
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.registration-submit-button {
+    width: 100%;
+    padding: 1rem;
+    background: #3498db;
     color: white;
     border: none;
-    border-radius: var(--radius-md);
-    font-size: 1rem;
-    font-weight: 500;
+    border-radius: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    transition: background var(--transition-fast);
-    margin-top: var(--spacing-md);
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.register-button:hover:not(:disabled) {
-    background: var(--primary-dark);
+.registration-submit-button:hover:not(:disabled) {
+    background: #2980b9;
+    transform: translateY(-1px);
 }
 
-.register-button:disabled {
-    opacity: 0.6;
+.registration-submit-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.button-disabled {
+    opacity: 0.7;
     cursor: not-allowed;
 }
 
-.login-prompt {
-    text-align: center;
-    margin-top: var(--spacing-lg);
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
-
-.login-prompt a {
-    color: var(--primary);
-    text-decoration: none;
-    margin-left: var(--spacing-xs);
-    font-weight: 500;
-    transition: color var(--transition-fast);
-}
-
-.login-prompt a:hover {
-    color: var(--primary-dark);
-}
-
-/* Animation Classes */
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.register-button svg {
-    animation: spin 1s linear infinite;
-}
-
 /* Responsive Design */
-@media (max-width: 480px) {
-    .register-container {
-        width: 100%;
-        margin: 0;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        border-radius: 0;
-        box-shadow: none;
+@media (max-width: 640px) {
+    .registration-card {
+        padding: 2rem;
+        margin: 1rem;
     }
+
+    .registration-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .registration-title {
+        font-size: 1.8rem;
+    }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
 }
