@@ -80,6 +80,24 @@ const refreshTokenValidation = [
         .isJWT().withMessage('Invalid refresh token format')
 ];
 
+const forgotPasswordValidation = [
+    body('email').isEmail().withMessage('Valid email required'),
+    body('lastName')
+        .trim()
+        .isLength({ min: 2 }).withMessage('Last name must be at least 2 characters long')
+        .matches(/^[a-zA-Z\s-]+$/).withMessage('Last name can only contain letters, spaces, and hyphens'),
+    body('newPassword')
+        .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+        .withMessage('Password must include uppercase, lowercase, number, and special character'),
+    body('confirmPassword').custom((value, { req }) => {
+        if (value !== req.body.newPassword) {
+            throw new Error('Passwords do not match');
+        }
+        return true;
+    })
+];
+
 // Public Routes
 router.post('/register', registerValidation, AuthController.register);
 router.post('/login', loginValidation, AuthController.login);
@@ -91,5 +109,8 @@ router.post('/logout-all', authMiddleware, AuthController.logoutAll);
 router.get('/profile', authMiddleware, AuthController.getProfile);
 router.put('/profile', authMiddleware, profileUpdateValidation, AuthController.updateProfile);
 router.post('/change-password', authMiddleware, passwordChangeValidation, AuthController.changePassword);
+
+// Password reset routes
+router.post('/forgot-password', forgotPasswordValidation, AuthController.forgotPassword);
 
 module.exports = router;

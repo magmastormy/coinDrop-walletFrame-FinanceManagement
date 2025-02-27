@@ -60,6 +60,13 @@ const UserSchema = new mongoose.Schema({
     }],
     lastLogin: {
         type: Date
+    },
+    resetPasswordAttempts: {
+        type: Number,
+        default: 0
+    },
+    resetPasswordLockUntil: {
+        type: Date
     }
 }, {
     timestamps: true,

@@ -9,7 +9,7 @@ import './styles/budgetListStyles.css';
 const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     const { theme } = useTheme();
 
-    const budgetStats = budgets.reduce((stats, budget) => {
+    const budgetStats = Array.isArray(budgets) ? budgets.reduce((stats, budget) => {
         const spent = budget.spent || 0;
         return {
             totalBudget: stats.totalBudget + budget.amount,
@@ -17,7 +17,7 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
             count: stats.count + 1,
             overBudgetCount: stats.overBudgetCount + (spent > budget.amount ? 1 : 0)
         };
-    }, { totalBudget: 0, totalSpent: 0, count: 0, overBudgetCount: 0 });
+    }, { totalBudget: 0, totalSpent: 0, count: 0, overBudgetCount: 0 }) : { totalBudget: 0, totalSpent: 0, count: 0, overBudgetCount: 0 };
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {

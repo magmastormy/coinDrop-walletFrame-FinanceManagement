@@ -219,3 +219,12 @@ export const logout = () => {
     store.dispatch(logoutAction());
     window.location.href = '/login';
 };
+
+export const forgotPassword = async (formData) => {
+    try {
+        const response = await axiosInstance.post('/auth/forgot-password', formData);
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.error || 'Failed to reset password');
+    }
+};
