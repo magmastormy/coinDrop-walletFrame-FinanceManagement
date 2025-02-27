@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import authService from '../../services/authService';
+import authService, { AUTH_ERRORS } from '../../services/authService';
 import './styles/loginStyles.css';
 
 const ForgotPassword = () => {
@@ -25,25 +25,24 @@ const ForgotPassword = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Password validation (referencing userRegistrationForm.jsx)
         if (formData.newPassword !== formData.confirmPassword) {
-            toast.error('Passwords do not match');
+            toast.error(AUTH_ERRORS.PASSWORD_MISMATCH);
             return;
         }
 
         if (formData.newPassword.length < 8) {
-            toast.error('Password must be at least 8 characters long');
+            toast.error(AUTH_ERRORS.PASSWORD_REQUIREMENTS);
             return;
         }
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(formData.newPassword)) {
-            toast.error('Password must include uppercase, lowercase, number, and special character');
+            toast.error(AUTH_ERRORS.PASSWORD_REQUIREMENTS);
             return;
         }
 
         if (!formData.email.includes('@')) {
-            toast.error('Please enter a valid email address');
+            toast.error(AUTH_ERRORS.VALIDATION_ERROR);
             return;
         }
         
@@ -53,7 +52,7 @@ const ForgotPassword = () => {
             toast.success('Password reset successful! Please login with your new password.');
             navigate('/login');
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Failed to reset password');
+            toast.error(error.response?.data?.error || AUTH_ERRORS.SERVER_ERROR);
         } finally {
             setLoading(false);
         }
@@ -102,9 +101,6 @@ const ForgotPassword = () => {
                             value={formData.newPassword}
                             onChange={handleChange}
                         />
-                        <small className="password-requirements">
-                            Password must be at least 8 characters and include uppercase, lowercase, number, and special character
-                        </small>
                     </div>
                     <div className="login-form-field">
                         <label htmlFor="confirmPassword">Confirm Password</label>
