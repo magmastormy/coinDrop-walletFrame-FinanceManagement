@@ -43,3 +43,10 @@ backend/reports/
 backend/uploads/
 uploads/
 thesisImplementation/
+
+# Test files
+backend/utils/testPdf.js
+backend/routes/testRoutes.js
+**/test-*.pdf
+**/test-*.xlsx
+**/test-*.json

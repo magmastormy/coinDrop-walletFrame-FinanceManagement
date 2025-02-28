@@ -1,65 +1,72 @@
 const Report = require('../models/Report');
-const fs = require('fs').promises;
-const path = require('path');
+const { readFileToBuffer, saveBufferToFile } = require('./fileUtils');
 const ReportController = require('../controllers/reportController');
 
-const REPORTS_DIR = path.join(__dirname, '../reports');
-
-async function storeReportMetadata(reportId, reportData) {
-    const report = new Report({
-        _id: reportId,
-        userId: reportData.userId,
-        type: reportData.reportType,
-        format: reportData.format,
-        status: 'processing'
-    });
-    
-    await report.save();
-    return report;
+/**
+ * Store report metadata in database
+ */
+async function storeReportMetadata(userId, reportType, format) {
+  const report = new Report({
+    userId,
+    type: reportType,
+    format: format.toUpperCase(),
+    status: 'processing',
+    generatedAt: new Date()
+  });
+  
+  await report.save();
+  return report;
 }
 
+/**
+ * Get report content from storage
+ */
 async function getReportFromStorage(reportId) {
-    const report = await Report.findById(reportId);
-    if (!report || !report.filePath) {
-        return null;
-    }
-    
-    const content = await fs.readFile(report.filePath);
-    return {
-        content,
-        format: report.format
-    };
+  const report = await Report.findById(reportId);
+  if (!report || !report.filePath) {
+    return null;
+  }
+  
+  const content = await readFileToBuffer(report.filePath);
+  return content ? { content, format: report.format } : null;
 }
 
-async function generateReportAsync(reportId, reportData) {
-    try {
-        // Ensure reports directory exists
-        await fs.mkdir(REPORTS_DIR, { recursive: true });
-        
-        const report = await Report.findById(reportId);
-        const filePath = path.join(REPORTS_DIR, `${reportId}.${reportData.format.toLowerCase()}`);
-        
-        // Generate report using ReportController methods
-        const content = reportData.format === 'PDF' 
-            ? await ReportController.generatePDFReport(reportData, reportData.reportType)
-            : await ReportController.generateExcelReport(reportData, reportData.reportType);
-            
-        await fs.writeFile(filePath, content);
-        
-        // Update report status
-        report.status = 'completed';
-        report.filePath = filePath;
-        await report.save();
-    } catch (error) {
-        console.error('Async report generation failed:', error);
-        const report = await Report.findById(reportId);
-        report.status = 'failed';
-        await report.save();
+/**
+ * Generate report asynchronously
+ */
+async function generateReportAsync(reportId, analytics, reportType, format) {
+  try {
+    const report = await Report.findById(reportId);
+    if (!report) throw new Error(`Report ${reportId} not found`);
+    
+    // Generate report content based on format
+    const content = format.toUpperCase() === 'PDF' 
+      ? await ReportController.generatePDFReport(analytics, reportType)
+      : await ReportController.generateExcelReport(analytics, reportType);
+    
+    // Save file and update report status
+    const filename = `${reportId}.${format.toLowerCase()}`;
+    const filePath = await saveBufferToFile(content, filename);
+    
+    report.status = 'completed';
+    report.filePath = filePath;
+    await report.save();
+    
+    return { success: true, reportId };
+  } catch (error) {
+    console.error('Async report generation failed:', error);
+    const report = await Report.findById(reportId);
+    if (report) {
+      report.status = 'failed';
+      report.error = error.message;
+      await report.save();
     }
+    return { success: false, error: error.message };
+  }
 }
 
 module.exports = {
-    storeReportMetadata,
-    getReportFromStorage,
-    generateReportAsync
+  storeReportMetadata,
+  getReportFromStorage,
+  generateReportAsync
 }; 

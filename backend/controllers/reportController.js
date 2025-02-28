@@ -2,44 +2,37 @@ const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
 const Wallet = require('../models/Wallet');
 const mongoose = require('mongoose');
-const PDFDocument = require('pdfkit-table');
+const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 const Report = require('../models/Report');
 const { format } = require('@fast-csv/format');
 const D3Node = require('d3-node');
 const path = require('path');
 const fs = require('fs').promises;
+const { PDF_STYLES, EXCEL_STYLES, EXCEL_COLUMNS } = require('../utils/reportStyles');
+const { storeReportMetadata, generateReportAsync } = require('../utils/reportGenerator');
+const { saveBufferToFile } = require('../utils/fileUtils');
 
 class ReportController {
+    /**
+     * Main report generation handler
+     */
     static async generateReport(req, res) {
         try {
-            const userId =  req.user._id || req.query.userId || req.user.userId;
+            console.log('Report generation request received:', req.body);
+            const userId = req.user._id || req.user.userId;
             const { reportType, format } = req.body;
             
-            console.log('Generating report:', { userId, reportType, format });
-
+            console.log('Generating report for user:', userId);
+            console.log('Report type:', reportType);
+            console.log('Format:', format);
+            
             // Validate input
             if (!reportType || !format) {
                 return res.status(400).json({ error: 'Report type and format are required' });
             }
-
+            
             try {
-                // Fetch all necessary data
-                const [transactions, wallets, budgets] = await Promise.all([
-                    Transaction.find({ userId }),
-                    Wallet.find({ userId }),
-                    Budget.find({ userId })
-                ]);
-
-                console.log('Data fetched:', { 
-                    transactionsCount: transactions.length,
-                    walletsCount: wallets.length,
-                    budgetsCount: budgets.length
-                });
-
-                // Calculate analytics
-                const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
-                
                 // Create a new report record
                 const report = new Report({
                     userId,
@@ -50,17 +43,35 @@ class ReportController {
                 });
                 
                 await report.save();
+                console.log('Report record created:', report._id);
+                
+                // Fetch data
+                console.log('Fetching data for report...');
+                const [transactions, wallets, budgets] = await Promise.all([
+                    Transaction.find({ userId }),
+                    Wallet.find({ userId }),
+                    Budget.find({ userId })
+                ]);
+                
+                console.log(`Data fetched: ${transactions.length} transactions, ${wallets.length} wallets, ${budgets.length} budgets`);
+                
+                // Calculate analytics
+                const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
+                
+                console.log('Analytics calculated:', analytics);
                 
                 // Generate report content
                 let reportContent;
                 try {
                     if (format.toUpperCase() === 'PDF') {
+                        console.log('Generating PDF report...');
                         reportContent = await this.generatePDFReport(analytics, reportType);
-                    } else if (format.toUpperCase() === 'EXCEL') {
-                        reportContent = await this.generateExcelReport(analytics, reportType);
                     } else {
-                        return res.status(400).json({ error: 'Invalid format. Supported formats: PDF, EXCEL' });
+                        console.log('Generating Excel report...');
+                        reportContent = await this.generateExcelReport(analytics, reportType);
                     }
+                    
+                    console.log(`Report content generated, size: ${reportContent.length} bytes`);
                     
                     // Create reports directory if it doesn't exist
                     const REPORTS_DIR = path.join(__dirname, '../reports');
@@ -70,18 +81,22 @@ class ReportController {
                     const filePath = path.join(REPORTS_DIR, `${report._id}.${format.toLowerCase()}`);
                     await fs.writeFile(filePath, reportContent);
                     
+                    console.log(`Report saved to: ${filePath}`);
+                    
                     // Update the report with the file path and status
                     report.filePath = filePath;
                     report.status = 'completed';
                     await report.save();
                     
-                    res.json({
+                    console.log('Report record updated, status: completed');
+                    
+                    return res.json({
                         reportId: report._id,
                         status: 'success',
                         message: 'Report generated successfully'
                     });
                 } catch (genError) {
-                    console.error('Report generation error:', genError);
+                    console.error('Report content generation error:', genError);
                     report.status = 'failed';
                     await report.save();
                     return res.status(500).json({ error: 'Failed to generate report content', details: genError.message });
@@ -95,9 +110,39 @@ class ReportController {
             res.status(500).json({ error: 'Failed to generate report', details: error.message });
         }
     }
-
+    
+    /**
+     * Start async report generation process
+     */
+    static async startReportGeneration(reportId, userId, reportType, format) {
+        try {
+            // Fetch all necessary data
+            const [transactions, wallets, budgets] = await Promise.all([
+                Transaction.find({ userId }),
+                Wallet.find({ userId }),
+                Budget.find({ userId })
+            ]);
+            
+            // Calculate analytics
+            const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
+            
+            // Generate report asynchronously
+            await generateReportAsync(reportId, analytics, reportType, format);
+        } catch (error) {
+            console.error('Report generation process error:', error);
+            const report = await Report.findById(reportId);
+            if (report) {
+                report.status = 'failed';
+                report.error = error.message;
+                await report.save();
+            }
+        }
+    }
+    
+    /**
+     * Calculate analytics from user data
+     */
     static async calculateAnalytics(transactions, wallets, budgets) {
-        // Similar calculation logic as in dashboardUserShortAnalytics
         const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
         const currentMonth = new Date().getMonth();
         
@@ -123,6 +168,96 @@ class ReportController {
             budgets: budgets.length,
             transactions: transactions.length
         };
+    }
+    
+    /**
+     * Generate PDF report
+     */
+    static async generatePDFReport(analytics, reportType) {
+        return new Promise((resolve, reject) => {
+            try {
+                const doc = new PDFDocument();
+                const buffers = [];
+                
+                // Collect PDF data chunks
+                doc.on('data', chunk => buffers.push(chunk));
+                doc.on('error', reject);
+                
+                // Add header
+                doc.fontSize(PDF_STYLES.header.fontSize)
+                    .text('Financial Report', { align: PDF_STYLES.header.align });
+                doc.moveDown();
+                
+                // Add date and report type
+                doc.fontSize(PDF_STYLES.normal.fontSize)
+                    .text(`Generated on: ${new Date().toLocaleDateString()}`);
+                doc.moveDown();
+                
+                doc.fontSize(PDF_STYLES.subheader.fontSize)
+                    .text(`Report Type: ${reportType}`, { align: PDF_STYLES.subheader.align });
+                doc.moveDown();
+                
+                // Add financial overview
+                doc.fontSize(PDF_STYLES.section.fontSize)
+                    .text('Financial Overview', { underline: true });
+                doc.moveDown();
+                
+                // Add financial data
+                doc.fontSize(PDF_STYLES.normal.fontSize);
+                doc.text(`Total Balance: $${analytics.totalBalance?.toFixed(2) ?? '0.00'}`);
+                doc.text(`Monthly Income: $${analytics.monthlyIncome?.toFixed(2) ?? '0.00'}`);
+                doc.text(`Monthly Expenses: $${analytics.monthlyExpenses?.toFixed(2) ?? '0.00'}`);
+                doc.text(`Savings Rate: ${analytics.savingsRate?.toFixed(1) ?? '0'}%`);
+                
+                // Finalize PDF
+                doc.end();
+                
+                // Return buffer when complete
+                doc.on('end', () => {
+                    const pdfBuffer = Buffer.concat(buffers);
+                    resolve(pdfBuffer);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+    
+    /**
+     * Generate Excel report
+     */
+    static async generateExcelReport(analytics, reportType) {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Financial Report');
+        
+        // Set columns based on report type
+        worksheet.columns = EXCEL_COLUMNS[reportType] || EXCEL_COLUMNS['financial-summary'];
+        
+        // Add header
+        const headerRow = worksheet.addRow(['Financial Report']);
+        headerRow.font = EXCEL_STYLES.header.font;
+        headerRow.alignment = EXCEL_STYLES.header.alignment;
+        
+        // Add date
+        worksheet.addRow(['Generated on:', new Date().toLocaleDateString()]);
+        worksheet.addRow([]);
+        
+        // Add content based on report type
+        const subheaderRow = worksheet.addRow([`${reportType.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`]);
+        subheaderRow.font = EXCEL_STYLES.subheader.font;
+        
+        worksheet.addRow([]);
+        
+        // Add data rows
+        if (reportType === 'financial-summary') {
+            worksheet.addRow(['Total Balance', `$${analytics.totalBalance?.toFixed(2) ?? '0.00'}`]);
+            worksheet.addRow(['Monthly Income', `$${analytics.monthlyIncome?.toFixed(2) ?? '0.00'}`]);
+            worksheet.addRow(['Monthly Expenses', `$${analytics.monthlyExpenses?.toFixed(2) ?? '0.00'}`]);
+            worksheet.addRow(['Savings Rate', `${analytics.savingsRate?.toFixed(1) ?? '0'}%`]);
+        }
+        
+        return workbook.xlsx.writeBuffer();
     }
 
     static async generateSVGChart(data, type = 'bar') {
@@ -170,144 +305,6 @@ class ReportController {
         }
 
         return d3n.svgString();
-    }
-
-    static async generatePDFReport(analytics, reportType) {
-        console.log('Starting PDF generation for', reportType, 'with analytics:', analytics);
-        
-        try {
-            // Create a new PDF document
-            const doc = new PDFDocument();
-            const buffers = [];
-            
-            // Collect PDF data chunks
-            doc.on('data', (chunk) => {
-                console.log('PDF chunk received, size:', chunk.length);
-                buffers.push(chunk);
-            });
-            
-            // Add content to the PDF
-            console.log('Adding content to PDF');
-            
-            // Header
-            doc.fontSize(20).text('Financial Report', { align: 'center' });
-            doc.moveDown();
-            doc.fontSize(12).text(`Generated on: ${new Date().toLocaleDateString()}`);
-            doc.moveDown();
-            
-            // Add report type
-            doc.fontSize(16).text(`Report Type: ${reportType}`, { align: 'center' });
-            doc.moveDown();
-            
-            // Basic content that doesn't rely on complex data
-            doc.fontSize(14).text('Financial Overview', { underline: true });
-            doc.moveDown();
-            
-            // Simple table with basic data
-            doc.fontSize(12).text(`Total Balance: $${analytics.totalBalance?.toFixed(2) || '0.00'}`);
-            doc.text(`Monthly Income: $${analytics.monthlyIncome?.toFixed(2) || '0.00'}`);
-            doc.text(`Monthly Expenses: $${analytics.monthlyExpenses?.toFixed(2) || '0.00'}`);
-            doc.text(`Savings Rate: ${analytics.savingsRate?.toFixed(1) || '0'}%`);
-            
-            // Finalize the PDF
-            console.log('Finalizing PDF document');
-            doc.end();
-            
-            // Return a promise that resolves when the document is complete
-            return new Promise((resolve, reject) => {
-                // Handle errors
-                doc.on('error', (err) => {
-                    console.error('PDF generation error:', err);
-                    reject(err);
-                });
-                
-                // Resolve when document is complete
-                doc.on('end', () => {
-                    const pdfBuffer = Buffer.concat(buffers);
-                    console.log('PDF generation complete, size:', pdfBuffer.length, 'bytes');
-                    resolve(pdfBuffer);
-                });
-            });
-        } catch (error) {
-            console.error('Error in PDF generation:', error);
-            throw error;
-        }
-    }
-
-    static async generateExcelReport(analytics, reportType) {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Financial Report');
-
-        // Common styling
-        worksheet.getColumn(1).width = 30;
-        worksheet.getColumn(2).width = 15;
-
-        // Header
-        worksheet.addRow(['Financial Report']);
-        worksheet.addRow(['Generated on:', new Date().toLocaleDateString()]);
-        worksheet.addRow([]);
-
-        switch (reportType) {
-            case 'financial-summary':
-                worksheet.addRow(['Financial Overview']);
-                worksheet.addRow(['Total Balance', analytics.totalBalance]);
-                worksheet.addRow(['Monthly Income', analytics.monthlyIncome]);
-                worksheet.addRow(['Monthly Expenses', analytics.monthlyExpenses]);
-                worksheet.addRow(['Savings Rate', `${analytics.savingsRate}%`]);
-                break;
-
-            case 'savings-report':
-                // Reference analytics calculation pattern from:
-                // backend/controllers/analyticsController.js lines 211-273
-                worksheet.addRow(['Savings Analysis']);
-                worksheet.addRow(['Current Savings Rate', `${analytics.savingsRate}%`]);
-                worksheet.addRow(['Monthly Savings', analytics.monthlyIncome - analytics.monthlyExpenses]);
-                
-                if (analytics.monthlyTrends) {
-                    worksheet.addRow([]);
-                    worksheet.addRow(['Month', 'Income', 'Expenses', 'Savings']);
-                    analytics.monthlyTrends.forEach(trend => {
-                        worksheet.addRow([
-                            trend.month,
-                            trend.income,
-                            trend.expenses,
-                            trend.income - trend.expenses
-                        ]);
-                    });
-                }
-                break;
-
-            case 'budget-performance':
-                worksheet.addRow(['Budget Performance']);
-                if (analytics.budgetPerformance) {
-                    worksheet.addRow(['Category', 'Budget', 'Spent', 'Remaining', '% Used']);
-                    analytics.budgetPerformance.forEach(budget => {
-                        worksheet.addRow([
-                            budget.name,
-                            budget.amount,
-                            budget.spent,
-                            budget.amount - budget.spent,
-                            `${budget.spentPercentage}%`
-                        ]);
-                    });
-                }
-                break;
-        }
-
-        return workbook.xlsx.writeBuffer();
-    }
-
-    static async saveReportMetadata(userId, type, format) {
-        const report = new Report({
-            userId,
-            type,
-            format,
-            status: 'processing',
-            generatedAt: new Date()
-        });
-        
-        await report.save();
-        return report;
     }
 }
 
