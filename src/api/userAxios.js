@@ -36,6 +36,11 @@ let isRefreshing = false;
 // Add request interceptor to handle auth token
 axiosInstance.interceptors.request.use(
     async (config) => {
+        // Skip token refresh for refresh and login endpoints
+        if (config.url === '/auth/refresh-token' || config.url === '/auth/login' || config.url === '/auth/register') {
+            console.log('Skipping token check for:', config.url);
+            return config;
+        }
         const token = localStorage.getItem('token');
 
         if (!token) {
@@ -49,7 +54,6 @@ axiosInstance.interceptors.request.use(
                 config.headers.Authorization = `Bearer ${newToken}`;
             } catch (error) {
                 console.error('Token refresh failed:', error);
-
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
                 window.location.href = '/login';
@@ -65,11 +69,28 @@ axiosInstance.interceptors.request.use(
         return Promise.reject(error);
     }
 );
+//If the refresh fails (e.g., due to an invalid token), redirect the user to log in
+axiosInstance.interceptors.response.use(
+    response => response,
+    async error => {
+        if (error.response?.status === 401) {
+            try {
+                const newAccessToken = await refreshToken();
+                error.config.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                return axiosInstance(error.config);
+            } catch (refreshError) {
+                localStorage.clear();
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 // Add response interceptor to extract data
 axiosInstance.interceptors.response.use(
     (response) => {
-        console.log('User-axios - Raw response:', response);
         console.log('User axios - Response Data:', response.data);
         // Return the data directly
         return response.data;
