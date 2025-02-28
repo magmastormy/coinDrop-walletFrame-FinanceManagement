@@ -17,6 +17,7 @@ const savingsAccountRoutes = require('./routes/savingsAccountRoutes');
 const savingsGoalRoutes = require('./routes/savingsGoalRoutes');
 const zhipuaiRoutes = require('./routes/zhipuaiRoutes');
 const imageRoutes = require('./routes/imageRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const {initCloudinary} = require('./config/cloudinary');
 const app = express();
@@ -65,6 +66,7 @@ app.use('/api/saving-accounts', savingsAccountRoutes);
 app.use('/api/saving-goals', savingsGoalRoutes);
 app.use('/api/zhipuai', zhipuaiRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health Check Route
 /*

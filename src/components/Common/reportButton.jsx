@@ -5,6 +5,7 @@ import { Button, CircularProgress, Snackbar, Menu, MenuItem } from '@mui/materia
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import reportService from '../../services/reportService';
+import { ErrorBoundary } from 'react-error-boundary';
 
 const ReportButton = ({ 
   accountId, 
@@ -21,19 +22,61 @@ const ReportButton = ({
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleDownload = (blob, filename) => {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    try {
+      // Check if blob is valid
+      if (!(blob instanceof Blob)) {
+        console.error('Invalid blob object:', blob);
+        setSnackbar({ 
+          open: true, 
+          message: 'Error: Downloaded file is not in the correct format', 
+          type: 'error' 
+        });
+        return;
+      }
+      
+      console.log('Creating URL for blob:', blob.size, blob.type);
+      
+      // Create URL and download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      setSnackbar({ 
+        open: true, 
+        message: 'Report downloaded successfully', 
+        type: 'success' 
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      setSnackbar({ 
+        open: true, 
+        message: `Error downloading file: ${error.message}`, 
+        type: 'error' 
+      });
+    }
   };
 
   const handleGenerateReport = async () => {
     try {
       setLoading(true);
+      setSnackbar({ open: false, message: '', type: 'info' });
+      
+      console.log('Generating report with:', {
+        accountId,
+        isGlobal,
+        format: selectedFormat,
+        reportType: selectedType
+      });
+      
       const response = await reportService.generateReport({
         accountId,
         isGlobal,
@@ -41,26 +84,41 @@ const ReportButton = ({
         reportType: selectedType
       });
 
-      // Poll for report completion
-      const checkStatus = async () => {
-        const status = await reportService.getReportStatus(response.reportId);
-        if (status.status === 'completed') {
-          const reportBlob = await reportService.downloadReport(response.reportId);
-          handleDownload(reportBlob, `${selectedType}-${new Date().toISOString()}.${selectedFormat.toLowerCase()}`);
-          setLoading(false);
-          setSnackbar({ open: true, message: 'Report generated successfully', type: 'success' });
-        } else if (status.status === 'failed') {
-          setLoading(false);
-          setSnackbar({ open: true, message: 'Failed to generate report', type: 'error' });
-        } else {
-          setTimeout(checkStatus, 1000);
-        }
-      };
+      console.log('Report generation response:', response);
+      
+      if (response && response.reportId) {
+        // Poll for report completion
+        const checkStatus = async () => {
+          const statusResponse = await reportService.getReportStatus(response.reportId);
+          const status = statusResponse.data || statusResponse;
+          
+          console.log('Report status:', status);
+          
+          if (status.status === 'completed') {
+            const reportBlob = await reportService.downloadReport(response.reportId);
+            handleDownload(reportBlob, `${selectedType}-${new Date().toISOString()}.${selectedFormat.toLowerCase()}`);
+            setLoading(false);
+            setSnackbar({ open: true, message: 'Report generated successfully', type: 'success' });
+          } else if (status.status === 'failed') {
+            setLoading(false);
+            setSnackbar({ open: true, message: 'Failed to generate report', type: 'error' });
+          } else {
+            setTimeout(checkStatus, 1000);
+          }
+        };
 
-      checkStatus();
+        checkStatus();
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
+      console.error('Error generating report:', error);
       setLoading(false);
-      setSnackbar({ open: true, message: 'Error generating report', type: 'error' });
+      setSnackbar({ 
+        open: true, 
+        message: `Error generating report: ${error.response?.data?.error || error.message}`, 
+        type: 'error' 
+      });
     }
   };
 
@@ -77,12 +135,17 @@ const ReportButton = ({
     setSelectedFormat(format);
   };
 
-  useEffect(() => {
-    const fetchReportTypes = async () => {
+  const fetchReportTypes = async () => {
+    try {
       const types = await reportService.getReportTypes();
       setReportTypes(types);
-    };
+    } catch (error) {
+      console.error('Report types loading failed:', error);
+      setReportTypes([]); // Fail gracefully with empty state
+    }
+  };
 
+  useEffect(() => {
     fetchReportTypes();
   }, []);
 
@@ -129,4 +192,12 @@ const ReportButton = ({
   );
 };
 
-export default ReportButton;
+const ReportErrorComponent = () => {
+  return <div>Error loading report types. Please try again later.</div>;
+};
+
+export default () => (
+  <ErrorBoundary fallback={<ReportErrorComponent />}>
+    <ReportButton />
+  </ErrorBoundary>
+);

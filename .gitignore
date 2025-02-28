@@ -37,3 +37,9 @@ uploadedusers.md
 
 .codegpt
 .windsurfrules
+
+# Generated files and uploads
+backend/reports/
+backend/uploads/
+uploads/
+thesisImplementation/

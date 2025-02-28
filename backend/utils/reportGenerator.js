@@ -1,6 +1,7 @@
 const Report = require('../models/Report');
 const fs = require('fs').promises;
 const path = require('path');
+const ReportController = require('../controllers/reportController');
 
 const REPORTS_DIR = path.join(__dirname, '../reports');
 

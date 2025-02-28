@@ -228,3 +228,12 @@ export const forgotPassword = async (formData) => {
         throw new Error(error.response?.data?.error || 'Failed to reset password');
     }
 };
+
+const handleLogout = async () => {
+    try {
+        await logoutUser();
+        navigate('/login');
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
+};

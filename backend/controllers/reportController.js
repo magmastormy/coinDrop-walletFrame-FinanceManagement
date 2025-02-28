@@ -7,42 +7,92 @@ const ExcelJS = require('exceljs');
 const Report = require('../models/Report');
 const { format } = require('@fast-csv/format');
 const D3Node = require('d3-node');
+const path = require('path');
+const fs = require('fs').promises;
 
 class ReportController {
     static async generateReport(req, res) {
         try {
-            const userId = req.user._id;
+            const userId =  req.user._id || req.query.userId || req.user.userId;
             const { reportType, format } = req.body;
+            
+            console.log('Generating report:', { userId, reportType, format });
 
-            // Fetch all necessary data
-            const [transactions, wallets, budgets] = await Promise.all([
-                Transaction.find({ userId }),
-                Wallet.find({ userId }),
-                Budget.find({ userId })
-            ]);
-
-            // Calculate analytics similar to dashboardUserShortAnalytics
-            const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
-
-            // Generate report based on format
-            let reportContent;
-            if (format.toUpperCase() === 'PDF') {
-                reportContent = await this.generatePDFReport(analytics, reportType);
-            } else if (format.toUpperCase() === 'EXCEL') {
-                reportContent = await this.generateExcelReport(analytics, reportType);
+            // Validate input
+            if (!reportType || !format) {
+                return res.status(400).json({ error: 'Report type and format are required' });
             }
 
-            // Store report metadata
-            const report = await this.saveReportMetadata(userId, reportType, format);
+            try {
+                // Fetch all necessary data
+                const [transactions, wallets, budgets] = await Promise.all([
+                    Transaction.find({ userId }),
+                    Wallet.find({ userId }),
+                    Budget.find({ userId })
+                ]);
 
-            res.json({
-                reportId: report._id,
-                status: 'success',
-                message: 'Report generated successfully'
-            });
+                console.log('Data fetched:', { 
+                    transactionsCount: transactions.length,
+                    walletsCount: wallets.length,
+                    budgetsCount: budgets.length
+                });
+
+                // Calculate analytics
+                const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
+                
+                // Create a new report record
+                const report = new Report({
+                    userId,
+                    type: reportType,
+                    format: format.toUpperCase(),
+                    status: 'processing',
+                    generatedAt: new Date()
+                });
+                
+                await report.save();
+                
+                // Generate report content
+                let reportContent;
+                try {
+                    if (format.toUpperCase() === 'PDF') {
+                        reportContent = await this.generatePDFReport(analytics, reportType);
+                    } else if (format.toUpperCase() === 'EXCEL') {
+                        reportContent = await this.generateExcelReport(analytics, reportType);
+                    } else {
+                        return res.status(400).json({ error: 'Invalid format. Supported formats: PDF, EXCEL' });
+                    }
+                    
+                    // Create reports directory if it doesn't exist
+                    const REPORTS_DIR = path.join(__dirname, '../reports');
+                    await fs.mkdir(REPORTS_DIR, { recursive: true });
+                    
+                    // Save the file
+                    const filePath = path.join(REPORTS_DIR, `${report._id}.${format.toLowerCase()}`);
+                    await fs.writeFile(filePath, reportContent);
+                    
+                    // Update the report with the file path and status
+                    report.filePath = filePath;
+                    report.status = 'completed';
+                    await report.save();
+                    
+                    res.json({
+                        reportId: report._id,
+                        status: 'success',
+                        message: 'Report generated successfully'
+                    });
+                } catch (genError) {
+                    console.error('Report generation error:', genError);
+                    report.status = 'failed';
+                    await report.save();
+                    return res.status(500).json({ error: 'Failed to generate report content', details: genError.message });
+                }
+            } catch (dbError) {
+                console.error('Database operation error:', dbError);
+                return res.status(500).json({ error: 'Database operation failed', details: dbError.message });
+            }
         } catch (error) {
             console.error('Report generation error:', error);
-            res.status(500).json({ error: 'Failed to generate report' });
+            res.status(500).json({ error: 'Failed to generate report', details: error.message });
         }
     }
 
@@ -123,88 +173,65 @@ class ReportController {
     }
 
     static async generatePDFReport(analytics, reportType) {
-        const doc = new PDFDocument();
-        const buffers = [];
-
-        doc.on('data', buffers.push.bind(buffers));
+        console.log('Starting PDF generation for', reportType, 'with analytics:', analytics);
         
-        // Header
-        doc.fontSize(20).text('Financial Report', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).text(`Generated on: ${new Date().toLocaleDateString()}`);
-        doc.moveDown();
-
-        // Content based on report type
-        switch (reportType) {
-            case 'financial-summary':
-                // Create table for financial summary
-                const tableData = {
-                    headers: ['Metric', 'Value'],
-                    rows: [
-                        ['Total Balance', `$${analytics.totalBalance.toFixed(2)}`],
-                        ['Monthly Income', `$${analytics.monthlyIncome.toFixed(2)}`],
-                        ['Monthly Expenses', `$${analytics.monthlyExpenses.toFixed(2)}`],
-                        ['Savings Rate', `${analytics.savingsRate.toFixed(1)}%`]
-                    ]
-                };
-
-                await doc.table(tableData, {
-                    prepareHeader: () => doc.font('Helvetica-Bold'),
-                    prepareRow: () => doc.font('Helvetica')
-                });
-
-                // Add SVG chart
-                if (analytics.monthlyTrends) {
-                    const svgString = await this.generateSVGChart({
-                        labels: analytics.monthlyTrends.map(t => t.month),
-                        values: analytics.monthlyTrends.map(t => t.amount)
-                    });
-                    
-                    doc.addPage();
-                    doc.svg(svgString, {
-                        fit: [500, 400],
-                        align: 'center'
-                    });
-                }
-                break;
-
-            case 'savings-report':
-                // Reference analytics route pattern from:
-                // backend/routes/analyticsRoutes.js lines 95-135
-                doc.fontSize(16).text('Savings Analysis');
-                doc.moveDown();
-                doc.text(`Current Savings Rate: ${analytics.savingsRate.toFixed(1)}%`);
-                doc.text(`Monthly Savings: $${(analytics.monthlyIncome - analytics.monthlyExpenses).toFixed(2)}`);
-                
-                if (analytics.recommendations) {
-                    doc.moveDown();
-                    doc.fontSize(14).text('Recommendations:');
-                    analytics.recommendations.forEach(rec => {
-                        doc.text(`• ${rec}`);
-                    });
-                }
-                break;
-
-            case 'budget-performance':
-                // Reference budget performance pattern from:
-                // backend/controllers/budgetController.js lines 229-268
-                doc.fontSize(16).text('Budget Performance');
-                doc.moveDown();
-                if (analytics.budgetPerformance) {
-                    analytics.budgetPerformance.forEach(budget => {
-                        doc.text(`${budget.name}: ${budget.spentPercentage}% used`);
-                    });
-                }
-                break;
-        }
-
-        doc.end();
-
-        return new Promise((resolve) => {
-            doc.on('end', () => {
-                resolve(Buffer.concat(buffers));
+        try {
+            // Create a new PDF document
+            const doc = new PDFDocument();
+            const buffers = [];
+            
+            // Collect PDF data chunks
+            doc.on('data', (chunk) => {
+                console.log('PDF chunk received, size:', chunk.length);
+                buffers.push(chunk);
             });
-        });
+            
+            // Add content to the PDF
+            console.log('Adding content to PDF');
+            
+            // Header
+            doc.fontSize(20).text('Financial Report', { align: 'center' });
+            doc.moveDown();
+            doc.fontSize(12).text(`Generated on: ${new Date().toLocaleDateString()}`);
+            doc.moveDown();
+            
+            // Add report type
+            doc.fontSize(16).text(`Report Type: ${reportType}`, { align: 'center' });
+            doc.moveDown();
+            
+            // Basic content that doesn't rely on complex data
+            doc.fontSize(14).text('Financial Overview', { underline: true });
+            doc.moveDown();
+            
+            // Simple table with basic data
+            doc.fontSize(12).text(`Total Balance: $${analytics.totalBalance?.toFixed(2) || '0.00'}`);
+            doc.text(`Monthly Income: $${analytics.monthlyIncome?.toFixed(2) || '0.00'}`);
+            doc.text(`Monthly Expenses: $${analytics.monthlyExpenses?.toFixed(2) || '0.00'}`);
+            doc.text(`Savings Rate: ${analytics.savingsRate?.toFixed(1) || '0'}%`);
+            
+            // Finalize the PDF
+            console.log('Finalizing PDF document');
+            doc.end();
+            
+            // Return a promise that resolves when the document is complete
+            return new Promise((resolve, reject) => {
+                // Handle errors
+                doc.on('error', (err) => {
+                    console.error('PDF generation error:', err);
+                    reject(err);
+                });
+                
+                // Resolve when document is complete
+                doc.on('end', () => {
+                    const pdfBuffer = Buffer.concat(buffers);
+                    console.log('PDF generation complete, size:', pdfBuffer.length, 'bytes');
+                    resolve(pdfBuffer);
+                });
+            });
+        } catch (error) {
+            console.error('Error in PDF generation:', error);
+            throw error;
+        }
     }
 
     static async generateExcelReport(analytics, reportType) {
