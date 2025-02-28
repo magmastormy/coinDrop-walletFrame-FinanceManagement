@@ -6,8 +6,6 @@ const SavingsAccount = require('../models/SavingsAccount');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const sendEmail = require('../utils/emailService');
 require('dotenv').config();
 
 class AuthController {
@@ -491,61 +489,6 @@ class AuthController {
         }
     }
 
-    static async resetPassword(req, res) {
-        try {
-            const { password } = req.body;
-            const { token } = req.params;
-
-            // Find user with valid token
-            const hashedToken = crypto
-                .createHash('sha256')
-                .update(token)
-                .digest('hex');
-
-            const user = await User.findOne({
-                resetPasswordToken: hashedToken,
-                resetPasswordExpires: { $gt: Date.now() }
-            });
-
-            if (!user) {
-                return res.status(400).json({ error: 'Invalid or expired reset token' });
-            }
-
-            // Update password
-            const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(password, salt);
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
-            await user.save();
-
-            res.json({ message: 'Password reset successful' });
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to reset password' });
-        }
-    }
-
-    static async verifyResetToken(req, res) {
-        try {
-            const { token } = req.params;
-            const hashedToken = crypto
-                .createHash('sha256')
-                .update(token)
-                .digest('hex');
-
-            const user = await User.findOne({
-                resetPasswordToken: hashedToken,
-                resetPasswordExpires: { $gt: Date.now() }
-            });
-
-            if (!user) {
-                return res.status(400).json({ error: 'Invalid or expired reset token' });
-            }
-
-            res.json({ valid: true });
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to verify token' });
-        }
-    }
 }
 
 module.exports = AuthController;

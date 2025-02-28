@@ -17,7 +17,9 @@ const EducationImageUpload = ({
     const [error, setError] = useState('');
 
     const handleImageUpload = async (file) => {
-        if (!file) return;
+        if (!(file instanceof File)) {
+            throw new Error('Invalid file format');
+        }
         
         if (currentImages.length >= maxImages) {
             setError(`Maximum ${maxImages} images allowed`);

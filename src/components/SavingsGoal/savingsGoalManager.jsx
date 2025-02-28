@@ -7,6 +7,7 @@ import NewGoalDialog from './newGoalDialog';
 import EditGoalModal from './editGoalModal';
 import savingsGoalService from '../../services/savingsGoalService';
 import './styles/savingsGoalManagerStyles.css';
+import ReportSection from '../Common/ReportSection';
 
 const SavingsGoalManager = () => {
     const { user } = useAuth();
@@ -101,6 +102,11 @@ const SavingsGoalManager = () => {
                 >
                     New Goal
                 </Button>
+                <ReportSection 
+                    title="Savings Goals Report" 
+                    accountId={user?.id} 
+                    reportType="savings-report"
+                />
             </Box>
 
             <Grid container spacing={3} className="goals-grid">

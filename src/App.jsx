@@ -9,7 +9,7 @@ import Sidebar from './components/Sidebar/sideBar';
 import SidebarToggle from './components/Sidebar/SidebarToggle';
 import { ThemeProvider } from './theme/ThemeContext';
 import { SidebarProvider } from './components/Sidebar/SidebarContext';
-import { useAuth } from './contexts/authContext';
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 

@@ -10,6 +10,7 @@ import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
 import TransactionList from '../Transaction/transactionList';
 import WalletChart from './walletCharts';
+import ReportSection from '../Common/ReportSection';
 import './styles/walletManagerStyles.css';
 
 const WalletManager = () => {
@@ -97,6 +98,11 @@ const WalletManager = () => {
             <div className="wallet-chart-container">
                 <FontAwesomeIcon icon={faWallet} size="lg" />
                 <WalletChart wallets={wallets} />
+                <ReportSection 
+                    title="Wallet Report" 
+                    accountId={selectedWallet?._id || user?.id} 
+                    reportType="wallet-summary"
+                />
             </div>
             {!selectedWallet ? (
                 <div>

@@ -31,7 +31,29 @@ const connectDB = async () => {
         return connection;
     } catch(error) {
         console.error('MongoDB Connection Error:', error);
-        process.exit(1);
+
+        try{
+            console.log("Internet MongoDB Connection One failed. Trying offline database connection")
+            mongoURI= "mongodb://localhost:27017/coinDrop";
+            connection = await mongoose.connect(mongoURI, options);
+                    // Log successful connection details
+            console.log('🟢 MongoDB Connection Established 🌐');
+            console.log(`📍 Connected to Database: ${connection.connection.db.databaseName}`);
+            console.log(`🔗 Host: ${connection.connection.host}`);
+            console.log(`📊 Connection State: ${mongoose.ConnectionStates[connection.connection.readyState]}`);
+
+            // Optional: Log when connection is fully open
+            connection.connection.on('open', () => {
+                console.log('📨 MongoDB Connection Fully Initialized');
+            });
+            return connection;
+        }
+        catch(error)
+        {
+            console.log("MongoDB Offline Failed Too");
+            process.exit(1);
+        }
+
     }
 };
 

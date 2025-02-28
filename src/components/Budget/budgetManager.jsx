@@ -14,6 +14,7 @@ import TransactionChart from '../Transaction/transactionCharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {faChartLine} from '@fortawesome/free-solid-svg-icons';
 import './styles/budgetManagerStyles.css';
+import ReportSection from '../Common/ReportSection';
 
 const BudgetManager = () => 
 {
@@ -123,6 +124,11 @@ const BudgetManager = () =>
                 }} className="create-budget-btn">
                     Create Budget
                 </button>
+                <ReportSection 
+                    title="Budget Report" 
+                    accountId={selectedBudget?._id || user?.id} 
+                    reportType="budget-performance"
+                />
             </div>
 
             {error && <div className="error-message">{error}</div>}

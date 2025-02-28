@@ -31,7 +31,7 @@ const refreshToken = async () => {
     return response.accessToken; // Match backend response structure
 };
 
-
+let isRefreshing = false;
 
 // Add request interceptor to handle auth token
 axiosInstance.interceptors.request.use(
@@ -76,12 +76,28 @@ axiosInstance.interceptors.response.use(
     },
     async (error) => {
         console.error('User-axios - Axios error:', error);
-        if (error.response?.status === 401) {
-            console.log('User-axios - Token expired, sending you to login page.');
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            window.location.href = '/login';
+        const originalRequest = error.config;
+        
+        // Prevent infinite loops
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) return Promise.reject(error);
+            
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const newToken = await refreshToken();
+                axiosInstance.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+                return axiosInstance(originalRequest);
+            } catch (refreshError) {
+                console.error('Refresh token failed:', refreshError);
+                window.location.href = '/login'; // Immediate redirect on failure
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
+        
         return Promise.reject(error);
     }
 );

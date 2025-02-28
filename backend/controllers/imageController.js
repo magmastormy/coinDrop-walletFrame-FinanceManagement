@@ -9,11 +9,17 @@ class ImageController {
                 return res.status(400).json({ error: 'No image provided' });
             }
 
+            // Ensure we have the file path
+            const filePath = req.file.path || req.file.tempFilePath;
+            if (!filePath) {
+                return res.status(400).json({ error: 'Invalid file format' });
+            }
+
             const userId = req.user._id || req.query.userId || req.user.userId;
             const imageType = req.body.imageType || 'education';
             const options = getUploadOptions(imageType);
 
-            const result = await cloudinary.uploader.upload(req.file.path, options);
+            const result = await cloudinary.uploader.upload(filePath, options);
 
             const image = new Image({
                 url: result.secure_url,

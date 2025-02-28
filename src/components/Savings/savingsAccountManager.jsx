@@ -12,6 +12,7 @@ import savingsAccountService from '../../services/savingsAccountService';
 import walletService from '../../services/walletService';
 import { motion } from 'framer-motion';
 import './styles/savingsAccountManagerStyles.css';
+import ReportSection from '../Common/ReportSection';
 
 const SavingsAccountManager = () => {
     const { user } = useAuth();
@@ -161,6 +162,11 @@ const SavingsAccountManager = () => {
         <div 
             className="savings-account-manager"
         >
+            <ReportSection 
+                title="Savings Accounts Report" 
+                accountId={selectedAccount || user?.id} 
+                reportType="savings-report"
+            />
             <SavingsAnalytics accounts={accounts} />
             
             <Grid container spacing={3} sx={{ mb: 4 }}>

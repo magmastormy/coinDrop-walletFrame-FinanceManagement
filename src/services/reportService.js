@@ -1,9 +1,9 @@
-import axiosInstance from '../api/axiosConfig';
+import axiosInstance from '../api/userAxios';
 
 class ReportService {
     async getReportTypes() {
         const response = await axiosInstance.get('/api/reports/types');
-        return response.data;
+        return response;
     }
 
     async generateReport(reportData) {
@@ -13,7 +13,7 @@ class ReportService {
 
     async getReportStatus(reportId) {
         const response = await axiosInstance.get(`/api/reports/${reportId}/status`);
-        return response.data;
+        return response;
     }
 
     async downloadReport(reportId) {
