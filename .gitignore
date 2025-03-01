@@ -37,12 +37,15 @@ uploadedusers.md
 
 .codegpt
 .windsurfrules
+.cursorrules
 
 # Generated files and uploads
 backend/reports/
 backend/uploads/
 uploads/
 thesisImplementation/
+backend/tests/
+backend/node_modules/
 
 # Test files
 backend/utils/testPdf.js

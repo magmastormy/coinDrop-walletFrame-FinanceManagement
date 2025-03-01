@@ -11,10 +11,12 @@ import {
     faMoneyBillWave,
     faCreditCard,
     faUniversity,
-    faPiggyBank
+    faPiggyBank,
+    faFileDownload
 } from '@fortawesome/free-solid-svg-icons';
 import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
+import ReportButton from '../Common/reportButton';
 import './styles/walletCardStyles.css';
 
 const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
@@ -22,6 +24,7 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
     const optionsButtonRef = useRef(null);
     const [optionsPosition, setOptionsPosition] = useState({ top: 0, left: 0 });
 
@@ -199,6 +202,18 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
                                     <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
                                     <span>Transfer</span>
                                 </motion.button>
+                                <motion.button 
+                                    onClick={() => {
+                                        setShowReportModal(true);
+                                        setShowOptions(false);
+                                    }}
+                                    role="menuitem"
+                                    className="option-item"
+                                    whileHover={{ x: 5 }}
+                                >
+                                    <FontAwesomeIcon icon={faFileDownload} aria-hidden="true" />
+                                    <span>Generate Report</span>
+                                </motion.button>
                             </motion.div>,
                             document.body
                         )}
@@ -280,6 +295,30 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
                                 onClick={() => setShowDeleteConfirm(false)}
                             >
                                 Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {showReportModal && createPortal(
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="report-modal">
+                            <h3>Generate Wallet Report</h3>
+                            <p>Generate a report for {wallet.name}</p>
+                            <ReportButton 
+                                accountId={wallet._id}
+                                label="Generate Report"
+                                defaultReportType="wallet-report"
+                                isGlobal={false}
+                            />
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setShowReportModal(false)}
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
