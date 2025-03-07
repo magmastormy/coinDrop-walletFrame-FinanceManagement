@@ -187,12 +187,22 @@ export const savingsAccountService = {
     },
 
     transferBetweenSavings: async ({ fromAccountId, toAccountId, amount }) => {
-        const response = await axiosInstance.post(`${API_URL}/transfer-between`, {
-            fromAccountId,
-            toAccountId,
-            amount: parseFloat(amount)
-        });
-        return response.data;
+        try {
+            console.log("[savingsAccountService - transferBetweenSavings] Attempting transfer between accounts:", 
+                { fromAccountId, toAccountId, amount });
+            
+            const response = await axiosInstance.post(`${API_URL}/transfer-between-accounts`, {
+                fromAccountId,
+                toAccountId,
+                amount: parseFloat(amount)
+            });
+            
+            console.log("[savingsAccountService - transferBetweenSavings] Transfer completed successfully:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("[savingsAccountService - transferBetweenSavings] Error transferring between savings accounts:", error);
+            throw error;
+        }
     },
 };
 

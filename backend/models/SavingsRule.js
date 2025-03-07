@@ -1,45 +1,58 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const SavingsRuleSchema = new mongoose.Schema({
+const savingsRuleSchema = new Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        type: Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     goalId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'savingsgoal',
+        type: Schema.Types.ObjectId,
+        ref: 'SavingsGoal',
         required: true
+    },
+    name: {
+        type: String,
+        required: true
+    },
+    description: String,
+    active: {
+        type: Boolean,
+        default: true
+    },
+    triggerType: {
+        type: String,
+        enum: ['income', 'expense', 'scheduled', 'roundUp', 'budgetUnderflow'],
+        required: true
+    },
+    savePercentage: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: 10
     },
     saveBudgetUnderflow: {
         type: Boolean,
         default: false
     },
-    savePercentage: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 50
-    },
-    roundUpTransactions: {
-        type: Boolean,
-        default: false
-    },
-    savingsPriority: {
+    scheduleFrequency: {
         type: String,
-        enum: ['low', 'medium', 'high'],
-        default: 'medium'
+        enum: ['daily', 'weekly', 'monthly', 'none'],
+        default: 'none'
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    scheduleDay: Number,
+    scheduleAmount: Number,
+    sourceWalletId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Wallet'
     },
-    lastExecuted: {
-        type: Date
-    }
+    lastExecuted: Date
+}, {
+    timestamps: true
 });
 
 // Index for faster queries
-SavingsRuleSchema.index({ userId: 1, goalId: 1 });
+savingsRuleSchema.index({ userId: 1, goalId: 1 });
 
-module.exports = mongoose.model('savingsrule', SavingsRuleSchema);
+module.exports = mongoose.model('SavingsRule', savingsRuleSchema);

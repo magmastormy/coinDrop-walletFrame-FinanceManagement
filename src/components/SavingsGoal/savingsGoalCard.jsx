@@ -49,10 +49,19 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
             setIsLoading(true);
             setError(null);
 
-            const [wallets, savingsAccounts] = await Promise.all([
+            const [walletsResponse, savingsAccounts] = await Promise.all([
                 walletService.getAllWallets(user.id),
                 savingsAccountService.getUserSavingsAccounts(user.id)
             ]);
+            
+            console.log('[SavingsGoalCard] fetchSources - wallets', walletsResponse);
+            console.log('[SavingsGoalCard] fetchSources - savingsAccounts', savingsAccounts);
+            
+            // Extract wallets array from response object if needed
+            const wallets = Array.isArray(walletsResponse) 
+                ? walletsResponse 
+                : (walletsResponse?.wallets || []);
+                
             setSources({
                 wallets: Array.isArray(wallets) ? wallets : [],
                 savingsAccounts: Array.isArray(savingsAccounts) ? savingsAccounts : []
@@ -77,7 +86,20 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                 throw new Error('Invalid contribution amount');
             }
 
-            await savingsGoalService.contributeToGoal(goal.id, {
+            // Check which property contains the goal ID
+            const goalId = goal._id || goal.id;
+            
+            console.log('Contributing to goal:', goalId, {
+                sourceType,
+                sourceId,
+                amount
+            });
+
+            if (!goalId) {
+                throw new Error('Goal ID is missing');
+            }
+
+            await savingsGoalService.contributeToGoal(goalId, {
                 sourceType,
                 sourceId,
                 amount
@@ -93,7 +115,7 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
             }
         } catch (error) {
             console.error('Error contributing to goal:', error);
-            // You might want to show an error message to the user here
+            setError(error.message || 'Failed to contribute to goal');
         }
     };
 
@@ -193,60 +215,86 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                 </CardContent>
             </Card>
 
-            <Dialog open={showContributeDialog} onClose={() => setShowContributeDialog(false)}>
+            <Dialog 
+                open={showContributeDialog} 
+                onClose={() => setShowContributeDialog(false)}
+                fullWidth
+                maxWidth="sm"
+            >
                 <DialogTitle>Contribute to {goal.name}</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
-                        Choose a source and amount to contribute to your goal.
+                    <DialogContentText sx={{ mb: 2 }}>
+                        Current progress: {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
                     </DialogContentText>
+                    
+                    {error && (
+                        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+                            {error}
+                        </Typography>
+                    )}
+                    
                     <TextField
-                        autoFocus
-                        margin="dense"
                         label="Amount"
                         type="number"
                         fullWidth
                         value={contributionAmount}
                         onChange={(e) => setContributionAmount(e.target.value)}
-                        inputProps={{ min: 0, step: 0.01 }}
+                        margin="dense"
+                        inputProps={{ min: 0.01, step: 0.01 }}
+                        required
+                        sx={{ mb: 2 }}
                     />
+                    
                     <FormControl fullWidth margin="dense">
-                        <InputLabel>Source</InputLabel>
+                        <InputLabel id="source-select-label">Source</InputLabel>
                         <Select
+                            labelId="source-select-label"
                             value={selectedSource}
                             onChange={(e) => setSelectedSource(e.target.value)}
                             label="Source"
+                            required
+                            disabled={isLoading}
                         >
-                            {isLoading ? (
-                                <MenuItem disabled>Loading sources...</MenuItem>
-                            ) : error ? (
-                                <MenuItem disabled>Error loading sources</MenuItem>
-                            ) : (
-                                <>
-                                    <ListSubheader>Wallets</ListSubheader>
-                                    {sources.wallets.map(wallet => (
-                                        <MenuItem key={`wallet-${wallet.id}`} value={`wallet-${wallet.id}`}>
-                                            {wallet.name} ({formatCurrency(wallet.balance)})
-                                        </MenuItem>
-                                    ))}
-                                    <ListSubheader>Savings Accounts</ListSubheader>
-                                    {sources.savingsAccounts.map(account => (
-                                        <MenuItem key={`savings-${account.id}`} value={`savings-${account.id}`}>
-                                            {account.name} ({formatCurrency(account.balance)})
-                                        </MenuItem>
-                                    ))}
-                                </>
+                            {sources.wallets.length === 0 && sources.savingsAccounts.length === 0 && (
+                                <MenuItem disabled>No funding sources available</MenuItem>
                             )}
+                            
+                            {sources.wallets.length > 0 && [
+                                <ListSubheader key="wallets-header">Wallets</ListSubheader>,
+                                ...sources.wallets.map(wallet => (
+                                    <MenuItem 
+                                        key={`wallet-${wallet._id}`} 
+                                        value={`wallet-${wallet._id}`}
+                                        disabled={wallet.balance <= 0}
+                                    >
+                                        {wallet.name} ({formatCurrency(wallet.balance)})
+                                    </MenuItem>
+                                ))
+                            ]}
+                            
+                            {sources.savingsAccounts.length > 0 && [
+                                <ListSubheader key="savings-header">Savings Accounts</ListSubheader>,
+                                ...sources.savingsAccounts.map(account => (
+                                    <MenuItem 
+                                        key={`savings-${account._id}`} 
+                                        value={`savings-${account._id}`}
+                                        disabled={account.balance <= 0}
+                                    >
+                                        {account.name} ({formatCurrency(account.balance)})
+                                    </MenuItem>
+                                ))
+                            ]}
                         </Select>
                     </FormControl>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setShowContributeDialog(false)}>Cancel</Button>
                     <Button 
-                        onClick={handleContribute}
+                        onClick={handleContribute} 
+                        color="primary"
                         disabled={!selectedSource || !contributionAmount || isLoading}
-                        variant="contained"
                     >
-                        Contribute
+                        {isLoading ? 'Processing...' : 'Contribute'}
                     </Button>
                 </DialogActions>
             </Dialog>

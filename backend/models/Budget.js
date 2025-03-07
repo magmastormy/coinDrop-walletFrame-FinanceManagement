@@ -77,7 +77,7 @@ budgetSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 // Pre-save middleware to validate category type matches budget type
 budgetSchema.pre('save', async function(next) {
-    if (this.isModified('category') || this.isModified('type')) {
+    if (this.isModified('category')) {
         const Category = mongoose.model('Category');
         const category = await Category.findById(this.category);
         
@@ -85,11 +85,8 @@ budgetSchema.pre('save', async function(next) {
             next(new Error('Category not found'));
             return;
         }
-
-        if (!category.budgetTypes.includes(this.type)) {
-            next(new Error(`Category ${category.name} does not support budget type ${this.type}`));
-            return;
-        }
+        
+        // No type validation needed anymore
     }
     next();
 });
@@ -150,6 +147,22 @@ budgetSchema.statics.getUserBudgetsWithTotalSpent = async function(userId) {
     return this.find({ userId })
         .populate('category')
         .sort({ startDate: -1 });
+};
+
+// Add this to the budget model to handle transaction impacts
+budgetSchema.methods.updateTotalSpent = async function(transactionAmount, transactionType) {
+    if (transactionType === 'expense') {
+        // For expenses, increase the amount spent
+        this.spent = (this.spent || 0) + transactionAmount;
+    } else if (transactionType === 'income' && this.type === 'income') {
+        // For income transactions on income-type budgets
+        this.spent = (this.spent || 0) + transactionAmount;
+    } else if (transactionType === 'transfer' && this.type === 'expense') {
+        // For transfers to expense budgets (adding funds)
+        this.spent = Math.max(0, (this.spent || 0) - transactionAmount);
+    }
+    
+    return this.save();
 };
 
 module.exports = mongoose.model('Budget', budgetSchema);

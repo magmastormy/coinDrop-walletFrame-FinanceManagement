@@ -49,7 +49,7 @@ const BudgetManager = () =>
         try {
             const fetchedBudgets = await budgetService.getUserBudgets(user.id);
             console.log('[BudgetManager] Budgets fetched:', fetchedBudgets);
-            dispatch(setBudgets(fetchedBudgets));
+            dispatch(setBudgets(fetchedBudgets.budgets));
         } catch (error) {
             dispatch(setError(`Budget fetch failed: ${error.message}`));
         } finally {

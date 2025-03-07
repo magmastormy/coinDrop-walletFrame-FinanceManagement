@@ -28,7 +28,7 @@ const refreshToken = async () => {
     if (!refreshToken) throw new Error('No refresh token available');
 
     const response = await axiosInstance.post('/auth/refresh-token', { refreshToken });
-    return response.accessToken; // Match backend response structure
+    return response.token; // Match backend response structure
 };
 
 let isRefreshing = false;

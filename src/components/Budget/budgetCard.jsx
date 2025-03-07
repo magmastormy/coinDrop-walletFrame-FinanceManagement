@@ -19,13 +19,17 @@ import {
 import SaveIcon from '@mui/icons-material/Save';
 import savingsGoalService from '../../services/savingsGoalService';
 import savingsRuleService from '../../services/savingsRuleService';
+import budgetService from '../../services/budgetService';
 import './styles/budgetCardStyles.css';
+import { toast } from 'react-toastify';
 
 const BudgetCard = ({ budget, onEdit, onDelete }) => {
   const { user } = useSelector(state => state.auth);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     fetchSavingsGoals();
@@ -76,33 +80,74 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
   };
 
   const handleSaveToGoal = async () => {
-    if (!selectedGoal) return;
+    if (!selectedGoal) {
+      setError('Please select a savings goal');
+      return;
+    }
+    
+    const savingsAmount = calculateSavings();
+    if (savingsAmount <= 0) {
+      setError('No surplus available to save');
+      return;
+    }
     
     try {
-      const savings = calculateSavings();
+      setIsProcessing(true);
+      setError('');
       
-      // First check if there are any automated rules for this goal
-      const rules = await savingsRuleService.getUserRules(user.id);
-      const goalRules = rules.filter(rule => rule.goalId === selectedGoal.id);
+      // Get walletId from budget
+      let walletId = budget.walletId || budget.wallet?._id;
       
-      // If there's a rule with saveBudgetUnderflow enabled, use that percentage
-      const saveBudgetRule = goalRules.find(rule => rule.saveBudgetUnderflow);
-      const savingsAmount = saveBudgetRule 
-          ? (savings * saveBudgetRule.savePercentage / 100)
-          : savings;
-
-      // Contribute to the goal
-      await savingsGoalService.contributeToGoal(selectedGoal.id, {
-        amount: savingsAmount,
-        sourceType: 'budget',
-        sourceId: budget.id
+      // If walletId is still not available, try to fetch it
+      if (!walletId) {
+        try {
+          const fullBudgetDetails = await budgetService.getBudgetById(budget._id);
+          walletId = fullBudgetDetails?.walletId || fullBudgetDetails?.wallet?._id;
+          
+          if (!walletId) {
+            throw new Error('Could not find wallet associated with this budget');
+          }
+        } catch (err) {
+          throw new Error('Could not retrieve wallet information for this budget');
+        }
+      }
+      
+      console.log('Contributing to goal:', selectedGoal, {
+        sourceType: 'wallet',
+        sourceId: walletId,
+        amount: savingsAmount
       });
-
-      setShowSaveDialog(false);
+      
+      // Use the same format as in savingsGoalCard.jsx
+      await savingsGoalService.contributeToGoal(selectedGoal, {
+        sourceType: 'wallet',
+        sourceId: walletId,
+        amount: parseFloat(savingsAmount)
+      });
+      
+      toast.success(`Successfully saved $${savingsAmount.toFixed(2)} to your goal!`);
       setSelectedGoal(null);
+      setShowSaveDialog(false);
+      
+      // If there's an onEdit callback, call it to refresh the budget
+      if (onEdit) {
+        onEdit(budget);
+      }
     } catch (error) {
       console.error('Failed to save to goal:', error);
+      setError(error.message || 'Failed to contribute to goal');
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleGoalSelect = (event) => {
+    setSelectedGoal(event.target.value);
+    setError(''); // Clear any previous errors
+  };
+
+  const handleSaveClick = () => {
+    handleSaveToGoal();
   };
 
   return (
@@ -202,28 +247,34 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Savings Goal</InputLabel>
             <Select
-              value={selectedGoal?.id || ''}
-              onChange={(e) => {
-                const goal = savingsGoals.find(g => g.id === e.target.value);
-                setSelectedGoal(goal);
-              }}
+              value={selectedGoal || ''}
+              onChange={handleGoalSelect}
+              fullWidth
             >
-              {savingsGoals.map((goal) => (
-                <MenuItem key={goal.id} value={goal.id}>
-                  {goal.name} (${goal.currentAmount} / ${goal.targetAmount})
+              <MenuItem value="" disabled>
+                Select a savings goal
+              </MenuItem>
+              {savingsGoals.map(goal => (
+                <MenuItem 
+                  key={goal._id} 
+                  value={goal._id}
+                >
+                  {goal.name}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowSaveDialog(false)}>Cancel</Button>
+          <Button onClick={() => setShowSaveDialog(false)} color="secondary">
+            Cancel
+          </Button>
           <Button 
-            onClick={handleSaveToGoal} 
-            disabled={!selectedGoal}
-            variant="contained"
+            onClick={handleSaveClick} 
+            color="primary"
+            disabled={isProcessing || !selectedGoal || calculateSavings() <= 0}
           >
-            Save
+            {isProcessing ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

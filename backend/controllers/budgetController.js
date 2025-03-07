@@ -2,7 +2,7 @@ const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
-const { Wallet } = require('@mui/icons-material');
+const Wallet = require('../models/Wallet');
 
 class BudgetController {
     // Create a new budget
@@ -45,11 +45,14 @@ class BudgetController {
             const budgetData = {
                 ...req.body,
                 userId: userId,
+                category: categoryId,
             };
+
+            delete budgetData.categoryId;
 
             const budget = new Budget(budgetData);
             await budget.save();
-            await budget.populate('categoryId');
+            await budget.populate('category');
 
             res.status(201).json({
                 message: '[BudgetController] Budget created successfully',
@@ -63,14 +66,14 @@ class BudgetController {
         }
     }
 
-    // Get all budgets for a user withtional filters
+    // Get all budgets for a user with optional filters
     static async getUserBudgets(req, res) {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
             const budgets = await Budget.find({ 
                 userId: userId 
             })
-            .populate('categoryId')
+            .populate('category')
             .sort('-createdAt');
     
             res.json({ budgets });
@@ -103,13 +106,17 @@ class BudgetController {
                         error: '[BudgetController] Invalid category'
                     });
                 }
+                
+                // Map categoryId to category for schema consistency
+                req.body.category = categoryId;
+                delete req.body.categoryId;
             }
 
             const budget = await Budget.findOneAndUpdate(
                 { _id: id, userId: userId },
                 req.body,
                 { new: true, runValidators: true }
-            ).populate('categoryId');
+            ).populate('category');
 
                 if (!budget) {
                     return res.status(404).json({

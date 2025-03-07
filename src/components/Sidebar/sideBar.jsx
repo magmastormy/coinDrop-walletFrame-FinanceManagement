@@ -37,8 +37,13 @@ const Sidebar = () => {
 
     const handleLogout = async () => {
         try {
-            await logout();
-            navigate('/login');
+            if (typeof logout === 'function') {
+                await logout();
+                navigate('/login');
+            } else {
+                console.error('Logout function is not available');
+                navigate('/login');
+            }
         } catch (error) {
             console.error('Logout failed:', error);
         }

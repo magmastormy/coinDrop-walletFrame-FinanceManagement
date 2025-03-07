@@ -46,20 +46,25 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (formData) => {
         try {
             setLoading(true);
             setError(null);
-            await savingsRuleService.updateRule(goalId, {
-                ...rules,
-                userId: user.id,
-                goalId
-            });
+            if (formData._id) {
+                await savingsRuleService.updateRule(formData._id, formData);
+            } else {
+                await savingsRuleService.createRule({
+                    ...formData,
+                    userId: user.id,
+                    goalId
+                });
+            }
             setSuccess(true);
             if (onRuleChange) {
-                onRuleChange(rules);
+                onRuleChange(formData);
             }
             setTimeout(() => setSuccess(false), 3000);
+            fetchRules();
         } catch (err) {
             setError('Failed to save rules');
             console.error(err);
@@ -143,7 +148,7 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
                 <Button
                     variant="contained"
                     color="primary"
-                    onClick={handleSave}
+                    onClick={() => handleSave(rules)}
                     disabled={loading}
                     fullWidth
                 >

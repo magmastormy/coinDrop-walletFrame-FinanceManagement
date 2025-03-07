@@ -5,10 +5,11 @@ import './styles/budgetCreateStyles.css';
 const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets = [], userId, budgetData }) => {
     const [budgetFormData, setBudgetFormData] = useState({
         name: '',
-        amount: 0,
-        type: 'monthly',
+        amount: '',
         categoryId: '',
         walletId: '',
+        type: 'expense',
+        period: 'monthly',
         startDate: new Date().toISOString().split('T')[0],
         endDate: '',
         metadata: {
@@ -40,25 +41,34 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
+        setError('');
         setLoading(true);
-
+        
+        // Ensure all required fields are present
+        if (!budgetFormData.name || !budgetFormData.amount || !budgetFormData.categoryId || !budgetFormData.walletId || !budgetFormData.type) {
+            setError('All fields are required: name, amount, category, wallet, and type');
+            setLoading(false);
+            return;
+        }
+        
         try {
-            if (!budgetFormData.categoryId || !budgetFormData.walletId) {
-                throw new Error('[BudgetCreateModal] Please select a category and a wallet');
-            }
-
-            const amount = parseFloat(budgetFormData.amount);
-            if (isNaN(amount) || amount <= 0) {
-                throw new Error('[BudgetCreateModal] Please enter a valid amount');
-            }
-
-            if (budgetData) {
-                await budgetService.updateBudget(budgetData._id, budgetFormData);
-            } else {
-                await budgetService.createBudget(userId, budgetFormData);
-            }
-
+            // Find the selected category
+            const selectedCategory = categories.find(cat => cat._id === budgetFormData.categoryId);
+            
+            const budgetData = {
+                name: budgetFormData.name,
+                amount: parseFloat(budgetFormData.amount),
+                categoryId: budgetFormData.categoryId,
+                category: budgetFormData.categoryId, // Map categoryId to category
+                walletId: budgetFormData.walletId,
+                userId: userId,
+                type: budgetFormData.type, // Use the selected type
+                startDate: budgetFormData.startDate || new Date().toISOString().split('T')[0],
+                period: budgetFormData.period || 'monthly',
+            };
+            
+            const result = await budgetService.createBudget(budgetData);
+            
             onCreateBudget();
             resetForm();
             onClose();
@@ -72,10 +82,11 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
     const resetForm = () => {
         setBudgetFormData({
             name: '',
-            amount: 0,
-            type: 'monthly',
+            amount: '',
             categoryId: '',
             walletId: '',
+            type: 'expense',
+            period: 'monthly',
             startDate: new Date().toISOString().split('T')[0],
             endDate: '',
             metadata: {
@@ -132,9 +143,9 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                             value={budgetFormData.type}
                             onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
                         >
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                            <option value="custom">Custom</option>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                            <option value="savings">Savings</option>
                         </select>
                     </div>
                     <div className="form-group">

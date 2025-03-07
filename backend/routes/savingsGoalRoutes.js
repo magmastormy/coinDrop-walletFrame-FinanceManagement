@@ -17,4 +17,7 @@ router.put('/:id', SavingsGoalController.updateSavingsGoal);
 // Delete a savings goal
 router.delete('/:id', SavingsGoalController.deleteSavingsGoal);
 
+// Contribute to a savings goal
+router.post('/:goalId/contribute', SavingsGoalController.contributeSavingsGoal);
+
 module.exports = router;

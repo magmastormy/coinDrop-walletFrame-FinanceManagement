@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -10,8 +10,15 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Box
+    Box,
+    FormControlLabel,
+    Switch,
+    Grid,
+    RadioGroup,
+    Radio,
+    FormLabel
 } from '@mui/material';
+import { useAuth } from '../../contexts/AuthContext';
 import { styled } from '@mui/material/styles';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -37,135 +44,211 @@ const SavingsAccountEditDialog = ({
     onClose,
     account,
     onSave,
-    loading
+    loading,
+    isNewAccount = false
 }) => {
-    const [formState, setFormState] = React.useState({
+    const { user } = useAuth();
+    const [formData, setFormData] = useState({
         name: '',
-        initialBalance: '',
+        initialBalance: 0,
         automation: {
+            enabled: false,
             type: 'fixed',
-            amount: '',
-            frequency: 'monthly'
+            amount: 0,
+            percentage: 0,
+            frequency: 'weekly',
+            nextExecutionDate: new Date().toISOString().split('T')[0]
         }
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (account) {
-            setFormState({
+            setFormData({
                 name: account.name || '',
                 initialBalance: account.balance || 0,
-                automation: account.automation || {
+                automation: {
+                    enabled: account.automation?.enabled || false,
+                    type: account.automation?.type || 'fixed',
+                    amount: account.automation?.amount || 0,
+                    percentage: account.automation?.percentage || 0,
+                    frequency: account.automation?.frequency || 'weekly',
+                    nextExecutionDate: account.automation?.nextExecutionDate 
+                        ? new Date(account.automation.nextExecutionDate).toISOString().split('T')[0]
+                        : new Date().toISOString().split('T')[0]
+                }
+            });
+        } else {
+            setFormData({
+                name: '',
+                initialBalance: 0,
+                automation: {
+                    enabled: false,
                     type: 'fixed',
-                    amount: '',
-                    frequency: 'monthly'
+                    amount: 0,
+                    percentage: 0,
+                    frequency: 'weekly',
+                    nextExecutionDate: new Date().toISOString().split('T')[0]
                 }
             });
         }
-    }, [account]);
+    }, [account, open]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSave({
-            ...formState,
-            balance: parseFloat(formState.initialBalance)
-        });
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        
+        if (name.includes('automation.')) {
+            const field = name.split('.')[1];
+            setFormData(prev => ({
+                ...prev,
+                automation: {
+                    ...prev.automation,
+                    [field]: value
+                }
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
-    const handleAutomationChange = (field, value) => {
-        setFormState(prev => ({
+    const handleSwitchChange = (e) => {
+        setFormData(prev => ({
             ...prev,
             automation: {
                 ...prev.automation,
-                [field]: value
+                enabled: e.target.checked
             }
         }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave(formData);
     };
 
     return (
         <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <form onSubmit={handleSubmit}>
-                <StyledDialogTitle>Edit Savings Account</StyledDialogTitle>
+                <StyledDialogTitle>
+                    {isNewAccount ? 'Create Savings Account' : 'Edit Savings Account'}
+                </StyledDialogTitle>
                 <DialogContent>
-                    <Box sx={{ mt: 2 }}>
-                        <StyledFormControl>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid item xs={12}>
                             <TextField
+                                fullWidth
                                 label="Account Name"
-                                value={formState.name}
-                                onChange={(e) => setFormState(prev => ({
-                                    ...prev,
-                                    name: e.target.value
-                                }))}
-                                fullWidth
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
                                 required
                             />
-                        </StyledFormControl>
+                        </Grid>
+                        
+                        {isNewAccount && (
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Initial Balance"
+                                    name="initialBalance"
+                                    type="number"
+                                    value={formData.initialBalance}
+                                    onChange={handleChange}
+                                    InputProps={{ inputProps: { min: 0, step: 0.01 } }}
+                                />
+                            </Grid>
+                        )}
 
-                        <StyledFormControl>
-                            <TextField
-                                label="Current Balance"
-                                type="number"
-                                value={formState.initialBalance}
-                                onChange={(e) => setFormState(prev => ({
-                                    ...prev,
-                                    initialBalance: e.target.value
-                                }))}
-                                fullWidth
-                                InputProps={{ 
-                                    startAdornment: <span>$</span>,
-                                    inputProps: { min: 0, step: "0.01" }
-                                }}
-                                required
-                            />
-                        </StyledFormControl>
-
-                        <StyledFormControl>
-                            <InputLabel>Automation Type</InputLabel>
-                            <Select
-                                value={formState.automation.type}
-                                onChange={(e) => handleAutomationChange('type', e.target.value)}
-                                label="Automation Type"
-                            >
-                                <MenuItem value="fixed">Fixed Amount</MenuItem>
-                                <MenuItem value="percentage">Percentage of Income</MenuItem>
-                                <MenuItem value="none">No Automation</MenuItem>
-                            </Select>
-                        </StyledFormControl>
-
-                        {formState.automation.type !== 'none' && (
-                            <>
-                                <StyledFormControl>
-                                    <TextField
-                                        label={formState.automation.type === 'fixed' ? 'Amount' : 'Percentage'}
-                                        type="number"
-                                        value={formState.automation.amount}
-                                        onChange={(e) => handleAutomationChange('amount', e.target.value)}
-                                        fullWidth
-                                        InputProps={{
-                                            startAdornment: formState.automation.type === 'fixed' ? <span>$</span> : <span>%</span>,
-                                            inputProps: { 
-                                                min: 0,
-                                                max: formState.automation.type === 'percentage' ? 100 : undefined,
-                                                step: formState.automation.type === 'percentage' ? "1" : "0.01"
-                                            }
-                                        }}
+                        <Grid item xs={12}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={formData.automation.enabled}
+                                        onChange={handleSwitchChange}
+                                        name="automation.enabled"
                                     />
-                                </StyledFormControl>
+                                }
+                                label="Enable Automatic Contributions"
+                            />
+                        </Grid>
 
-                                <StyledFormControl>
-                                    <InputLabel>Frequency</InputLabel>
-                                    <Select
-                                        value={formState.automation.frequency}
-                                        onChange={(e) => handleAutomationChange('frequency', e.target.value)}
-                                        label="Frequency"
-                                    >
-                                        <MenuItem value="daily">Daily</MenuItem>
-                                        <MenuItem value="weekly">Weekly</MenuItem>
-                                        <MenuItem value="monthly">Monthly</MenuItem>
-                                    </Select>
-                                </StyledFormControl>
+                        {formData.automation.enabled && (
+                            <>
+                                <Grid item xs={12}>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend">Contribution Type</FormLabel>
+                                        <RadioGroup
+                                            row
+                                            name="automation.type"
+                                            value={formData.automation.type}
+                                            onChange={handleChange}
+                                        >
+                                            <FormControlLabel value="fixed" control={<Radio />} label="Fixed Amount" />
+                                            <FormControlLabel value="percentage" control={<Radio />} label="Percentage" />
+                                        </RadioGroup>
+                                    </FormControl>
+                                </Grid>
+                                
+                                {formData.automation.type === 'fixed' && (
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Contribution Amount"
+                                            name="automation.amount"
+                                            type="number"
+                                            value={formData.automation.amount}
+                                            onChange={handleChange}
+                                            InputProps={{ inputProps: { min: 0, step: 0.01 } }}
+                                        />
+                                    </Grid>
+                                )}
+                                
+                                {formData.automation.type === 'percentage' && (
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Contribution Percentage"
+                                            name="automation.percentage"
+                                            type="number"
+                                            value={formData.automation.percentage}
+                                            onChange={handleChange}
+                                            InputProps={{ inputProps: { min: 0, max: 100, step: 1 } }}
+                                        />
+                                    </Grid>
+                                )}
+                                
+                                <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Frequency</InputLabel>
+                                        <Select
+                                            name="automation.frequency"
+                                            value={formData.automation.frequency}
+                                            onChange={handleChange}
+                                            label="Frequency"
+                                        >
+                                            <MenuItem value="weekly">Weekly</MenuItem>
+                                            <MenuItem value="monthly">Monthly</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Next Execution Date"
+                                        name="automation.nextExecutionDate"
+                                        type="date"
+                                        value={formData.automation.nextExecutionDate}
+                                        onChange={handleChange}
+                                        InputProps={{ inputProps: { min: new Date().toISOString().split('T')[0] } }}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
                             </>
                         )}
-                    </Box>
+                    </Grid>
                 </DialogContent>
                 <DialogActions sx={{ padding: 2 }}>
                     <Button onClick={onClose} color="inherit">
@@ -177,7 +260,7 @@ const SavingsAccountEditDialog = ({
                         color="primary"
                         disabled={loading}
                     >
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {loading ? 'Saving...' : isNewAccount ? 'Create Account' : 'Save Changes'}
                     </Button>
                 </DialogActions>
             </form>

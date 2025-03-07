@@ -1,6 +1,7 @@
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
+const Category = require('../models/Category');
 
 class WalletController {
     // Create a new wallet
@@ -193,6 +194,35 @@ class WalletController {
                 });
             }
 
+            // Find default category or create one if needed
+            const defaultCategory = await Category.findOne({
+                userId: req.user._id || req.query.userId || req.user.userId,
+                name: "Transfer"
+            }).session(session);
+
+            let categoryId;
+            if (defaultCategory) {
+                categoryId = defaultCategory._id;
+            } else {
+                // Find any category to use as fallback
+                const anyCategory = await Category.findOne({
+                    userId: req.user._id || req.query.userId || req.user.userId
+                }).session(session);
+                
+                if (anyCategory) {
+                    categoryId = anyCategory._id;
+                } else {
+                    // If no categories exist, create a Transfer category
+                    const newCategory = new Category({
+                        userId: req.user._id || req.query.userId || req.user.userId,
+                        name: "Transfer",
+                        description: "Transfers between wallets"
+                    });
+                    const savedCategory = await newCategory.save({ session });
+                    categoryId = savedCategory._id;
+                }
+            }
+
             // Update wallet balances
             fromWallet.balance -= amount;
             toWallet.balance += amount;
@@ -207,10 +237,10 @@ class WalletController {
                 userId: req.user._id || req.query.userId || req.user.userId,
                 type: 'transfer',
                 amount: numAmount,
-                category: 'Transfer', // Default category
+                category: categoryId, 
                 description: `Transfer from ${fromWallet.name} to ${toWallet.name}`,
                 date: new Date(),
-                walletId: fromWallet._id, // Set source wallet as primary
+                walletId: fromWallet._id,
                 fromWalletId: fromWallet._id,
                 toWalletId: toWallet._id
             });
@@ -232,12 +262,11 @@ class WalletController {
                 error: 'Transfer failed',
                 details: error.message
             });
-        }finally{
+        } finally {
             session.endSession();
         }
     }
 
-    // backend/controllers/walletController.js
     static async getWalletBudgets (req, res) {
         try {
             const { walletId } = req.params;

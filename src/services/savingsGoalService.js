@@ -84,6 +84,28 @@ export const savingsGoalService = {
             console.error("[savingsGoalService - getCompletedGoals] Error fetching completed goals:", error);
             throw error;
         }
+    },
+
+    contributeToGoal: async (goalId, contributionData) => {
+        try {
+            console.log(`[savingsGoalService - contributeToGoal] Contributing to goal ${goalId} with data:`, contributionData);
+            
+            // Make sure goalId is not undefined
+            if (!goalId) {
+                throw new Error('Goal ID is required');
+            }
+            
+            const response = await axiosInstance.post(
+                `${API_URL}/${goalId}/contribute`, 
+                contributionData
+            );
+            
+            console.log('[savingsGoalService - contributeToGoal] Successfully contributed to goal:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('[savingsGoalService - contributeToGoal] Error contributing to goal:', error);
+            throw error;
+        }
     }
 };
 

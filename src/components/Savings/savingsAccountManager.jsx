@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Paper } from '@mui/material';
+import { Grid, Box, Paper, Button, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsAccountCard from './savingsAccountCard';
@@ -24,6 +25,7 @@ const SavingsAccountManager = () => {
     const [selectedWallet, setSelectedWallet] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [createAccountOpen, setCreateAccountOpen] = useState(false);
 
     const [modalState, setModalState] = useState({
         deposit: { open: false },
@@ -62,6 +64,10 @@ const SavingsAccountManager = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleCreateAccount = () => {
+        setCreateAccountOpen(true);
     };
 
     const handleDeposit = (accountId) => {
@@ -167,6 +173,19 @@ const SavingsAccountManager = () => {
                 accountId={selectedAccount || user?.id} 
                 reportType="savings-report"
             />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" component="h2">
+                    Your Savings Accounts
+                </Typography>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    startIcon={<AddIcon />}
+                    onClick={handleCreateAccount}
+                >
+                    Create Account
+                </Button>
+            </Box>
             <SavingsAnalytics accounts={accounts} />
             
             <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -248,6 +267,23 @@ const SavingsAccountManager = () => {
                         setError('Transfer failed. Please try again later.');
                     }
                 }}
+            />
+
+            <SavingsAccountEditDialog
+                open={createAccountOpen}
+                account={null}
+                onClose={() => setCreateAccountOpen(false)}
+                onSave={async (newAccount) => {
+                    try {
+                        await savingsAccountService.createSavingsAccount(newAccount);
+                        await fetchAccounts();
+                        setCreateAccountOpen(false);
+                    } catch (error) {
+                        console.error('Failed to create account:', error);
+                        setError('Failed to create the account. Please try again later.');
+                    }
+                }}
+                isNewAccount={true}
             />
         </div>
     );

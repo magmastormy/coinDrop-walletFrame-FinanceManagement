@@ -9,6 +9,18 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 class AuthController {
+
+    // Helper to validate token format
+    static isValidJWT = (token) => {
+        if (!token) return false;
+        try {
+        // Check token has 3 parts (header.payload.signature)
+            const parts = token.split('.');
+            return parts.length === 3;
+        } catch (err) {
+            return false;
+        }
+    };
     static generateTokens(userId, role) {
         const accessToken = jwt.sign(
             { userId, role },

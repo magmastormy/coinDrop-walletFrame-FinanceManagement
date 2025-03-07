@@ -24,4 +24,7 @@ router.put('/transactions/:id', SavingsAccountController.updateTransaction);
 router.post('/:accountId/deposit', SavingsAccountController.depositToSavings);
 router.post('/:accountId/withdraw', SavingsAccountController.withdrawFromSavings);
 
+// Add transfer between accounts route
+router.post('/transfer-between-accounts', SavingsAccountController.transferBetweenAccounts);
+
 module.exports = router;

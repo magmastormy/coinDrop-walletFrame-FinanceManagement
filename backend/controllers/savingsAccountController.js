@@ -144,25 +144,36 @@ class SavingsAccountController {
         }
     }
 
-    static async transferBetweenSavings(req, res) {
+    static async transferBetweenAccounts(req, res) {
         try {
-            const { amount, fromAccountId, toAccountId } = req.body;
+            const { fromAccountId, toAccountId, amount } = req.body;
+            
+            // Validate inputs
+            if (!fromAccountId || !toAccountId || !amount) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            
+            // Implement the transfer logic similar to other transfer methods
             const fromAccount = await SavingsAccount.findById(fromAccountId);
             const toAccount = await SavingsAccount.findById(toAccountId);
-
-            if (fromAccount.balance < amount) {
-                return res.status(400).json({ error: 'Insufficient funds in account' });
-            }
-
-            fromAccount.balance -= amount;
-            toAccount.balance += amount;
-
+            
+            // Perform the transfer
+            fromAccount.balance -= parseFloat(amount);
+            toAccount.balance += parseFloat(amount);
+            
             await fromAccount.save();
             await toAccount.save();
-
-            res.json({ message: 'Transfer successful', fromAccount, toAccount });
+            
+            res.json({ 
+                message: 'Transfer successful', 
+                fromAccount, 
+                toAccount 
+            });
         } catch (error) {
-            res.status(500).json({ error: 'Transfer failed', details: error.message });
+            res.status(500).json({ 
+                error: 'Transfer failed', 
+                details: error.message 
+            });
         }
     }
 }

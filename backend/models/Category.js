@@ -24,11 +24,6 @@ const categorySchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    // Associated budget types
-    budgetTypes: [{
-        type: String,
-        enum: ['expense', 'income', 'savings']
-    }],
     // Icon for UI display
     icon: {
         type: String,

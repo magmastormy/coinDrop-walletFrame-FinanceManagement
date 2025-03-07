@@ -28,14 +28,25 @@ export const getBudgetStats = async () => {
 const budgetService = {
     createBudget: async (budgetData) => {
         try {
+            // Create a clean copy without empty string values
+            const cleanBudgetData = Object.fromEntries(
+                Object.entries(budgetData)
+                    .filter(([key, value]) => value !== '')
+            );
+            
+            // Map categoryId to category if needed
+            if (cleanBudgetData.categoryId && !cleanBudgetData.category) {
+                cleanBudgetData.category = cleanBudgetData.categoryId;
+            }
+            
             const response = await axiosInstance.post(API_URL, {
-                ...budgetData,
-                amount: parseFloat(budgetData.amount),
+                ...cleanBudgetData,
+                amount: parseFloat(cleanBudgetData.amount),
                 currency: 'USD' // Default currency
             });
             return response.data;
         } catch (error) {
-            const serverMessage = error.response?.data?.message;
+            const serverMessage = error.response?.data?.details || error.response?.data?.error;
             throw new Error(serverMessage || 'Budget validation failed');
         }
     },
