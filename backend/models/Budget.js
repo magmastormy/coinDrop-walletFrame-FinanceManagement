@@ -30,6 +30,12 @@ const budgetSchema = new mongoose.Schema({
         required: true
     },
     endDate: Date,
+    // Add walletId field to schema
+    walletId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Wallet',
+        required: true
+    },
     // Link to category
     category: {
         type: mongoose.Schema.Types.ObjectId,
