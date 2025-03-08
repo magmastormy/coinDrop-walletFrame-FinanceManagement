@@ -88,7 +88,6 @@ export const savingsGoalService = {
 
     contributeToGoal: async (goalId, contributionData) => {
         try {
-            console.log(`[savingsGoalService - contributeToGoal] Contributing to goal ${goalId} with data:`, contributionData);
             
             // Make sure goalId is not undefined
             if (!goalId) {

@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -15,11 +16,12 @@ import EducationImageUpload from '../educationImageUpload';
 import ImageService from '../../../services/imageService';
 import ImageUploadPreview from '../imageUploadPreview';
 import educationService from '../../../services/educationService';
+import { toast } from 'react-toastify';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_DIMENSION = 1920;
 
-const MenuBar = ({ editor, onImageUpload, theme }) => {
+const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
     if (!editor) return null;
 
     const fileInputRef = useRef(null);
@@ -32,20 +34,52 @@ const MenuBar = ({ editor, onImageUpload, theme }) => {
     const handleFileChange = async (event) => {
         event.preventDefault();
         const file = event.target.files?.[0];
-        if (file) {
-            try {
-                if (file.size > MAX_FILE_SIZE) {
-                    throw new Error('File size exceeds 5MB limit');
-                }
-                const imageUrl = await onImageUpload(file);
-                if (imageUrl) {
-                    editor.chain().focus().setImage({ src: imageUrl }).run();
-                }
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                // You might want to show this error to the user
+        if (!file) return;
+        
+        try {
+            if (file.size > MAX_FILE_SIZE) {
+                toast.error('File size exceeds 5MB limit');
+                return;
             }
+            
+            // Create preview URL only - don't upload yet
+            const previewUrl = URL.createObjectURL(file);
+            
+            // Add to the image files collection for later upload
+            setImageFiles(prev => [...prev, file]);
+            
+            // Generate a temporary ID for this image
+            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+            
+            // Add to preview state with the file for later upload
+            setUploadedImages(prev => [...prev, {
+                tempId: tempId,
+                preview: previewUrl,
+                file: file,
+                isUploaded: false,
+                pendingUpload: true
+            }]);
+            
+            // Insert image directly into the editor with the preview URL
+            editor.chain()
+                .focus()
+                .setImage({ 
+                    src: previewUrl,
+                    alt: file.name.split('.')[0],
+                    'data-temp-id': tempId // Add a data attribute to find this image later
+                })
+                .run();
+            
+            toast.info('Image added to post. Save to upload.', {
+                autoClose: 2000
+            });
+            
+        } catch (error) {
+            console.error('Error preparing image:', error);
+            toast.error(`Error: ${error.message || 'Failed to prepare image'}`);
         }
+        
+        // Reset the input
         event.target.value = '';
     };
 
@@ -60,17 +94,9 @@ const MenuBar = ({ editor, onImageUpload, theme }) => {
             />
             <button
                 type="button"
-                onClick={handleImageClick}
-                className={editor.isActive('image') ? 'is-active' : ''}
-                style={{ color: theme.text }}
-            >
-                <FontAwesomeIcon icon={faImage} />
-            </button>
-            <button
-                type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                className={editor.isActive('bold') ? 'is-active' : ''}
-                style={{ color: theme.text }}
+                className={`editor-button ${editor.isActive('bold') ? 'is-active' : ''}`}
+                style={{ color: editor.isActive('bold') ? theme.accent : theme.text }}
             >
                 <FontAwesomeIcon icon={faBold} />
             </button>
@@ -120,93 +146,215 @@ const MenuBar = ({ editor, onImageUpload, theme }) => {
             <button type="button" onClick={() => editor.chain().focus().redo().run()} style={{ color: theme.text }}>
                 <FontAwesomeIcon icon={faRedo} />
             </button>
+            <button
+                type="button"
+                onClick={handleImageClick}
+                className="editor-button image-button"
+                style={{ color: theme.text }}
+            >
+                <FontAwesomeIcon icon={faImage} />
+            </button>
         </div>
     );
 };
 
-const CreateEditEducationPost = ({ onSubmit, onClose, initialData }) => {
+const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
     const { theme } = useTheme();
-    const [title, setTitle] = useState(initialData?.title || '');
-    const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [title, setTitle] = useState('');
+    const [imageFiles, setImageFiles] = useState([]);
     const [uploadedImages, setUploadedImages] = useState([]);
-    const [imageFiles, setImageFiles] = useState([]); // Store actual files
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const isEditMode = !!post;
 
     const editor = useEditor({
         extensions: [
             StarterKit,
-            Image
+            Image.configure({
+                inline: false,
+                allowBase64: true,
+                HTMLAttributes: {
+                    class: 'image-resizable',
+                },
+            }),
+            Link.configure({
+                openOnClick: false,
+            }),
         ],
-        content: initialData?.content || '',
-        autofocus: true,
+        content: '',
         editorProps: {
             attributes: {
-                class: 'create-edit-education-editor'
-            }
+                class: 'education-editor-content',
+            },
         }
     });
+
+    useEffect(() => {
+        if (post && editor) {
+            console.log("Loading post for editing:", post);
+            setTitle(post.title || '');
+            
+            // Process content to replace placeholder images with actual image URLs
+            let contentToSet = post.details || '';
+            
+            // Check if we have actual images to use
+            if (post.images && post.images.length > 0) {
+                console.log("Post has images:", post.images);
+                
+                // Create an array to track loaded images
+                const loadedImages = [];
+                
+                // For each image in the post, create a reference
+                post.images.forEach((img, index) => {
+                    if (img && (img.url || typeof img === 'string')) {
+                        const imageUrl = img.url || img;
+                        console.log(`Processing image ${index + 1}:`, imageUrl);
+                        
+                        // Replace [IMAGE] placeholders with actual URLs
+                        contentToSet = contentToSet.replace('[IMAGE]', imageUrl);
+                        
+                        // Create a reference to the existing image
+                        loadedImages.push({
+                            preview: imageUrl,
+                            isExisting: true,
+                            url: imageUrl
+                        });
+                    }
+                });
+                
+                console.log("Loaded images:", loadedImages);
+                console.log("Updated content:", contentToSet);
+                
+                // Set the uploaded images state
+                setUploadedImages(loadedImages);
+            }
+            
+            // Set the editor content with processed content
+            editor.commands.setContent(contentToSet);
+            
+            // For debugging, check what was actually set
+            console.log("Editor content after setting:", editor.getHTML());
+        }
+    }, [post, editor]);
 
     const handleImageUpload = async (file) => {
         try {
             if (file.size > MAX_FILE_SIZE) {
-                throw new Error('File size exceeds 5MB limit');
+                toast.error('File size exceeds 5MB limit');
+                return null;
             }
-
-            // Create a copy of the file with a unique name to prevent conflicts
-            const uniqueFile = new File([file], `${Date.now()}-${file.name}`, {
-                type: file.type
-            });
-
-            setImageFiles(prev => [...prev, uniqueFile]);
             
-            // Instead of using blob URLs, create base64 data URLs for preview
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        } catch (err) {
-            console.error('Failed to handle image:', err);
-            setError('Failed to process image');
+            const response = await ImageService.uploadImage(file, 'education');
+            console.log("Image uploaded:", response);
+            
+            if (response && response.url) {
+                setImageFiles(prev => [...prev, file]);
+                
+                setUploadedImages(prev => [...prev, {
+                    preview: URL.createObjectURL(file),
+                    file
+                }]);
+                
+                return response.url;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            toast.error('Failed to upload image');
             return null;
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (!title.trim()) {
             setError('Title is required');
             return;
         }
-
+        
+        if (!editor.getText().trim()) {
+            setError('Content is required');
+            return;
+        }
+        
         setIsSubmitting(true);
         setError('');
         
         try {
-            const content = editor?.getHTML() || '';
-            await onSubmit({ 
-                title, 
+            const content = editor.getHTML();
+            
+            // Find pending images that need to be uploaded
+            const pendingImages = uploadedImages.filter(img => img.pendingUpload);
+            console.log("Pending images to upload:", pendingImages.length);
+            
+            // Create the post data object
+            const postData = {
+                title: title.trim(),
                 details: content,
-                category: 'general', // Default category
-                images: imageFiles // Send the actual files for upload
+                // Separate pending images and existing image IDs
+                pendingImages: pendingImages,
+                existingImageIds: uploadedImages
+                    .filter(img => img.imageId && !img.pendingUpload)
+                    .map(img => img.imageId)
+            };
+            
+            if (isEditMode) {
+                postData._id = post._id;
+            }
+            
+            console.log('Submitting education post data:', postData);
+            
+            // Show uploading toast when we have pending images
+            if (pendingImages.length > 0) {
+                toast.info(`Uploading ${pendingImages.length} image(s)...`, {
+                    autoClose: false,
+                    toastId: 'uploading-images'
+                });
+            }
+            
+            // Send to server via onSubmit callback
+            const response = await onSubmit(postData);
+            
+            if (pendingImages.length > 0) {
+                toast.update('uploading-images', {
+                    render: 'Images uploaded successfully',
+                    type: toast.TYPE.SUCCESS,
+                    autoClose: 2000
+                });
+            }
+            
+            if (!response) {
+                throw new Error('Failed to save post');
+            }
+            
+            // Clean up any object URLs created for previews
+            uploadedImages.forEach(img => {
+                if (img.preview && typeof img.preview === 'string') {
+                    URL.revokeObjectURL(img.preview);
+                }
             });
             
-            // No need to clean up data URLs since we're using FileReader
+            toast.success(isEditMode ? 'Post updated successfully' : 'Post created successfully');
             onClose();
         } catch (err) {
-            setError(err.message || 'Failed to create post');
+            console.error('Error saving education post:', err);
+            setError('Error saving post: ' + (err.message || 'Unknown error'));
+            toast.error('Error saving post');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Clean up temporary URLs when component unmounts
-    React.useEffect(() => {
+    useEffect(() => {
         return () => {
-            uploadedImages.forEach(url => URL.revokeObjectURL(url));
+            uploadedImages.forEach(img => {
+                if (img.preview && !img.isExisting) {
+                    URL.revokeObjectURL(img.preview);
+                }
+            });
         };
-    }, []);
+    }, [uploadedImages]);
 
     return (
         <AnimatePresence>
@@ -227,7 +375,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData }) => {
                     style={{ backgroundColor: theme.backgroundAlt, color: theme.text }}
                 >
                     <div className="create-edit-education-modal-header" style={{ borderBottom: `1px solid ${theme.border}` }}>
-                        <h2 style={{ color: theme.text }}>{initialData ? 'Edit Post' : 'Create New Post'}</h2>
+                        <h2 style={{ color: theme.text }}>{isEditMode ? 'Edit Post' : 'Create New Post'}</h2>
                         <button 
                             type="button"
                             className="create-edit-education-close-button"
@@ -259,12 +407,58 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData }) => {
                             }}
                         />
                         
-                        <div className="create-edit-education-editor-container" style={{ 
-                            backgroundColor: theme.backgroundAlt,
-                            border: `1px solid ${theme.border}`
-                        }}>
-                            <MenuBar editor={editor} onImageUpload={handleImageUpload} theme={theme} />
-                            <EditorContent editor={editor} />
+                        {uploadedImages.length > 0 && (
+                            <div className="image-preview-container" style={{ marginBottom: '1rem' }}>
+                                <h4 style={{ color: theme.text }}>Uploaded Images:</h4>
+                                <div className="image-previews">
+                                    {uploadedImages.map((image, index) => (
+                                        <div className="image-preview" key={index}>
+                                            <img 
+                                                src={image.preview || image.url} 
+                                                alt={`Preview ${index}`}
+                                                style={{ 
+                                                    maxWidth: '100px', 
+                                                    maxHeight: '100px',
+                                                    border: `1px solid ${theme.border}`
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+                                                    if (!image.isExisting) {
+                                                        setImageFiles(prev => prev.filter((_, i) => i !== index));
+                                                        URL.revokeObjectURL(image.preview);
+                                                    }
+                                                }}
+                                                style={{ 
+                                                    backgroundColor: theme.error,
+                                                    color: 'white' 
+                                                }}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="editor-container">
+                            <MenuBar 
+                                editor={editor} 
+                                theme={theme} 
+                                setImageFiles={setImageFiles}
+                                setUploadedImages={setUploadedImages}
+                            />
+                            <EditorContent 
+                                editor={editor} 
+                                className="education-editor" 
+                                style={{ 
+                                    backgroundColor: theme.background.secondary,
+                                    color: theme.text.primary
+                                }}
+                            />
                         </div>
 
                         <div className="create-edit-education-actions">
@@ -289,7 +483,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData }) => {
                                     color: theme.buttonText
                                 }}
                             >
-                                {isSubmitting ? 'Saving...' : (initialData ? 'Update' : 'Create')}
+                                {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Post')}
                             </button>
                         </div>
                     </form>

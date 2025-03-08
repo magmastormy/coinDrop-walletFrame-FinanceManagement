@@ -1,4 +1,5 @@
 import axiosInstance from "../api/userAxios";
+import ImageService from "../services/imageService";
 
 const API_URL = '/profile';
 
@@ -8,6 +9,7 @@ const profileService = {
         try {
             console.log(`[Profile Service] Fetching profile for user: ${userId}`);
             const response = await axiosInstance.get(`${API_URL}/${userId}`);
+            console.log('[Profile Service] Profile fetched successfully:', response);
             return response;
         } catch (error) {
             if (error.response?.status === 404) {
@@ -66,27 +68,63 @@ const profileService = {
         }
     },
 
-    uploadProfileImage: async (userId, file, type = 'profile') => {
+    uploadProfileImage: async (userId, file) => {
         try {
-            console.log('[Profile Service: uploadProfileImage] Sending image to upload:', file);
-            const formData = new FormData();
-            formData.append('image', file);
-    
-            const config = {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+            if (!file || !userId) {
+                throw new Error('File and user ID are required');
+            }
+            
+            // More robust file validation that doesn't rely solely on instanceof
+            if (!file.name || !file.type || !file.type.startsWith('image/')) {
+                throw new Error('Invalid file format - must be an image file');
+            }
+            
+            console.log("[ProfileService] Uploading profile image for user:", userId);
+            console.log("[ProfileService] File details:", { 
+                name: file.name, 
+                type: file.type, 
+                size: file.size 
+            });
+            
+            // Use ImageService to handle the actual upload
+            const imageResponse = await ImageService.uploadImage(file, 'profile');
+            console.log("[ProfileService] Image upload response:", imageResponse);
+            
+            // Check if we have the required data
+            if (!imageResponse || (!imageResponse.url && !imageResponse.secure_url)) {
+                console.error("[ProfileService] Invalid image response:", imageResponse);
+                throw new Error('Failed to upload image - invalid response');
+            }
+            
+            // Get the URL from the response (handle both url and secure_url formats)
+            const imageUrl = imageResponse.secure_url || imageResponse.url;
+            const imageId = imageResponse._id || imageResponse.publicId;
+            
+            // Now update the user profile with the new image URL
+            const updateData = {
+                profilePicture: imageUrl,
+                imageId: imageId
             };
-    
-            const response = await axiosInstance.post(
-                `${API_URL}/${userId}/upload-image?type=${type}`,
-                formData,
-                config
-            );
-            console.log('[Profile Service: uploadProfileImage] Upload response:', response);
-            return response.data;
+            
+            console.log("[ProfileService] Updating profile with:", updateData);
+            
+            // Send update to server
+            const response = await axiosInstance.put(`${API_URL}/${userId}`, updateData);
+            
+            if (!response || !response.data) {
+                console.error('Failed to update profile with new image:', response);
+                throw new Error('Failed to update profile with new image');
+            }
+            
+            console.log("[ProfileService] Profile image updated successfully");
+            return {
+                url: imageUrl,
+                _id: imageId,
+                profile: response.data
+            };
         } catch (error) {
-            throw new Error(error.response?.data?.error || '[Profile Service: uploadProfileImage] Failed to upload image');
+            console.error('[ProfileService] Image upload error:', error);
+            throw error;
         }
     },
 

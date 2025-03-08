@@ -6,7 +6,6 @@ const API_URL = '/budgets';
 export const getUserBudgets = async (userId, filters = {}) => {
     try {
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
-        console.log('[BudgetService - getUserBudgets] Successfully fetched user budgets:', response);
         return response;
     } catch (error) {
         console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);
@@ -54,7 +53,6 @@ const budgetService = {
     getUserBudgets: async (userId, filters = {}) => {
         try {
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
-            console.log('[BudgetService - getUserBudgets] Successfully fetched user budgets:', response);
             return response;
         } catch (error) {
             console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);

@@ -91,6 +91,10 @@ const educationSlice = createSlice({
                     caption: ''
                 });
             }
+        },
+
+        removeEducation: (state, action) => {
+            state.educations = state.educations.filter(education => education._id !== action.payload);
         }
     }
 });
@@ -108,7 +112,8 @@ export const {
     addComment,
     deleteComment,
     updateEditorContent,
-    addImageToPost
+    addImageToPost,
+    removeEducation
 } = educationSlice.actions;
 
 export default educationSlice.reducer;

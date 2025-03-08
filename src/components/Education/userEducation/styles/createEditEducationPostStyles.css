@@ -250,3 +250,36 @@
         width: 100%;
     }
 }
+
+/* Ensure TipTap content areas are properly styled */
+.ProseMirror {
+  min-height: 200px;
+  padding: 1rem;
+  border-radius: 0 0 4px 4px;
+  outline: none;
+  overflow: auto;
+}
+
+/* Style for images within the editor */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Make sure the editor content is visible */
+.education-editor-content {
+  width: 100%;
+  background-color: inherit;
+  color: inherit;
+}
+
+/* For the editor content container */
+.create-edit-education-editor-container {
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}

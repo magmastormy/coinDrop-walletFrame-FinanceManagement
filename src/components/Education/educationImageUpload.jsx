@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
 import ImageService from '../../services/imageService';
 import { useTheme } from '../../theme/ThemeContext';
+import './styles/educationImageUploadStyles.css';
 
 const EducationImageUpload = ({ 
     onImageUpload, 
@@ -16,24 +17,27 @@ const EducationImageUpload = ({
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleImageUpload = async (file) => {
-        if (!(file instanceof File)) {
-            throw new Error('Invalid file format');
-        }
-        
-        if (currentImages.length >= maxImages) {
+    const handleImageUpload = async (files) => {
+        if (files.length + currentImages.length > maxImages) {
             setError(`Maximum ${maxImages} images allowed`);
             return;
         }
-    
+        
         setUploading(true);
         setError('');
-    
+        
         try {
-            const uploadedImage = await ImageService.uploadImage(file, 'education');
-            await onImageUpload(uploadedImage);
+            for (const file of files) {
+                if (!(file instanceof File)) {
+                    throw new Error('Invalid file format');
+                }
+                
+                // Call the parent handler for image upload
+                await onImageUpload(file);
+            }
         } catch (error) {
-            setError(error.message);
+            setError(error.message || 'Error uploading image');
+            console.error('Image upload error:', error);
         } finally {
             setUploading(false);
         }
@@ -41,16 +45,12 @@ const EducationImageUpload = ({
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: async (acceptedFiles) => {
-            for (const file of acceptedFiles) {
-                if (currentImages.length >= maxImages) break;
-                await handleImageUpload(file);
-            }
+            handleImageUpload(acceptedFiles);
         },
         accept: {
-            'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+            'image/*': ['.jpeg', '.jpg', '.png', '.gif']
         },
-        maxSize: 5242880, // 5MB
-        multiple: true
+        maxSize: 5 * 1024 * 1024 // 5MB
     });
 
     const containerStyle = {
@@ -74,38 +74,15 @@ const EducationImageUpload = ({
         <div className={`education-image-upload ${className}`} style={containerStyle}>
             <div className="current-images">
                 {currentImages.map((image, index) => (
-                    <div key={index} className="image-preview" style={{ position: 'relative' }}>
+                    <div className="image-preview" key={index}>
                         <img 
-                            src={image.url} 
-                            alt={`Upload ${index + 1}`}
-                            className="preview-image"
-                            loading="lazy"
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                borderRadius: '4px'
-                            }}
+                            src={image.preview || image.url} 
+                            alt={`Preview ${index + 1}`} 
                         />
-                        <button
-                            onClick={() => onImageRemove(image._id)}
+                        <button 
+                            onClick={() => onImageRemove(index)}
                             className="remove-image"
                             aria-label="Remove image"
-                            style={{
-                                position: 'absolute',
-                                top: '5px',
-                                right: '5px',
-                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '24px',
-                                height: '24px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer'
-                            }}
                         >
                             <FontAwesomeIcon icon={faTimes} />
                         </button>
@@ -114,28 +91,21 @@ const EducationImageUpload = ({
             </div>
 
             {currentImages.length < maxImages && (
-                <div {...getRootProps()} style={dropzoneStyle}>
+                <div {...getRootProps()} className="dropzone" style={dropzoneStyle}>
                     <input {...getInputProps()} />
                     <FontAwesomeIcon 
                         icon={faImage} 
-                        style={{ 
-                            fontSize: '2em', 
-                            marginBottom: '10px',
-                            color: theme.text.secondary 
-                        }} 
+                        className="upload-icon"
                     />
-                    <p style={{ color: theme.text.primary }}>Drop images or click to select</p>
-                    <span style={{ 
-                        color: theme.text.secondary,
-                        fontSize: '0.9em' 
-                    }}>
+                    <p>Drop images or click to select</p>
+                    <span className="image-limit">
                         {currentImages.length} / {maxImages} images
                     </span>
                 </div>
             )}
             
-            {error && <p style={{ color: theme.error, marginTop: '10px' }}>{error}</p>}
-            {uploading && <p style={{ color: theme.text.secondary, marginTop: '10px' }}>Uploading...</p>}
+            {error && <p className="error-message">{error}</p>}
+            {uploading && <div className="loading-overlay">Uploading...</div>}
         </div>
     );
 };

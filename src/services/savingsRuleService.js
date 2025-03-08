@@ -10,7 +10,6 @@ const savingsRuleService = {
                 throw new Error('UserId is required');
             }
             
-            console.log("Savings Rule Service - getUserRules - userId Received: ", userId);
             const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
             return response.data || [];
         } catch (error) {

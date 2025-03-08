@@ -9,7 +9,6 @@ const walletService = {
                 throw new Error('UserId is required');
             }
             
-            console.log("Wallet Service - getAllWallets - userId Received: ", userId);
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
             return response || []; 
         } catch (error) {

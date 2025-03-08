@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -22,19 +22,27 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
         }
     };
 
-    const { getRootProps, getInputProps } = useDropzone({
-        onDrop: async (acceptedFiles) => {
-            if (acceptedFiles.length > 1) {
-                setError('Only one image can be uploaded');
-                return;
-            }
-            setUploading(true);
+    const onDrop = useCallback(async (acceptedFiles) => {
+        if (acceptedFiles && acceptedFiles.length > 0) {
+            const file = acceptedFiles[0];
+            
             try {
-                await handleImageUpload(acceptedFiles[0]);
+                setUploading(true);
+                setError('');
+                
+                await onImageUpload(file);
+                
+            } catch (error) {
+                console.error('Error in image drop handler:', error);
+                setError(error.message || 'Failed to upload image');
             } finally {
                 setUploading(false);
             }
-        },
+        }
+    }, [onImageUpload]);
+
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
         accept: {
             'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
         },

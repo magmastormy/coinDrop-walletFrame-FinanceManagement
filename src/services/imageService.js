@@ -1,42 +1,45 @@
 import axiosInstance from '../api/userAxios';
 import imageCompression from 'browser-image-compression';
 
-const API_URL = '/images';
+const API_URL = '/images'; //ALWAYS USE THIS URL FOR IMAGE UPLOADS
 
 const imageService = {
     uploadImage: async (file, imageType = 'education') => {
         try {
-            let fileToUpload = file;
+            if (!file) {
+                throw new Error('No file provided');
+            }
             
-            // Only compress if it's a File object
-            if (file instanceof File) {
-                const options = {
-                    maxSizeMB: 1,
-                    maxWidthOrHeight: 1920,
-                    useWebWorker: true,
-                    fileType: 'image/jpeg'
-                };
-                fileToUpload = await imageCompression(file, options);
+            // More flexible file validation
+            if (!file.name || !file.type || !file.type.startsWith('image/')) {
+                throw new Error('Invalid file format - must be an image file');
             }
-
+            
+            console.log(`[ImageService] Uploading ${imageType} image:`, file.name);
+            
             const formData = new FormData();
-            formData.append('image', fileToUpload);
-            formData.append('imageType', imageType);
-
-            // Always use Cloudinary for education posts
-            if (imageType === 'education') {
-                formData.append('storage', 'cloudinary');
-            }
-
-            const response = await axiosInstance.post(`${API_URL}/upload`, formData, {
+            formData.append('image', file);
+            
+            // Add image type as query parameter
+            const response = await axiosInstance.post(`${API_URL}/upload?type=${imageType}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-
-            return response.data;
+            
+            // Log the full response for debugging
+            console.log(`[Step One: Full response from Cloudinary] [ImageService - AFTER UPLOADING TO CLOUDINARY] Server response:`, response);
+            
+            // Fixed condition - if we have a response object at all, process it
+            if (response) {
+                console.log(`[Step Two: Checking if we have a response from Cloudinary] [ImageService - AFTER UPLOADING TO CLOUDINARY] ${imageType} image uploaded successfully:`, response);
+                return response;
+            } else {
+                console.error('[Step Three: Error uploading to Cloudinary] [ImageService - AFTER UPLOADING TO CLOUDINARY] Empty response data:', response);
+                throw new Error('No data received from server');
+            }
         } catch (error) {
-            console.error('Error uploading image:', error);
+            console.error(`[Step Four: Final Error outside main Try-Catch] [ImageService - AFTER UPLOADING TO CLOUDINARY] Error uploading ${imageType} image:`, error);
             throw error;
         }
     },

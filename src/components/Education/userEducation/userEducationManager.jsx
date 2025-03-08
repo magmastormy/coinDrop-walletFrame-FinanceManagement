@@ -34,6 +34,7 @@ import CreateEditEducationPost from './createEditEducationPost';
 import UserEducationPostCard from './userEducationPostCard';
 import UserEducationInformationBar from './userEducationInformationBar';
 import './styles/userEducationManagerStyles.css';
+import { toast } from 'react-toastify';
 
 const UserEducationManager = () => {
     const dispatch = useDispatch();
@@ -63,39 +64,48 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleCreatePost = async (postData) => {
+    const handlePostSubmit = async (postData) => {
         dispatch(setLoading(true));
         try {
-            const response = await educationService.createEducation(postData);
-            dispatch(addEducation(response));
+            let result;
+            
+            if (postData._id) {
+                // Update existing post
+                result = await educationService.updateEducation(postData._id, postData);
+                dispatch(updateEducation(result));
+                toast.success('Post updated successfully');
+            } else {
+                // Create new post
+                result = await educationService.createEducation(postData);
+                dispatch(addEducation(result));
+                toast.success('Post created successfully');
+            }
+            
+            setEditingPost(null);
             setShowCreateModal(false);
-            // Refresh the list to ensure we have the latest data
-            fetchUserEducationPosts();
         } catch (err) {
             dispatch(setError(err.message));
+            toast.error(err.message || 'Failed to save post');
         } finally {
             dispatch(setLoading(false));
         }
     };
 
-    const handleUpdatePost = async (id, postData) => {
-        try {
-            const response = await educationService.updateEducation(id, postData);
-            dispatch(updateEducation(response));
-            setEditingPost(null);
-        } catch (err) {
-            dispatch(setError(err.message));
-        }
-    };
-
     const handleDeletePost = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this post?')) return;
-
+        if (!window.confirm("Are you sure you want to delete this post?")) {
+            return;
+        }
+        
+        dispatch(setLoading(true));
         try {
             await educationService.deleteEducation(id);
             dispatch(deleteEducation(id));
+            toast.success('Post deleted successfully');
         } catch (err) {
             dispatch(setError(err.message));
+            toast.error('Failed to delete post');
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 
@@ -103,8 +113,10 @@ const UserEducationManager = () => {
         try {
             await educationService.likeEducation(postId);
             fetchUserEducationPosts();
+            toast.success('Post liked successfully');
         } catch (err) {
             dispatch(setError(err.message));
+            toast.error('Failed to like post');
         }
     };
 
@@ -112,8 +124,10 @@ const UserEducationManager = () => {
         try {
             await educationService.addComment(postId, comment);
             fetchUserEducationPosts();
+            toast.success('Comment added successfully');
         } catch (err) {
             dispatch(setError(err.message));
+            toast.error('Failed to add comment');
         }
     };
 
@@ -127,9 +141,9 @@ const UserEducationManager = () => {
         setSelectedPost(null);
     };
 
-    const handleEditClick = () => {
-        setEditingPost(selectedPost);
-        handleMenuClose();
+    const handleEditClick = (post) => {
+        setEditingPost(post);
+        setShowCreateModal(true);
     };
 
     const handleDeleteClick = () => {
@@ -137,6 +151,57 @@ const UserEducationManager = () => {
             handleDeletePost(selectedPost.id);
         }
         handleMenuClose();
+    };
+
+    const renderEducationPosts = () => {
+        if (loading) {
+            return <CircularProgress />;
+        }
+
+        if (!educations || educations.length === 0) {
+            return (
+                <Box sx={{ textAlign: 'center', mt: 4 }}>
+                    <Typography variant="h6" color="textSecondary">
+                        You haven't created any education posts yet.
+                    </Typography>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() => setShowCreateModal(true)}
+                        sx={{ mt: 2 }}
+                    >
+                        Create your first post
+                    </Button>
+                </Box>
+            );
+        }
+
+        return educations.map(post => {
+            if (!post || !post._id) {
+                console.warn('Invalid post data:', post);
+                return null;
+            }
+            
+            return (
+                <motion.div
+                    key={post._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    layout
+                >
+                    <UserEducationPostCard
+                        post={post}
+                        currentUser={user}
+                        onLike={() => handleLike(post._id)}
+                        onComment={(comment) => handleComment(post._id, comment)}
+                        onEdit={() => handleEditClick(post)}
+                        onDelete={() => handleDeletePost(post._id)}
+                    />
+                </motion.div>
+            );
+        }).filter(Boolean); // Filter out any null values from invalid posts
     };
 
     if (loading) {
@@ -163,40 +228,7 @@ const UserEducationManager = () => {
                 gap: '24px',
                 padding: '24px'
             }}>
-                {educations.map((post, index) => (
-                    <Box 
-                        key={`education-post-${post.id || index}`}
-                        sx={{
-                            position: 'relative',
-                            height: 'fit-content'
-                        }}
-                    >
-                        <UserEducationPostCard 
-                            key={`post-card-${post.id || index}`}
-                            post={post}
-                            onLike={() => handleLike(post.id)}
-                            onComment={(comment) => handleComment(post.id, comment)}
-                        />
-                        {post.userId === user.id && (
-                            <IconButton
-                                key={`menu-button-${post.id || index}`}
-                                size="small"
-                                sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    backgroundColor: theme.backgroundAlt,
-                                    '&:hover': {
-                                        backgroundColor: theme.primary
-                                    }
-                                }}
-                                onClick={(e) => handleMenuOpen(e, post)}
-                            >
-                                <MoreVertIcon />
-                            </IconButton>
-                        )}
-                    </Box>
-                ))}
+                {renderEducationPosts()}
             </Box>
 
             <Menu
@@ -210,10 +242,6 @@ const UserEducationManager = () => {
                     }
                 }}
             >
-                <MenuItem onClick={handleEditClick} sx={{ color: theme.text }}>
-                    <EditIcon sx={{ mr: 1 }} />
-                    Edit
-                </MenuItem>
                 <MenuItem onClick={handleDeleteClick} sx={{ color: theme.error }}>
                     <DeleteIcon sx={{ mr: 1 }} />
                     Delete
@@ -238,17 +266,14 @@ const UserEducationManager = () => {
             </Fab>
 
             <AnimatePresence>
-                {(showCreateModal || editingPost) && (
-                    <CreateEditEducationPost
+                {showCreateModal && (
+                    <CreateEditEducationPost 
+                        onSubmit={handlePostSubmit} 
                         onClose={() => {
                             setShowCreateModal(false);
                             setEditingPost(null);
-                        }}
-                        onSubmit={editingPost ? 
-                            (data) => handleUpdatePost(editingPost.id, data) : 
-                            handleCreatePost
-                        }
-                        initialData={editingPost}
+                        }} 
+                        post={editingPost}
                     />
                 )}
             </AnimatePresence>

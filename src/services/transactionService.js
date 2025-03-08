@@ -10,7 +10,6 @@ export const getUserTransactions = async (userId, filters = {}) => {
         }).toString();
         console.log(`[getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
         const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
-        console.log(`[getUserTransactions] Transactions fetched successfully:`, response);
         return response;
     } catch (error) {
         console.error(`[getUserTransactions] Error fetching user transactions:`, error);
@@ -27,7 +26,6 @@ const transactionService = {
             }).toString();
             console.log(`[transactionService - getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
             const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
-            console.log(`[transactionService - getUserTransactions] Transactions fetched successfully:`, response);
             return response; 
         } catch (error) {
             console.error("[transactionService - getUserTransactions] Error fetching transactions:", error);
@@ -37,7 +35,6 @@ const transactionService = {
 
     getAllUserTransactions: async (userId, filters = {}) => {
         try {
-            console.log("[transactionService - getAllUserTransactions] Fetching all transactions for userId:", userId);
             const [walletTransactions, savingsTransactions] = await Promise.all([
                 axiosInstance.get(`${API_URL}?${new URLSearchParams({ userId, type: 'wallet',...filters }).toString()}`),
                 axiosInstance.get(`${API_URL}?${new URLSearchParams({ userId, type: 'savings',...filters }).toString()}`)
@@ -50,16 +47,12 @@ const transactionService = {
             const walletData = Array.isArray(walletTransactions?.data)? walletTransactions.data : [];
             const savingsData = Array.isArray(savingsTransactions?.data)? savingsData.data : [];
 
-            console.log("[transactionService - getAllUserTransactions] Wallet Data: ", walletData);
-            console.log("[transactionService - getAllUserTransactions] Savings Data: ", savingsData);
-
             // Combine and sort transactions by date
             const allTransactions = [
                ...walletData.map(t => ({...t, source: 'wallet' })),
                ...savingsData.map(t => ({...t, source: 'savings' }))
             ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            console.log("[transactionService - getAllUserTransactions] All Transactions: ", allTransactions);
             return allTransactions;
         } catch (error) {
             console.error("[transactionService - getAllUserTransactions] Error fetching all user transactions:", error);
@@ -87,7 +80,6 @@ const transactionService = {
         try {
             console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
             const response = await axiosInstance.put(`${API_URL}/${id}`, transactionData);
-            console.log("[transactionService - updateTransaction] Transaction updated successfully:", response);
             return response;
         } catch (error) {
             console.error("[transactionService - updateTransaction] Error updating transaction:", error);
@@ -97,9 +89,7 @@ const transactionService = {
 
     deleteTransaction: async (id) => {
         try {
-            console.log(`[transactionService - deleteTransaction] Deleting transaction with id: ${id}`);
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            console.log("[transactionService - deleteTransaction] Transaction deleted successfully:", response);
             return response;
         } catch (error) {
             console.error("[transactionService - deleteTransaction] Error deleting transaction:", error);
@@ -121,9 +111,7 @@ const transactionService = {
 
     transferBalance: async (transferData) => {
         try {
-            console.log("[transactionService - transferBalance] Transferring balance with data:", transferData);
             const response = await axiosInstance.post(`${API_URL}/transfer`, transferData);
-            console.log("[transactionService - transferBalance] Balance transferred successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[transactionService - transferBalance] Error transferring balance:", error);

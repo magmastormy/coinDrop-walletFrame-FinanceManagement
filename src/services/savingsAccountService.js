@@ -187,10 +187,7 @@ export const savingsAccountService = {
     },
 
     transferBetweenSavings: async ({ fromAccountId, toAccountId, amount }) => {
-        try {
-            console.log("[savingsAccountService - transferBetweenSavings] Attempting transfer between accounts:", 
-                { fromAccountId, toAccountId, amount });
-            
+        try {            
             const response = await axiosInstance.post(`${API_URL}/transfer-between-accounts`, {
                 fromAccountId,
                 toAccountId,
