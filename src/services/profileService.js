@@ -86,41 +86,32 @@ const profileService = {
                 size: file.size 
             });
             
-            // Use ImageService to handle the actual upload
+            // Step 1: Upload the image using ImageService
             const imageResponse = await ImageService.uploadImage(file, 'profile');
             console.log("[ProfileService] Image upload response:", imageResponse);
             
             // Check if we have the required data
-            if (!imageResponse || (!imageResponse.url && !imageResponse.secure_url)) {
+            if (!imageResponse || !imageResponse.url) {
                 console.error("[ProfileService] Invalid image response:", imageResponse);
                 throw new Error('Failed to upload image - invalid response');
             }
             
-            // Get the URL from the response (handle both url and secure_url formats)
-            const imageUrl = imageResponse.secure_url || imageResponse.url;
-            const imageId = imageResponse._id || imageResponse.publicId;
-            
-            // Now update the user profile with the new image URL
+            // Step 2: Update the user profile with the image URL
             const updateData = {
-                profilePicture: imageUrl,
-                imageId: imageId
+                profilePicture: imageResponse.url,
+                imageId: imageResponse._id || imageResponse.publicId
             };
             
             console.log("[ProfileService] Updating profile with:", updateData);
             
-            // Send update to server
-            const response = await axiosInstance.put(`${API_URL}/${userId}`, updateData);
+            // Use the updateUserProfile method instead of direct API call
+            const updatedProfile = await profileService.updateUserProfile(userId, updateData);
             
-            if (!response || !response.data) {
-                console.error('Failed to update profile with new image:', response);
-                throw new Error('Failed to update profile with new image');
-            }
+            console.log("[ProfileService-uploadProfileImage] Profile image updated successfully", updatedProfile);
             
-            console.log("[ProfileService] Profile image updated successfully");
             return {
-                url: imageUrl,
-                _id: imageId,
-                profile: response.data
+                url: imageResponse.url,
+                profile: updatedProfile?.data?.profile || {}
             };
         } catch (error) {
             console.error('[ProfileService] Image upload error:', error);
