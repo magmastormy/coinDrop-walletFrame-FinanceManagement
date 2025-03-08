@@ -2,7 +2,6 @@ import axiosInstance from "../api/userAxios";
 const API_URL = '/saving-accounts';
 
 export const savingsAccountService = {
-    // Create a new savings account
     createSavingsAccount: async (accountData) => {
         try {
             console.log("[savingsAccountService - createSavingsAccount] Savings account data:", accountData);
@@ -15,7 +14,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Get savings account details
     getSavingsAccount: async (accountId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${accountId}`);
@@ -23,7 +21,6 @@ export const savingsAccountService = {
             return response;
         } catch (error) {
             console.error("[savingsAccountService - getSavingsAccount] Error fetching savings account:", error);
-            // Return null instead of throwing error for 404
             if (error.response?.status === 404) {
                 console.log("[savingsAccountService - getSavingsAccount] Savings account not found for ID:", accountId);
                 return null;
@@ -32,7 +29,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Get user savings accounts
     getUserSavingsAccounts: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/userId=${userId}`);
@@ -40,9 +36,7 @@ export const savingsAccountService = {
             return response;
         } catch (error) {
             console.error("[savingsAccountService - getUserSavingsAccounts] Error fetching user savings accounts:", error);
-            // Return empty array instead of throwing error
             if (error.response) {
-                // Log the error response for debugging
                 console.error("Error response data:", error.response.data);
                 console.error("Error response status:", error.response.status);
             }
@@ -54,7 +48,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Transfer money to savings
     transferToSavings: async (userId, amount, sourceWalletId, transferType) => {
         try {
             const response = await axiosInstance.post(`${API_URL}/transfer`, {
@@ -71,7 +64,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Withdraw from savings
     withdrawFromSavings: async (userId, amount, targetWalletId) => {
         try {
             const response = await axiosInstance.post(`${API_URL}/withdraw`, {
@@ -87,7 +79,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Set up automatic savings
     setupAutomaticSavings: async (userId, config) => {
         try {
             const response = await axiosInstance.post(`${API_URL}/automatic-setup`, {
@@ -102,7 +93,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Get savings transactions
     getSavingsTransactions: async (userId, page = 1, limit = 10) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/transactions/${userId}`, {
@@ -116,7 +106,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Update automatic savings settings
     updateAutomaticSavings: async (userId, config) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/automatic-settings`, {
@@ -131,7 +120,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Update savings account
     updateSavingsAccount: async (accountId, updateData) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/${accountId}`, updateData);
@@ -143,7 +131,6 @@ export const savingsAccountService = {
         }
     },
 
-    // Delete savings account
     deleteSavingsAccount: async (accountId) => {
         try {
             // First fetch the account to check if it's the default "Savings" account

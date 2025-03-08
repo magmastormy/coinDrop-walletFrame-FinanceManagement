@@ -160,9 +160,11 @@ class EducationController {
                 await ImageService.deleteImage(image._id);
             }
 
-            await education.remove();
+            await Education.findByIdAndDelete(req.params.id);
+            
             res.status(200).json({ message: 'Education post deleted successfully' });
         } catch (error) {
+            console.error('Error deleting education post:', error);
             res.status(400).json({ error: error.message });
         }
     }

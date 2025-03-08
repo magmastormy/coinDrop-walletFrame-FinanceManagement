@@ -104,7 +104,6 @@ const profileService = {
             
             console.log("[ProfileService] Updating profile with:", updateData);
             
-            // Use the updateUserProfile method instead of direct API call
             const updatedProfile = await profileService.updateUserProfile(userId, updateData);
             
             console.log("[ProfileService-uploadProfileImage] Profile image updated successfully", updatedProfile);

@@ -45,6 +45,7 @@ const UserEducationManager = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedPost, setSelectedPost] = useState(null);
     const { theme } = useTheme();
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         fetchUserEducationPosts();
@@ -91,21 +92,36 @@ const UserEducationManager = () => {
         }
     };
 
-    const handleDeletePost = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this post?")) {
-            return;
-        }
-        
-        dispatch(setLoading(true));
+    const handleDeletePost = async (postId) => {
         try {
-            await educationService.deleteEducation(id);
-            dispatch(deleteEducation(id));
+            setIsLoading(true);
+            
+            if (!postId) {
+                toast.error('No post ID provided for deletion');
+                return;
+            }
+            
+            // Show confirmation dialog
+            const confirmed = window.confirm('Are you sure you want to delete this post?');
+            if (!confirmed) {
+                return;
+            }
+            
+            console.log(`[userEducationManager] Deleting post with ID: ${postId}`);
+            
+            // Attempt to delete the post
+            await educationService.deleteEducation(postId);
+            
+            // Update the UI after successful deletion
+            dispatch(deleteEducation(postId));
             toast.success('Post deleted successfully');
-        } catch (err) {
-            dispatch(setError(err.message));
-            toast.error('Failed to delete post');
+        } catch (error) {
+            console.error('[userEducationManager] Error deleting post:', error);
+            
+            // User-friendly error message
+            toast.error(error.message || 'Failed to delete post. Please try again later.');
         } finally {
-            dispatch(setLoading(false));
+            setIsLoading(false);
         }
     };
 

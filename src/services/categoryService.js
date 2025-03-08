@@ -1,8 +1,6 @@
-// src/services/categoryService.js
 import axiosInstance from "../api/userAxios";
 const API_URL = '/categories';
 
-// Export individual functions for better tree-shaking
 export const getUserCategories = async (userId) => {
     try {
         if (!userId) {
@@ -66,14 +64,12 @@ const categoryService = {
 
     deleteCategory: async (id) => {
         try {
-            // First fetch the category to check if it's the default "None" category
-            const category = await axiosInstance.get(`${API_URL}/${id}`);
-            if (category.data.name === "None") {
-                console.error('deleteCategory: Cannot delete the default "None" category');
-                throw new Error("Cannot delete the default 'None' category");
+            if (!id) {
+                throw new Error('Category ID is required for deletion');
             }
+        
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            console.log('deleteCategory: Successfully deleted category:', response.data);
+            console.log('Category deleted successfully:', response);
             return response.data;
         } catch (error) {
             console.error('deleteCategory: Error deleting category:', error);

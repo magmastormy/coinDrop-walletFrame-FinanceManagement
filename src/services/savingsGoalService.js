@@ -88,8 +88,6 @@ export const savingsGoalService = {
 
     contributeToGoal: async (goalId, contributionData) => {
         try {
-            
-            // Make sure goalId is not undefined
             if (!goalId) {
                 throw new Error('Goal ID is required');
             }

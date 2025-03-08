@@ -203,12 +203,22 @@ const educationService = {
 
     deleteEducation: async (id) => {
         try {
+            if (!id) {
+                throw new Error('Education post ID is required for deletion');
+            }
+            
+            console.log(`[educationService] Attempting to delete education post with ID: ${id}`);
+            
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            console.log('deleteEducation: Post deleted successfully', response);
+            console.log('[educationService] Post deleted successfully via DELETE', response);
             return response.data;
         } catch (error) {
-            console.error('deleteEducation: Error deleting education:', error);
-            throw error;
+            console.error('[educationService] Error deleting education:', error);
+            
+            const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+            const enhancedError = new Error(`Failed to delete post: ${errorMessage}`);
+            enhancedError.originalError = error;
+            throw enhancedError;
         }
     },
 
@@ -236,14 +246,12 @@ const educationService = {
 
     addComment: async (id, comment) => {
         try {
-            // Change 'content' to 'text' to match backend validation
             const response = await axiosInstance.post(`${API_URL}/${id}/comments`, { text: comment });
             console.log('addComment: Comment added successfully', response.data);
             return response.data;
         } catch (error) {
             console.error('addComment: Error adding comment:', error);
             
-            // Improve error handling to show validation errors
             if (error.response?.data?.details) {
                 console.error('Comment validation details:', error.response.data.details);
                 const errorMessages = error.response.data.details.map(detail => detail.message).join(', ');
@@ -266,7 +274,6 @@ const educationService = {
     }
 };
 
-// Helper function for escaping special regex characters
 function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
