@@ -72,6 +72,7 @@ Please provide:
 };
 
 exports.sendMessage = async (req, res, next) => {
+    console.log('Sending message to ZhipuAI');
     try {
         const { messages } = req.body;
         if (!messages || !Array.isArray(messages)) {

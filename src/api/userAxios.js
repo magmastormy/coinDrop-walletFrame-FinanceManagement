@@ -1,6 +1,6 @@
 import axios from 'axios';
-import store from '../slices/store';
-import { logoutAction } from '../slices/authSlice';
+import { store } from '../slices/store';
+import { logout } from '../slices/authSlice';
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -97,7 +97,7 @@ axiosInstance.interceptors.response.use(
                     
                     if (!refreshToken) {
                         // No refresh token, redirect to login
-                        store.dispatch(logoutAction());
+                        store.dispatch(logout());
                         window.location.href = '/login';
                         return Promise.reject(error);
                     }
@@ -116,13 +116,13 @@ axiosInstance.interceptors.response.use(
                 } catch (refreshError) {
                     // If refresh fails, logout and redirect
                     console.error('Token refresh failed:', refreshError);
-                    store.dispatch(logoutAction());
+                    store.dispatch(logout());
                     window.location.href = '/login';
                     return Promise.reject(refreshError);
                 }
             } else {
                 // For other authentication errors, logout and redirect
-                store.dispatch(logoutAction());
+                store.dispatch(logout());
                 window.location.href = '/login';
             }
         }
