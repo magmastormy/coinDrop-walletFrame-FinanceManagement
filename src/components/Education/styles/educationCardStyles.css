@@ -35,13 +35,14 @@
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Image Container */
+/* Updated Image Container Styles */
 .card-image-container {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 220px;
   overflow: hidden;
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 1rem;
 }
 
 .card-image {
@@ -217,10 +218,30 @@
   background: var(--color-primary-dark);
 }
 
-/* Responsive Design */
+/* Remove duplicate image container */
+.card-footer-image {
+  display: none;
+}
+
+/* Add indicator for multiple images */
+.image-counter {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .card-image-container {
-    height: 160px;
+    height: 180px;
   }
 
   .card-content {

@@ -22,11 +22,15 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '../../../theme/ThemeContext';
 import './styles/userEducationPostCardStyles.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faImages } from '@fortawesome/free-solid-svg-icons';
+import EducationImageGallery from '../educationImageGallery';
 
 const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, onDelete }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [showComments, setShowComments] = useState(false);
     const [newComment, setNewComment] = useState('');
+    const [showImageGallery, setShowImageGallery] = useState(false);
     const { theme } = useTheme();
 
     if (!post) {
@@ -34,29 +38,6 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
     }
 
     const isAuthor = currentUser?._id === post.user?._id || currentUser?.id === post.user;
-
-    const renderImage = (imageUrl) => {
-        if (!imageUrl?.url) return null;
-        
-        return (
-            <Box 
-                component="img"
-                src={imageUrl.url}
-                alt="Post content"
-                onError={(e) => {
-                    console.error('Image failed to load:', imageUrl.url);
-                    e.target.style.display = 'none';
-                }}
-                sx={{
-                    width: '100%',
-                    height: 'auto',
-                    objectFit: 'cover',
-                    maxHeight: '300px',
-                    borderRadius: '4px'
-                }}
-            />
-        );
-    };
 
     const handleMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -172,12 +153,6 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
 
                 <Typography variant="h6" sx={{ mb: 2 }}>{post.title}</Typography>
 
-                {post.images && post.images.map((image, index) => (
-                    <Box key={`${post._id}-image-${index}`} sx={{ mb: 2 }}>
-                        {renderImage(image)}
-                    </Box>
-                ))}
-
                 <div 
                     className="post-content" 
                     dangerouslySetInnerHTML={{ __html: post.details }}
@@ -263,6 +238,14 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                     </Box>
                 )}
             </CardContent>
+
+            {showImageGallery && (
+                <EducationImageGallery
+                    images={post.images}
+                    initialIndex={0}
+                    onClose={() => setShowImageGallery(false)}
+                />
+            )}
         </Card>
     );
 };

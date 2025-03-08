@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardMedia, Typography, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeart, faComment, faShare } from '@fortawesome/free-solid-svg-icons';
+import { faHeart, faComment, faShare, faImages, faImage } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
@@ -48,15 +48,57 @@ const EducationCard = ({ education }) => {
                 style={cardStyle}
                 onClick={() => setIsModalOpen(true)}
             >
-                {education.images && education.images.length > 0 && (
-                    <CardMedia
-                        component="img"
-                        height="200"
-                        image={education.images[0].url}
-                        alt={education.title}
-                        style={{ objectFit: 'cover' }}
-                    />
-                )}
+                <CardMedia
+                    component="div"
+                    className="card-image-container"
+                    sx={{ 
+                        height: { xs: 180, md: 220 },
+                        position: 'relative'
+                    }}
+                >
+                    {education.images && education.images.length > 0 ? (
+                        <>
+                            <img
+                                src={education.images[0].url}
+                                alt={education.title}
+                                className="card-image"
+                                loading="lazy"
+                            />
+                            {education.images.length > 1 && (
+                                <Box 
+                                    className="image-counter"
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: '10px',
+                                        right: '10px',
+                                        bgcolor: 'rgba(0,0,0,0.6)',
+                                        color: 'white',
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: '12px',
+                                        fontSize: '0.75rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <FontAwesomeIcon icon={faImages} />
+                                    {education.images.length}
+                                </Box>
+                            )}
+                        </>
+                    ) : (
+                        <Box sx={{ 
+                            bgcolor: theme.background.tertiary, 
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <FontAwesomeIcon icon={faImage} size="2x" opacity={0.4} />
+                        </Box>
+                    )}
+                </CardMedia>
                 
                 <CardContent>
                     <Typography 
