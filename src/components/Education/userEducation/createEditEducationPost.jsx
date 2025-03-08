@@ -166,6 +166,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const isEditMode = !!post;
+    const [isUploading, setIsUploading] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -244,99 +245,105 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
                 return null;
             }
             
-            const response = await ImageService.uploadImage(file, 'education');
-            console.log("Image uploaded:", response);
+            // Show loading state
+            setIsUploading(true);
             
-            if (response && response.url) {
-                setImageFiles(prev => [...prev, file]);
-                
-                setUploadedImages(prev => [...prev, {
-                    preview: URL.createObjectURL(file),
-                    file
-                }]);
-                
-                return response.url;
+            const response = await ImageService.uploadImage(file, 'education');
+            console.log("[CreateEditEducation] Image uploaded response:", response);
+            
+            // Check for valid response data
+            if (!response || !response.url) {
+                throw new Error('Invalid image upload response');
             }
-            return null;
+            
+            // Update the UI state
+            setImageFiles(prev => [...prev, file]);
+            
+            setUploadedImages(prev => [...prev, {
+                preview: URL.createObjectURL(file),
+                url: response.url,
+                _id: response._id || response.publicId,
+                file
+            }]);
+            
+            // Return the image URL for content embedding
+            return response.url;
         } catch (error) {
-            console.error('Error uploading image:', error);
-            toast.error('Failed to upload image');
+            console.error('[CreateEditEducation] Error uploading image:', error);
+            toast.error(error.message || 'Failed to upload image');
             return null;
+        } finally {
+            setIsUploading(false);
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!title.trim()) {
-            setError('Title is required');
-            return;
-        }
-        
-        if (!editor.getText().trim()) {
-            setError('Content is required');
-            return;
-        }
-        
-        setIsSubmitting(true);
-        setError('');
-        
         try {
-            const content = editor.getHTML();
+            if (isSubmitting) return;
+            setIsSubmitting(true);
+            setError('');
             
-            // Find pending images that need to be uploaded
-            const pendingImages = uploadedImages.filter(img => img.pendingUpload);
-            console.log("Pending images to upload:", pendingImages.length);
+            // Validate required fields
+            if (!title.trim()) {
+                setError('Title is required');
+                return;
+            }
             
-            // Create the post data object
+            // Count pending images to upload
+            const pendingImagesToUpload = uploadedImages.filter(img => img.file && !img.uploaded);
+            console.log('Pending images to upload:', pendingImagesToUpload.length);
+            
+            // Create the post data
             const postData = {
-                title: title.trim(),
-                details: content,
-                // Separate pending images and existing image IDs
-                pendingImages: pendingImages,
+                title: title,
+                details: editor.getHTML(),
+                pendingImages: pendingImagesToUpload.map(img => ({
+                    file: img.file,
+                    preview: img.preview,
+                    tempId: img.tempId
+                })),
                 existingImageIds: uploadedImages
-                    .filter(img => img.imageId && !img.pendingUpload)
-                    .map(img => img.imageId)
+                    .filter(img => img.uploaded && img._id)
+                    .map(img => img._id)
             };
             
-            if (isEditMode) {
+            if (isEditMode && post) {
                 postData._id = post._id;
             }
             
-            console.log('Submitting education post data:', postData);
+            console.log('[CreateEditEducationPost] Submitting education post data:', postData);
             
-            // Show uploading toast when we have pending images
-            if (pendingImages.length > 0) {
-                toast.info(`Uploading ${pendingImages.length} image(s)...`, {
-                    autoClose: false,
-                    toastId: 'uploading-images'
-                });
-            }
-            
-            // Send to server via onSubmit callback
-            const response = await onSubmit(postData);
-            
-            if (pendingImages.length > 0) {
-                toast.update('uploading-images', {
-                    render: 'Images uploaded successfully',
-                    type: toast.TYPE.SUCCESS,
-                    autoClose: 2000
-                });
-            }
-            
-            if (!response) {
-                throw new Error('Failed to save post');
-            }
-            
-            // Clean up any object URLs created for previews
-            uploadedImages.forEach(img => {
-                if (img.preview && typeof img.preview === 'string') {
-                    URL.revokeObjectURL(img.preview);
+            // Save the post through the provided onSubmit handler
+            let response;
+            try {
+                if (isEditMode) {
+                    response = await onSubmit(post._id, postData);
+                } else {
+                    response = await onSubmit(postData);
                 }
-            });
-            
-            toast.success(isEditMode ? 'Post updated successfully' : 'Post created successfully');
-            onClose();
+                
+                console.log('[CreateEditEducationPost] Education post (onSubmit) response:', response);
+                
+                // Handle the response
+                if (response && response.SUCCESS) {
+                    // Clean up any object URLs created for previews
+                    uploadedImages.forEach(img => {
+                        if (img.preview && typeof img.preview === 'string') {
+                            URL.revokeObjectURL(img.preview);
+                        }
+                    });
+                    
+                    toast.success(isEditMode ? 'Post updated successfully' : 'Post created successfully');
+                    onClose();
+                } else {
+                    throw new Error('Failed to save post');
+                }
+            } catch (submitError) {
+                console.error('Error submitting education post:', submitError);
+                throw submitError; // Rethrow to be caught by the outer catch
+            }
         } catch (err) {
             console.error('Error saving education post:', err);
             setError('Error saving post: ' + (err.message || 'Unknown error'));

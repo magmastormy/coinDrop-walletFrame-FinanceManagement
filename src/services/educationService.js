@@ -33,14 +33,14 @@ const educationService = {
                 throw new Error('Title and details are required');
             }
 
-            console.log("[educationService - createEducation] Post data:", postData);
+            console.log("Step 1: Full Post data:[educationService - createEducation] Checking Post data:", postData);
             
             // Upload any pending images first
             let uploadedImageIds = [];
             let contentHtml = postData.details;
             
             if (postData.pendingImages && postData.pendingImages.length > 0) {
-                console.log("Uploading pending images:", postData.pendingImages.length);
+                console.log("Step 2: Uploading pending images:[educationService - createEducation] Checking Post data images:", postData.pendingImages.length);
                 
                 // Upload each pending image
                 const uploadResults = await Promise.all(
@@ -62,7 +62,7 @@ const educationService = {
                                 
                                 return {
                                     success: true,
-                                    imageId: result._id,
+                                    imageId: result._id || result.publicId,
                                     originalTempId: imageItem.tempId,
                                     url: result.url
                                 };
@@ -74,13 +74,14 @@ const educationService = {
                         }
                     })
                 );
-                
+
+                console.log("Step 3: Collecting successfully uploaded image IDs:[educationService - createEducation] Checking Post data images:", uploadResults);
                 // Collect successfully uploaded image IDs
                 uploadedImageIds = uploadResults
                     .filter(result => result.success && result.imageId)
                     .map(result => result.imageId);
                     
-                console.log("Successfully uploaded images:", uploadedImageIds.length);
+                console.log("Step 4: Successfully uploaded images:[educationService - createEducation] Checking Post data images:", uploadedImageIds.length);
             }
             
             // Combine with any existing image IDs
@@ -101,18 +102,23 @@ const educationService = {
                 dataToSend._id = postData._id;
             }
             
-            console.log("Sending post data with images:", dataToSend);
+            console.log("Step 5: Sending post data with images:[educationService - createEducation] Checking Post data images:", dataToSend);
             
             const response = await axiosInstance.post(API_URL, dataToSend);
             
-            if (!response || !response.data) {
-                throw new Error('No data returned from server');
+            // Fixed: Check response status before checking data
+            if (response && response.status >= 200 && response.status < 300 && response.data) {
+                console.log("Step 6: Post created successfully:[educationService - createEducation] Checking Post data images:", response.data);
+                return {
+                    SUCCESS: true,
+                    data: response.data
+                };
+            } else {
+                console.error("Step 7: Invalid response:[educationService - createEducation] Checking Post data images:", response);
+                throw new Error('Invalid response from server');
             }
-            
-            console.log('createEducation: Post created successfully', response.data);
-            return response.data;
         } catch (error) {
-            console.error('createEducation: Error creating education post:', error);
+            console.error("Step 8: Error creating education post:[educationService - createEducation] Checking Post data images:", error);
             throw error;
         }
     },
@@ -133,29 +139,47 @@ const educationService = {
                 imageUrls = await Promise.all(
                     images.map(async (file, index) => {
                         try {
-                            const imageResponse = await ImageService.uploadImage(file);
-                            console.log(`New image ${index + 1} uploaded successfully:`, imageResponse);
-                            return imageResponse.url;
+                            const imageResponse = await ImageService.uploadImage(file, 'education');
+                            console.log(`[EducationService] New image ${index + 1} uploaded successfully:`, imageResponse);
+                            
+                            // Validate the response contains a URL
+                            if (!imageResponse || !imageResponse.url) {
+                                console.error(`[EducationService] Invalid image response for image ${index + 1}:`, imageResponse);
+                                return null;
+                            }
+                            
+                            return {
+                                url: imageResponse.url,
+                                _id: imageResponse._id || imageResponse.publicId
+                            };
                         } catch (error) {
-                            console.error(`Failed to upload new image ${index + 1}:`, error);
+                            console.error(`[EducationService] Failed to upload new image ${index + 1}:`, error);
                             return null;
                         }
                     })
                 );
                 
                 // Filter out any failed uploads
-                imageUrls = imageUrls.filter(url => url !== null);
+                imageUrls = imageUrls.filter(item => item !== null);
             }
             
             // Combine new image URLs with existing ones
             let allImages = [];
             
             if (existingImages && existingImages.length > 0) {
-                allImages = existingImages.map(url => ({ url }));
+                // Make sure existing images have the right format
+                allImages = existingImages.map(img => {
+                    // Handle if existingImages is just an array of URLs
+                    if (typeof img === 'string') {
+                        return { url: img };
+                    }
+                    // Handle if existingImages is already an array of objects
+                    return img;
+                });
             }
             
             if (imageUrls.length > 0) {
-                allImages = [...allImages, ...imageUrls.map(url => ({ url }))];
+                allImages = [...allImages, ...imageUrls];
             }
             
             // Add images array if we have any images
