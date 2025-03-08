@@ -87,8 +87,8 @@ const transactionService = {
         try {
             console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
             const response = await axiosInstance.put(`${API_URL}/${id}`, transactionData);
-            console.log("[transactionService - updateTransaction] Transaction updated successfully:", response.data);
-            return response.data;
+            console.log("[transactionService - updateTransaction] Transaction updated successfully:", response);
+            return response;
         } catch (error) {
             console.error("[transactionService - updateTransaction] Error updating transaction:", error);
             throw error;
@@ -99,8 +99,8 @@ const transactionService = {
         try {
             console.log(`[transactionService - deleteTransaction] Deleting transaction with id: ${id}`);
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            console.log("[transactionService - deleteTransaction] Transaction deleted successfully:", response.data);
-            return response.data;
+            console.log("[transactionService - deleteTransaction] Transaction deleted successfully:", response);
+            return response;
         } catch (error) {
             console.error("[transactionService - deleteTransaction] Error deleting transaction:", error);
             throw error;

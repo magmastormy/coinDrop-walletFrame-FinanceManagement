@@ -20,6 +20,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import savingsGoalService from '../../services/savingsGoalService';
 import savingsRuleService from '../../services/savingsRuleService';
 import budgetService from '../../services/budgetService';
+import walletService from '../../services/walletService';
 import './styles/budgetCardStyles.css';
 import { toast } from 'react-toastify';
 
@@ -40,7 +41,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
       const goals = await savingsGoalService.getSavingsGoals(user.id);
       setSavingsGoals(goals);
     } catch (error) {
-      console.error('Failed to fetch savings goals:', error);
+      toast.error('Failed to fetch savings goals');
     }
   };
 
@@ -95,21 +96,10 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
       setIsProcessing(true);
       setError('');
       
-      // Get walletId from budget
-      let walletId = budget.walletId || budget.wallet?._id;
+      const walletId = budget.walletId;
       
-      // If walletId is still not available, try to fetch it
       if (!walletId) {
-        try {
-          const fullBudgetDetails = await budgetService.getBudgetById(budget._id);
-          walletId = fullBudgetDetails?.walletId || fullBudgetDetails?.wallet?._id;
-          
-          if (!walletId) {
-            throw new Error('Could not find wallet associated with this budget');
-          }
-        } catch (err) {
-          throw new Error('Could not retrieve wallet information for this budget');
-        }
+        throw new Error('This budget does not have an associated wallet');
       }
       
       console.log('Contributing to goal:', selectedGoal, {
@@ -118,7 +108,6 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
         amount: savingsAmount
       });
       
-      // Use the same format as in savingsGoalCard.jsx
       await savingsGoalService.contributeToGoal(selectedGoal, {
         sourceType: 'wallet',
         sourceId: walletId,
@@ -129,12 +118,18 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
       setSelectedGoal(null);
       setShowSaveDialog(false);
       
-      // If there's an onEdit callback, call it to refresh the budget
       if (onEdit) {
         onEdit(budget);
       }
     } catch (error) {
       console.error('Failed to save to goal:', error);
+      
+      if (error.response?.data?.details === 'Insufficient balance in source wallet') {
+        toast.error('Insufficient funds in wallet to complete this transfer');
+      } else {
+        toast.error('Failed to contribute to goal');
+      }
+      
       setError(error.message || 'Failed to contribute to goal');
     } finally {
       setIsProcessing(false);
@@ -143,7 +138,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
 
   const handleGoalSelect = (event) => {
     setSelectedGoal(event.target.value);
-    setError(''); // Clear any previous errors
+    setError(''); 
   };
 
   const handleSaveClick = () => {
@@ -193,7 +188,7 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
       <div className="budget-details">
         <div className="detail-item">
           <FontAwesomeIcon icon={faChartLine} aria-hidden="true" />
-          <span>Category: {budget.categoryId?.name || 'Uncategorized'}</span>
+          <span>Category: {budget.category.name || 'Uncategorized'}</span>
         </div>
         <div className="detail-item">
           <FontAwesomeIcon icon={faCalendarAlt} aria-hidden="true" />
