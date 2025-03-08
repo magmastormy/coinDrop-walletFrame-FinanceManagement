@@ -1,4 +1,6 @@
 import axios from 'axios';
+import store from '../slices/store';
+import { logoutAction } from '../slices/authSlice';
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -69,21 +71,62 @@ axiosInstance.interceptors.request.use(
         return Promise.reject(error);
     }
 );
-//If the refresh fails (e.g., due to an invalid token), redirect the user to log in
+
+// Add response interceptor for handling authentication errors
 axiosInstance.interceptors.response.use(
     response => response,
     async error => {
-        if (error.response?.status === 401) {
-            try {
-                const newAccessToken = await refreshToken();
-                error.config.headers['Authorization'] = `Bearer ${newAccessToken}`;
-                return axiosInstance(error.config);
-            } catch (refreshError) {
-                localStorage.clear();
+        const originalRequest = error.config;
+        
+        // Avoid infinite loops
+        if (originalRequest._retry || !error.response) {
+            return Promise.reject(error);
+        }
+        
+        // Handle authentication errors
+        if (error.response.status === 401) {
+            // Check error code
+            const errorCode = error.response.data?.code;
+            
+            if (errorCode === 'TOKEN_EXPIRED' && !originalRequest._retry) {
+                originalRequest._retry = true;
+                
+                try {
+                    // Try to refresh the token
+                    const refreshToken = localStorage.getItem('refreshToken');
+                    
+                    if (!refreshToken) {
+                        // No refresh token, redirect to login
+                        store.dispatch(logoutAction());
+                        window.location.href = '/login';
+                        return Promise.reject(error);
+                    }
+                    
+                    const response = await axios.post('/api/auth/refresh-token', { refreshToken });
+                    
+                    // Update tokens in storage
+                    localStorage.setItem('token', response.data.accessToken);
+                    localStorage.setItem('refreshToken', response.data.refreshToken);
+                    
+                    // Update authorization header and retry request
+                    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
+                    originalRequest.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
+                    
+                    return axiosInstance(originalRequest);
+                } catch (refreshError) {
+                    // If refresh fails, logout and redirect
+                    console.error('Token refresh failed:', refreshError);
+                    store.dispatch(logoutAction());
+                    window.location.href = '/login';
+                    return Promise.reject(refreshError);
+                }
+            } else {
+                // For other authentication errors, logout and redirect
+                store.dispatch(logoutAction());
                 window.location.href = '/login';
-                return Promise.reject(refreshError);
             }
         }
+        
         return Promise.reject(error);
     }
 );

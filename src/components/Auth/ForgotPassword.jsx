@@ -61,10 +61,10 @@ const ForgotPassword = () => {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h2 className="login-title">Reset Password</h2>
+                <h2 className="login-title">Reset Your Password</h2>
                 <form className="login-form" onSubmit={handleSubmit}>
                     <div className="login-form-field">
-                        <label htmlFor="email">Email address</label>
+                        <label htmlFor="email">Email Address</label>
                         <input
                             id="email"
                             name="email"
@@ -123,6 +123,17 @@ const ForgotPassword = () => {
                         {loading ? 'Resetting Password...' : 'Reset Password'}
                     </button>
                 </form>
+                <div className="login-footer">
+                    <p className="login-signup-link">
+                        Remember your password?{' '}
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="login-link"
+                        >
+                            Back to Login
+                        </button>
+                    </p>
+                </div>
             </div>
         </div>
     );

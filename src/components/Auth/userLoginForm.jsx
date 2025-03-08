@@ -91,15 +91,30 @@ const UserLogin = () => {
                     </button>
                 </form>
 
-                <p className="login-signup-link">
-                    Don't have an account?{' '}
-                    <button
-                        onClick={() => navigate('/register')}
-                        className="login-link"
-                    >
-                        Sign up
-                    </button>
-                </p>
+                <div className="login-footer">
+                    <p className="login-signup-link">
+                        Don't have an account?{' '}
+                        <button
+                            onClick={() => navigate('/register')}
+                            className="login-link"
+                        >
+                            Sign up
+                        </button>
+                    </p>
+                    <p className="login-signup-link">
+                        Forgot your password?{' '}
+                        <button
+                            onClick={() => {
+                                console.log('DEBUG: Attempting navigation to reset password');
+                                // Force navigation with window.location as a temporary test
+                                window.location.href = '/forgot-password';
+                            }}
+                            className="login-link"
+                        >
+                            Reset Password
+                        </button>
+                    </p>
+                </div>
             </div>
         </div>
     );

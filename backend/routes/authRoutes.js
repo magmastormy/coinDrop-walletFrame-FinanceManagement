@@ -111,6 +111,6 @@ router.put('/profile', authMiddleware, profileUpdateValidation, AuthController.u
 router.post('/change-password', authMiddleware, passwordChangeValidation, AuthController.changePassword);
 
 // Password reset routes
-router.post('/forgot-password', forgotPasswordValidation, AuthController.forgotPassword);
+router.post('/reset-password', forgotPasswordValidation, AuthController.forgotPassword);
 
 module.exports = router;

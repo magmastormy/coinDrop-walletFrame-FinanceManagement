@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Login from './components/Auth/userLoginForm';
 import Register from './components/Auth/userRegistrationForm';
+import ForgotPassword from './components/Auth/ForgotPassword';
 import Dashboard from './components/Dashboard/dashboardManager';
 import Wallet from './components/Wallet/walletManager';
 import Budget from './components/Budget/budgetManager';
@@ -21,7 +22,6 @@ const ProtectedRoute = ({ children }) => {
     const location = useLocation();
     
     if (!isAuthenticated) {
-        // Save the attempted URL for redirection after login
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
     
@@ -33,9 +33,7 @@ const PublicRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
     const location = useLocation();
     
-    // If user is authenticated and tries to access public routes like login/register
     if (isAuthenticated) {
-        // Don't redirect if they're already on the home page
         if (location.pathname === '/') {
             return children;
         }
@@ -67,7 +65,17 @@ const AppRoutes = () => {
                         <Register />
                     </PublicRoute>
                 } />
-                
+
+                <Route path="/forgot-password" element={
+                    <PublicRoute>
+                        <ForgotPassword />
+                    </PublicRoute>
+                } />
+                <Route path="/reset-password" element={
+                    <PublicRoute>
+                        <ForgotPassword />
+                    </PublicRoute>
+                } />
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
                     <ProtectedRoute>

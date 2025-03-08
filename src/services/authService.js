@@ -11,8 +11,8 @@ import { setBudgets } from '../slices/budgetSlice';
 import { setCategories } from '../slices/categorySlice';
 import { setTransactions } from '../slices/transactionSlice';
 
-// Simple error messages
-const AUTH_ERRORS = {
+// Add AUTH_ERRORS export
+export const AUTH_ERRORS = {
     INVALID_LOGIN: 'Wrong email or password. Please try again.',
     SERVER_ERROR: 'Something went wrong. Please try again later.',
     VALIDATION_ERROR: 'Please check your input and try again.',
@@ -21,6 +21,10 @@ const AUTH_ERRORS = {
     DUPLICATE_USERNAME: 'This username is already taken.',
     PASSWORD_REQUIREMENTS: 'Password must include uppercase, lowercase, number, and special character.',
     MISSING_FIELDS: 'Please fill in all required fields.',
+    PASSWORD_MISMATCH: "Passwords do not match",
+    PASSWORD_REQUIREMENTS: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
+    VALIDATION_ERROR: "Invalid input. Please check your data",
+    SERVER_ERROR: "Server error occurred. Please try again later"
 };
 
 // Helper function to format error messages
@@ -220,12 +224,14 @@ export const logout = () => {
     window.location.href = '/login';
 };
 
-export const forgotPassword = async (formData) => {
+// Keep existing forgotPassword function
+export const forgotPassword = async (userData) => {
     try {
-        const response = await axiosInstance.post('/auth/forgot-password', formData);
+        const response = await axiosInstance.post('/auth/reset-password', userData);
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.error || 'Failed to reset password');
+        console.error('Error in forgotPassword:', error);
+        throw error;
     }
 };
 
@@ -237,3 +243,11 @@ const handleLogout = async () => {
         console.error('Logout failed:', error);
     }
 };
+
+// Export forgotPassword as part of the default export too
+const authService = {
+    // Include other methods...
+    forgotPassword
+};
+
+export default authService;

@@ -39,14 +39,12 @@ class AuthController {
 
     // User Registration
     static async register(req, res) {
-        // Start a session for transaction
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
             console.log('📝 Registration request received:', req.body);
             
-            // Check for validation errors
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 console.log('❌ Validation errors:', errors.array());
@@ -65,7 +63,6 @@ class AuthController {
                 phone 
             } = req.body;
 
-            // Check for existing user before any database operations
             const existingUser = await User.findOne({ 
                 $or: [{ email }, { username }] 
             }).session(session);
@@ -98,7 +95,6 @@ class AuthController {
 
             const savedUser = await user.save({ session });
 
-            // Create user profile
             const userProfile = new UserProfile({
                 user: savedUser._id,
                 username: savedUser.username,
@@ -114,14 +110,12 @@ class AuthController {
             await userProfile.save({ session });
             console.log('✅ User profile created successfully');
 
-            // Commit the transaction
             await session.commitTransaction();
             session.endSession();
 
             const { accessToken, refreshToken } = AuthController.generateTokens(savedUser._id, savedUser.role);
             console.log('✅ Tokens generated successfully');
 
-            // Return success response
             res.status(201).json({
                 message: 'User registered successfully',
                 user: {
@@ -137,14 +131,12 @@ class AuthController {
             });
 
         } catch (error) {
-            // Rollback transaction on error
             await session.abortTransaction();
             session.endSession();
             
             console.error('❌ Registration error:', error);
             console.error('Error stack:', error.stack);
             
-            // Check for specific MongoDB errors
             if (error.name === 'ValidationError') {
                 return res.status(400).json({
                     error: 'Validation error',
@@ -184,7 +176,6 @@ class AuthController {
 
             console.log("AuthController.login - Request:", { email, password });
 
-            // Find user by email and explicitly select password
             const user = await User.findOne({ email }).select('+password');
             
             console.log("AuthController.login - User found:", { 
@@ -201,7 +192,6 @@ class AuthController {
                 });
             }
 
-            // Add password normalization for existing seeded users
             const isLegacyPassword = user.password.startsWith('$2a$10$hVNyxBKkgZv8EeNHz.r0ku');
             const isValidPassword = await bcrypt.compare(password, user.password);
 
@@ -213,7 +203,6 @@ class AuthController {
             });
 
             if (!isValidPassword) {
-                // Auto-upgrade legacy passwords
                 if (user.password === password) {
                     const salt = await bcrypt.genSalt(10);
                     user.password = await bcrypt.hash(password, salt);
@@ -232,14 +221,11 @@ class AuthController {
                 role: user.role
             });
 
-            // Update last login
             user.lastLogin = new Date();
             await user.save();
 
-            // Generate tokens using the static method
             const { accessToken, refreshToken } = AuthController.generateTokens(user._id, user.role);
 
-            // Return success response
             res.json({
                 accessToken,
                 refreshToken,
@@ -265,38 +251,90 @@ class AuthController {
     // Refresh Token
     static async refreshToken(req, res) {
         try {
-            const { refreshToken } = req.body;
-
+            // Get the refresh token from the request
+            const refreshToken = req.body.refreshToken || 
+                                req.cookies.refreshToken || 
+                                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+            
             if (!refreshToken) {
-                return res.status(400).json({ error: 'Refresh token is required' });
+                return res.status(401).json({
+                    error: 'Authentication failed',
+                    details: 'No refresh token provided',
+                    code: 'NO_TOKEN'
+                });
             }
 
-            // Verify refresh token
-            const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-
-            // Check if it's a refresh token
-            if (decoded.type !== 'refresh') {
-                throw new Error('Invalid token type');
+            // Validate token format before verification
+            if (typeof refreshToken !== 'string' || !refreshToken.trim()) {
+                return res.status(401).json({
+                    error: 'Authentication failed',
+                    details: 'Invalid token format',
+                    code: 'INVALID_FORMAT'
+                });
             }
 
-            // Find user
-            const user = await User.findById(decoded.userId);
-            if (!user) {
-                throw new Error('User not found');
+            try {
+                // Verify the token
+                const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+                
+                // Find the user
+                const user = await User.findById(decoded.userId);
+                
+                if (!user) {
+                    return res.status(401).json({
+                        error: 'Authentication failed',
+                        details: 'User not found',
+                        code: 'USER_NOT_FOUND'
+                    });
+                }
+                
+                // Check if refresh token is in the user's valid tokens
+                if (!user.refreshTokens.includes(refreshToken)) {
+                    return res.status(401).json({
+                        error: 'Authentication failed',
+                        details: 'Invalid refresh token',
+                        code: 'INVALID_TOKEN'
+                    });
+                }
+                
+                // Generate new tokens
+                const accessToken = this.generateAccessToken(user);
+                const newRefreshToken = this.generateRefreshToken(user);
+                
+                // Update user's refresh tokens (remove old, add new)
+                user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+                user.refreshTokens.push(newRefreshToken);
+                await user.save();
+                
+                // Return new tokens
+                res.json({
+                    accessToken,
+                    refreshToken: newRefreshToken
+                });
+            } catch (tokenError) {
+                // Handle specific JWT errors
+                if (tokenError.name === 'JsonWebTokenError') {
+                    return res.status(401).json({
+                        error: 'Authentication failed',
+                        details: 'Invalid token',
+                        code: 'INVALID_TOKEN'
+                    });
+                } else if (tokenError.name === 'TokenExpiredError') {
+                    return res.status(401).json({
+                        error: 'Authentication failed',
+                        details: 'Token expired',
+                        code: 'TOKEN_EXPIRED'
+                    });
+                } else {
+                    throw tokenError; // Re-throw unexpected errors
+                }
             }
-
-            // Generate new tokens
-            const tokens = this.generateTokens(user._id, user.role);
-
-            res.json({
-                token: tokens.accessToken,
-                refreshToken: tokens.refreshToken
-            });
         } catch (error) {
             console.error('Token refresh error:', error);
-            res.status(401).json({ 
-                error: 'Invalid refresh token',
-                details: error.message 
+            res.status(500).json({
+                error: 'Server error',
+                details: 'Failed to refresh token',
+                code: 'SERVER_ERROR'
             });
         }
     }
@@ -472,31 +510,35 @@ class AuthController {
         try {
             const { email, lastName, newPassword } = req.body;
             
-            const user = await User.findOne({ 
-                email: email.toLowerCase(),
-                lastName: lastName.trim() 
-            });
+            // Find user by email and last name
+            const user = await User.findOne({ email, lastName });
             
             if (!user) {
-                return res.status(404).json({ 
-                    error: 'No account found with this email and last name combination' 
+                return res.status(404).json({
+                    error: 'User not found',
+                    details: 'No account matches the provided email and last name'
                 });
             }
-
-            // Hash new password (using same method as changePassword)
+            
+            // Hash the new password
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(newPassword, salt);
             
+            // Update user's password
             user.password = hashedPassword;
-            user.updatedAt = new Date();
             await user.save();
-
-            res.json({ message: 'Password has been reset successfully' });
+            
+            // Log the password reset action
+            console.log(`Password reset completed for user: ${email}`);
+            
+            res.status(200).json({
+                message: 'Password has been reset successfully'
+            });
         } catch (error) {
             console.error('Password reset error:', error);
-            res.status(500).json({ 
-                error: 'Server error',
-                details: 'Could not reset password'
+            res.status(500).json({
+                error: 'Failed to reset password',
+                details: error.message
             });
         }
     }
