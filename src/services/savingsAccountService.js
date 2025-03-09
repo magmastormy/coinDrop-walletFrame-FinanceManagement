@@ -131,19 +131,29 @@ export const savingsAccountService = {
         }
     },
 
-    deleteSavingsAccount: async (accountId) => {
+    deleteSavingsAccount: async (accountId, transferToWalletId) => {
         try {
-            // First fetch the account to check if it's the default "Savings" account
-            const account = await axiosInstance.get(`${API_URL}/${accountId}`);
-            if (account.data.name === "Savings") {
-                console.error("[savingsAccountService - deleteSavingsAccount] Cannot delete the default 'Savings' account");
-                throw new Error("Cannot delete the default 'Savings' account");
-            }
-            const response = await axiosInstance.delete(`${API_URL}/${accountId}`);
-            console.log("[savingsAccountService - deleteSavingsAccount] Savings account deleted successfully:", response.data);
+            console.log(`[savingsAccountService - deleteSavingsAccount] Deleting account ${accountId} and transferring balance to wallet ${transferToWalletId || 'none'}`);
+            
+            // Get the current user ID from your auth context
+            const userId = localStorage.getItem('userId'); // Or however you store the current user ID
+            
+            const data = { 
+                transferToWalletId: transferToWalletId || null,
+                userId // Include userId in the request as a fallback
+            };
+            
+            console.log(`[savingsAccountService - deleteSavingsAccount] Request data:`, data);
+            
+            const response = await axiosInstance.delete(`${API_URL}/${accountId}`, {
+                data: data
+            });
+            
+            console.log("[savingsAccountService - deleteSavingsAccount] Account deleted successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[savingsAccountService - deleteSavingsAccount] Error deleting savings account:", error);
+            console.error("Response data:", error.response?.data);
             throw error;
         }
     },

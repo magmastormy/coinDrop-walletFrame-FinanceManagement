@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Paper, Button, Typography } from '@mui/material';
+import { Grid, Box, Paper, Button, Typography, Modal, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -26,6 +26,11 @@ const SavingsAccountManager = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [createAccountOpen, setCreateAccountOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [accountToDelete, setAccountToDelete] = useState(null);
+    const [transferWalletId, setTransferWalletId] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     const [modalState, setModalState] = useState({
         deposit: { open: false },
@@ -102,18 +107,59 @@ const SavingsAccountManager = () => {
         }));
     };
 
-    const handleDelete = async (accountId) => {
-        if (window.confirm('Are you sure you want to delete this savings account?')) {
-            try {
-                await savingsAccountService.deleteSavingsAccount(accountId);
-                setAccounts(prevAccounts => 
-                    prevAccounts.filter(account => account._id !== accountId)
-                );
-                setSelectedAccount(null);
-            } catch (error) {
-                console.error('Failed to delete account:', error);
-                setError('Failed to delete the account. Please try again later.');
+    const handleDelete = (accountId) => {
+        const account = accounts.find(acc => acc._id === accountId);
+        setAccountToDelete(account);
+        
+        // Default to first wallet or empty string, ensuring it's not undefined
+        setTransferWalletId(wallets.length > 0 ? wallets[0]._id : '');
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!accountToDelete) return;
+        
+        try {
+            setIsDeleting(true);
+            setDeleteError('');
+            
+            // Enhanced validation to handle zero-balance accounts
+            const hasBalance = accountToDelete.balance > 0;
+            
+            if (hasBalance && !transferWalletId) {
+                setDeleteError('Please select a wallet to transfer the remaining balance');
+                setIsDeleting(false);
+                return;
             }
+            
+            // Only pass the wallet ID if there's a balance to transfer
+            const walletIdToUse = hasBalance ? transferWalletId : null;
+            
+            console.log(`Deleting account with ID: ${accountToDelete._id}, transferring to wallet: ${walletIdToUse || 'none'}`);
+            
+            await savingsAccountService.deleteSavingsAccount(
+                accountToDelete._id, 
+                walletIdToUse
+            );
+            
+            setAccounts(prevAccounts => 
+                prevAccounts.filter(account => account._id !== accountToDelete._id)
+            );
+            
+            if (hasBalance && walletIdToUse) {
+                await fetchWallets();
+            }
+            
+            setDeleteModalOpen(false);
+            setAccountToDelete(null);
+            setTransferWalletId('');
+            setDeleteError('');
+            
+        } catch (error) {
+            console.error('Failed to delete account:', error);
+            setDeleteError('Failed to delete the account. Please try again later.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -146,6 +192,106 @@ const SavingsAccountManager = () => {
 
     const handleCardSelect = (accountId) => {
         setSelectedAccount(prev => prev === accountId ? null : accountId);
+    };
+
+    const renderDeleteModal = () => {
+        if (!accountToDelete) return null;
+        
+        return (
+            <Modal
+                open={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                aria-labelledby="delete-savings-account-modal"
+            >
+                <Box sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 400,
+                    bgcolor: 'background.paper',
+                    boxShadow: 24,
+                    p: 4,
+                    borderRadius: 2
+                }}>
+                    <Typography variant="h6" component="h2" gutterBottom>
+                        Delete Savings Account
+                    </Typography>
+                    
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        Are you sure you want to delete the savings account "{accountToDelete.name}"?
+                    </Typography>
+                    
+                    {accountToDelete.balance > 0 && (
+                        <>
+                            <Box sx={{ 
+                                bgcolor: 'warning.light', 
+                                color: 'warning.contrastText',
+                                p: 2,
+                                borderRadius: 1,
+                                mb: 2 
+                            }}>
+                                <Typography variant="body2">
+                                    This account has a balance of ${accountToDelete.balance.toFixed(2)}. 
+                                    Please select a wallet to transfer this amount to:
+                                </Typography>
+                            </Box>
+                            
+                            <FormControl fullWidth sx={{ mb: 2 }}>
+                                <InputLabel id="transfer-wallet-label">Transfer Balance to Wallet</InputLabel>
+                                <Select
+                                    labelId="transfer-wallet-label"
+                                    id="transfer-wallet-select"
+                                    value={transferWalletId}
+                                    label="Transfer Balance to Wallet"
+                                    onChange={(e) => setTransferWalletId(e.target.value)}
+                                    required
+                                >
+                                    <MenuItem value="">
+                                        <em>Select a wallet</em>
+                                    </MenuItem>
+                                    {wallets.map(wallet => (
+                                        <MenuItem key={wallet._id} value={wallet._id}>
+                                            {wallet.name} (${wallet.balance.toFixed(2)})
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </>
+                    )}
+                    
+                    {deleteError && (
+                        <Box sx={{ 
+                            bgcolor: 'error.light', 
+                            color: 'error.contrastText',
+                            p: 2,
+                            borderRadius: 1,
+                            mb: 2 
+                        }}>
+                            <Typography variant="body2">{deleteError}</Typography>
+                        </Box>
+                    )}
+                    
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => setDeleteModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={confirmDelete}
+                            disabled={isDeleting || (accountToDelete.balance > 0 && !transferWalletId)}
+                        >
+                            {isDeleting ? 'Deleting...' : 'Delete Account'}
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
+        );
     };
 
     if (isLoading) {
@@ -285,6 +431,8 @@ const SavingsAccountManager = () => {
                 }}
                 isNewAccount={true}
             />
+
+            {renderDeleteModal()}
         </div>
     );
 };

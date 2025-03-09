@@ -15,7 +15,7 @@ router.post('/', SavingsAccountController.createSavingsAccount);
 router.put('/:id', SavingsAccountController.updateSavingsAccount);
 
 // Delete a savings account
-router.delete('/:id', SavingsAccountController.deleteSavingsAccount);
+router.delete('/:id', authMiddleware, SavingsAccountController.deleteSavingsAccount);
 
 // Update a transaction in a savings account
 router.put('/transactions/:id', SavingsAccountController.updateTransaction);

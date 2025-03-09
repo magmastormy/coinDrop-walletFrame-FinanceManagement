@@ -1,5 +1,7 @@
 const SavingsAccount = require('../models/SavingsAccount');
 const Wallet = require('../models/Wallet');
+const Transaction = require('../models/Transaction');
+const mongoose = require('mongoose');
 
 class SavingsAccountController {
     static async createSavingsAccount(req, res) {
@@ -63,11 +65,98 @@ class SavingsAccountController {
     }
 
     static async deleteSavingsAccount(req, res) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        
         try {
-            await SavingsAccount.findByIdAndDelete(req.params.id);
-            res.status(204).send();
+            const { id } = req.params;
+            const { transferToWalletId } = req.body || {};
+            const userId = req.user._id || req.user.id || req.query.userId;
+            
+            console.log(`[SavingsAccountController - deleteSavingsAccount] Deleting account ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
+            console.log(`[SavingsAccountController - deleteSavingsAccount] request data: ${req.body}`);
+            
+            const savingsAccount = await SavingsAccount.findOne({ 
+                _id: id, 
+                userId 
+            }).session(session);
+            
+            if (!savingsAccount) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
+            
+            const remainingBalance = savingsAccount.currentBalance || savingsAccount.balance || 0;
+            
+            console.log(`[SavingsAccountController - deleteSavingsAccount] Found account with balance: ${remainingBalance}`);
+            
+            if (remainingBalance > 0 && transferToWalletId) {
+                console.log(`[SavingsAccountController - deleteSavingsAccount] Account has balance: ${remainingBalance}, attempting transfer to wallet ${transferToWalletId}`);
+                
+                const wallet = await Wallet.findOne({ 
+                    _id: transferToWalletId, 
+                    userId 
+                }).session(session);
+                
+                if (!wallet) {
+                    await session.abortTransaction();
+                    session.endSession();
+                    return res.status(404).json({ 
+                        error: 'Target wallet not found',
+                        details: 'The wallet to transfer funds to does not exist or does not belong to you'
+                    });
+                }
+                
+                console.log(`[SavingsAccountController - deleteSavingsAccount] Wallet found, current balance: ${wallet.balance}`);
+                
+                wallet.balance += remainingBalance;
+                await wallet.save({ session });
+                
+                console.log(`[SavingsAccountController - deleteSavingsAccount] Wallet balance updated to: ${wallet.balance}`);
+                
+                const transaction = new Transaction({
+                    userId,
+                    amount: remainingBalance,
+                    type: 'transfer',
+                    category: 'account_closure',
+                    description: `Transferred from deleted savings account: ${savingsAccount.name}`,
+                    savingsAccountId: id,
+                    walletId: transferToWalletId,
+                    date: new Date(),
+                });
+                
+                await transaction.save({ session });
+                
+                console.log(`[SavingsAccountController - deleteSavingsAccount] Transaction recorded for ${remainingBalance}`);
+            } else if (remainingBalance > 0) {
+                console.log(`[SavingsAccountController - deleteSavingsAccount] Account has balance but no target wallet specified`);
+            }
+            
+            // Delete the savings account
+            await SavingsAccount.deleteOne({ _id: id }).session(session);
+            
+            // Commit the transaction
+            await session.commitTransaction();
+            session.endSession();
+            
+            res.status(200).json({ 
+                success: true, 
+                message: 'Savings account deleted successfully',
+                transferredAmount: transferToWalletId ? remainingBalance : 0,
+                transferredTo: transferToWalletId || null
+            });
+            
         } catch (error) {
-            res.status(400).json({ error: 'Failed to delete savings account' });
+            // Abort transaction on error
+            await session.abortTransaction();
+            session.endSession();
+            
+            console.error('[SavingsAccountController - deleteSavingsAccount] Error:', error);
+            res.status(500).json({ 
+                error: 'Failed to delete savings account', 
+                details: error.message 
+            });
         }
     }
 
