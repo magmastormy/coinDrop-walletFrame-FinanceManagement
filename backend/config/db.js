@@ -1,59 +1,38 @@
 //config/db.js
 
 const mongoose = require('mongoose');
+const isOnline = require('is-online');
 
 // Mongoose connection function
 const connectDB = async () => {
     try {
-        // Use environment variable for connection string, fallback to local if not available
-        const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/coinDrop';
+        const online = await isOnline();
 
-        // Connection options
-        const options = {
-            // Remove deprecated options
-            // useNewUrlParser and useUnifiedTopology are no longer needed in recent mongoose versions
-        };
-
-        // Attempt connection
-        const connection = await mongoose.connect(mongoURI, options);
+        if (online) {
+            // Use your remote database
+            const mongoURI = process.env.MONGO_URI;
+            await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+        } else {
+            // Use your local database
+            const mongoURI = 'mongodb://localhost:27017/coinDrop';
+            await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+        }
 
         // Log successful connection details
         console.log('🟢 MongoDB Connection Established 🌐');
-        console.log(`📍 Connected to Database: ${connection.connection.db.databaseName}`);
-        console.log(`🔗 Host: ${connection.connection.host}`);
-        console.log(`📊 Connection State: ${mongoose.ConnectionStates[connection.connection.readyState]}`);
+        console.log(`📍 Connected to Database: ${mongoose.connection.db.databaseName}`);
+        console.log(`🔗 Host: ${mongoose.connection.host}`);
+        console.log(`📊 Connection State: ${mongoose.ConnectionStates[mongoose.connection.readyState]}`);
 
         // Optional: Log when connection is fully open
-        connection.connection.on('open', () => {
+        mongoose.connection.on('open', () => {
             console.log('📨 MongoDB Connection Fully Initialized');
         });
 
-        return connection;
-    } catch(error) {
+        return mongoose.connection;
+    } catch (error) {
         console.error('MongoDB Connection Error:', error);
-
-        try{
-            console.log("Internet MongoDB Connection One failed. Trying offline database connection")
-            mongoURI= "mongodb://localhost:27017/coinDrop";
-            connection = await mongoose.connect(mongoURI, options);
-                    // Log successful connection details
-            console.log('🟢 MongoDB Connection Established 🌐');
-            console.log(`📍 Connected to Database: ${connection.connection.db.databaseName}`);
-            console.log(`🔗 Host: ${connection.connection.host}`);
-            console.log(`📊 Connection State: ${mongoose.ConnectionStates[connection.connection.readyState]}`);
-
-            // Optional: Log when connection is fully open
-            connection.connection.on('open', () => {
-                console.log('📨 MongoDB Connection Fully Initialized');
-            });
-            return connection;
-        }
-        catch(error)
-        {
-            console.log("MongoDB Offline Failed Too");
-            process.exit(1);
-        }
-
+        process.exit(1);
     }
 };
 
