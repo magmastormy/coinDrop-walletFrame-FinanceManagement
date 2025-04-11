@@ -22,7 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
 uploadedusers.md
 
 #envs and other files
@@ -46,7 +45,8 @@ uploads/
 thesisImplementation/
 backend/tests/
 backend/node_modules/
-cursorRules/
+cursorRule/
+cursorRule/HowToImproveCurrentFeatures.md
 
 # Test files
 backend/utils/testPdf.js
