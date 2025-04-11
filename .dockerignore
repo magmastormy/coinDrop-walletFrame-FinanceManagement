@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist
 dist-ssr
 *.local
 
@@ -32,7 +32,7 @@ uploadedusers.md
 .env.test.local
 .env.production.local
 *.env
-.env.example
+
 # vercel
 
 .codegpt
@@ -46,7 +46,6 @@ uploads/
 thesisImplementation/
 backend/tests/
 backend/node_modules/
-cursorRules/
 
 # Test files
 backend/utils/testPdf.js

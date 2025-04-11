@@ -1,22 +1,16 @@
 //config/db.js
 
 const mongoose = require('mongoose');
-const isOnline = require('is-online');
+//const isOnline = require('is-online');
 
 // Mongoose connection function
 const connectDB = async () => {
     try {
-        const online = await isOnline();
+        //const online = await isOnline();
 
-        if (online) {
-            // Use your remote database
-            const mongoURI = process.env.MONGO_URI;
-            await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-        } else {
-            // Use your local database
-            const mongoURI = 'mongodb://localhost:27017/coinDrop';
-            await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-        }
+        // Use your remote database
+        const mongoURI = process.env.MONGO_URI;
+        await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
         // Log successful connection details
         console.log('🟢 MongoDB Connection Established 🌐');
