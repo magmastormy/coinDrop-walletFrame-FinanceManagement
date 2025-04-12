@@ -29,6 +29,26 @@ const zhipuaiModelService = {
             console.error('ZhipuAI Service - Error getting financial advice:', error);
             throw error;
         }
+    },
+
+    async getProactiveInsights(userId) {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/${userId}/proactive-insights`);
+            return response.insights;
+        } catch (error) {
+            console.error('ZhipuAI Service - Error getting proactive insights:', error);
+            throw error;
+        }
+    },
+
+    async getContextAwareSuggestions(userId) {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/${userId}/context-suggestions`);
+            return response.suggestions;
+        } catch (error) {
+            console.error('ZhipuAI Service - Error getting context-aware suggestions:', error);
+            throw error;
+        }
     }
 };
 

@@ -22,4 +22,9 @@ router.get('/:userId/financial-advice', (req, res, next) => {
     });
 });
 
+
+// New routes for proactive insights and context-aware suggestions
+router.get('/:userId/proactive-insights', authMiddleware, controller.getProactiveInsights);
+router.get('/:userId/context-suggestions', authMiddleware, controller.getContextSuggestions);
+
 module.exports = router;

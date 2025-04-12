@@ -1,0 +1,39 @@
+### Rule ID : CUR-001
+## Title : Track Feature Implementation Lifecycle
+
+## Description :
+Ensure all implemented features are documented in cursorRule/ModificationsImplemented.md and removed from cursorRule/HowToImproveCurrentFeatures.md to maintain accurate codebase records 
+
+## Trigger :
+Feature implementation commit detected in version control.
+
+## Conditions :
+1. The feature exists in cursorRule/HowToImproveCurrentFeatures.md under "Small Features to Implement" 
+2. Code changes match the feature's implementation criteria.
+
+## Actions :
+1. Remove Entry : Delete the feature's description from cursorRule/HowToImproveCurrentFeatures.md.
+2. Log Modification : Add a new entry to cursorRule/ModificationsImplemented.md with:
+ (a) Feature name
+ (b) Implementation date
+ (c)Author/PR reference
+ (d)Brief impact summary 
+
+## Validation : Verify no duplicate entries exist in either file.
+#Example :
+```
+# Before (HowToImproveCurrentFeatures.md)
+- [ ] Add dark mode toggle (src/ui/theme.js)  
+
+# After (ModificationsImplemented.md)
+- 2025-04-11: Dark mode toggle implemented by @user (PR #123)  
+  - Impact: Improved accessibility, 15% reduced screen glare
+```  
+##References :
+- Codebase documentation standards 
+- Continuous integration best practices 
+- AI-assisted codebase tracking 
+
+##Notes :
+- Use git blame or AI tools like Archie to verify feature origins.
+- Automate via pre-commit hooks for enforcement 

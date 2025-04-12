@@ -37,6 +37,7 @@ uploadedusers.md
 .codegpt
 .windsurfrules
 .cursorrules
+*.cursorrules
 
 # Generated files and uploads
 backend/reports/
@@ -47,6 +48,7 @@ backend/tests/
 backend/node_modules/
 cursorRule/
 cursorRule/HowToImproveCurrentFeatures.md
+
 
 # Test files
 backend/utils/testPdf.js
