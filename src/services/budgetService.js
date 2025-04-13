@@ -6,6 +6,7 @@ const API_URL = '/budgets';
 export const getUserBudgets = async (userId, filters = {}) => {
     try {
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
+        console.log('[BudgetService - getUserBudgets] Successfully fetched user budgets');
         return response;
     } catch (error) {
         console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);
@@ -94,28 +95,7 @@ const budgetService = {
         }
     },
 
-    getBudgetStats: async () => {
-        try {
-            const response = await axiosInstance.get(`${API_URL}/stats`);
-            console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats');
-            
-            // Check if we have chart data in the response
-            if (response?.data?.chartData) {
-                return response.data.chartData;
-            } else {
-                console.warn('[BudgetService - getBudgetStats] No chart data found in response');
-                return { error: false, data: [] };
-            }
-        } catch (error) {
-            console.error('[BudgetService - getBudgetStats] Error fetching budget stats:', error);
-            // Return error object that can be handled by the component
-            return { 
-                error: true, 
-                message: error.response?.data?.error || 'Failed to fetch budget data',
-                data: [] 
-            };
-        }
-    }
+    getBudgetStats
 };
 
 export default budgetService;

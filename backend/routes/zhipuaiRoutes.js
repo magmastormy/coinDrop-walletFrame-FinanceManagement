@@ -3,8 +3,12 @@ const router = express.Router();
 const controller = require('../controllers/zhipuaiController');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
-// Test route for debugging
+// Test route
 router.get('/test', (req, res) => {
+    // Only log in development environment
+    if (process.env.NODE_ENV === 'development') {
+        console.log('ZhipuAI test route accessed');
+    }
     res.json({ message: 'ZhipuAI route test successful' });
 });
 
@@ -12,12 +16,7 @@ router.get('/test', (req, res) => {
 router.post('/send', authMiddleware, controller.sendMessage);
 
 // Account info - place this before /:userId routes to avoid conflicts
-router.get('/account-info', authMiddleware, (req, res) => {
-    if (!controller.getUserAccountInfo) {
-        return res.status(500).json({ error: 'getUserAccountInfo function not found' });
-    }
-    controller.getUserAccountInfo(req, res);
-});
+router.get('/account-info', authMiddleware, controller.getUserAccountInfo);
 
 // Get financial advice
 router.get('/:userId/financial-advice', authMiddleware, controller.getFinancialAdvice);

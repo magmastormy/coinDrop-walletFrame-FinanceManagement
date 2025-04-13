@@ -130,43 +130,38 @@ const DashboardUserShortAnalytics = () => {
                 .filter(t => new Date(t.date) >= startOfYear && t.type === 'income')
                 .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-            // Calculate net worth growth rate - FIX: Use transaction data for better accuracy
-            const startOfYearTransactions = transactions.filter(t => {
-                const txDate = new Date(t.date);
-                // Get all transactions before start of year
-                return txDate < startOfYear;
+            // Calculate net worth growth rate - FIXED: Use transaction history for accuracy
+            // First, calculate current net worth (sum of all wallet balances)
+            const currentNetWorth = totalBalance;
+            
+            // Next, determine start of year net worth by subtracting this year's net transactions
+            let startOfYearNetWorth = currentNetWorth;
+            
+            // For each wallet, adjust the starting net worth based on this year's transactions
+            wallets.forEach(wallet => {
+                // Get all transactions for this wallet from this year
+                const walletYearTransactions = transactions.filter(t => 
+                    new Date(t.date) >= startOfYear && 
+                    t.walletId === wallet._id
+                );
+                
+                // Calculate net effect of this year's transactions
+                const yearNetChange = walletYearTransactions.reduce((net, t) => {
+                    if (t.type === 'income') {
+                        return net + (Number(t.amount) || 0);
+                    } else if (t.type === 'expense') {
+                        return net - (Math.abs(Number(t.amount)) || 0);
+                    }
+                    return net;
+                }, 0);
+                
+                // Subtract the net change to get start of year value
+                startOfYearNetWorth -= yearNetChange;
             });
             
-            // Calculate net worth at start of year based on all transactions
-            const startNetWorth = wallets.reduce((total, wallet) => {
-                // Start with current balance
-                let walletBalance = Number(wallet.balance) || 0;
-                
-                // Subtract income from this year
-                const yearIncome = transactions
-                    .filter(t => 
-                        new Date(t.date) >= startOfYear && 
-                        t.type === 'income' && 
-                        t.walletId === wallet._id
-                    )
-                    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-                
-                // Add expenses from this year
-                const yearExpenses = transactions
-                    .filter(t => 
-                        new Date(t.date) >= startOfYear && 
-                        t.type === 'expense' && 
-                        t.walletId === wallet._id
-                    )
-                    .reduce((sum, t) => sum + (Math.abs(Number(t.amount)) || 0), 0);
-                    
-                return total + (walletBalance - yearIncome + yearExpenses);
-            }, 0);
-            
             // Calculate growth rate
-            const currentNetWorth = totalBalance;
-            const netWorthGrowthRate = startNetWorth > 0 
-                ? ((currentNetWorth - startNetWorth) / startNetWorth) * 100 
+            const netWorthGrowthRate = startOfYearNetWorth > 0 
+                ? ((currentNetWorth - startOfYearNetWorth) / startOfYearNetWorth) * 100 
                 : (currentNetWorth > 0 ? 100 : 0); // If we started with 0, any positive is 100% growth
                 
             setAnalytics({

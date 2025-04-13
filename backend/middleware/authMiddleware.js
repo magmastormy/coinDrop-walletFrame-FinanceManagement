@@ -5,7 +5,9 @@ const authMiddleware = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) {
-            return res.status(401).json({ error: 'Authentication required' });
+            const error = new Error('Authentication required');
+            error.status = 401;
+            return next(error);
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -14,9 +16,13 @@ const authMiddleware = async (req, res, next) => {
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ error: 'Token expired' });
+            error.status = 401;
+            error.message = 'Token expired';
+        } else {
+            error.status = 401;
+            error.message = 'Invalid token';
         }
-        return res.status(401).json({ error: 'Invalid token' });
+        next(error);
     }
 };
 

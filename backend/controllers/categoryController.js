@@ -227,126 +227,32 @@ class CategoryController {
         }
     }
 
-    // Get category patterns for auto-categorization
-    static async getCategoryPatterns(req, res) {
-        try {
-            const patterns = await Transaction.aggregate([
-                {
-                    $match: {
-                        userId: req.user._id,
-                        category: { $exists: true }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$description',
-                        category: { $last: '$category' },
-                        subcategory: { $last: '$subcategory' },
-                        confidence: {
-                            $sum: {
-                                $cond: [
-                                    { $eq: ['$category', '$category'] },
-                                    1,
-                                    0
-                                ]
-                            }
-                        },
-                        total: { $sum: 1 }
-                    }
-                },
-                {
-                    $project: {
-                        category: 1,
-                        subcategory: 1,
-                        confidence: { $divide: ['$confidence', '$total'] }
-                    }
-                }
-            ]);
-
-            res.json(patterns);
-        } catch (error) {
-            res.status(500).json({
-                error: 'Failed to retrieve category patterns',
-                details: error.message
-            });
-        }
-    }
-
-    // Update category patterns
-    static async updateCategoryPatterns(req, res) {
-        try {
-            const { patterns } = req.body;
-            // Store patterns in cache or database
-            // This is a simplified version - you might want to use Redis or another caching solution
-            global.categoryPatterns = patterns;
-            
-            res.json({ message: 'Category patterns updated successfully' });
-        } catch (error) {
-            res.status(500).json({
-                error: 'Failed to update category patterns',
-                details: error.message
-            });
-        }
-    }
-
-    // Suggest category for transaction
-    static async suggestCategory(req, res) {
-        try {
-            const { description } = req.body;
-            const patterns = global.categoryPatterns || [];
-
-            // Find best matching pattern
-            let bestMatch = null;
-            let highestConfidence = 0;
-
-            for (const pattern of patterns) {
-                const similarity = this.calculateSimilarity(
-                    this.normalizeDescription(description),
-                    this.normalizeDescription(pattern._id)
-                );
-
-                const confidence = similarity * pattern.confidence;
-                if (confidence > highestConfidence) {
-                    highestConfidence = confidence;
-                    bestMatch = pattern;
-                }
-            }
-
-            if (bestMatch && highestConfidence >= 0.6) {
-                res.json({
-                    category: bestMatch.category,
-                    subcategory: bestMatch.subcategory,
-                    confidence: highestConfidence
-                });
-            } else {
-                res.json(null);
-            }
-        } catch (error) {
-            res.status(500).json({
-                error: 'Failed to suggest category',
-                details: error.message
-            });
-        }
-    }
-
-    // Helper method to normalize description
-    static normalizeDescription(description) {
-        return description
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
-    // Helper method to calculate string similarity
+    // Calculating string similarity is now centralized in one function
     static calculateSimilarity(str1, str2) {
+        // Normalize descriptions
+        str1 = str1.toLowerCase().trim().replace(/[^\w\s]/g, '');
+        str2 = str2.toLowerCase().trim().replace(/[^\w\s]/g, '');
+        
+        if (str1 === str2) return 1.0;
+        
         const len1 = str1.length;
         const len2 = str2.length;
+        
+        if (len1 === 0 || len2 === 0) {
+            return 0.0;
+        }
+        
+        // Levenshtein distance calculation
         const matrix = Array(len1 + 1).fill().map(() => Array(len2 + 1).fill(0));
-
-        for (let i = 0; i <= len1; i++) matrix[i][0] = i;
-        for (let j = 0; j <= len2; j++) matrix[0][j] = j;
-
+        
+        for (let i = 0; i <= len1; i++) {
+            matrix[i][0] = i;
+        }
+        
+        for (let j = 0; j <= len2; j++) {
+            matrix[0][j] = j;
+        }
+        
         for (let i = 1; i <= len1; i++) {
             for (let j = 1; j <= len2; j++) {
                 const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -357,17 +263,18 @@ class CategoryController {
                 );
             }
         }
-
+        
         const distance = matrix[len1][len2];
         const maxLength = Math.max(len1, len2);
         return 1 - (distance / maxLength);
     }
 
-    // Auto-categorization methods
-    static async getCategoryPatternsAuto(req, res) {
+    // The getCategoryPatterns method remains the primary function for pattern retrieval
+    static async getCategoryPatterns(req, res) {
         try {
+            const userId = req.user._id;
             const patterns = await Category.aggregate([
-                { $match: { userId: req.user.id } },
+                { $match: { userId: mongoose.Types.ObjectId(userId) } },
                 {
                     $lookup: {
                         from: 'transactions',
@@ -392,7 +299,8 @@ class CategoryController {
                     }
                 }
             ]);
-
+            
+            // Organize the patterns in a more usable format
             const patternMap = {};
             patterns.forEach(category => {
                 category.patterns.forEach(pattern => {
@@ -403,15 +311,19 @@ class CategoryController {
                     };
                 });
             });
-
+            
             res.json(patternMap);
         } catch (error) {
             console.error('Error getting category patterns:', error);
-            res.status(500).json({ message: 'Error getting category patterns' });
+            res.status(500).json({ 
+                error: 'Failed to retrieve category patterns',
+                details: error.message 
+            });
         }
     }
 
-    static async suggestCategoryAuto(req, res) {
+    // The suggestCategory method handles all category suggestions
+    static async suggestCategory(req, res) {
         try {
             const { description, amount, merchant } = req.body;
             
@@ -427,10 +339,10 @@ class CategoryController {
                     }
                 }
             ]);
-
+            
             let bestMatch = null;
             let highestConfidence = 0;
-
+            
             patterns.forEach(category => {
                 category.transactions.forEach(transaction => {
                     const similarity = this.calculateSimilarity(
@@ -447,11 +359,11 @@ class CategoryController {
                     }
                 });
             });
-
+            
             if (bestMatch && bestMatch.confidence > 0.8) {
                 return res.json(bestMatch);
             }
-
+            
             // If no good pattern match, use amount-based heuristics
             const similarTransactions = await Transaction.find({
                 userId: req.user.id,
@@ -460,17 +372,17 @@ class CategoryController {
                     $lte: amount * 1.1 
                 }
             }).populate('category');
-
+            
             if (similarTransactions.length > 0) {
                 const categoryCounts = {};
                 similarTransactions.forEach(transaction => {
                     const categoryId = transaction.category._id.toString();
                     categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + 1;
                 });
-
+                
                 const mostCommonCategory = Object.entries(categoryCounts)
                     .sort((a, b) => b[1] - a[1])[0];
-
+                
                 if (mostCommonCategory) {
                     const category = await Category.findById(mostCommonCategory[0]);
                     return res.json({
@@ -480,14 +392,14 @@ class CategoryController {
                     });
                 }
             }
-
+            
             // If still no match, suggest based on merchant if available
             if (merchant) {
                 const merchantTransactions = await Transaction.find({
                     userId: req.user.id,
                     merchant: { $regex: merchant, $options: 'i' }
                 }).populate('category');
-
+                
                 if (merchantTransactions.length > 0) {
                     const category = merchantTransactions[0].category;
                     return res.json({
@@ -497,15 +409,19 @@ class CategoryController {
                     });
                 }
             }
-
+            
             // If no suggestions found
             res.json(null);
         } catch (error) {
             console.error('Error suggesting category:', error);
-            res.status(500).json({ message: 'Error suggesting category' });
+            res.status(500).json({ 
+                error: 'Failed to suggest category',
+                details: error.message 
+            });
         }
     }
 
+    // Training is still a separate function to maintain clean separation of concerns
     static async trainCategoryModel(req, res) {
         try {
             const { transactions } = req.body;
@@ -527,65 +443,15 @@ class CategoryController {
                     }
                 );
             }
-
+            
             res.json({ message: 'Category model trained successfully' });
         } catch (error) {
             console.error('Error training category model:', error);
-            res.status(500).json({ message: 'Error training category model' });
+            res.status(500).json({ 
+                error: 'Failed to train category model',
+                details: error.message 
+            });
         }
-    }
-
-    static async batchCategorizeTransactions(req, res) {
-        try {
-            const { transactions } = req.body;
-            const categorizedTransactions = [];
-
-            for (const transaction of transactions) {
-                const suggestion = await this.suggestCategoryAuto({
-                    body: {
-                        description: transaction.description,
-                        amount: transaction.amount,
-                        merchant: transaction.merchant
-                    },
-                    user: req.user
-                }, { json: (data) => data });
-
-                categorizedTransactions.push({
-                    ...transaction,
-                    suggestedCategory: suggestion
-                });
-            }
-
-            res.json(categorizedTransactions);
-        } catch (error) {
-            console.error('Error batch categorizing transactions:', error);
-            res.status(500).json({ message: 'Error batch categorizing transactions' });
-        }
-    }
-
-    // Utility function to calculate string similarity
-    static calculateSimilarityAuto(str1, str2) {
-        const len1 = str1.length;
-        const len2 = str2.length;
-        const matrix = Array(len1 + 1).fill().map(() => Array(len2 + 1).fill(0));
-
-        for (let i = 0; i <= len1; i++) matrix[i][0] = i;
-        for (let j = 0; j <= len2; j++) matrix[0][j] = j;
-
-        for (let i = 1; i <= len1; i++) {
-            for (let j = 1; j <= len2; j++) {
-                const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j - 1] + cost
-                );
-            }
-        }
-
-        const distance = matrix[len1][len2];
-        const maxLength = Math.max(len1, len2);
-        return 1 - (distance / maxLength);
     }
 
     // Update a category

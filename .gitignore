@@ -48,6 +48,7 @@ backend/tests/
 backend/node_modules/
 cursorRule/
 cursorRule/HowToImproveCurrentFeatures.md
+cursorRule/ModificationsImplemented.md
 
 
 # Test files
@@ -56,3 +57,7 @@ backend/routes/testRoutes.js
 **/test-*.pdf
 **/test-*.xlsx
 **/test-*.json
+
+# Documentation files
+*.md
+!README.md

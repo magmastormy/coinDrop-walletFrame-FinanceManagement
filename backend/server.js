@@ -73,15 +73,15 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/test', testRoutes);
 
 // Health Check Route
-/*
 app.get('/api/health', (req, res) => {
     const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
-        database: dbStatus
+        database: dbStatus,
+        env: process.env.NODE_ENV || 'development'
     });
-}); */
+});
 
 // 404 Not Found Handler
 app.use((req, res, next) => {

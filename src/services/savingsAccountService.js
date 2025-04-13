@@ -158,20 +158,56 @@ export const savingsAccountService = {
         }
     },
 
+    // Consolidated savings transfer methods
+    transferFunds: async ({ 
+        accountId, 
+        walletId, 
+        amount, 
+        description = 'Savings transfer', 
+        direction = 'deposit' // 'deposit' or 'withdraw'
+    }) => {
+        try {
+            // Normalize parameters
+            const transferData = {
+                walletId,
+                amount: parseFloat(amount),
+                description
+            };
+            
+            // Determine the endpoint based on direction
+            const endpoint = direction === 'withdraw' 
+                ? `${API_URL}/${accountId}/withdraw`
+                : `${API_URL}/${accountId}/deposit`;
+                
+            console.log(`[savingsAccountService - transferFunds] Performing ${direction} of ${amount} between wallet ${walletId} and account ${accountId}`);
+            
+            const response = await axiosInstance.post(endpoint, transferData);
+            return response.data;
+        } catch (error) {
+            console.error(`[savingsAccountService - transferFunds] Error during ${direction}:`, error);
+            throw error;
+        }
+    },
+
+    // Deprecated methods (kept for backward compatibility)
     depositToSavings: async ({ accountId, walletId, amount }) => {
-        const response = await axiosInstance.post(`${API_URL}/${accountId}/deposit`, {
-            walletId,
-            amount: parseFloat(amount)
+        console.warn('[savingsAccountService] depositToSavings is deprecated, use transferFunds instead');
+        return savingsAccountService.transferFunds({ 
+            accountId, 
+            walletId, 
+            amount, 
+            direction: 'deposit' 
         });
-        return response.data;
     },
 
     withdrawFromSavings: async ({ accountId, walletId, amount }) => {
-        const response = await axiosInstance.post(`${API_URL}/${accountId}/withdraw`, {
-            walletId,
-            amount: parseFloat(amount)
+        console.warn('[savingsAccountService] withdrawFromSavings is deprecated, use transferFunds instead');
+        return savingsAccountService.transferFunds({ 
+            accountId, 
+            walletId, 
+            amount, 
+            direction: 'withdraw' 
         });
-        return response.data;
     },
 
     createSavingsTransaction: async ({ accountId, amount, description, category }) => {
