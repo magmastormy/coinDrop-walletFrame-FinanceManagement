@@ -16,11 +16,23 @@ export const getUserBudgets = async (userId, filters = {}) => {
 export const getBudgetStats = async () => {
     try {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats:', response);
-        return response;
+        console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats');
+        
+        // Check if we have chart data in the response
+        if (response?.data?.chartData) {
+            return response.data.chartData;
+        } else {
+            console.warn('[BudgetService - getBudgetStats] No chart data found in response');
+            return { error: false, data: [] };
+        }
     } catch (error) {
         console.error('[BudgetService - getBudgetStats] Error fetching budget stats:', error);
-        throw error;
+        // Return error object that can be handled by the component
+        return { 
+            error: true, 
+            message: error.response?.data?.error || 'Failed to fetch budget data',
+            data: [] 
+        };
     }
 };
 
@@ -85,11 +97,23 @@ const budgetService = {
     getBudgetStats: async () => {
         try {
             const response = await axiosInstance.get(`${API_URL}/stats`);
-            console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats:', response.data);
-            return response;
+            console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats');
+            
+            // Check if we have chart data in the response
+            if (response?.data?.chartData) {
+                return response.data.chartData;
+            } else {
+                console.warn('[BudgetService - getBudgetStats] No chart data found in response');
+                return { error: false, data: [] };
+            }
         } catch (error) {
             console.error('[BudgetService - getBudgetStats] Error fetching budget stats:', error);
-            throw error;
+            // Return error object that can be handled by the component
+            return { 
+                error: true, 
+                message: error.response?.data?.error || 'Failed to fetch budget data',
+                data: [] 
+            };
         }
     }
 };

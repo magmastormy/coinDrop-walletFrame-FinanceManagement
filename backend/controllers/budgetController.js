@@ -167,9 +167,21 @@ class BudgetController {
     static async getBudgetStats(req, res) {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
+            
+            // Ensure userId is a valid ObjectId
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) 
+                ? new mongoose.Types.ObjectId(userId) 
+                : null;
+            
+            if (!userObjectId) {
+                return res.status(400).json({
+                    error: '[BudgetController] Invalid user ID format',
+                    details: 'The provided user ID is not a valid MongoDB ObjectId'
+                });
+            }
 
             const stats = await Budget.aggregate([
-                { $match: { userId: mongoose.Types.ObjectId(userId) } },
+                { $match: { userId: userObjectId } },
                 {
                     $lookup: {
                         from: 'categories',
@@ -178,7 +190,7 @@ class BudgetController {
                         as: 'category'
                     }
                 },
-                { $unwind: '$category' },
+                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
                 {
                     $group: {
                         _id: '$status',
@@ -191,7 +203,7 @@ class BudgetController {
             const activeBudgets = await Budget.aggregate([
                 { 
                     $match: { 
-                        userId: mongoose.Types.ObjectId(userId),
+                        userId: userObjectId,
                         status: 'active'
                     }
                 },
@@ -203,29 +215,41 @@ class BudgetController {
                         as: 'category'
                     }
                 },
-                { $unwind: '$category' },
+                { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
                 {
                     $project: {
                         name: 1,
                         amount: 1,
                         totalSpent: 1,
                         status: 1,
-                        'category.name': 1
+                        category: { $ifNull: ['$category.name', 'Uncategorized'] }
                     }
                 }
             ]);
 
             const budgetHealth = activeBudgets.map(budget => ({
                 name: budget.name,
-                category: budget.category.name,
+                category: budget.category,
                 amount: budget.amount,
                 spent: budget.totalSpent || 0,
                 spentPercentage: Math.round(((budget.totalSpent || 0) / budget.amount) * 100),
                 status: budget.status
             }));
 
-            res.json({ statusStats: stats, budgetHealth });
+            // Return data in the format the dashboard component expects
+            const chartData = activeBudgets.map(budget => ({
+                category: budget.category,
+                budgetAmount: budget.amount,
+                actualSpent: budget.totalSpent || 0
+            }));
+
+            res.json({ 
+                statusStats: stats, 
+                budgetHealth,
+                chartData
+            });
         } catch (error) {
+            console.error('[BudgetController] Error in getBudgetStats:', error);
             res.status(500).json({
                 error: '[BudgetController] Failed to retrieve budget statistics',
                 details: error.message
@@ -236,9 +260,21 @@ class BudgetController {
     static async analyzeBudgetPerformance(req, res) {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
+            
+            // Ensure userId is a valid ObjectId
+            const userObjectId = mongoose.Types.ObjectId.isValid(userId) 
+                ? new mongoose.Types.ObjectId(userId) 
+                : null;
+            
+            if (!userObjectId) {
+                return res.status(400).json({
+                    error: '[BudgetController] Invalid user ID format',
+                    details: 'The provided user ID is not a valid MongoDB ObjectId'
+                });
+            }
 
             const performanceAnalysis = await Budget.aggregate([
-                { $match: { userId: mongoose.Types.ObjectId(userId) } },
+                { $match: { userId: userObjectId } },
                 {
                     $lookup: {
                         from: 'categories',

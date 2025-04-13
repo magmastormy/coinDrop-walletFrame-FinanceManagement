@@ -1,64 +1,124 @@
 /* Basic styles for the analytics cards */
 .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    padding: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .analytics-card {
-    background: linear-gradient(145deg, #ffffff, #f3f4f6);
-    border-radius: 16px;
-    box-shadow: 
-        0 4px 6px -1px var(--dashboard-shadow),
-        0 2px 4px -2px var(--dashboard-shadow);
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    background-color: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .analytics-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-        0 20px 25px -5px var(--dashboard-shadow),
-        0 8px 10px -6px var(--dashboard-shadow);
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.analytics-card-header {
-    background: linear-gradient(to right, var(--dashboard-primary), var(--dashboard-secondary));
-    padding: 1rem;
+.card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: white;
+    flex-shrink: 0;
 }
 
-.analytics-icon {
+.card-content {
+    flex: 1;
+}
+
+.card-content h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin: 0 0 0.5rem 0;
+}
+
+.card-value {
     font-size: 1.5rem;
-    opacity: 0.9;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
 }
 
-.analytics-card-content {
-    padding: 1.25rem;
+.loading-container {
+    grid-column: 1 / -1;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #6b7280;
+}
+
+.loading-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #3b82f6;
+}
+
+.analytics-error {
+    grid-column: 1 / -1;
+    background-color: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    color: #b91c1c;
+    display: flex;
+    flex-direction: column;
     align-items: center;
 }
 
-.analytics-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--dashboard-primary);
-    letter-spacing: -0.025em;
+.error-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
 }
 
-.trend {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
+/* Color variables */
+:root {
+    --blue-color: #3b82f6;
+    --red-color: #ef4444;
+    --green-color: #10b981;
+    --purple-color: #8b5cf6;
+    --orange-color: #f59e0b;
+    --teal-color: #14b8a6;
+    --pink-color: #ec4899;
+    --brown-color: #92400e;
 }
 
-.trend-up {
-    color: #10b981;
-}
-
-.trend-down {
-    color: #ef4444;
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .analytics-card {
+        background-color: #1f2937;
+    }
+    
+    .card-content h3 {
+        color: #9ca3af;
+    }
+    
+    .card-value {
+        color: #f9fafb;
+    }
+    
+    .loading-container {
+        color: #9ca3af;
+    }
+    
+    .analytics-error {
+        background-color: rgba(185, 28, 28, 0.1);
+        border-color: rgba(185, 28, 28, 0.2);
+        color: #ef4444;
+    }
 }

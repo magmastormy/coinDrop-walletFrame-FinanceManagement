@@ -4,7 +4,7 @@ import { logout } from '../slices/authSlice';
 
 // Create axios instance
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://localhost:5001/api',
     headers: {
         'Content-Type': 'application/json'
     }

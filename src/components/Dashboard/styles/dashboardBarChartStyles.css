@@ -123,3 +123,147 @@
       inset 0 0 0 1px rgba(255, 255, 255, 0.25);
   }
   
+.dashboard-chart-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chart-action-button {
+    background: none;
+    border: none;
+    color: #6b7280;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chart-action-button:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.chart-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+}
+
+.chart-loading, .chart-error, .no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.chart-loading svg, .chart-error svg, .no-data svg {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.chart-loading p, .chart-error p, .no-data p {
+    margin: 0 0 0.5rem;
+    font-weight: 500;
+}
+
+.chart-loading {
+    color: #6b7280;
+}
+
+.chart-error {
+    color: #ef4444;
+}
+
+.chart-error .refresh-button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #f3f4f6;
+    border: none;
+    border-radius: 0.5rem;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chart-error .refresh-button:hover {
+    background-color: #e5e7eb;
+}
+
+.no-data {
+    color: #6b7280;
+}
+
+.no-data svg {
+    color: #9ca3af;
+}
+
+.no-data span {
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .dashboard-chart-card {
+        background-color: #1f2937;
+    }
+    
+    .chart-title {
+        color: #f9fafb;
+    }
+    
+    .chart-action-button {
+        color: #9ca3af;
+    }
+    
+    .chart-action-button:hover {
+        background-color: #374151;
+        color: #f3f4f6;
+    }
+    
+    .no-data, .chart-loading {
+        color: #9ca3af;
+    }
+    
+    .chart-error .refresh-button {
+        background-color: #374151;
+        color: #e5e7eb;
+    }
+    
+    .chart-error .refresh-button:hover {
+        background-color: #4b5563;
+    }
+}
+  

@@ -49,6 +49,17 @@ const zhipuaiModelService = {
             console.error('ZhipuAI Service - Error getting context-aware suggestions:', error);
             throw error;
         }
+    },
+    
+    async getUserAccountInfo(userId) {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/account-info`);
+            console.log('ZhipuAI Service - Got user account info:', response.context);
+            return response.context;
+        } catch (error) {
+            console.error('ZhipuAI Service - Error getting user account info:', error);
+            throw error;
+        }
     }
 };
 

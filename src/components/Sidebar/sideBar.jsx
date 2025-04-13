@@ -18,14 +18,14 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useSidebar } from './SidebarContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { logoutUser } from '../../services/authService';
+import { logout } from '../../services/authService';
 import { useTheme } from '../../theme/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import './styles/sideBarstyle.css';
 
 const Sidebar = () => {
     const { isOpen, isMobile, toggleSidebar } = useSidebar();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [isVisible, setIsVisible] = useState(false);
@@ -37,15 +37,11 @@ const Sidebar = () => {
 
     const handleLogout = async () => {
         try {
-            if (typeof logout === 'function') {
-                await logout();
-                navigate('/login');
-            } else {
-                console.error('Logout function is not available');
-                navigate('/login');
-            }
+            await logout();
+            navigate('/login');
         } catch (error) {
             console.error('Logout failed:', error);
+            navigate('/login');
         }
     };
 
@@ -110,19 +106,26 @@ const Sidebar = () => {
                         <span className="nav-text">{item.name}</span>
                     </Link>
                 ))}
-                <a 
+                <button 
                     onClick={handleLogout} 
                     className="nav-link logout"
+                    type="button"
                     style={{
                         color: theme.text.primary,
+                        background: 'none',
+                        border: 'none',
+                        width: '100%',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        padding: 'inherit',
                         '&:hover': {
                             backgroundColor: theme.button.base + '20'
                         }
                     }}
                 >
-                    <FontAwesomeIcon icon={faDoorClosed} />
+                    <FontAwesomeIcon icon={faSignOut} />
                     <span className="nav-text">Logout</span>
-                </a>
+                </button>
             </nav>
 
             <div 
