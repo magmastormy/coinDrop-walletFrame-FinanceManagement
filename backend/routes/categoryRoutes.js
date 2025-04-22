@@ -25,9 +25,9 @@ router.get('/:id/stats', CategoryController.getCategoryStats);
 
 // Auto-categorization endpoints
 router.get('/patterns', CategoryController.getCategoryPatterns);
-router.post('/patterns', CategoryController.updateCategoryPatterns);
-router.post('/suggest', CategoryController.suggestCategory);
-router.post('/train', CategoryController.trainCategoryModel);
-router.post('/batch-categorize', CategoryController.batchCategorizeTransactions);
+router.post('/auto-categorize/patterns', CategoryController.updateCategoryPatterns);
+router.post('/auto-categorize/suggest', CategoryController.suggestCategory);
+router.post('/auto-categorize/train', CategoryController.trainCategoryModel);
+router.post('/auto-categorize/batch', CategoryController.batchCategorizeTransactions);
 
 module.exports = router;

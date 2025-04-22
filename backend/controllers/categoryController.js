@@ -3,6 +3,8 @@ const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
 const mongoose = require('mongoose');
 
+const escapeRegex = (str) => str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
 class CategoryController {
     // Create a new category
     static async createCategory(req, res) {
@@ -216,7 +218,7 @@ class CategoryController {
                         '_id.month': -1
                     }
                 }
-            ]);
+            ]).cache({ key: `category-stats-${req.params.id}`, ttl: 3600 });
 
             res.json(stats);
         } catch (error) {
@@ -395,9 +397,10 @@ class CategoryController {
             
             // If still no match, suggest based on merchant if available
             if (merchant) {
+                const safeMerchant = escapeRegex(merchant);
                 const merchantTransactions = await Transaction.find({
                     userId: req.user.id,
-                    merchant: { $regex: merchant, $options: 'i' }
+                    merchant: { $regex: safeMerchant, $options: 'i' }
                 }).populate('category');
                 
                 if (merchantTransactions.length > 0) {
@@ -576,6 +579,68 @@ class CategoryController {
             res.status(500).json({
                 error: 'Failed to delete category',
                 details: error.message
+            });
+        }
+    }
+
+    static async updateCategoryPatterns(req, res) {
+        try {
+            const { categoryId, patterns } = req.body;
+            const userId = req.user._id;
+
+            // Validate patterns format
+            if (!Array.isArray(patterns)) {
+                return res.status(400).json({ 
+                    error: 'Invalid patterns format',
+                    details: 'Patterns must be an array of { pattern: string, confidence: number }' 
+                });
+            }
+
+            // Update patterns for the category
+            await Category.updateOne(
+                { _id: categoryId, userId },
+                { $set: { patterns } }
+            );
+
+            res.json({ message: 'Category patterns updated successfully' });
+        } catch (error) {
+            res.status(500).json({ 
+                error: 'Failed to update patterns', 
+                details: error.message 
+            });
+        }
+    }
+
+    static async batchCategorizeTransactions(req, res) {
+        try {
+            const { transactionIds, categoryId } = req.body;
+            const userId = req.user._id;
+
+            // Validate inputs
+            if (!Array.isArray(transactionIds) || !categoryId) {
+                return res.status(400).json({ 
+                    error: 'Invalid input',
+                    details: 'transactionIds must be an array, and categoryId is required' 
+                });
+            }
+
+            // Update transactions in bulk
+            const { modifiedCount } = await Transaction.updateMany(
+                { 
+                    _id: { $in: transactionIds }, 
+                    userId 
+                },
+                { category: categoryId }
+            );
+
+            res.json({ 
+                message: `${modifiedCount} transactions categorized successfully`,
+                modifiedCount 
+            });
+        } catch (error) {
+            res.status(500).json({ 
+                error: 'Failed to categorize transactions', 
+                details: error.message 
             });
         }
     }
