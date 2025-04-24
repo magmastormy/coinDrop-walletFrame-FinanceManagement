@@ -22,6 +22,7 @@ const reportRoutes = require('./routes/reportRoutes');
 const testRoutes = require('./routes/testRoutes');
 
 const {initCloudinary} = require('./config/cloudinary');
+const categoryInit = require('./config/categoryInit');
 const app = express();
 
 // Connect Database
@@ -29,6 +30,9 @@ connectDB();
 
 // Initialize Cloudinary
 initCloudinary();
+
+//Initialize the CategoryAI
+categoryInit();
 
 // Ensure upload directories exist
 ensureUploadDirectories()

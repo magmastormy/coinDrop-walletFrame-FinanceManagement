@@ -75,6 +75,16 @@ const categoryService = {
             console.error('deleteCategory: Error deleting category:', error);
             throw error;
         }
+    },
+
+    suggestCategory: async (description) => {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/suggest?description=${description}`);
+            return response.data;
+        } catch (error) {
+            console.error('suggestCategory: Error fetching AI suggestion:', error);
+            throw error;
+        }
     }
 };
 

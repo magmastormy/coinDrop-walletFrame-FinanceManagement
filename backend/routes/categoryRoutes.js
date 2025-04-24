@@ -2,6 +2,7 @@ const express = require('express');
 const CategoryController = require('../controllers/categoryController');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/authMiddleware');
+const CategoryService = require('../services/categoryService');
 
 // Protect all category routes
 router.use(authMiddleware);
@@ -29,5 +30,19 @@ router.post('/auto-categorize/patterns', CategoryController.updateCategoryPatter
 router.post('/auto-categorize/suggest', CategoryController.suggestCategory);
 router.post('/auto-categorize/train', CategoryController.trainCategoryModel);
 router.post('/auto-categorize/batch', CategoryController.batchCategorizeTransactions);
+
+// New endpoint for AI suggestions
+router.get('/suggest', async (req, res) => {
+  try {
+    const { description } = req.query;
+    if (!description) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+    const suggestedCategory = await CategoryService.suggestCategory(description);
+    res.json(suggestedCategory);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
