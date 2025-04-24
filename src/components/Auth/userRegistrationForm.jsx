@@ -39,9 +39,9 @@ const UserRegistration = () => {
             return;
         }
 
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
-            toast.error('Password must include uppercase, lowercase, number, and special character');
+            toast.error('Password must include uppercase, lowercase, number, and special character (@$!%*?&_)');
             return;
         }
 
@@ -165,7 +165,7 @@ const UserRegistration = () => {
                                 onChange={handleChange}
                             />
                             <small className="password-requirements">
-                                Password must be at least 8 characters and include uppercase, lowercase, number, and special character
+                                Password must be at least 8 characters and include uppercase, lowercase, number, and special character (@$!%*?&_)
                             </small>
                         </div>
 

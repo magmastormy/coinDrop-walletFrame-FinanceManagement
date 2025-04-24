@@ -3,6 +3,7 @@ const Budget = require('../models/Budget');
 const Wallet = require('../models/Wallet');
 const SavingsAccount = require('../models/SavingsAccount');
 const mongoose = require('mongoose');
+const CategoryService = require('../services/categoryService');
 
 class TransactionController {
     // Create a new transaction
@@ -21,12 +22,15 @@ class TransactionController {
                 });
             }
             
+            // 1. Validate category
+            const finalCategory = await CategoryService.handleCategory(category, userId);
+            
             // Create the transaction with validated data
             const transactionData = {
                 userId,
                 amount: parseFloat(amount),
                 type,
-                category,
+                category: finalCategory._id,
                 description,
                 walletId,
                 date: date || new Date()
@@ -50,10 +54,10 @@ class TransactionController {
             }
             
             // Find and update any matching budget by category
-            if (category) {
+            if (finalCategory.name) {
                 const matchingBudget = await Budget.findOne({
                     userId,
-                    category,
+                    category: finalCategory.name,
                     walletId
                 });
                 
@@ -106,6 +110,9 @@ class TransactionController {
                 throw new Error('Associated wallet not found');
             }
     
+            // 1. Validate category
+            const finalCategory = await CategoryService.handleCategory(category, userId);
+    
             // Create transaction
             const transaction = new Transaction({
                 userId: userId,
@@ -113,7 +120,7 @@ class TransactionController {
                 walletId: wallet._id, // This will be removed later
                 amount,
                 type,
-                category,
+                category: finalCategory._id,
                 description,
                 date: new Date()
             });
@@ -163,7 +170,7 @@ class TransactionController {
 
             // Optional filters
             if (type) filter.type = type;
-            if (category) filter.category = category;
+            if (category) filter.category = mongoose.Types.ObjectId(category);
             if (walletId) filter.walletId = walletId;
             
             if (startDate && endDate) {
@@ -344,6 +351,9 @@ class TransactionController {
                 throw new Error('Associated wallet not found');
             }
 
+            // 1. Validate category
+            const finalCategory = await CategoryService.handleCategory(category, userId);
+
             // Create transaction
             const transaction = new Transaction({
                 userId: userId,
@@ -351,7 +361,7 @@ class TransactionController {
                 walletId: wallet._id,
                 amount,
                 type,
-                category,
+                category: finalCategory._id,
                 description,
                 date: new Date()
             });

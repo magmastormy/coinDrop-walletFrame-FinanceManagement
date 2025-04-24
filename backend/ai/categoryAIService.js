@@ -1,6 +1,7 @@
 // backend/ai/categoryAIService.js
+const mongoose = require('mongoose');
+const Category = require('../models/Category');
 const CategoryAIModel = require('./categoryAIModel');
-const { Category } = require('../models/Category');
 
 class CategoryAIService {
   constructor() {
@@ -8,8 +9,14 @@ class CategoryAIService {
   }
 
   async initialize() {
-    const categories = await Category.find({});
-    await CategoryAIModel.loadCategories(categories);
+    try {
+      const categories = await Category.find({});
+      await CategoryAIModel.loadCategories(categories);
+      console.log('AI Service initialized with', categories.length, 'categories');
+    } catch (error) {
+      console.error('AI Service initialization failed:', error);
+      throw error;
+    }
   }
 
   async matchOrCreateCategory(description) {
