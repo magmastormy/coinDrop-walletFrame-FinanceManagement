@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const SavingsRuleController = require('../controllers/savingsRuleController');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { body } = require('express-validator');
+const { validationMiddleware } = require('../middleware/validationMiddleware');
 
 // Test route without middleware or controller
 router.get('/test', (req, res) => {
@@ -15,14 +17,56 @@ router.get('/user/:userId', authMiddleware, (req, res) => {
 });
 
 // Create a new rule
-router.post('/', authMiddleware, (req, res) => {
-  SavingsRuleController.createRule(req, res);
-});
+router.post(
+  '/',
+  authMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Name is required'),
+    body('triggerType')
+      .isIn(['income','expense','scheduled','roundUp','budgetUnderflow'])
+      .withMessage('Invalid trigger type'),
+    body('savePercentage')
+      .isFloat({ min: 0, max: 100 })
+      .withMessage('Save percentage must be between 0 and 100'),
+    body('saveBudgetUnderflow')
+      .isBoolean()
+      .withMessage('saveBudgetUnderflow must be boolean'),
+    body('roundUpTransactions')
+      .isBoolean()
+      .withMessage('roundUpTransactions must be boolean'),
+    body('savingsPriority')
+      .isIn(['low','medium','high'])
+      .withMessage('Invalid savings priority'),
+  ],
+  validationMiddleware,
+  SavingsRuleController.createRule
+);
 
 // Update a rule
-router.put('/:ruleId', authMiddleware, (req, res) => {
-  SavingsRuleController.updateRule(req, res);
-});
+router.put(
+  '/:ruleId',
+  authMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Name is required'),
+    body('triggerType')
+      .isIn(['income','expense','scheduled','roundUp','budgetUnderflow'])
+      .withMessage('Invalid trigger type'),
+    body('savePercentage')
+      .isFloat({ min: 0, max: 100 })
+      .withMessage('Save percentage must be between 0 and 100'),
+    body('saveBudgetUnderflow')
+      .isBoolean()
+      .withMessage('saveBudgetUnderflow must be boolean'),
+    body('roundUpTransactions')
+      .isBoolean()
+      .withMessage('roundUpTransactions must be boolean'),
+    body('savingsPriority')
+      .isIn(['low','medium','high'])
+      .withMessage('Invalid savings priority'),
+  ],
+  validationMiddleware,
+  SavingsRuleController.updateRule
+);
 
 // Delete a rule
 router.delete('/:ruleId', authMiddleware, (req, res) => {

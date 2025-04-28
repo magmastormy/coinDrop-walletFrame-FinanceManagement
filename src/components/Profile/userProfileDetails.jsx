@@ -14,7 +14,9 @@ import {
     updateProfileSuccess,
     updateProfileFailure
 } from '../../slices/profileSlice';
-import './styles/profileStyles.css';
+import { Box, Grid, Typography, TextField, Button, Avatar, IconButton, FormGroup, FormControlLabel, Checkbox, CircularProgress, Alert, Paper } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 
 const UserProfileDetails = () => {
     const [isEditing, setIsEditing] = useState(false);
@@ -191,117 +193,47 @@ const UserProfileDetails = () => {
     };
 
     return (
-        <div className="profile-container">
-            {loading && <div className="loading-overlay">Loading...</div>}
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="profile-content">
-                <div className="profile-image-section">
-                    {isEditing && (
-                        <ImageUpload 
-                            onImageUpload={handleProfileImageUpload}
-                            onImageRemove={handleProfileImageRemove}
-                            currentImage={formData.profilePicture || 'https://placeholder.pics/svg/150'}
-                            imageType="profile"
-                        />
+        <Paper sx={{ p: 2, position: 'relative' }}>
+            {loading && <Box position="absolute" inset={0} display="flex" justifyContent="center" alignItems="center" bgcolor="rgba(255,255,255,0.7)"><CircularProgress/></Box>}
+            {error && <Alert severity="error">{error}</Alert>}
+            <Grid container spacing={2}>
+                <Grid item xs={12} md={4} display="flex" flexDirection="column" alignItems="center">
+                    {isEditing ? (
+                        <ImageUpload onImageUpload={handleProfileImageUpload} onImageRemove={handleProfileImageRemove} currentImage={formData.profilePicture} imageType="profile" />
+                    ) : (
+                        <Avatar src={formData.profilePicture || ''} sx={{ width: 120, height: 120 }} />
                     )}
-                </div>
-                <div className="profile-header">
-                    <h2>{user?.username}'s Profile</h2>
-                    <button 
-                        onClick={() => setIsEditing(true)} 
-                        className="btn-edit"
-                    >
-                        {profile ? 'Edit Profile' : 'Create Profile'}
-                    </button>
-                </div>
-
-                <div className="profile-display">
-                    <div className="profile-picture" style={{ width: '150px', height: '150px' }}>
-                        <img 
-                            src={formData.profilePicture || 'https://placeholder.pics/svg/150'} 
-                            alt={`${user?.username}'s profile`} 
-                            style={{ width: '100%', height: '100%', borderRadius: '50%' }}
-                        />
-                    </div>
-
-                    <div className="profile-info">
-                        {isEditing ? (
-                            <form onSubmit={handleSubmit}>
-                                <div className="form-group">
-                                    <label>First Name:</label>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Last Name:</label>
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Phone:</label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Bio:</label>
-                                    <textarea
-                                        name="bio"
-                                        value={formData.bio}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Interests:</label>
-                                    {allowedInterests.map(interest => (
-                                        <div key={interest}>
-                                            <input
-                                                type="checkbox"
-                                                id={interest}
-                                                checked={formData.interests.includes(interest)}
-                                                onChange={() => handleCheckboxChange(interest)}
-                                            />
-                                            <label htmlFor={interest}>{interest}</label>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="edit-actions">
-                                    <button type="submit" className="btn-save">
-                                        {profile ? 'Save Changes' : 'Create Profile'}
-                                    </button>
-                                    {profile && (
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setIsEditing(false)} 
-                                            className="btn-cancel"
-                                        >
-                                            Cancel
-                                        </button>
-                                    )}
-                                </div>
-                            </form>
-                        ) : (
-                            <ViewProfileDetailsOnly user={user} profile={profile} />
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
+                    {!isEditing && (
+                        <Button startIcon={<EditIcon />} onClick={() => setIsEditing(true)} sx={{ mt: 2 }}>
+                            {profile ? 'Edit Profile' : 'Create Profile'}
+                        </Button>
+                    )}
+                </Grid>
+                <Grid item xs={12} md={8}>
+                    <Typography variant="h5" gutterBottom>{user?.username}'s Profile</Typography>
+                    {isEditing ? (
+                        <Box component="form" onSubmit={handleSubmit} display="grid" gap={2}>
+                            <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} required fullWidth />
+                            <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} required fullWidth />
+                            <TextField label="Email" name="email" value={formData.email} onChange={handleInputChange} required fullWidth disabled />
+                            <TextField label="Phone" name="phone" value={formData.phone} onChange={handleInputChange} fullWidth />
+                            <TextField label="Bio" name="bio" value={formData.bio} onChange={handleInputChange} multiline rows={3} fullWidth />
+                            <FormGroup row>
+                                {allowedInterests.map(interest => (
+                                    <FormControlLabel key={interest} control={<Checkbox checked={formData.interests.includes(interest)} onChange={() => handleCheckboxChange(interest)} />} label={interest} />
+                                ))}
+                            </FormGroup>
+                            <Box display="flex" gap={2}>
+                                <Button type="submit" variant="contained" startIcon={<SaveIcon />}>Save</Button>
+                                <Button variant="outlined" onClick={() => setIsEditing(false)}>Cancel</Button>
+                            </Box>
+                        </Box>
+                    ) : (
+                        <ViewProfileDetailsOnly user={user} profile={profile} />
+                    )}
+                </Grid>
+            </Grid>
+        </Paper>
     );
 };
 

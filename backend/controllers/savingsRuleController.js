@@ -1,5 +1,6 @@
-const SavingsRule = require('../models/SavingsRule');
 const mongoose = require('mongoose');
+const SavingsRule = require('../models/SavingsRule');
+const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
 
 class SavingsRuleController {
     // Get all rules for a user
@@ -94,37 +95,15 @@ class SavingsRuleController {
     static async executeRules(req, res) {
         try {
             const userId = req.user?._id || req.body.userId || req.query.userId;
-            
-            if (!userId) {
-                return res.status(400).json({ error: 'User ID is required' });
-            }
-            
             const { transactionData } = req.body;
-            
-            // Find all active rules for the user
-            const rules = await SavingsRule.find({ 
-                userId: userId,
-                active: true
-            });
-            
-            if (!rules || rules.length === 0) {
-                return res.json({ 
-                    message: 'No active rules found',
-                    executed: 0
-                });
+            if (!userId || !transactionData) {
+                return res.status(400).json({ error: 'User ID and transactionData are required' });
             }
-            
-            // Logic to execute rules based on transaction data
-            // This is a placeholder - implement according to your business logic
-            
-            res.json({
-                message: 'Rules executed successfully',
-                executed: rules.length,
-                rules: rules
-            });
+            const result = await executeRulesForTransaction(userId, transactionData);
+            return res.json(result);
         } catch (error) {
             console.error('Error executing savings rules:', error);
-            res.status(500).json({ error: 'Failed to execute savings rules' });
+            return res.status(500).json({ error: 'Failed to execute savings rules' });
         }
     }
 

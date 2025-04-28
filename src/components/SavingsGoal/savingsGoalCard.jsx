@@ -195,23 +195,12 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                         <Button
                             variant="outlined"
                             color="secondary"
-                            onClick={() => setShowRules(!showRules)}
+                            onClick={() => setShowRules(true)}
                             fullWidth
                         >
-                            {showRules ? 'Hide Rules' : 'Automation Rules'}
+                            Automation Rules
                         </Button>
                     </Box>
-
-                    {showRules && (
-                        <Box sx={{ mt: 2 }}>
-                            <AutomatedSavingsRules 
-                                goalId={goal.id}
-                                onRuleChange={(rules) => {
-                                    console.log('Rules updated:', rules);
-                                }}
-                            />
-                        </Box>
-                    )}
                 </CardContent>
             </Card>
 
@@ -296,6 +285,24 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                     >
                         {isLoading ? 'Processing...' : 'Contribute'}
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={showRules}
+                onClose={() => setShowRules(false)}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>Automation Rules for {goal.name}</DialogTitle>
+                <DialogContent>
+                    <AutomatedSavingsRules
+                        goalId={goal._id || goal.id}
+                        onRuleChange={(rules) => console.log('Rules updated:', rules)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowRules(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
         </motion.div>

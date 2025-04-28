@@ -10,10 +10,12 @@ const walletService = {
             }
             
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-            return response || []; 
+            //TO DO & FIX Return the wallets array from response data
+            return response.wallets || [];
         } catch (error) {
             console.error('Wallet Service - Error fetching wallets:', error);
-            return []; 
+            // Return empty array on error
+            return [];
         }
     },
     getWalletBudgets: async (walletId) => {

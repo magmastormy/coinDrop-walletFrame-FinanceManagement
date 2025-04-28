@@ -132,6 +132,7 @@ export const registerUser = async (userData) => {
         const response = await axiosInstance.post("/auth/register", registrationData);
         console.log('✅ Registration successful:', response.data);
         
+        console.log('📝 Registration successful:', response.data);
         const userId = response.data.user.id;
 
         // Create default "None" category

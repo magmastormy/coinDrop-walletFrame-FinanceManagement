@@ -73,38 +73,17 @@ const FilterTransactions = ({
             </div>
 
             <div className="filter-section">
-                <h4>Amount Range</h4>
-                <div className="amount-inputs">
-                    <input
-                        type="number"
-                        name="minAmount"
-                        placeholder="Min Amount"
-                        value={filters.minAmount}
-                        onChange={handleInputChange}
-                    />
-                    <span>to</span>
-                    <input
-                        type="number"
-                        name="maxAmount"
-                        placeholder="Max Amount"
-                        value={filters.maxAmount}
-                        onChange={handleInputChange}
-                    />
-                </div>
-            </div>
-
-            <div className="filter-section">
-                <h4>Date Range</h4>
+                <h4>Month Range</h4>
                 <div className="date-inputs">
                     <input
-                        type="date"
+                        type="month"
                         name="startDate"
                         value={filters.startDate}
                         onChange={handleInputChange}
                     />
                     <span>to</span>
                     <input
-                        type="date"
+                        type="month"
                         name="endDate"
                         value={filters.endDate}
                         onChange={handleInputChange}

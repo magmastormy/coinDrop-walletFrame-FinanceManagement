@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import budgetService from '../../services/budgetService';
-import './styles/budgetCreateStyles.css';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, Box, Typography } from '@mui/material';
+import dayjs from 'dayjs';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets = [], userId, budgetData }) => {
+    // Ensure wallets is an array
+    const walletOptions = Array.isArray(wallets) ? wallets : [];
+
     const [budgetFormData, setBudgetFormData] = useState({
         name: '',
         amount: '',
@@ -10,8 +16,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         walletId: '',
         type: 'expense',
         period: 'monthly',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: '',
+        startDate: dayjs(),
+        endDate: null,
         metadata: {
             icon: 'budget',
             color: '#007bff'
@@ -29,8 +35,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 type: budgetData.type,
                 categoryId: budgetData.categoryId,
                 walletId: budgetData.walletId,
-                startDate: budgetData.startDate ? budgetData.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
-                endDate: budgetData.endDate ? budgetData.endDate.split('T')[0] : '',
+                startDate: budgetData.startDate ? dayjs(budgetData.startDate) : dayjs(),
+                endDate: budgetData.endDate ? dayjs(budgetData.endDate) : null,
                 metadata: {
                     icon: (budgetData.metadata && budgetData.metadata.icon) ? budgetData.metadata.icon : 'budget',
                     color: (budgetData.metadata && budgetData.metadata.color) ? budgetData.metadata.color : '#007bff'
@@ -63,7 +69,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 walletId: budgetFormData.walletId,
                 userId: userId,
                 type: budgetFormData.type, // Use the selected type
-                startDate: budgetFormData.startDate || new Date().toISOString().split('T')[0],
+                startDate: budgetFormData.startDate ? budgetFormData.startDate.toISOString().split('T')[0] : dayjs().toISOString().split('T')[0],
                 period: budgetFormData.period || 'monthly',
             };
             
@@ -87,8 +93,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             walletId: '',
             type: 'expense',
             period: 'monthly',
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: '',
+            startDate: dayjs(),
+            endDate: null,
             metadata: {
                 icon: 'budget',
                 color: '#007bff'
@@ -107,124 +113,63 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         return null;
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="modal-overlay">
-            <div className="modal">
-                <h2>{budgetData ? 'Edit Budget' : 'Create New Budget'}</h2>
-                {error && <div className="error-message">{error}</div>}
-                {loading && <div className="loading-message">Creating budget...</div>}
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="budgetName">Budget Name</label>
-                        <input
-                            id="budgetName"
-                            type="text"
-                            value={budgetFormData.name}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="budgetAmount">Amount</label>
-                        <input
-                            id="budgetAmount"
-                            type="number"
-                            value={budgetFormData.amount}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="budgetType">Type</label>
-                        <select
-                            id="budgetType"
-                            value={budgetFormData.type}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
-                        >
-                            <option value="expense">Expense</option>
-                            <option value="income">Income</option>
-                            <option value="savings">Savings</option>
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="budgetCategory">Category</label>
-                        <select
-                            id="budgetCategory"
-                            value={budgetFormData.categoryId}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
-                            required
-                        >
-                            <option value="">Select Category</option>
-                            {categories.map(category => (
-                                <option key={category._id} value={category._id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="walletId">Wallet</label>
-                        <select
-                            id="walletId"
+        <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
+            <DialogTitle>{budgetData ? 'Edit Budget' : 'Create New Budget'}</DialogTitle>
+            <DialogContent>
+                <Box component="form" onSubmit={handleSubmit} sx={{ display:'grid', gap:2, pt:1 }}>
+                    <TextField label="Name" value={budgetFormData.name} onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })} required fullWidth />
+                    <TextField label="Amount" type="number" value={budgetFormData.amount} onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })} required fullWidth />
+                    <FormControl fullWidth>
+                        <InputLabel>Type</InputLabel>
+                        <Select value={budgetFormData.type} onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}>
+                            <MenuItem value="expense">Expense</MenuItem>
+                            <MenuItem value="income">Income</MenuItem>
+                            <MenuItem value="savings">Savings</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl fullWidth>
+                        <InputLabel>Category</InputLabel>
+                        <Select value={budgetFormData.categoryId} onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })} required>
+                            {categories.map(cat => <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <FormControl fullWidth>
+                        <InputLabel id="wallet-select-label">Wallet</InputLabel>
+                        <Select
+                            labelId="wallet-select-label"
+                            id="wallet-select"
                             value={budgetFormData.walletId}
+                            label="Wallet"
                             onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
                             required
                         >
-                            <option value="">Select Wallet</option>
-                            {wallets.wallets.map(wallet => (
-                                <option key={wallet._id} value={wallet._id}>
-                                    {wallet.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="startDate">Start Date</label>
-                        <input
-                            id="startDate"
-                            type="date"
+                            <MenuItem value="" disabled>Select Wallet</MenuItem>
+                            {walletOptions.map(w => <MenuItem key={w._id} value={w._id}>{w.name}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                            label="Start Date"
                             value={budgetFormData.startDate}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
+                            onChange={date => setBudgetFormData({ ...budgetFormData, startDate: date })}
+                            slotProps={{ textField: { fullWidth: true } }}
                         />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="endDate">End Date</label>
-                        <input
-                            id="endDate"
-                            type="date"
+                        <DatePicker
+                            label="End Date"
                             value={budgetFormData.endDate}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
-                            required
+                            onChange={date => setBudgetFormData({ ...budgetFormData, endDate: date })}
+                            slotProps={{ textField: { fullWidth: true, required: true } }}
                         />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="budgetIcon">Icon</label>
-                        <select
-                            id="budgetIcon"
-                            value={budgetFormData.metadata.icon}
-                            onChange={e => setBudgetFormData({
-                                ...budgetFormData,
-                                metadata: {
-                                    ...budgetFormData.metadata,
-                                    icon: e.target.value
-                                }
-                            })}
-                        >
-                            <option value="budget">Budget</option>
-                            <option value="savings">Savings</option>
-                            <option value="expenses">Expenses</option>
-                            {/* Add more icons as needed */}
-                        </select>
-                    </div>
-                    <div className="modal-actions">
-                        <button type="submit">{budgetData ? 'Update Budget' : 'Create Budget'}</button>
-                        <button type="button" onClick={onClose}>Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                    </LocalizationProvider>
+                    {error && <Typography color="error">{error}</Typography>}
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>Cancel</Button>
+                <Button type="submit" variant="contained" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
+            </DialogActions>
+        </Dialog>
     );
 };
 

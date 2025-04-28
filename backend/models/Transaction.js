@@ -72,6 +72,14 @@ const transactionSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Validator: require either category or description for AI categorization
+transactionSchema.pre('validate', function(next) {
+  if (!this.category && (!this.description || this.description.trim() === '')) {
+    this.invalidate('description', 'Must supply a category or description');
+  }
+  next();
+});
+
 // Pre-save middleware to validate budget category
 transactionSchema.pre('save', async function(next) {
     if (this.budgetId && this.isModified('category')) {

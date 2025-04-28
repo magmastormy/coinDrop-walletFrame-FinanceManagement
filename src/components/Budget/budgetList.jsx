@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPiggyBank, faChartPie, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import BudgetCard from './budgetCard';
-import './styles/budgetListStyles.css';
+import { Box, Paper, List, ListItem, Typography } from '@mui/material';
 
 const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     const { theme } = useTheme();
@@ -44,9 +44,9 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     }
 
     return (
-        <div className="budget-container" style={{ backgroundColor: theme.background.secondary }}>
+        <Paper elevation={1} sx={{ p:2, backgroundColor: theme.background.secondary }}>
             {budgetStats && (
-                <div className="budget-summary" role="region" aria-label="Budget summary">
+                <Box mb={2} role="region" aria-label="Budget summary">
                     <div className="summary-header">
                         <h2>
                             <FontAwesomeIcon icon={faChartPie} aria-hidden="true" style={{ color: theme.button.base }} />
@@ -73,40 +73,33 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
                             </div>
                         )}
                     </div>
-                </div>
+                </Box>
             )}
 
-            <div 
-                className="budget-list"
-                role="list"
-                aria-label="List of budgets"
-            >
+            <List>
                 <AnimatePresence>
                     {budgets.map(budget => (
-                        <motion.div
-                            key={budget._id}
-                            layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.2 }}
-                            role="listitem"
-                            style={{
-                                backgroundColor: theme.background.primary,
-                                borderColor: theme.button.base + '20'
-                            }}
-                        >
-                            <BudgetCard
-                                budget={budget}
-                                onEdit={onEdit}
-                                onDelete={onDelete}
-                                theme={theme}
-                            />
-                        </motion.div>
+                        <ListItem key={budget._id} sx={{ p:0 }}>
+                            <motion.div
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.2 }}
+                                role="listitem"
+                                style={{ width: '100%', backgroundColor: theme.background.primary, borderColor: theme.button.base + '20', borderRadius: 4 }}
+                            >
+                                <BudgetCard
+                                    budget={budget}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                />
+                            </motion.div>
+                        </ListItem>
                     ))}
                 </AnimatePresence>
-            </div>
-        </div>
+            </List>
+        </Paper>
     );
 };
 

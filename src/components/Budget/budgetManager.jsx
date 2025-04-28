@@ -15,6 +15,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {faChartLine} from '@fortawesome/free-solid-svg-icons';
 import './styles/budgetManagerStyles.css';
 import ReportSection from '../Common/ReportSection';
+import { Box, Grid, AppBar, Toolbar, Typography, Button, Card, CardContent } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 
 const BudgetManager = () => 
 {
@@ -115,69 +117,66 @@ const BudgetManager = () =>
     };
 
     return (
-        <div className="budget-manager">
-            <div className="budget-header">
-                <h2>Budget Management</h2>
-                <button onClick={() => {
-                    setEditingBudget(null);
-                    setIsModalOpen(true);
-                }} className="create-budget-btn">
-                    Create Budget
-                </button>
-                <ReportSection 
-                    title="Budget Report" 
-                    accountId={selectedBudget?._id || user?.id} 
-                    reportType="budget-performance"
-                />
-            </div>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="budget-content">
-                <div className="budget-list-section">
+        <Box sx={{ p: 2 }}>
+            <AppBar position="static" color="transparent" elevation={0}>
+                <Toolbar disableGutters>
+                    <Typography variant="h5" sx={{ flexGrow: 1 }}>Budget Management</Typography>
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditingBudget(null); setIsModalOpen(true); }}>
+                        Create Budget
+                    </Button>
+                    <ReportSection
+                        title="Budget Report"
+                        accountId={selectedBudget?._id || user?.id}
+                        reportType="budget-performance"
+                    />
+                </Toolbar>
+            </AppBar>
+            {error && <Typography color="error">{error}</Typography>}
+            <Grid container spacing={2} sx={{ mt: 2 }}>
+                <Grid item xs={12} md={4}>
                     <BudgetList
                         budgets={budgets}
-                        onEdit={(budget) => {
-                            setEditingBudget(budget);
-                            setIsModalOpen(true);
-                        }}
+                        onEdit={(budget) => { setEditingBudget(budget); setIsModalOpen(true); }}
                         onDelete={handleDeleteBudget}
                         onSelect={setSelectedBudget}
                         selectedBudget={selectedBudget}
                     />
-                </div>
-
-                <div className="budget-details-section">
+                </Grid>
+                <Grid item xs={12} md={8}>
                     {selectedBudget && (
-                        <>
+                        <Box>
                             <BudgetTransactionList
                                 budget={selectedBudget}
                                 transactions={transactions}
                                 onFilterChange={handleFilterChange}
                                 filter={filter}
                             />
-                            <div className="budget-charts">
-                                <BudgetChart budget={selectedBudget} />
-                                <BudgetPerformanceChart budget={selectedBudget} />
-                            </div>
-                        </>
+                            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                                <Card sx={{ flex: 1 }}>
+                                    <CardContent>
+                                        <BudgetChart budget={selectedBudget} />
+                                    </CardContent>
+                                </Card>
+                                <Card sx={{ flex: 1 }}>
+                                    <CardContent>
+                                        <BudgetPerformanceChart budget={selectedBudget} />
+                                    </CardContent>
+                                </Card>
+                            </Box>
+                        </Box>
                     )}
-                </div>
-            </div>
-
+                </Grid>
+            </Grid>
             <CreateBudgetModal
                 isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setEditingBudget(null);
-                }}
+                onClose={() => { setIsModalOpen(false); setEditingBudget(null); }}
                 onCreateBudget={handleBudgetCreated}
                 categories={categories}
                 wallets={wallets}
                 userId={user.id}
                 budgetData={editingBudget}
             />
-        </div>
+        </Box>
     );
 };
 

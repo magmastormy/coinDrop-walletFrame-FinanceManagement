@@ -65,6 +65,11 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                 throw new Error('Please select either a wallet or a savings account');
             }
 
+            // Ensure at least a category or a description is provided
+            if (!cleanTransactionData.category && (!cleanTransactionData.description || !cleanTransactionData.description.trim())) {
+                throw new Error('Please provide a category or description');
+            }
+
             const response = await transactionService.createTransaction(cleanTransactionData);
             onTransactionCreated(response);
             onClose();
@@ -115,12 +120,11 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                         </select>
                     </div>
                     <div className="form-group">
-                        <label htmlFor="category">Category</label>
+                        <label htmlFor="category">Category (optional if description provided)</label>
                         <select
                             id="category"
                             value={transactionData.category}
                             onChange={e => setTransactionData({ ...transactionData, category: e.target.value })}
-                            required
                         >
                             <option value="">Select a category</option>
                             {categories.map(category => (

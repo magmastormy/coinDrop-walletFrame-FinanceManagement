@@ -36,6 +36,15 @@ const savingsRuleSchema = new Schema({
         type: Boolean,
         default: false
     },
+    roundUpTransactions: {
+        type: Boolean,
+        default: false
+    },
+    savingsPriority: {
+        type: String,
+        enum: ['low', 'medium', 'high'],
+        default: 'medium'
+    },
     scheduleFrequency: {
         type: String,
         enum: ['daily', 'weekly', 'monthly', 'none'],

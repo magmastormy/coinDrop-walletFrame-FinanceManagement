@@ -11,7 +11,7 @@ import TransactionList from './transactionList';
 import FilterTransactions from './filterTransactions';
 import TransactionSavingsAccountCard from './transactionSavingsAccountCard';
 import TransactionWalletCard from './transactionWalletCard';
-import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Alert, CircularProgress, Card, CardContent } from '@mui/material';
 import { useTheme } from '../../theme/ThemeContext';
 import './styles/transactionManagerStyles.css';
 
@@ -177,6 +177,11 @@ const TransactionManager = () => {
         [transactions]
     );
 
+    // Summary stats for displayed transactions
+    const totalIncome = filteredTransactions.reduce((sum, tx) => tx.type === 'income' ? sum + tx.amount : sum, 0);
+    const totalExpense = filteredTransactions.reduce((sum, tx) => tx.type === 'expense' ? sum + tx.amount : sum, 0);
+    const net = totalIncome - totalExpense;
+
     if (loading) {
         return (
             <Box className="loading-container">
@@ -191,16 +196,34 @@ const TransactionManager = () => {
                 <Typography variant="h5" className="page-title">
                     Transactions
                 </Typography>
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        setEditingTransaction(null);
-                        setIsModalOpen(true);
-                    }}
-                    className="new-transaction-button"
-                >
-                    New Transaction
-                </Button>
+            </Box>
+            <Box className="summary-section" sx={{ mb: 3 }}>
+                <Card>
+                    <CardContent sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                        <Box textAlign="center">
+                            <Typography variant="subtitle1">Income</Typography>
+                            <Typography variant="h6">${totalIncome.toFixed(2)}</Typography>
+                        </Box>
+                        <Box textAlign="center">
+                            <Typography variant="subtitle1">Expense</Typography>
+                            <Typography variant="h6">${totalExpense.toFixed(2)}</Typography>
+                        </Box>
+                        <Box textAlign="center">
+                            <Typography variant="subtitle1">Net</Typography>
+                            <Typography variant="h6">${net.toFixed(2)}</Typography>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                setEditingTransaction(null);
+                                setIsModalOpen(true);
+                            }}
+                            sx={{ height: 40 }}
+                        >
+                            New Transaction
+                        </Button>
+                    </CardContent>
+                </Card>
             </Box>
 
             {error && (

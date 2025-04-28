@@ -4,6 +4,7 @@ const Wallet = require('../models/Wallet');
 const SavingsAccount = require('../models/SavingsAccount');
 const mongoose = require('mongoose');
 const CategoryService = require('../services/categoryService');
+const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
 
 class TransactionController {
     // Create a new transaction
@@ -14,6 +15,17 @@ class TransactionController {
             // Extract all required fields
             const { amount, type, category, description, walletId, date } = req.body;
             
+            // AI fallback: if no category provided, but description exists, get AI-suggested category
+            let categoryData = category;
+            if (!categoryData && description && description.trim()) {
+                try {
+                    categoryData = await CategoryService.suggestCategory(description);
+                    console.log('🤖 AI-suggested category:', categoryData);
+                } catch (aiErr) {
+                    console.error('Category AI suggestion failed:', aiErr);
+                }
+            }
+
             // Validate required fields
             if (!amount || !type) { 
                 return res.status(400).json({ 
@@ -22,8 +34,8 @@ class TransactionController {
                 });
             }
             
-            // 1. Validate category
-            const finalCategory = await CategoryService.handleCategory(category, userId);
+            // 1. Validate category (use AI suggestion if applicable)
+            const finalCategory = await CategoryService.handleCategory(categoryData, userId);
             
             // Create the transaction with validated data
             const transactionData = {
@@ -53,11 +65,11 @@ class TransactionController {
                 }
             }
             
-            // Find and update any matching budget by category
-            if (finalCategory.name) {
+            // Find and update any matching budget by category (use ObjectId)
+            if (finalCategory._id) {
                 const matchingBudget = await Budget.findOne({
                     userId,
-                    category: finalCategory.name,
+                    category: finalCategory._id,
                     walletId
                 });
                 
@@ -66,10 +78,20 @@ class TransactionController {
                 }
             }
             
+            // Execute savings rules per-transaction
+            let autoSavings;
+            try {
+                autoSavings = await executeRulesForTransaction(userId, transaction.toObject());
+            } catch (err) {
+                console.error('Auto savings error:', err);
+                autoSavings = { executed: 0, details: [], error: err.message };
+            }
+            
             res.status(201).json({ 
                 message: 'Transaction created successfully',
                 transaction,
-                wallet
+                wallet,
+                autoSavings
             });
         } catch (error) {
             res.status(400).json({ 

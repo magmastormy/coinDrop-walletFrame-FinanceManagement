@@ -11,11 +11,12 @@
     border-collapse: separate;
     border-spacing: 0;
     margin: 0;
+    font-size: 0.9rem !important;
 }
 
 .transaction-table th,
 .transaction-table td {
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm) !important;
     text-align: left;
     border-bottom: 1px solid var(--border);
 }
@@ -119,9 +120,9 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 6px 12px;
+    padding: 4px 8px !important;
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
+    font-size: 0.8rem !important;
     transition: all var(--transition-fast);
     background: none;
     border: 1px solid var(--border);

@@ -1,0 +1,32 @@
+.new-goal-card {
+  cursor: pointer;
+}
+
+.new-goal-card .MuiCard-root {
+  border: 2px dashed var(--primary-color);
+  transition: all 0.3s ease;
+}
+
+.new-goal-card .MuiCard-root:hover {
+  border-style: solid;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.new-goal-card .MuiIconButton-root {
+  background: var(--background-tertiary);
+  transition: transform 0.3s ease;
+}
+
+.new-goal-card .MuiIconButton-root:hover {
+  transform: rotate(90deg);
+}
+
+.new-goal-card .MuiTextField-root,
+.new-goal-card .MuiDatePicker-root {
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
