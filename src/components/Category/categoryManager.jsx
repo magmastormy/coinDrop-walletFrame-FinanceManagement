@@ -13,6 +13,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { setCategories, setLoading, setError } from '../../slices/categorySlice';
 import categoryService from '../../services/categoryService';
+import transactionService from '../../services/transactionService';
+import CategoryPanel from './categoryPanel';
+import ExpensesByCategoryChart from './expensesbycategoryChart';
+import ExpensesOverTimeLineChart from './expensesovertimeLineChart';
 import './styles/categoryManagerStyles.css';
 
 const CategoryManager = () => {
@@ -22,10 +26,18 @@ const CategoryManager = () => {
     const [newCategory, setNewCategory] = useState('');
     const [editingCategory, setEditingCategory] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [transactions, setTransactions] = useState([]);
+    const [txLoading, setTxLoading] = useState(false);
+    const [txError, setTxError] = useState(null);
 
     useEffect(() => {
         fetchCategories();
     }, [dispatch]);
+
+    useEffect(() => {
+        if (user && user.id) loadTransactions();
+    }, [user]);
 
     const fetchCategories = async () => {
         dispatch(setLoading(true));
@@ -90,6 +102,23 @@ const CategoryManager = () => {
     const handleCancelEdit = () => {
         setNewCategory('');
         setEditingCategory(null);
+    };
+
+    const loadTransactions = async () => {
+        setTxLoading(true);
+        try {
+            const txs = await transactionService.getUserTransactions(user.id);
+            setTransactions(txs);
+        } catch (err) {
+            setTxError(err.message);
+        } finally {
+            setTxLoading(false);
+        }
+    };
+
+    const handlePanelAdd = () => {
+        setEditingCategory(null);
+        setNewCategory('');
     };
 
     return (
@@ -172,6 +201,13 @@ const CategoryManager = () => {
                 </div>
             </form>
 
+            <CategoryPanel
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onAddCategory={handlePanelAdd}
+                onSelectCategory={(cat) => setSelectedCategory(cat)}
+            />
+
             <motion.div 
                 className="category-list-container"
                 layout
@@ -251,6 +287,18 @@ const CategoryManager = () => {
                     </motion.div>
                 )}
             </motion.div>
+
+            <div className="charts-container">
+                <ExpensesByCategoryChart
+                    transactions={transactions}
+                    categories={categories}
+                    loading={loading || txLoading}
+                />
+                <ExpensesOverTimeLineChart
+                    transactions={transactions}
+                    loading={loading || txLoading}
+                />
+            </div>
         </motion.div>
     );
 };
