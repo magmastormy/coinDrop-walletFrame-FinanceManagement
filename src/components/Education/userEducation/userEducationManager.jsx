@@ -78,15 +78,18 @@ const UserEducationManager = () => {
             } else {
                 // Create new post
                 result = await educationService.createEducation(postData);
+                console.log("***[userEducationManager - handlePostSubmit createEducation] result/response: ", result);
                 dispatch(addEducation(result));
                 toast.success('Post created successfully');
             }
             
             setEditingPost(null);
             setShowCreateModal(false);
+            return result; // Return the result to createEditEducationPost.jsx
         } catch (err) {
             dispatch(setError(err.message));
             toast.error(err.message || 'Failed to save post');
+            throw err; // Rethrow to be caught by createEditEducationPost.jsx
         } finally {
             dispatch(setLoading(false));
         }

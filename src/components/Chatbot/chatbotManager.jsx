@@ -109,9 +109,9 @@ const ChatbotManager = () => {
 
             // Detect different types of financial queries
             const isBalanceQuery = /\b(balance|account|wallet|how much|check balance)\b/i.test(message.toLowerCase());
-            const isBudgetQuery = /\b(budget|spending|expenses|spent|overspent)\b/i.test(message.toLowerCase());
+            const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(message.toLowerCase());
             const isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(message.toLowerCase());
-            const isBillQuery = /\b(bill|payment|due|upcoming|recurring|subscription)\b/i.test(message.toLowerCase());
+            const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(message.toLowerCase());
             const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
                                      /\b(money|financial|finance|income|automations|transfer)\b/i.test(message.toLowerCase());
             

@@ -29,7 +29,7 @@ import budgetService from '../../services/budgetService';
 import walletService from '../../services/walletService';
 import { toast } from 'react-toastify';
 
-const BudgetCard = ({ budget, onEdit, onDelete }) => {
+const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
   const { user } = useSelector(state => state.auth);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState([]);
@@ -152,7 +152,14 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-      <Card sx={{ mb: 2 }}>
+      <Card
+        onClick={() => onSelect?.(budget)}
+        sx={{
+          mb: 2,
+          cursor: onSelect ? 'pointer' : 'default',
+          border: isSelected ? '2px solid #1976d2' : undefined
+        }}
+      >
         <CardHeader
           title={budget.name}
           subheader={budget.type.charAt(0).toUpperCase() + budget.type.slice(1)}
@@ -177,9 +184,9 @@ const BudgetCard = ({ budget, onEdit, onDelete }) => {
           </Box>
         </CardContent>
         <CardActions>
-          <Button size="small" onClick={() => onEdit(budget)} startIcon={<FontAwesomeIcon icon={faEdit} />}>Edit</Button>
-          <Button size="small" onClick={() => onDelete(budget._id)} startIcon={<FontAwesomeIcon icon={faTrash} />} color="error">Delete</Button>
-          <Button size="small" variant="outlined" onClick={() => setShowSaveDialog(true)} disabled={calculateSavings() <= 0}>Save Surplus (${calculateSavings().toFixed(2)})</Button>
+          <Button size="small" onClick={e => { e.stopPropagation(); onEdit(budget); }} startIcon={<FontAwesomeIcon icon={faEdit} />}>Edit</Button>
+          <Button size="small" color="error" onClick={e => { e.stopPropagation(); onDelete(budget._id); }} startIcon={<FontAwesomeIcon icon={faTrash} />}>Delete</Button>
+          <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); setShowSaveDialog(true); }} disabled={calculateSavings() <= 0}>Save Surplus (${calculateSavings().toFixed(2)})</Button>
         </CardActions>
         <Dialog open={showSaveDialog} onClose={() => setShowSaveDialog(false)}>
           <DialogTitle>Save Budget Surplus</DialogTitle>

@@ -6,8 +6,8 @@ import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
 import walletService from '../../services/walletService';
 import CreateBudgetModal from './createBudgetModal';
-import BudgetList from './budgetList';
-import BudgetTransactionList from './budgetTransactionList';
+import BudgetGrid from './budgetGrid';
+import BudgetAnalytics from './budgetAnalytics';
 import BudgetChart from './budgetCharts';
 import BudgetPerformanceChart from './budgetPerformanceChart';
 import TransactionChart from '../Transaction/transactionCharts';
@@ -15,7 +15,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {faChartLine} from '@fortawesome/free-solid-svg-icons';
 import './styles/budgetManagerStyles.css';
 import ReportSection from '../Common/ReportSection';
-import { Box, Grid, AppBar, Toolbar, Typography, Button, Card, CardContent } from '@mui/material';
+import { Box, Grid, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
 const BudgetManager = () => 
@@ -80,6 +80,7 @@ const BudgetManager = () =>
     };
 
     const handleBudgetCreated = () => {
+        console.log('Budget created callback triggered!');
         fetchBudgets();
         setIsModalOpen(false);
     };
@@ -133,38 +134,22 @@ const BudgetManager = () =>
             </AppBar>
             {error && <Typography color="error">{error}</Typography>}
             <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={12} md={4}>
-                    <BudgetList
+                <Grid item xs={12}>
+                    <BudgetGrid
                         budgets={budgets}
-                        onEdit={(budget) => { setEditingBudget(budget); setIsModalOpen(true); }}
+                        onEdit={b => { setEditingBudget(b); setIsModalOpen(true); }}
                         onDelete={handleDeleteBudget}
-                        onSelect={setSelectedBudget}
+                        onSelect={handleBudgetSelect}
                         selectedBudget={selectedBudget}
                     />
                 </Grid>
-                <Grid item xs={12} md={8}>
-                    {selectedBudget && (
-                        <Box>
-                            <BudgetTransactionList
-                                budget={selectedBudget}
-                                transactions={transactions}
-                                onFilterChange={handleFilterChange}
-                                filter={filter}
-                            />
-                            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                                <Card sx={{ flex: 1 }}>
-                                    <CardContent>
-                                        <BudgetChart budget={selectedBudget} />
-                                    </CardContent>
-                                </Card>
-                                <Card sx={{ flex: 1 }}>
-                                    <CardContent>
-                                        <BudgetPerformanceChart budget={selectedBudget} />
-                                    </CardContent>
-                                </Card>
-                            </Box>
-                        </Box>
-                    )}
+                <Grid item xs={12}>
+                    <BudgetAnalytics
+                        budget={selectedBudget}
+                        transactions={transactions}
+                        filter={filter}
+                        onFilterChange={handleFilterChange}
+                    />
                 </Grid>
             </Grid>
             <CreateBudgetModal

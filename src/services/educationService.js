@@ -9,7 +9,8 @@ const educationService = {
         try {
             const response = await axiosInstance.get(API_URL);
             console.log('Education Service - getEducations - Response:', response);
-            return response.data;
+            console.log('Education Service - getEducations - Response.data:', response.data);
+            return response;
         } catch (error) {
             console.error('Education Service - getEducations: Error fetching educations:', error);
             throw error;
@@ -105,14 +106,12 @@ const educationService = {
             console.log("Step 5: Sending post data with images:[educationService - createEducation] Checking Post data images:", dataToSend);
             
             const response = await axiosInstance.post(API_URL, dataToSend);
+            console.log('Step 5: Sending post data with images:[educationService - createEducation] Checking Post data image - Response: ', response);
             
-            // Fixed: Check response status before checking data
-            if (response && response.status >= 200 && response.status < 300 && response.data) {
-                console.log("Step 6: Post created successfully:[educationService - createEducation] Checking Post data images:", response.data);
-                return {
-                    SUCCESS: true,
-                    data: response.data
-                };
+            // Updated: Return the response directly if it's valid
+            if (response) {
+                console.log("Step 6: Post created successfully:[educationService - createEducation] Final response:", response);
+                return response;
             } else {
                 console.error("Step 7: Invalid response:[educationService - createEducation] Checking Post data images:", response);
                 throw new Error('Invalid response from server');

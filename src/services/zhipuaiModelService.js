@@ -15,49 +15,49 @@ const zhipuaiModelService = {
         }
     },
 
-    async getFinancialAdvice(userId) {
+    async getUserContext(userId) {
         try {
-            console.log('ZhipuAI Service - Getting financial advice for user:', userId);
-            const response = await axiosInstance.get(`${API_URL}/${userId}/financial-advice`);
-            
-            if (!response?.advice) {
-                throw new Error('Invalid response from AI service');
-            }
-
-            return response.advice;
+            console.log("[ZhipuAIService - getUserContext] - getting contexted advice")
+            const response = await axiosInstance.get(`${API_URL}/user-context/${userId}`);
+            console.log('[ZhipuAIService - getUserContext] - getting contexted advice response:', response);
+            return response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error getting financial advice:', error);
+            console.error('[ZhipuAIService - getUserContext] - Error sending message:', error);
+            throw error;
+        }
+    },
+
+    async getContextSuggestions(userId) {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/context-suggestions/${userId}`);
+            return response.suggestions || response;
+        } catch (error) {
+            console.error('ZhipuAI Service - Error fetching context suggestions:', error);
+            throw error;
+        }
+    },
+
+    async getContextAwareSuggestions(userId) {
+        // alias for backward compatibility
+        return this.getContextSuggestions(userId);
+    },
+
+    async getUserAccountInfo(userId) {
+        try {
+            const response = await axiosInstance.get(`${API_URL}/user-account-info/${userId}`);
+            return response.context || response;
+        } catch (error) {
+            console.error('ZhipuAI Service - Error fetching user account info:', error);
             throw error;
         }
     },
 
     async getProactiveInsights(userId) {
         try {
-            const response = await axiosInstance.get(`${API_URL}/${userId}/proactive-insights`);
-            return response.insights;
+            const response = await axiosInstance.get(`${API_URL}/proactive-insights/${userId}`);
+            return response.insights || response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error getting proactive insights:', error);
-            throw error;
-        }
-    },
-
-    async getContextAwareSuggestions(userId) {
-        try {
-            const response = await axiosInstance.get(`${API_URL}/${userId}/context-suggestions`);
-            return response.suggestions;
-        } catch (error) {
-            console.error('ZhipuAI Service - Error getting context-aware suggestions:', error);
-            throw error;
-        }
-    },
-    
-    async getUserAccountInfo(userId) {
-        try {
-            const response = await axiosInstance.get(`${API_URL}/account-info`);
-            console.log('ZhipuAI Service - Got user account info:', response.context);
-            return response.context;
-        } catch (error) {
-            console.error('ZhipuAI Service - Error getting user account info:', error);
+            console.error('ZhipuAI Service - Error fetching proactive insights:', error);
             throw error;
         }
     }

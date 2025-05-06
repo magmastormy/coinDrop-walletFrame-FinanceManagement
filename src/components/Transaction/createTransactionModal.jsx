@@ -51,6 +51,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                 savingsAccountId: transactionData.savingsAccountId || null,
                 budgetId: transactionData.budgetId || undefined
             };
+            console.log("[create Transaction Modal - handleSubmit] cleanTransactionData: ", cleanTransactionData);
 
             // Validate required fields
             if (!cleanTransactionData.amount || isNaN(cleanTransactionData.amount)) {

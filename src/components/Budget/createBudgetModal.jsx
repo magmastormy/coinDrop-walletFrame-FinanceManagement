@@ -50,36 +50,43 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         setError('');
         setLoading(true);
         
-        // Ensure all required fields are present
+        // Validate required fields
         if (!budgetFormData.name || !budgetFormData.amount || !budgetFormData.categoryId || !budgetFormData.walletId || !budgetFormData.type) {
             setError('All fields are required: name, amount, category, wallet, and type');
             setLoading(false);
             return;
         }
-        
+
+        // Validate amount is a positive number
+        const amount = parseFloat(budgetFormData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            setError('Amount must be a positive number');
+            setLoading(false);
+            return;
+        }
+
         try {
-            // Find the selected category
-            const selectedCategory = categories.find(cat => cat._id === budgetFormData.categoryId);
-            
             const budgetData = {
                 name: budgetFormData.name,
-                amount: parseFloat(budgetFormData.amount),
+                amount: amount,
                 categoryId: budgetFormData.categoryId,
-                category: budgetFormData.categoryId, // Map categoryId to category
                 walletId: budgetFormData.walletId,
                 userId: userId,
-                type: budgetFormData.type, // Use the selected type
+                type: budgetFormData.type,
                 startDate: budgetFormData.startDate ? budgetFormData.startDate.toISOString().split('T')[0] : dayjs().toISOString().split('T')[0],
                 period: budgetFormData.period || 'monthly',
             };
-            
+
+            console.log('[DEBUG] Budget data being sent:', budgetData);
             const result = await budgetService.createBudget(budgetData);
-            
+            console.log('[DEBUG] Budget creation result:', result);
+
             onCreateBudget();
             resetForm();
             onClose();
         } catch (err) {
-            setError(err.message);
+            console.error('[DEBUG] Budget creation error:', err);
+            setError(err.message || 'Failed to create budget. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -167,7 +174,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button type="submit" variant="contained" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
+                <Button onClick={handleSubmit} variant="contained" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
             </DialogActions>
         </Dialog>
     );

@@ -42,7 +42,7 @@ const TransactionManager = () => {
         try {
             // Fetch wallets
             const walletsResponse = await walletService.getAllWallets(user.id);
-            setLocalWallets(walletsResponse.wallets || []);
+            setLocalWallets(walletsResponse || []);
 
             //Fetch Savings Accounts
             const savingsAccountsResponse = await savingsAccountService.getUserSavingsAccounts(user.id);

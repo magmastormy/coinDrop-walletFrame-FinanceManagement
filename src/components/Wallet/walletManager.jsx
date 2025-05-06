@@ -34,7 +34,7 @@ const WalletManager = () => {
                 throw new Error('User not authenticated');
             }
             const walletdata = await walletService.getAllWallets(user.id);
-            dispatch(setWallets(walletdata.wallets || []));
+            dispatch(setWallets(walletdata || []));
         } catch (error) {
             dispatch(setError(error.message));
         } finally {

@@ -253,7 +253,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             
             // Check for valid response data
             if (!response || !response.url) {
-                throw new Error('Invalid image upload response');
+                throw new Error('[CreateEditEducation] Invalid image upload response');
             }
             
             // Update the UI state
@@ -270,7 +270,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             return response.url;
         } catch (error) {
             console.error('[CreateEditEducation] Error uploading image:', error);
-            toast.error(error.message || 'Failed to upload image');
+            toast.error(error.message || ' [CreateEditEducation] Failed to upload image');
             return null;
         } finally {
             setIsUploading(false);
@@ -293,7 +293,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             
             // Count pending images to upload
             const pendingImagesToUpload = uploadedImages.filter(img => img.file && !img.uploaded);
-            console.log('Pending images to upload:', pendingImagesToUpload.length);
+            console.log('[CreateEditEducation] Pending images to upload:', pendingImagesToUpload.length);
             
             // Create the post data
             const postData = {
@@ -327,7 +327,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
                 console.log('[CreateEditEducationPost] Education post (onSubmit) response:', response);
                 
                 // Handle the response
-                if (response && response.SUCCESS) {
+                if (response) {
                     // Clean up any object URLs created for previews
                     uploadedImages.forEach(img => {
                         if (img.preview && typeof img.preview === 'string') {
@@ -335,19 +335,19 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
                         }
                     });
                     
-                    toast.success(isEditMode ? 'Post updated successfully' : 'Post created successfully');
+                    toast.success(isEditMode ? '[CreateEditEducation] Post updated successfully' : '[CreateEditEducation] Post created successfully');
                     onClose();
                 } else {
-                    throw new Error('Failed to save post');
+                    throw new Error('[CreateEditEducation] Failed to save post');
                 }
             } catch (submitError) {
-                console.error('Error submitting education post:', submitError);
+                console.error('[CreateEditEducation] Error submitting education post:', submitError);
                 throw submitError; // Rethrow to be caught by the outer catch
             }
         } catch (err) {
-            console.error('Error saving education post:', err);
-            setError('Error saving post: ' + (err.message || 'Unknown error'));
-            toast.error('Error saving post');
+            console.error('[CreateEditEducation] Error saving education post:', err);
+            setError('[CreateEditEducation] Error saving post: ' + (err.message || 'Unknown error'));
+            toast.error('[CreateEditEducation] Error saving post');
         } finally {
             setIsSubmitting(false);
         }
