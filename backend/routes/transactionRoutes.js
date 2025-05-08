@@ -12,5 +12,6 @@ router.get('/', TransactionController.getUserTransactions);
 router.patch('/:id', TransactionController.updateTransaction);
 router.delete('/:id', TransactionController.deleteTransaction);
 router.get('/stats', TransactionController.getTransactionStats);
+router.get('/budget/:budgetId', TransactionController.getTransactionsByBudget);
 
 module.exports = router;

@@ -123,10 +123,13 @@ const transactionService = {
         try {
             console.log(`[transactionService - getBudgetTransactions] Fetching transactions for budgetId: ${budgetId}`);
             const response = await axiosInstance.get(`${API_URL}/budget/${budgetId}`);
-            console.log("[transactionService - getBudgetTransactions] Budget transactions fetched successfully:", response);
             return response;
         } catch (error) {
-            console.error("[transactionService - getBudgetTransactions] Error fetching budget transactions:", error);
+            console.error('[transactionService - getBudgetTransactions] Error fetching budget transactions:', error);
+            // If endpoint doesn't exist, return empty array instead of throwing
+            if (error?.response?.status === 404) {
+                return { data: { transactions: [] } };
+            }
             throw error;
         }
     },

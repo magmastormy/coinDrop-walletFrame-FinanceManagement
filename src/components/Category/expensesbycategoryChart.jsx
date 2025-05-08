@@ -20,7 +20,8 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
     const prepareChartData = () => {
         // Group transactions by category
         const expensesByCategory = transactions.reduce((acc, transaction) => {
-            const category = categories.find(c => c._id === transaction.categoryId);
+            const catId = transaction.category?._id || transaction.category;
+            const category = categories.find(c => String(c._id) === String(catId));
             if (category) {
                 acc[category.name] = (acc[category.name] || 0) + Math.abs(transaction.amount);
             }

@@ -1,9 +1,3 @@
-//import data from savingsAccountManager
-//handle transfer betweem savingsAccount Only
-//so its from currentSavingsAccount to AnotherSavingsAccount
-//Smooth rounded UI
-// add a cancel button too
-
 import React, { useState } from 'react';
 import {
     Dialog,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faPlus,
@@ -16,7 +16,6 @@ import categoryService from '../../services/categoryService';
 import transactionService from '../../services/transactionService';
 import CategoryPanel from './categoryPanel';
 import ExpensesByCategoryChart from './expensesbycategoryChart';
-import ExpensesOverTimeLineChart from './expensesovertimeLineChart';
 import './styles/categoryManagerStyles.css';
 
 const CategoryManager = () => {
@@ -107,8 +106,9 @@ const CategoryManager = () => {
     const loadTransactions = async () => {
         setTxLoading(true);
         try {
-            const txs = await transactionService.getUserTransactions(user.id);
-            setTransactions(txs);
+            const res = await transactionService.getUserTransactions(user.id);
+            console.log("[CategoryManager - loadTransactions] transaction: ", res);
+            setTransactions(res.transactions || []);
         } catch (err) {
             setTxError(err.message);
         } finally {
@@ -204,98 +204,15 @@ const CategoryManager = () => {
             <CategoryPanel
                 categories={categories}
                 selectedCategory={selectedCategory}
-                onAddCategory={handlePanelAdd}
                 onSelectCategory={(cat) => setSelectedCategory(cat)}
+                onEditCategory={handleEditClick}
+                onDeleteCategory={handleDeleteCategory}
             />
-
-            <motion.div 
-                className="category-list-container"
-                layout
-            >
-                <AnimatePresence>
-                    {categories.map(category => (
-                        <motion.div
-                            key={category._id}
-                            className="category-item"
-                            layout
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <span className="category-name">
-                                {category.name}
-                                {category.name === "None" && (
-                                    <span className="default-badge" title="Default category - cannot be deleted">
-                                        Default
-                                    </span>
-                                )}
-                            </span>
-                            <div className="category-actions">
-                                {deleteConfirm === category._id ? (
-                                    <div className="delete-confirm">
-                                        <span>Delete?</span>
-                                        <button 
-                                            onClick={() => handleDeleteCategory(category._id)}
-                                            className="btn-danger"
-                                            aria-label="Confirm delete category"
-                                            disabled={category.name === "None"}
-                                        >
-                                            <FontAwesomeIcon icon={faCheck} />
-                                        </button>
-                                        <button 
-                                            onClick={() => setDeleteConfirm(null)}
-                                            className="btn-secondary"
-                                            aria-label="Cancel delete"
-                                        >
-                                            <FontAwesomeIcon icon={faTimes} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <button 
-                                            onClick={() => handleEditClick(category)}
-                                            className="btn-edit"
-                                            aria-label="Edit category"
-                                        >
-                                            <FontAwesomeIcon icon={faEdit} />
-                                        </button>
-                                        <button 
-                                            onClick={() => setDeleteConfirm(category._id)}
-                                            className="btn-delete"
-                                            aria-label="Delete category"
-                                            disabled={category.name === "None"}
-                                            title={category.name === "None" ? "Cannot delete default category" : "Delete category"}
-                                        >
-                                            <FontAwesomeIcon icon={faTrash} />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-                
-                {categories.length === 0 && !loading && (
-                    <motion.div 
-                        className="empty-state"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <p>No categories yet. Create one to get started!</p>
-                    </motion.div>
-                )}
-            </motion.div>
 
             <div className="charts-container">
                 <ExpensesByCategoryChart
                     transactions={transactions}
                     categories={categories}
-                    loading={loading || txLoading}
-                />
-                <ExpensesOverTimeLineChart
-                    transactions={transactions}
                     loading={loading || txLoading}
                 />
             </div>

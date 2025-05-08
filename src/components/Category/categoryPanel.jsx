@@ -5,11 +5,13 @@ import {
     faTag, 
     faFolderOpen,
     faChartPie,
-    faPlusCircle
+    faPlusCircle,
+    faEdit,
+    faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import './styles/categoryPanelStyles.css';
 
-const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selectedCategory }) => {
+const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selectedCategory, onEditCategory, onDeleteCategory }) => {
     const getTotalAmount = (category) => {
         return category.transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
     };
@@ -39,16 +41,6 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
                     <FontAwesomeIcon icon={faFolderOpen} aria-hidden="true" />
                     Categories
                 </h2>
-                {onAddCategory && (
-                    <button 
-                        className="add-category-btn"
-                        onClick={onAddCategory}
-                        aria-label="Add new category"
-                    >
-                        <FontAwesomeIcon icon={faPlusCircle} aria-hidden="true" />
-                        Add Category
-                    </button>
-                )}
             </div>
 
             {categories.length === 0 ? (
@@ -62,15 +54,6 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
                     <FontAwesomeIcon icon={faChartPie} className="empty-icon" aria-hidden="true" />
                     <h3>No Categories Yet</h3>
                     <p>Create categories to better organize your transactions</p>
-                    {onAddCategory && (
-                        <button 
-                            onClick={onAddCategory}
-                            className="create-first-btn"
-                            aria-label="Create your first category"
-                        >
-                            Create First Category
-                        </button>
-                    )}
                 </motion.div>
             ) : (
                 <div 
@@ -89,24 +72,40 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
                                 transition={{ duration: 0.2 }}
                                 role="listitem"
                             >
-                                <button 
-                                    className={`category-item ${selectedCategory?._id === category._id ? 'selected' : ''}`}
-                                    onClick={() => onSelectCategory?.(category)}
-                                    aria-selected={selectedCategory?._id === category._id}
-                                >
-                                    <div className="category-icon" style={{ backgroundColor: getRandomColor(index) }}>
-                                        <FontAwesomeIcon icon={faTag} aria-hidden="true" />
+                                <div className="category-item-wrapper">
+                                    <button 
+                                        className={`category-item ${selectedCategory?._id === category._id ? 'selected' : ''}`}
+                                        onClick={() => onSelectCategory?.(category)}
+                                        aria-selected={selectedCategory?._id === category._id}
+                                    >
+                                        <div className="category-icon" style={{ backgroundColor: getRandomColor(index) }}>
+                                            <FontAwesomeIcon icon={faTag} aria-hidden="true" />
+                                        </div>
+                                        <div className="category-details">
+                                            <span className="category-name">{category.name}</span>
+                                            <span className="transaction-count">
+                                                {category.transactions?.length || 0} transactions
+                                            </span>
+                                        </div>
+                                    </button>
+                                    <div className="category-actions">
+                                        <button 
+                                            className="btn-edit"
+                                            onClick={() => onEditCategory?.(category)}
+                                            aria-label="Edit category"
+                                        >
+                                            <FontAwesomeIcon icon={faEdit} aria-hidden="true" />
+                                        </button>
+                                        <button 
+                                            className="btn-delete"
+                                            onClick={() => onDeleteCategory?.(category._id)}
+                                            aria-label="Delete category"
+                                            disabled={category.name === "None"}
+                                        >
+                                            <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                                        </button>
                                     </div>
-                                    <div className="category-details">
-                                        <span className="category-name">{category.name}</span>
-                                        <span className="transaction-count">
-                                            {category.transactions?.length || 0} transactions
-                                        </span>
-                                    </div>
-                                    <div className="category-amount">
-                                        {formatCurrency(getTotalAmount(category))}
-                                    </div>
-                                </button>
+                                </div>
                             </motion.div>
                         ))}
                     </AnimatePresence>

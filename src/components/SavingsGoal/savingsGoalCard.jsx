@@ -100,9 +100,9 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
             }
 
             await savingsGoalService.contributeToGoal(goalId, {
-                sourceType,
-                sourceId,
-                amount
+                amount: contributionAmount,
+                sourceType: sourceType,
+                sourceId: sourceId,
             });
 
             setShowContributeDialog(false);

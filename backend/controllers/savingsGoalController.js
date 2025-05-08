@@ -1,4 +1,5 @@
 const SavingsGoal = require('../models/SavingsGoal');
+const SavingsAccount = require('../models/SavingsAccount');
 const mongoose = require('mongoose');
 const Wallet = require('../models/Wallet');
 const Category = require('../models/Category');
@@ -54,11 +55,12 @@ class SavingsGoalController {
             const { goalId } = req.params;
             const { amount, sourceType, sourceId } = req.body;
             const userId = req.user._id || req.query.userId || req.user.userId;
+
+            console.log("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
+            console.log("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
             
-            // For backward compatibility
-            const sourceWalletId = req.body.sourceWalletId || (sourceType === 'wallet' ? sourceId : null);
             
-            if (!goalId || !amount || (!sourceWalletId && !sourceId)) {
+            if (!goalId || !amount || (!sourceId)) {
                 throw new Error('Missing required fields: goalId, amount, or source information');
             }
 
@@ -72,20 +74,30 @@ class SavingsGoalController {
                 throw new Error('Savings goal not found');
             }
 
-            // Find the source wallet
-            const sourceWallet = await Wallet.findOne({
-                _id: sourceWalletId || sourceId,
-                userId: userId,
-                isActive: true
-            }).session(session);
-
-            if (!sourceWallet) {
-                throw new Error('Source wallet not found');
+            // Find the source (wallet or savings account)
+            let source;
+            if (sourceType == "wallet") {
+                console.log("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
+                source = await Wallet.findOne({
+                    _id: sourceId,
+                    userId: userId,
+                    isActive: true
+                }).session(session);
+            } else {
+                console.log("[savingsGoalController - contributeSavingsGoal] source is Savings");
+                source = await SavingsAccount.findOne({
+                    _id: sourceId,
+                    userId: userId
+                }).session(session);
             }
 
-            // Check if wallet has sufficient balance
-            if (sourceWallet.balance < amount) {
-                throw new Error('Insufficient balance in source wallet');
+            if (!source) {
+                throw new Error('Source not found');
+            }
+
+            // Check if source has sufficient balance
+            if (source.balance < amount) {
+                throw new Error('Insufficient balance in source');
             }
 
             // Find default category or create one if needed
@@ -117,9 +129,9 @@ class SavingsGoalController {
                 }
             }
 
-            // Update wallet balance
-            sourceWallet.balance -= parseFloat(amount);
-            await sourceWallet.save({ session });
+            // Update source balance
+            source.balance -= parseFloat(amount);
+            await source.save({ session });
 
             // Update savings goal current amount
             savingsGoal.currentAmount += parseFloat(amount);
@@ -133,32 +145,17 @@ class SavingsGoalController {
                 category: categoryId,
                 description: `Contribution to ${savingsGoal.name} savings goal`,
                 date: new Date(),
-                walletId: sourceWallet._id,
+                walletId: source._id,
                 savingsGoalId: goalId
             });
 
             await transaction.save({ session });
-
-            // Create contribution record if SavingsContribution model exists
-            let contribution = null;
-            if (mongoose.models.SavingsContribution) {
-                contribution = new mongoose.models.SavingsContribution({
-                    userId: userId,
-                    savingsGoalId: goalId,
-                    amount: parseFloat(amount),
-                    date: new Date(),
-                    sourceWalletId: sourceWallet._id,
-                    transactionId: transaction._id
-                });
-                await contribution.save({ session });
-            }
 
             await session.commitTransaction();
 
             res.json({
                 message: 'Contribution successful',
                 savingsGoal,
-                contribution,
                 transaction
             });
         } catch (error) {

@@ -1,4 +1,5 @@
 const Transaction = require('../models/Transaction');
+const Category = require('../models/Category');
 const Budget = require('../models/Budget');
 const Wallet = require('../models/Wallet');
 const SavingsAccount = require('../models/SavingsAccount');
@@ -325,40 +326,35 @@ class TransactionController {
 
     static async getTransactionsByBudget(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
             const { budgetId } = req.params;
+            const userId = req.user._id || req.query.userId || req.user.userId;
+
+            // Validate budgetId exists and belongs to user
             const budget = await Budget.findOne({ 
                 _id: budgetId,
-                userId: userId,
+                userId: userId 
             });
 
             if (!budget) {
                 return res.status(404).json({ error: 'Budget not found' });
             }
 
+            // Find transactions related to this budget
             const transactions = await Transaction.find({
-                budgetId,
                 userId: userId,
-            }).populate('walletId');
+                budgetId: budgetId
+            })
+            .populate('category')
+            .populate('walletId')
+            .sort({ date: -1 });
 
-            // Calculate budget progress
-            const totalSpent = transactions.reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : 0), 0);
-            const remainingAmount = budget.amount - totalSpent;
-            const progressPercentage = (totalSpent / budget.amount) * 100;
-
-            res.json({
-                budget,
-                transactions,
-                progress: {
-                    total: budget.amount,
-                    spent: totalSpent,
-                    remaining: remainingAmount,
-                    percentage: progressPercentage
-                }
-            });
-
+            res.json({ transactions });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('[TransactionController] Error fetching budget transactions:', error);
+            res.status(500).json({ 
+                error: 'Failed to fetch budget transactions',
+                details: error.message
+            });
         }
     }
 

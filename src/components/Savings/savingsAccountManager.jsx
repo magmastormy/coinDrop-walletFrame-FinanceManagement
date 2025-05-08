@@ -62,7 +62,7 @@ const SavingsAccountManager = () => {
     const fetchWallets = async () => {
         try {
             const response = await walletService.getAllWallets(user.id);
-            setWallets(response.wallets || []);
+            setWallets(response || []);
         } catch (error) {
             console.error('Failed to fetch wallets:', error);
             setError('Failed to load wallets. Please try again later.');

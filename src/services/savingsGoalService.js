@@ -98,7 +98,7 @@ export const savingsGoalService = {
             );
             
             console.log('[savingsGoalService - contributeToGoal] Successfully contributed to goal:', response.data);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('[savingsGoalService - contributeToGoal] Error contributing to goal:', error);
             throw error;

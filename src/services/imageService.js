@@ -1,7 +1,6 @@
 import axiosInstance from '../api/userAxios';
-import imageCompression from 'browser-image-compression';
 
-const API_URL = '/images'; //ALWAYS USE THIS URL FOR IMAGE UPLOADS
+const API_URL = '/images'; 
 
 const imageService = {
     uploadImage: async (file, imageType = 'education') => {

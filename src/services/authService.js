@@ -1,15 +1,7 @@
 import axiosInstance from "../api/userAxios";
-import { loginSuccess, loginFailure, logout as logoutAction } from '../slices/authSlice';
+import { loginSuccess, logout as logoutAction } from '../slices/authSlice';
 import store from '../slices/store';
-import walletService from './walletService';
-import budgetService from './budgetService';
-import categoryService from './categoryService';
-import transactionService from './transactionService';
-import savingsAccountService from './savingsAccountService'; // Added import statement
-import { setWallets } from '../slices/walletSlice';
-import { setBudgets } from '../slices/budgetSlice';
-import { setCategories } from '../slices/categorySlice';
-import { setTransactions } from '../slices/transactionSlice';
+
 
 // Add AUTH_ERRORS export
 export const AUTH_ERRORS = {
@@ -132,34 +124,6 @@ export const registerUser = async (userData) => {
         const response = await axiosInstance.post("/auth/register", registrationData);
         console.log('✅ Registration successful:', response.data);
         
-        console.log('📝 Registration successful:', response.data);
-        const userId = response.data.user.id;
-
-        // Create default "None" category
-        try {
-            await categoryService.createCategory({
-                name: "None",
-                userId: userId,
-                description: "Default category for uncategorized items"
-            });
-            console.log('✅ Default "None" category created for new user');
-        } catch (categoryError) {
-            console.error('❌ Error creating default category:', categoryError);
-        }
-
-        // Create default savings account
-        try {
-            await savingsAccountService.createSavingsAccount({
-                userId: userId,
-                name: "Savings",
-                balance: 0,
-                description: "Default savings account"
-            });
-            console.log('✅ Default savings account created for new user');
-        } catch (savingsError) {
-            console.error('❌ Error creating default savings account:', savingsError);
-        }
-     
         if (response?.data?.token && response?.data?.user) {
             storeUserData(response.data.token, response.data.user);
             updateAppState(loginSuccess({ 
@@ -236,16 +200,7 @@ export const forgotPassword = async (userData) => {
     }
 };
 
-const handleLogout = async () => {
-    try {
-        await logoutUser();
-        navigate('/login');
-    } catch (error) {
-        console.error('Logout failed:', error);
-    }
-};
 
-// Export forgotPassword as part of the default export too
 const authService = {
     // Include other methods...
     forgotPassword

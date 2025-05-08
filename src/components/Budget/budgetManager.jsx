@@ -17,6 +17,7 @@ import './styles/budgetManagerStyles.css';
 import ReportSection from '../Common/ReportSection';
 import { Box, Grid, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { toast } from 'react-toastify';
 
 const BudgetManager = () => 
 {
@@ -30,6 +31,8 @@ const BudgetManager = () =>
     const [categories, setCategories] = useState([]);
     const [filter, setFilter] = useState({ category: '', dateRange: '' });
     const [wallets, setWallets] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedBudgetId, setSelectedBudgetId] = useState(null);
     
     useEffect(() => {
         fetchBudgets();
@@ -68,14 +71,24 @@ const BudgetManager = () =>
         }
     };
 
-    const handleBudgetSelect = async (budget) => {
+    const handleBudgetSelect = async (budgetId) => {
         try {
-            const data = await transactionService.getBudgetTransactions(budget._id);
-            console.log('[BudgetManager: handleBudgetSelect] response data: ', data);
-            setTransactions(data.transactions);
-            setSelectedBudget(budget);
-        } catch (err) {
-            console.error(err);
+            setSelectedBudgetId(budgetId);
+            setIsLoading(true);
+            
+            // Fetch budget transactions
+            const transactions = await transactionService.getBudgetTransactions(budgetId);
+            setTransactions(transactions?.data?.transactions || []);
+        } catch (error) {
+            console.error(error);
+            // Provide a fallback for missing transactions
+            setTransactions([]);
+            // Only show error if it's not a 404 (endpoint missing during development)
+            if (error?.response?.status !== 404) {
+                toast.error("Failed to load budget transactions");
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
