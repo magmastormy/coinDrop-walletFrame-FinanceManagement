@@ -1,46 +1,47 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ChatMessages from './chatMessages';
 import ChatInput from './chatInput';
 import ChatHeader from './chatHeader';
 import './styles/chatContainerStyles.css';
 
-const ChatContainer = ({ messages, onSendMessage, onInsightAction, loading, error }) => {
-    const [activeInsight, setActiveInsight] = useState(null);
-    
-    const handleSendMessage = (message) => {
-        if (onSendMessage && typeof onSendMessage === 'function') {
-            onSendMessage(message);
-        }
-    };
-    
-    const handleInsightAction = (insightId, action, insightData) => {
-        setActiveInsight(action === 'view-details' ? insightData : null);
-        
-        if (onInsightAction && typeof onInsightAction === 'function') {
-            onInsightAction(insightId, action, insightData);
-        }
-    };
-
+const ChatContainer = ({ 
+    messages, 
+    onSendMessage, 
+    onInsightAction, 
+    loading, 
+    error 
+}) => {
     return (
         <div className="chat-container">
-            <ChatHeader />
-            <div className="chat-body">
+            <ChatHeader title="Financial Assistant" />
+            
+            <div className="chat-messages-wrapper">
                 <ChatMessages 
                     messages={messages} 
-                    onInsightAction={handleInsightAction}
-                    activeInsight={activeInsight}
+                    onInsightAction={onInsightAction} 
                 />
+                
                 {error && (
-                    <div className="chat-error">
-                        <p>{error}</p>
+                    <div className="error-message">
+                        {error}
+                    </div>
+                )}
+                
+                {loading && (
+                    <div className="loading-indicator">
+                        <div className="loading-dots">
+                            <span className="dot"></span>
+                            <span className="dot"></span>
+                            <span className="dot"></span>
+                        </div>
                     </div>
                 )}
             </div>
+            
             <ChatInput 
-                onSendMessage={handleSendMessage}
-                isLoading={loading}
-                error={error}
-                activeInsight={activeInsight}
+                onSendMessage={onSendMessage} 
+                disabled={loading}
+                placeholder="Ask about your finances..."
             />
         </div>
     );

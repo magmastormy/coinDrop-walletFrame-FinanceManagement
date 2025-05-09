@@ -8,7 +8,7 @@ export const getUserTransactions = async (userId, filters = {}) => {
             userId,
            ...filters
         }).toString();
-        console.log(`[getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
+        //console.log(`[getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
         const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
         return response;
     } catch (error) {
@@ -24,7 +24,7 @@ const transactionService = {
                 userId,
                ...filters
             }).toString();
-            console.log(`[transactionService - getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
+            //console.log(`[transactionService - getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
             const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
             return response; 
         } catch (error) {
@@ -78,7 +78,7 @@ const transactionService = {
 
     updateTransaction: async (id, transactionData) => {
         try {
-            console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
+            //console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
             const response = await axiosInstance.put(`${API_URL}/${id}`, transactionData);
             return response;
         } catch (error) {
@@ -99,9 +99,9 @@ const transactionService = {
 
     getTransactionStats: async () => {
         try {
-            console.log("[transactionService - getTransactionStats] Fetching transaction stats");
+            //console.log("[transactionService - getTransactionStats] Fetching transaction stats");
             const response = await axiosInstance.get(`${API_URL}/stats`);
-            console.log("[transactionService - getTransactionStats] Transaction stats fetched successfully:", response);
+            //console.log("[transactionService - getTransactionStats] Transaction stats fetched successfully:", response);
             return response;
         } catch (error) {
             console.error("[transactionService - getTransactionStats] Error fetching transaction stats:", error);
@@ -121,7 +121,7 @@ const transactionService = {
 
     getBudgetTransactions: async (budgetId) => {
         try {
-            console.log(`[transactionService - getBudgetTransactions] Fetching transactions for budgetId: ${budgetId}`);
+            //console.log(`[transactionService - getBudgetTransactions] Fetching transactions for budgetId: ${budgetId}`);
             const response = await axiosInstance.get(`${API_URL}/budget/${budgetId}`);
             return response;
         } catch (error) {
@@ -136,9 +136,9 @@ const transactionService = {
 
     createBudgetTransaction: async (budgetId, transactionData) => {
         try {
-            console.log(`[transactionService - createBudgetTransaction] Creating transaction for budgetId: ${budgetId} with data:`, transactionData);
+            //console.log(`[transactionService - createBudgetTransaction] Creating transaction for budgetId: ${budgetId} with data:`, transactionData);
             const response = await axiosInstance.post(`${API_URL}/budget/${budgetId}`, transactionData);
-            console.log("[transactionService - createBudgetTransaction] Budget transaction created successfully:", response.data);
+            //console.log("[transactionService - createBudgetTransaction] Budget transaction created successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[transactionService - createBudgetTransaction] Error creating budget transaction:", error);

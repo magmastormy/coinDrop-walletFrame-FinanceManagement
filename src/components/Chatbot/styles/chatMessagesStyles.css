@@ -315,3 +315,239 @@
         transform: translateY(0);
     }
 }
+
+/* Add these CSS rules to properly format AI messages */
+
+/* Formatted message with markdown */
+.formatted-message {
+    margin: 0;
+    line-height: 1.5;
+    white-space: pre-line;
+    overflow-wrap: break-word;
+}
+
+/* Style for markdown headings */
+.formatted-message h1,
+.formatted-message h2,
+.formatted-message h3,
+.formatted-message h4,
+.formatted-message h5,
+.formatted-message h6 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.formatted-message h1 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.3rem;
+}
+
+.formatted-message h2 {
+    font-size: 1.25rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.3rem;
+    margin-top: 1.5rem;
+    color: #495057;
+}
+
+.formatted-message h3 {
+    font-size: 1.1rem;
+}
+
+/* Style for markdown lists */
+.formatted-message ul,
+.formatted-message ol {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.formatted-message li {
+    margin-bottom: 0.25rem;
+}
+
+/* Style for markdown code blocks and inline code */
+.formatted-message code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.2rem;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.formatted-message pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.formatted-message pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+/* Style for markdown blockquotes */
+.formatted-message blockquote {
+    border-left: 4px solid #dee2e6;
+    padding-left: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    color: #6c757d;
+}
+
+/* Style for markdown tables */
+.formatted-message table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.formatted-message th,
+.formatted-message td {
+    border: 1px solid #dee2e6;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.formatted-message th {
+    background-color: #f8f9fa;
+}
+
+/* Style for section-based content */
+.formatted-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Add styles for AI messages specifically */
+.ai-message {
+    font-size: 0.95rem;
+}
+
+.ai-message p {
+    margin-bottom: 0.75rem;
+}
+
+.ai-message p:last-child {
+    margin-bottom: 0;
+}
+
+/* Bold text formatting */
+.formatted-message strong,
+.formatted-message b {
+    font-weight: 600;
+    color: #343a40;
+}
+
+/* Italic text formatting */
+.formatted-message em,
+.formatted-message i {
+    font-style: italic;
+}
+
+/* Horizontal rule */
+.formatted-message hr {
+    border: 0;
+    border-top: 1px solid #e9ecef;
+    margin: 1rem 0;
+}
+
+/* Links */
+.formatted-message a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.formatted-message a:hover {
+    text-decoration: underline;
+}
+
+/* Special styling for bullet lists */
+.formatted-message ul {
+    list-style-type: disc;
+}
+
+.formatted-message ul ul {
+    list-style-type: circle;
+}
+
+/* Styling for code in AI responses */
+.ai-message .formatted-message code {
+    color: #e83e8c;
+}
+
+/* Make budget headers stand out */
+.ai-message .formatted-message h2:contains("BUDGET") {
+    color: #3498db;
+}
+
+/* Make expense headers stand out */
+.ai-message .formatted-message h2:contains("EXPENSE") {
+    color: #e74c3c;
+}
+
+/* Message bubble better structure for long content */
+.assistant .message-bubble {
+    max-width: 100%;
+    padding: 1rem 1.2rem;
+}
+
+/* Fix spacing issues between elements */
+.message-content > *:first-child {
+    margin-top: 0;
+}
+
+.message-content > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Savings goals specific styling */
+.savings-section {
+    border-left: 3px solid #2ecc71;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    background-color: rgba(46, 204, 113, 0.05);
+}
+
+.savings-section h2 {
+    color: #2ecc71 !important;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.savings-section ul {
+    padding-left: 1.25rem;
+    margin: 0.75rem 0;
+}
+
+.savings-section li {
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.savings-section p {
+    margin-bottom: 0.75rem;
+}
+
+/* Progress indication for savings goals */
+.savings-section .formatted-message p:contains("complete"),
+.savings-section .formatted-message li:contains("complete") {
+    font-weight: 500;
+    position: relative;
+}
+
+/* Add a small green indicator for complete percentage */
+.savings-section .formatted-message li:contains("complete")::before {
+    content: "🎯";
+    position: absolute;
+    left: -1.5rem;
+}

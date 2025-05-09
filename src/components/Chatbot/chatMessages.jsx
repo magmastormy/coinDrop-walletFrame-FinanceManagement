@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLightbulb, faInfoCircle, faWallet, faPiggyBank, faChartPie, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import ReactMarkdown from 'react-markdown';
 import './styles/chatMessagesStyles.css';
 
 const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
@@ -81,10 +82,49 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                     </div>
                 );
             } catch (e) {
-                return <p>{content}</p>;
+                // Fall back to markdown rendering if JSON parsing fails
+                return <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>;
             }
         }
         
+        // Check if content contains section headers (##)
+        if (content.includes('##')) {
+            // Special handling for sections about savings goals
+            if (content.includes('## SAVINGS GOALS') || content.includes('## Savings Goals')) {
+                return (
+                    <div className="formatted-sections savings-section">
+                        <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>
+                    </div>
+                );
+            }
+            
+            return (
+                <div className="formatted-sections">
+                    <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>
+                </div>
+            );
+        }
+        
+        // Check if content is specifically about Savings Goals but without section headers
+        if (content.includes('Savings Goals:')) {
+            return (
+                <div className="formatted-sections savings-section">
+                    <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>
+                </div>
+            );
+        }
+        
+        // Check if content includes bullet points or asterisks
+        if (content.includes('- ') || content.includes('* ') || content.includes('•')) {
+            return <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>;
+        }
+        
+        // Check if the message has multiple paragraphs
+        if (content.includes('\n\n') || content.includes('\n')) {
+            return <ReactMarkdown className="formatted-message">{content}</ReactMarkdown>;
+        }
+        
+        // Simple text message
         return <p>{content}</p>;
     };
 
@@ -121,7 +161,7 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                                     </div>
                                 )}
                                 
-                                <div className="message-content">
+                                <div className={`message-content ${message.role === 'assistant' ? 'ai-message' : ''}`}>
                                     {renderInsightContent(message.content)}
                                 </div>
                                 

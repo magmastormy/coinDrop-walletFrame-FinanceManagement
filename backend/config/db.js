@@ -11,7 +11,7 @@ const connectDB = async () => {
         // Use your remote database
         const mongoURI = process.env.MONGO_URI;
         await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-
+         
         // Log successful connection details
         console.log('🟢 MongoDB Connection Established 🌐');
         console.log(`📍 Connected to Database: ${mongoose.connection.db.databaseName}`);
@@ -25,8 +25,16 @@ const connectDB = async () => {
 
         return mongoose.connection;
     } catch (error) {
-        console.error('MongoDB Connection Error:', error);
-        process.exit(1);
+        console.error('MongoDB Remote Connection Error:', error);
+        console.log('Attempting local MongoDB fallback...');
+        const localURI = process.env.MONGO_URI_LOCAL || 'mongodb://localhost:27017/coinDrip';
+        try {
+            await mongoose.connect(localURI, { useNewUrlParser: true, useUnifiedTopology: true });
+            console.log('🟢 Local MongoDB Connection Established 🏠');
+        } catch (localError) {
+            console.error('Local MongoDB Connection Error:', localError);
+            process.exit(1);
+        }
     }
 };
 

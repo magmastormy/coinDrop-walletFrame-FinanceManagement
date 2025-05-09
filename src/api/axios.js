@@ -41,8 +41,8 @@ instance.interceptors.request.use(
 // Response interceptor - Extract data
 instance.interceptors.response.use(
     (response) => {
-        console.log('Axios - Raw Axios Response:', response);
-        console.log('Axios - Axios Response Data:', response.data);
+        //console.log('Axios - Raw Axios Response:', response);
+        //console.log('Axios - Axios Response Data:', response.data);
         return response.data;
     },
     (error) => {

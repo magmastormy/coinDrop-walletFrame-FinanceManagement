@@ -167,41 +167,376 @@ const findUpcomingBills = async (userId, startDate, endDate) => {
 
 exports.sendMessage = async (req, res, next) => {
     try {
-        const { messages } = req.body;
+        const { messages, userId: bodyUserId } = req.body;
         if (!Array.isArray(messages)) {
             return res.status(400).json({ error: 'Messages must be an array' });
         }
 
-        // Inject server-side context and only use the last user message
-        const userId = req.user._id || req.params.userId;
-        const ctx = await contextService.getContext(userId);
-        const prompt = contextService.formatContext(ctx, 'full');
+        // Use userId from JWT token, request body, or params in that order of preference
+        const userId = req.user?._id || bodyUserId || req.params.userId;
+        console.log(`[ZhipuaiController - sendMessage] Processing request for user: ${userId}`);
+        console.log(`[ZhipuaiController - sendMessage] User ID sources: JWT=${!!req.user?._id}, Body=${!!bodyUserId}, Params=${!!req.params.userId}`);
+        
+        if (!userId) {
+            console.error('[ZhipuaiController - sendMessage] No user ID available from any source');
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+        
+        // Add detailed debug logging for user info
+        console.log(`[ZhipuaiController - DEBUG] User object:`, JSON.stringify({
+            id: userId,
+            auth: !!req.user,
+            headers: req.headers['authorization'] ? 'Auth header present' : 'No auth header'
+        }));
+        
+        // Determine the type of query to better format the context
         const userMsgs = messages.filter(m => m.role === 'user');
         if (!userMsgs.length) {
             return res.status(400).json({ error: 'No user message provided' });
         }
+        
         const lastUser = userMsgs[userMsgs.length - 1];
+        const userMessage = lastUser.content.toLowerCase();
+        console.log(`[ZhipuaiController - sendMessage] User message: "${lastUser.content.substring(0, 50)}${lastUser.content.length > 50 ? '...' : ''}"`);
+        
+        // Detect query type for better context formatting
+        const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessage);
+        const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessage);
+        const isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessage);
+        const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessage);
+        const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
+                                /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessage);
+        
+        console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
+        
+        // Fetch user context from database
+        console.log(`[ZhipuaiController - DEBUG] About to fetch context for user ID: ${userId}`);
+        
+        try {
+            // Check if user exists in database
+            const User = require('../models/User');
+            const userExists = await User.findById(userId);
+            console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
+            
+            if (!userExists) {
+                console.error(`[ZhipuaiController - ERROR] User with ID ${userId} not found in database`);
+            }
+        } catch (dbError) {
+            console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
+        }
+        
+        const ctx = await contextService.getContext(userId);
+        console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
+            JSON.stringify({
+                budgets: ctx.budgets?.length || 0,
+                wallets: ctx.wallets?.length || 0,
+                transactions: ctx.recentTransactions?.length || 0,
+                savingsGoals: ctx.savingsGoals?.length || 0,
+                categories: ctx.categories?.length || 0
+            }));
+
+        // Check for missing data and log database information
+        if (!ctx.budgets || ctx.budgets.length === 0) {
+            console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
+            try {
+                const Budget = require('../models/Budget');
+                const budgetCount = await Budget.countDocuments({ userId });
+                console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
+                
+                // Sample a budget document to check if userId field matches expected format
+                const sampleBudget = await Budget.findOne({}).lean();
+                if (sampleBudget) {
+                    console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
+                    console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
+                }
+            } catch (dbError) {
+                console.error(`[ZhipuaiController - DEBUG] Database check error: ${dbError.message}`);
+            }
+        }
+
+        // Process all financial data based on query type
+        await enhanceContextData(ctx, userId, { 
+            isBudgetQuery, 
+            isBalanceQuery, 
+            isSavingsQuery: true, // Always process savings goals
+            isBillQuery 
+        });
+
+        // Choose format type based on query
+        let formatType = 'full';
+        if (isBudgetQuery) formatType = 'budget';
+        else if (isBalanceQuery) formatType = 'balance';
+        else if (isSavingsQuery) formatType = 'savings';
+        else if (isBillQuery) formatType = 'bills';
+        
+        // Format the context for the AI prompt
+        const prompt = contextService.formatContext(ctx, formatType);
+        console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
+        
         const aiInput = [
             { role: 'system', content: prompt },
             { role: 'user', content: lastUser.content }
         ];
+
+        console.log("[ZhipuaiController - sendMessage] Sending request to AI service");
         const aiResponse = await aiClient.send(aiInput);
+        console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
 
         return res.json({ response: aiResponse, context: ctx });
     } catch (err) {
+        console.error('[ZhipuaiController - sendMessage] Error:', err);
         next(err);
     }
 };
 
+/**
+ * Helper function to enhance context data with additional calculations and information
+ */
+async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, isSavingsQuery, isBillQuery }) {
+    console.log(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
+    
+    // Calculate if this is a general financial overview
+    const isFinancialOverview = isBudgetQuery && isBalanceQuery;
+    
+    // Process budget data if needed
+    if ((isBudgetQuery || isFinancialOverview) && (!ctx.budgets || ctx.budgets.length === 0)) {
+        // Double-check if budgets exist directly from the database
+        const Budget = require('../models/Budget');
+        const directBudgets = await Budget.find({ userId }).lean();
+        console.log(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
+        if (directBudgets.length > 0) {
+            ctx.budgets = directBudgets;
+            console.log("[enhanceContextData] Updated context with direct budgets");
+        }
+    }
+    
+    // ALWAYS process transactions to improve expense data quality regardless of query type
+    try {
+        console.log("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
+        
+        const firstOfMonth = new Date();
+        firstOfMonth.setDate(1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        
+        // Get all transactions for better analysis
+        const Transaction = require('../models/Transaction');
+        const transactions = await Transaction.find({
+            userId
+        }).populate('category', 'name').sort({ date: -1 }).limit(50);
+        
+        console.log(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
+        
+        // Store all transactions for UI display
+        ctx.allTransactions = transactions;
+        
+        // Extract expenses for this month for budget calculation
+        const currentMonthTransactions = transactions.filter(t => {
+            try {
+                const txDate = new Date(t.date);
+                return txDate >= firstOfMonth && t.type === 'expense';
+            } catch (e) {
+                return false;
+            }
+        });
+        
+        console.log(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
+        
+        // Calculate spent amount for each budget
+        if (ctx.budgets && ctx.budgets.length > 0) {
+            console.log("[enhanceContextData] Processing budget data with transactions");
+            ctx.budgets = ctx.budgets.map(budget => {
+                // Handle if budget is already a plain object from lean() query
+                const budgetObj = typeof budget.toObject === 'function' ? budget.toObject() : budget;
+                
+                // Find transactions that match this budget's category
+                const matchingTransactions = currentMonthTransactions.filter(t => {
+                    const budgetCategoryId = budgetObj.category ? 
+                        (typeof budgetObj.category === 'object' ? budgetObj.category._id.toString() : budgetObj.category.toString()) : 
+                        null;
+                    const transactionCategoryId = t.category ? 
+                        (typeof t.category === 'object' ? t.category._id.toString() : t.category.toString()) : 
+                        null;
+                    return budgetCategoryId === transactionCategoryId;
+                });
+                
+                // Calculate total spent
+                const spent = matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                const remaining = budgetObj.amount - spent;
+                const percentUsed = budgetObj.amount > 0 ? (spent / budgetObj.amount) * 100 : 0;
+                
+                // Add these calculated fields to the budget object
+                return {
+                    ...budgetObj,
+                    spent,
+                    remaining,
+                    percentUsed,
+                    transactions: matchingTransactions.slice(0, 5) // Include up to 5 recent transactions for this budget
+                };
+            });
+        }
+        
+        // Add expense analytics to context
+        ctx.expenseAnalytics = analyzeExpenses(transactions);
+        
+    } catch (error) {
+        console.error('[enhanceContextData] Error processing transactions:', error);
+    }
+    
+    // Enhance wallet data if needed
+    if (isBalanceQuery && ctx.wallets) {
+        console.log("[enhanceContextData] Processing wallet data");
+        // Add more details to wallets if needed
+        ctx.wallets = ctx.wallets.map(wallet => {
+            const walletObj = typeof wallet.toObject === 'function' ? wallet.toObject() : wallet;
+            return {
+                ...walletObj,
+                formattedBalance: `$${walletObj.balance.toFixed(2)}`
+            };
+        });
+    }
+    
+    // Always process savings goals to ensure data is properly formatted
+    if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
+        console.log("[enhanceContextData] Processing savings goals");
+        ctx.savingsGoals = ctx.savingsGoals.map(goal => {
+            const goalObj = typeof goal.toObject === 'function' ? goal.toObject() : goal;
+            
+            // Map the database field names to the expected names used in the formatContext function
+            const current = goalObj.currentAmount || 0;
+            const target = goalObj.targetAmount || 0;
+            
+            // Calculate progress percentage
+            const progress = target > 0 ? (current / target) * 100 : 0;
+            
+            // Calculate time remaining if target date exists
+            let timeRemaining = null;
+            let monthlyNeeded = null;
+            
+            if (goalObj.deadline) {
+                const now = new Date();
+                const targetDate = new Date(goalObj.deadline);
+                const monthsDiff = (targetDate.getFullYear() - now.getFullYear()) * 12 + 
+                                   (targetDate.getMonth() - now.getMonth());
+                
+                if (monthsDiff > 0) {
+                    timeRemaining = monthsDiff;
+                    monthlyNeeded = (target - current) / monthsDiff;
+                }
+            }
+            
+            return {
+                ...goalObj,
+                // Add the expected field names that formatContext uses
+                current,
+                target,
+                progress: progress.toFixed(1),
+                timeRemaining,
+                monthlyNeeded
+            };
+        });
+        
+        console.log(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
+    }
+    
+    // Log completion
+    console.log("[enhanceContextData] Data enhancement complete");
+    return ctx;
+}
+
+/**
+ * Helper function to analyze expenses from transactions
+ */
+function analyzeExpenses(transactions) {
+    const expenseTransactions = transactions.filter(t => t.type === 'expense');
+    const expensesByCategory = {};
+    const expensesByMonth = {};
+    let totalExpenses = 0;
+    
+    // Process each expense transaction
+    expenseTransactions.forEach(transaction => {
+        const amount = Math.abs(transaction.amount);
+        totalExpenses += amount;
+        
+        // Group by category
+        const categoryName = transaction.category?.name || 'Uncategorized';
+        if (!expensesByCategory[categoryName]) {
+            expensesByCategory[categoryName] = 0;
+        }
+        expensesByCategory[categoryName] += amount;
+        
+        // Group by month
+        try {
+            const date = new Date(transaction.date);
+            const monthKey = `${date.getFullYear()}-${date.getMonth()+1}`;
+            if (!expensesByMonth[monthKey]) {
+                expensesByMonth[monthKey] = 0;
+            }
+            expensesByMonth[monthKey] += amount;
+        } catch (e) {
+            console.error('Error parsing date:', e);
+        }
+    });
+    
+    // Calculate percentage by category
+    const categoriesWithPercentage = {};
+    Object.entries(expensesByCategory).forEach(([category, amount]) => {
+        categoriesWithPercentage[category] = {
+            amount,
+            percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
+        };
+    });
+    
+    // Find top expense categories
+    const topCategories = Object.entries(categoriesWithPercentage)
+        .sort((a, b) => b[1].amount - a[1].amount)
+        .slice(0, 3)
+        .map(([category, data]) => ({
+            category,
+            amount: data.amount,
+            percentage: data.percentage
+        }));
+    
+    // Find expense trend
+    const sortedMonths = Object.entries(expensesByMonth)
+        .sort(([monthA], [monthB]) => monthA.localeCompare(monthB));
+    
+    const trend = sortedMonths.length >= 2 ? 
+        (sortedMonths[sortedMonths.length-1][1] - sortedMonths[sortedMonths.length-2][1]) : 0;
+    
+    return {
+        totalExpenses,
+        expensesByCategory: categoriesWithPercentage,
+        topCategories,
+        monthlyTrend: trend,
+        trendDirection: trend > 0 ? 'increasing' : trend < 0 ? 'decreasing' : 'stable',
+        monthlyData: expensesByMonth
+    };
+}
+
 exports.getFinancialAdvice = async (req, res, next) => {
     try {
         const userId = req.user._id || req.query.userId || req.user.userId;
+        console.log(`[getFinancialAdvice] Fetching financial data for user: ${userId}`);
+        
         const ctx = await contextService.getContext(userId);
+        
+        // Enhance financial data
+        await enhanceContextData(ctx, userId, {
+            isBudgetQuery: true,
+            isBalanceQuery: true,
+            isSavingsQuery: true,
+            isBillQuery: true
+        });
+        
         const prompt = contextService.formatContext(ctx, 'full');
+        console.log(`[getFinancialAdvice] Prepared prompt (${prompt.length} chars), requesting AI advice`);
+        
         const aiResponse = await aiClient.send([{ role: 'system', content: prompt }]);
+        console.log(`[getFinancialAdvice] Received AI response (${aiResponse.length} chars)`);
 
         return res.json({ advice: aiResponse, context: ctx });
     } catch (err) {
+        console.error(`[getFinancialAdvice] Error:`, err);
         next(err);
     }
 };
@@ -221,9 +556,24 @@ exports.getProactiveInsights = async (req, res, next) => {
 exports.getUserAccountInfo = async (req, res, next) => {
     try {
         const userId = req.user._id || req.params.userId;
+        console.log(`[getUserAccountInfo] Fetching account info for user: ${userId}`);
+            
+        // Fetch comprehensive user context
         const ctx = await contextService.getContext(userId);
+        console.log(`[getUserAccountInfo] Data retrieved: budgets=${ctx.budgets?.length || 0}, wallets=${ctx.wallets?.length || 0}`);
+            
+        // Enhance all data for client-side consumption
+        await enhanceContextData(ctx, userId, {
+            isBudgetQuery: true, 
+            isBalanceQuery: true, 
+            isSavingsQuery: true, 
+            isBillQuery: true
+        });
+            
+        console.log(`[getUserAccountInfo] Enhanced data complete, returning to client`);
         return res.json({ context: ctx });
     } catch (err) {
+        console.error(`[getUserAccountInfo] Error:`, err);
         next(err);
     }
 };
@@ -231,28 +581,72 @@ exports.getUserAccountInfo = async (req, res, next) => {
 exports.getContextSuggestions = async (req, res, next) => {
     try {
         const userId = req.user._id || req.params.userId;
+        console.log(`[getContextSuggestions] Generating suggestions for user: ${userId}`);
+        
+        // Fetch comprehensive context
         const ctx = await contextService.getContext(userId);
+        console.log(`[getContextSuggestions] Context loaded with ${ctx.budgets?.length || 0} budgets, ${ctx.wallets?.length || 0} wallets`);
+        
         if (!ctx.recentTransactions?.length) {
+            console.log(`[getContextSuggestions] No transaction history available`);
             return res.json({ suggestions: { generalAdvice: [
                 "We need more transaction history to provide personalized suggestions."
             ] } });
         }
+        
+        // Enhance data to ensure accurate suggestions
+        await enhanceContextData(ctx, userId, {
+            isBudgetQuery: true, 
+            isBalanceQuery: true,
+            isSavingsQuery: true,
+            isBillQuery: false // Skip bill processing for suggestions
+        });
+        
+        // Generate personalized suggestions based on enhanced data
         const suggestions = await contextService.generateContextSuggestions(ctx);
+        console.log(`[getContextSuggestions] Generated ${Object.keys(suggestions).length} suggestion categories`);
+        
         const walletBalances = ctx.wallets.map(w => ({
-            name: w.name, type: w.type, balance: w.balance, currency: w.currency || 'USD'
+            name: w.name, 
+            type: w.type, 
+            balance: w.balance, 
+            currency: w.currency || 'USD'
         }));
+        
         return res.json({ suggestions, walletBalances, totalBalance: ctx.totalBalance });
     } catch (err) {
+        console.error('[getContextSuggestions] Error:', err);
         next(err);
     }
 };
 
 exports.getUserContext = async (req, res, next) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.params.userId || req.user._id;
+        console.log(`[getUserContext] Fetching raw context for user: ${userId}`);
+        
+        // Get raw context without enhancements for diagnostics/debugging
         const ctx = await contextService.getContext(userId);
+        
+        console.log(`[getUserContext] Retrieved data overview: 
+            Budgets: ${ctx.budgets?.length || 0}
+            Wallets: ${ctx.wallets?.length || 0}
+            Transactions: ${ctx.recentTransactions?.length || 0}
+            Categories: ${ctx.categories?.length || 0}
+            SavingsGoals: ${ctx.savingsGoals?.length || 0}`);
+        
+        // If data is missing, log additional diagnostics
+        if (!ctx.budgets || ctx.budgets.length === 0) {
+            console.log(`[getUserContext] WARNING: No budgets found for user ${userId}`);
+            // Direct database check
+            const Budget = require('../models/Budget');
+            const directCount = await Budget.countDocuments({ userId });
+            console.log(`[getUserContext] Direct DB check: found ${directCount} budgets in database`);  
+        }
+        
         return res.json(ctx);
     } catch (err) {
+        console.error('[getUserContext] Error:', err);
         next(err);
     }
 };

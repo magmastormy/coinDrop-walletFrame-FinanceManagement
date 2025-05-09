@@ -8,7 +8,7 @@ export const getUserCategories = async (userId) => {
             throw new Error('User ID is required');
         }
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-        console.log('[categoryService - getUserCategories]: Successfully fetched categories:', response);
+        //console.log('[categoryService - getUserCategories]: Successfully fetched categories:', response);
         return response;
     } catch (error) {
         console.error('[categoryService - getUserCategories]: Error fetching categories:', error);
@@ -24,7 +24,7 @@ const categoryService = {
                 throw new Error('[categoryService - createCategory]: Category data is required');
             }
             const response = await axiosInstance.post(`${API_URL}`, categoryData);
-            console.log('[categoryService - createCategory]: Successfully created category:', response.data);
+            //.log('[categoryService - createCategory]: Successfully created category:', response.data);
             return response.data;
         } catch (error) {
             console.error('[categoryService - createCategory]:  Error creating category:', error);
@@ -39,7 +39,7 @@ const categoryService = {
                 throw new Error('User ID is required');
             }
             const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-            console.log('[categoryService - getUserCategories]: Successfully fetched categories:', response);
+            //console.log('[categoryService - getUserCategories]: Successfully fetched categories:', response);
             return response;
         } catch (error) {
             console.error('[categoryService - getUserCategories]: Error fetching categories:', error);
@@ -54,7 +54,7 @@ const categoryService = {
                 throw new Error('[categoryService - updateCategory] Category ID and data are required');
             }
             const response = await axiosInstance.put(`${API_URL}/${id}`, categoryData);
-            console.log('[categoryService - updateCategory]: Successfully updated category: ', response.data);
+            //console.log('[categoryService - updateCategory]: Successfully updated category: ', response.data);
             return response.data;
         } catch (error) {
             console.error('[categoryService - updateCategory]: Error updating category:', error);
@@ -69,7 +69,7 @@ const categoryService = {
             }
         
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            console.log('[categoryService - deleteCategory] Category deleted successfully: ', response);
+            //console.log('[categoryService - deleteCategory] Category deleted successfully: ', response);
             return response.data;
         } catch (error) {
             console.error('[categoryService - deleteCategory]: Error deleting category: ', error);
@@ -80,7 +80,7 @@ const categoryService = {
     suggestCategory: async (description) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/suggest?description=${description}`);
-            console.log('[categoryService - suggestCategory]: AI category suggestion response: ', response)
+            //console.log('[categoryService - suggestCategory]: AI category suggestion response: ', response)
             return response.data;
         } catch (error) {
             console.error('[categoryService - suggestCategory]: Error fetching AI suggestion:', error);

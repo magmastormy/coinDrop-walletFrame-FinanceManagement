@@ -1,38 +1,21 @@
 // chatHeader.jsx
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCog, faHistory, faDatabase } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faCommentAlt } from '@fortawesome/free-solid-svg-icons';
 import './styles/chatHeaderStyles.css';
 
-const ChatHeader = ({ onToggleHistory, showHistory, onToggleContext, useContext }) => {
+const ChatHeader = ({ title = "Financial Assistant" }) => {
     return (
         <div className="chat-header">
-            <div className="header-title">
-                <h3>Financial Assistant</h3>
-                <div className="context-indicator">
-                    {useContext && <span>Using Context</span>}
-                </div>
+            <div className="chat-header-avatar">
+                <FontAwesomeIcon icon={faRobot} />
             </div>
-            <div className="header-actions">
-                <button 
-                    className={`header-button ${showHistory ? 'active' : ''}`}
-                    onClick={onToggleHistory}
-                    title="Chat History"
-                >
-                    <FontAwesomeIcon icon={faHistory} />
-                </button>
-                <button 
-                    className="header-button"
-                    title="Settings"
-                >
-                    <FontAwesomeIcon icon={faCog} />
-                </button>
-                <button 
-                    className={`context-button ${useContext ? 'active' : ''}`}
-                    onClick={onToggleContext}
-                >
-                    <FontAwesomeIcon icon={faDatabase} />
-                </button>
+            <div className="chat-header-info">
+                <h2>{title}</h2>
+                <p>Ask me about your finances</p>
+            </div>
+            <div className="chat-header-actions">
+                <FontAwesomeIcon icon={faCommentAlt} />
             </div>
         </div>
     );

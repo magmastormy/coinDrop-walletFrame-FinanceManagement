@@ -134,7 +134,7 @@ axiosInstance.interceptors.response.use(
 // Add response interceptor to extract data
 axiosInstance.interceptors.response.use(
     (response) => {
-        console.log('User axios - Response Data:', response.data);
+        //console.log('User axios - Response Data:', response.data);
         // Return the data directly
         return response.data;
     },
