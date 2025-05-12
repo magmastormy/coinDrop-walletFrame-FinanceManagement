@@ -4,6 +4,8 @@ const SavingsGoal = require('../models/SavingsGoal');
 const Wallet = require('../models/Wallet');
 const SavingsAccount = require('../models/SavingsAccount');
 const Category = require('../models/Category');
+const { performance } = require('perf_hooks');
+const contextFormatter = require('./formatters/contextFormatter');
 
 /**
  * Calculate user's net worth.
@@ -267,297 +269,27 @@ async function getContext(userId) {
  * @param {String} type - 'balance'|'budget'|'savings'|'bills'|'full'
  */
 function formatContext(ctx, type = 'full') {
-  switch (type) {
-    case 'balance':
-      return [
-        `Total Balance: $${ctx.totalBalance}`,
-        ...ctx.wallets.map(w => `- ${w.name}: $${w.balance} (${w.type})`)
-      ].join('\n');
-    case 'budget':
-      // Enhanced budget prompt with detailed expense breakdown
-      let prompt = '\nHere is your financial overview:\n\n';
-      
-      // Budget section
-      prompt += '## BUDGET INFORMATION\n';
-      if (ctx.budgets && ctx.budgets.length > 0) {
-        prompt += 'Your current budget allocations:\n';
-        ctx.budgets.forEach(budget => {
-          const catName = budget.category?.name || 'Uncategorized';
-          // Use pre-calculated budget usage from controller
-          const spent = budget.spent || 0;
-          const remaining = budget.remaining || budget.amount;
-          const percentUsed = budget.percentUsed || 0;
-          
-          prompt += `- ${budget.name} (${catName}): $${spent.toFixed(2)}/$${budget.amount} (${percentUsed.toFixed(0)}% used, $${remaining.toFixed(2)} remaining)\n`;
-        });
-      } else {
-        prompt += 'You have not set up any budgets yet.\n';
-      }
-      
-      // Add expense breakdown by category
-      prompt += '\n## EXPENSE BREAKDOWN\n';
-      
-      // Map to track spending by category
-      const categorySpending = {};
-      
-      // Process all transactions marked as expenses
-      if (ctx.recentTransactions && ctx.recentTransactions.length > 0) {
-        const expenseTransactions = ctx.recentTransactions.filter(t => t.type === 'expense');
-        
-        if (expenseTransactions.length > 0) {
-          // Categorize spending
-          expenseTransactions.forEach(transaction => {
-            const categoryName = transaction.category?.name || 'Uncategorized';
-            if (!categorySpending[categoryName]) {
-              categorySpending[categoryName] = {
-                total: 0,
-                transactions: []
-              };
-            }
-            
-            const amount = Math.abs(transaction.amount);
-            categorySpending[categoryName].total += amount;
-            categorySpending[categoryName].transactions.push({
-              description: transaction.description || 'No description',
-              amount: amount,
-              date: transaction.date
-            });
-          });
-          
-          // Add category spending to prompt
-          prompt += 'Your spending by category:\n';
-          Object.entries(categorySpending).forEach(([category, data]) => {
-            prompt += `- ${category}: $${data.total.toFixed(2)}\n`;
-            
-            // List up to 3 most recent transactions in each category
-            prompt += '  Recent transactions:\n';
-            data.transactions.slice(0, 3).forEach(t => {
-              const date = new Date(t.date).toLocaleDateString();
-              prompt += `  • ${t.description}: $${t.amount.toFixed(2)} on ${date}\n`;
-            });
-          });
-          
-          // Calculate total expenses
-          const totalExpenses = Object.values(categorySpending).reduce((sum, cat) => sum + cat.total, 0);
-          prompt += `\nTotal expenses: $${totalExpenses.toFixed(2)}\n`;
-        } else {
-          prompt += 'No expense transactions found in your recent history.\n';
-        }
-      } else {
-        prompt += 'No transaction history available to analyze expenses.\n';
-      }
-      
-      // Income vs. Expenses
-      prompt += '\n## INCOME VS. EXPENSES\n';
-      prompt += `Monthly income: $${ctx.financialSummary.monthlyIncome}\n`;
-      prompt += `Monthly expenses: $${ctx.financialSummary.monthlyExpenses}\n`;
-      
-      if (ctx.financialSummary.monthlyIncome > 0) {
-        const surplus = ctx.financialSummary.monthlyIncome - ctx.financialSummary.monthlyExpenses;
-        prompt += `Monthly ${surplus >= 0 ? 'surplus' : 'deficit'}: $${Math.abs(surplus).toFixed(2)}\n`;
-      }
-      
-      // Wallets overview
-      prompt += '\n## WALLET BALANCES\n';
-      if (ctx.wallets && ctx.wallets.length > 0) {
-        ctx.wallets.forEach(wallet => {
-          prompt += `- ${wallet.name} (${wallet.type}): $${wallet.balance.toFixed(2)}\n`;
-        });
-        prompt += `Total balance across all accounts: $${ctx.totalBalance.toFixed(2)}\n`;
-      } else {
-        prompt += 'No wallet accounts found.\n';
-      }
-      
-      // Add user guidance
-      prompt += `\nThe user has asked about their budgets and expenses. Please provide a helpful response focusing on:\n`;
-      prompt += `1. Their budget status, highlighting any that are close to or exceeding limits\n`;
-      prompt += `2. A breakdown of their actual spending by category\n`;
-      prompt += `3. Suggestions for managing expenses based on their current financial situation\n`;
-      
-      return prompt;
-    
-    case 'savings':
-      let savingsPrompt = '## SAVINGS GOALS\n\n';
-      
-      if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
-        savingsPrompt += 'Here are your current savings goals:\n\n';
-        
-        ctx.savingsGoals.forEach(goal => {
-          // Format the goal details
-          savingsPrompt += `- **${goal.name}**: $${goal.current.toFixed(2)}/$${goal.target.toFixed(2)} (${goal.progress}% complete)\n`;
-          
-          // Add deadline info if available
-          if (goal.deadline) {
-            const deadline = new Date(goal.deadline);
-            const now = new Date();
-            const timeLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)); // days left
-            
-            savingsPrompt += `  • Deadline: ${deadline.toLocaleDateString()} (${timeLeft} days remaining)\n`;
-            
-            // Calculate required monthly contribution
-            if (goal.timeRemaining && goal.monthlyNeeded) {
-              savingsPrompt += `  • Monthly contribution needed: $${goal.monthlyNeeded.toFixed(2)}\n`;
-            }
-          }
-          
-          // Add description if available
-          if (goal.description) {
-            savingsPrompt += `  • Notes: ${goal.description}\n`;
-          }
-          
-          savingsPrompt += '\n';
-        });
-        
-        // Add suggestions
-        savingsPrompt += `\n### Suggestions:\n`;
-        savingsPrompt += `- Review your progress and consider adjusting monthly contributions if needed.\n`;
-        savingsPrompt += `- You might want to prioritize goals with approaching deadlines.\n`;
-      } else {
-        savingsPrompt += 'You have not set up any savings goals yet.\n\n';
-        savingsPrompt += 'Setting savings goals can help you stay on track with your financial priorities. Consider creating goals for:\n';
-        savingsPrompt += '- Emergency fund (3-6 months of expenses)\n';
-        savingsPrompt += '- Major purchases\n';
-        savingsPrompt += '- Retirement contributions\n';
-      }
-      
-      return savingsPrompt;
-    case 'bills':
-      return [
-        'Upcoming Bills:',
-        ...ctx.upcomingBills.map(b => `- ${b.description || b.category}: $${b.amount} due in ${b.daysUntilDue} days`)
-      ].join('\n');
-    default:
-      // For 'full' type, create a structured comprehensive prompt
-      let fullPrompt = '\nHere is your complete financial overview:\n\n';
-      
-      // WALLET & BALANCE SECTION
-      fullPrompt += '## ACCOUNTS & BALANCES\n';
-      if (ctx.wallets && ctx.wallets.length > 0) {
-        ctx.wallets.forEach(wallet => {
-          fullPrompt += `- ${wallet.name} (${wallet.type}): $${wallet.balance.toFixed(2)}\n`;
-        });
-        fullPrompt += `Total balance: $${ctx.totalBalance.toFixed(2)}\n`;
-      } else {
-        fullPrompt += 'No accounts have been set up yet.\n';
-      }
-      
-      // BUDGET SECTION
-      fullPrompt += '\n## BUDGETS\n';
-      if (ctx.budgets && ctx.budgets.length > 0) {
-        ctx.budgets.forEach(budget => {
-          const catName = budget.category?.name || 'Uncategorized';
-          const spent = budget.spent || 0;
-          const remaining = budget.remaining || budget.amount;
-          const percentUsed = budget.percentUsed || 0;
-          
-          fullPrompt += `- ${budget.name} (${catName}): $${spent.toFixed(2)}/$${budget.amount} (${percentUsed.toFixed(0)}% used, $${remaining.toFixed(2)} remaining)\n`;
-        });
-      } else {
-        fullPrompt += 'No budgets have been set up yet.\n';
-      }
-      
-      // EXPENSE BREAKDOWN
-      fullPrompt += '\n## RECENT EXPENSES\n';
-      if (ctx.recentTransactions && ctx.recentTransactions.length > 0) {
-        const expenses = ctx.recentTransactions.filter(t => t.type === 'expense');
-        if (expenses.length > 0) {
-          // Group by category
-          const expensesByCategory = {};
-          expenses.forEach(expense => {
-            const category = expense.category?.name || 'Uncategorized';
-            if (!expensesByCategory[category]) {
-              expensesByCategory[category] = [];
-            }
-            expensesByCategory[category].push(expense);
-          });
-          
-          Object.entries(expensesByCategory).forEach(([category, transactions]) => {
-            const totalForCategory = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            fullPrompt += `- ${category}: $${totalForCategory.toFixed(2)}\n`;
-            // List a few examples
-            transactions.slice(0, 2).forEach(t => {
-              fullPrompt += `  • ${t.description || 'No description'}: $${Math.abs(t.amount).toFixed(2)} on ${new Date(t.date).toLocaleDateString()}\n`;
-            });
-          });
-          
-          const totalExpenses = expenses.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-          fullPrompt += `\nTotal recent expenses: $${totalExpenses.toFixed(2)}\n`;
-        } else {
-          fullPrompt += 'No expense transactions found in your recent history.\n';
-        }
-      } else {
-        fullPrompt += 'No transaction data available.\n';
-      }
-      
-      // SAVINGS SECTION
-      fullPrompt += '\n## SAVINGS GOALS\n';
-      if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
-        ctx.savingsGoals.forEach(goal => {
-          // Format the goal details with better styling
-          fullPrompt += `- **${goal.name}**: $${goal.current.toFixed(2)}/$${goal.target.toFixed(2)} (${goal.progress}% complete)\n`;
-          
-          // Add deadline info if available
-          if (goal.deadline) {
-            const deadline = new Date(goal.deadline);
-            const now = new Date();
-            const timeLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)); // days left
-            
-            fullPrompt += `  • Deadline: ${deadline.toLocaleDateString()} (${timeLeft} days remaining)\n`;
-          }
-          
-          // Add monthly contribution needed
-          if (goal.timeRemaining) {
-            fullPrompt += `  • Time remaining: ${goal.timeRemaining} months\n`;
-            fullPrompt += `  • Required monthly contribution: $${goal.monthlyNeeded?.toFixed(2)}/month\n`;
-          }
-          
-          // Add description if available
-          if (goal.description) {
-            fullPrompt += `  • Notes: ${goal.description}\n`;
-          }
-          
-          fullPrompt += '\n';
-        });
-      } else {
-        fullPrompt += 'No savings goals have been set up yet.\n\n';
-        fullPrompt += 'Setting savings goals can help you stay on track with your financial priorities. Consider creating goals for:\n';
-        fullPrompt += '- Emergency fund (3-6 months of expenses)\n';
-        fullPrompt += '- Major purchases\n';
-        fullPrompt += '- Retirement contributions\n';
-      }
-      
-      // MONTHLY SUMMARY
-      fullPrompt += '\n## MONTHLY SUMMARY\n';
-      fullPrompt += `Monthly income: $${ctx.financialSummary.monthlyIncome}\n`;
-      fullPrompt += `Monthly expenses: $${ctx.financialSummary.monthlyExpenses}\n`;
-      fullPrompt += `Savings rate: ${ctx.financialSummary.savingsRate.toFixed(1)}%\n`;
-      
-      // NET WORTH
-      fullPrompt += '\n## NET WORTH\n';
-      fullPrompt += `Total net worth: $${ctx.netWorth.total}\n`;
-      fullPrompt += `Liquid assets: $${ctx.netWorth.liquid}\n`;
-      
-      // GUIDANCE INSTRUCTIONS
-      fullPrompt += `\nProvide a helpful response that gives the user a clear picture of their financial situation. `;
-      fullPrompt += `Focus on the areas they ask about, but also highlight any important insights or areas of concern. `;
-      fullPrompt += `Offer practical suggestions for improving their financial health based on the data provided.`;
-      
-      return fullPrompt;
-  }
+  // Delegate to the contextFormatter module
+  return contextFormatter.formatContext(ctx, type);
 }
+
+// All formatting functions have been moved to the contextFormatter module
 
 /**
  * Generate context-based suggestions.
- * @param {Object} ctx
+ * @param {Object} ctx - The context object containing financial data
+ * @returns {Object} - Object containing suggestions
  */
 async function generateContextSuggestions(ctx) {
-  // Placeholder suggestions
-  return {
-    generalAdvice: [
-      "Consider reviewing your monthly subscriptions to cut down on recurring costs.",
-      `Your savings rate is ${ctx.financialSummary.savingsRate.toFixed(1)}%. Aim for 20% for better financial health.`
-    ]
-  };
+  // Delegate to the contextFormatter module
+  return contextFormatter.generateContextSuggestions(ctx);
 }
 
-module.exports = { getContext, formatContext, generateContextSuggestions };
+/**
+ * Module exports
+ */
+module.exports = { 
+  getContext, 
+  formatContext, 
+  generateContextSuggestions 
+};

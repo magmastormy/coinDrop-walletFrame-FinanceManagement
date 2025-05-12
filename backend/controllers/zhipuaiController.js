@@ -199,6 +199,19 @@ exports.sendMessage = async (req, res, next) => {
         const userMessage = lastUser.content.toLowerCase();
         console.log(`[ZhipuaiController - sendMessage] User message: "${lastUser.content.substring(0, 50)}${lastUser.content.length > 50 ? '...' : ''}"`);
         
+        // Check for general greetings or simple messages that don't need context
+        const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessage);
+        
+        // Check for very short messages (likely not requiring financial context)
+        const isVeryShortMessage = userMessage.trim().split(/\s+/).length <= 2;
+        
+        // Check for general questions that don't relate to finances
+        const isGeneralQuestion = /\b(what is|who is|how do|can you|tell me about|explain|define|where is|when is|why is|which)\b/i.test(userMessage) && 
+                                !isFinancialQuery;
+        
+        // Check for chat-like interactions
+        const isChatInteraction = /\b(how are you|what do you think|your opinion|can you help|what can you do|your capabilities|tell me a joke|fun fact)\b/i.test(userMessage);
+        
         // Detect query type for better context formatting
         const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessage);
         const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessage);
@@ -207,74 +220,100 @@ exports.sendMessage = async (req, res, next) => {
         const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
                                 /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessage);
         
+        // Skip context for general greetings, very short non-financial messages, general questions, or chat interactions
+        const skipContext = isGeneralGreeting || 
+                          (isVeryShortMessage && !isFinancialQuery) || 
+                          isGeneralQuestion || 
+                          isChatInteraction;
+        
         console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
+        console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
         
-        // Fetch user context from database
-        console.log(`[ZhipuaiController - DEBUG] About to fetch context for user ID: ${userId}`);
+        let prompt = '';
         
-        try {
-            // Check if user exists in database
-            const User = require('../models/User');
-            const userExists = await User.findById(userId);
-            console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
-            
-            if (!userExists) {
-                console.error(`[ZhipuaiController - ERROR] User with ID ${userId} not found in database`);
-            }
-        } catch (dbError) {
-            console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
-        }
-        
-        const ctx = await contextService.getContext(userId);
-        console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
-            JSON.stringify({
-                budgets: ctx.budgets?.length || 0,
-                wallets: ctx.wallets?.length || 0,
-                transactions: ctx.recentTransactions?.length || 0,
-                savingsGoals: ctx.savingsGoals?.length || 0,
-                categories: ctx.categories?.length || 0
-            }));
+        // Skip context for general greetings or very short non-financial messages
+        if (skipContext) {
+            console.log(`[ZhipuaiController - sendMessage] Skipping context for general message`);
+            // Use a minimal prompt that allows broader thinking
+            prompt = `You are a helpful financial assistant for the CoinDrip application. 
+For this message, no specific financial context is needed. 
+Feel free to draw on your general knowledge to provide a helpful response.
+Keep your response concise and avoid unnecessary line breaks.
 
-        // Check for missing data and log database information
-        if (!ctx.budgets || ctx.budgets.length === 0) {
-            console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
+If the user is asking about general topics unrelated to finance, you can provide information based on your knowledge.
+If the user is asking about your capabilities, explain that you're an AI assistant specialized in financial matters but can also help with general questions.`;
+        } else {
+            // Fetch user context from database for financial queries
+            console.log(`[ZhipuaiController - DEBUG] About to fetch context for user ID: ${userId}`);
+            
             try {
-                const Budget = require('../models/Budget');
-                const budgetCount = await Budget.countDocuments({ userId });
-                console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
+                // Check if user exists in database
+                const User = require('../models/User');
+                const userExists = await User.findById(userId);
+                console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
                 
-                // Sample a budget document to check if userId field matches expected format
-                const sampleBudget = await Budget.findOne({}).lean();
-                if (sampleBudget) {
-                    console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
-                    console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
+                if (!userExists) {
+                    console.error(`[ZhipuaiController - ERROR] User with ID ${userId} not found in database`);
                 }
             } catch (dbError) {
-                console.error(`[ZhipuaiController - DEBUG] Database check error: ${dbError.message}`);
+                console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
             }
+            
+            const ctx = await contextService.getContext(userId);
+            console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
+                JSON.stringify({
+                    budgets: ctx.budgets?.length || 0,
+                    wallets: ctx.wallets?.length || 0,
+                    transactions: ctx.recentTransactions?.length || 0,
+                    savingsGoals: ctx.savingsGoals?.length || 0,
+                    categories: ctx.categories?.length || 0
+                }));
+
+            // Check for missing data and log database information
+            if (!ctx.budgets || ctx.budgets.length === 0) {
+                console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
+                try {
+                    const Budget = require('../models/Budget');
+                    const budgetCount = await Budget.countDocuments({ userId });
+                    console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
+                    
+                    // Sample a budget document to check if userId field matches expected format
+                    const sampleBudget = await Budget.findOne({}).lean();
+                    if (sampleBudget) {
+                        console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
+                        console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
+                    }
+                } catch (dbError) {
+                    console.error(`[ZhipuaiController - DEBUG] Database check error: ${dbError.message}`);
+                }
+            }
+
+            // Process all financial data based on query type
+            await enhanceContextData(ctx, userId, { 
+                isBudgetQuery, 
+                isBalanceQuery, 
+                isSavingsQuery: true, // Always process savings goals
+                isBillQuery 
+            });
+
+            // Choose format type based on query
+            let formatType = 'full';
+            if (isBudgetQuery) formatType = 'budget';
+            else if (isBalanceQuery) formatType = 'balance';
+            else if (isSavingsQuery) formatType = 'savings';
+            else if (isBillQuery) formatType = 'bills';
+            
+            // Format the context for the AI prompt
+            prompt = contextService.formatContext(ctx, formatType);
+            console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
         }
-
-        // Process all financial data based on query type
-        await enhanceContextData(ctx, userId, { 
-            isBudgetQuery, 
-            isBalanceQuery, 
-            isSavingsQuery: true, // Always process savings goals
-            isBillQuery 
-        });
-
-        // Choose format type based on query
-        let formatType = 'full';
-        if (isBudgetQuery) formatType = 'budget';
-        else if (isBalanceQuery) formatType = 'balance';
-        else if (isSavingsQuery) formatType = 'savings';
-        else if (isBillQuery) formatType = 'bills';
         
-        // Format the context for the AI prompt
-        const prompt = contextService.formatContext(ctx, formatType);
-        console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
+        // Add a directive to encourage broader thinking beyond the immediate context
+        const systemPrompt = skipContext ? prompt : 
+            `${prompt}\n\nAdditional instructions:\n1. Feel free to draw on your general knowledge beyond the provided context when appropriate.\n2. Keep your response concise and avoid unnecessary line breaks.\n3. If the user's question isn't directly related to their financial data, you can provide general advice.\n4. Format your response with proper spacing - use single line breaks between paragraphs instead of multiple empty lines.\n5. When appropriate, consider broader financial concepts and principles that might be helpful to the user.\n6. You can reference external financial resources or concepts if they would be helpful to the user.`;
         
         const aiInput = [
-            { role: 'system', content: prompt },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: lastUser.content }
         ];
 
