@@ -94,12 +94,12 @@
 @media (max-width: 768px) {
   .sidebar {
     width: var(--sidebar-width-mobile);
-    transform: translateX(-100%);
+    transform: translateX(-100%) !important;
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
   }
 
   .sidebar.mobile.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
   }
 
   .sidebar-nav a {

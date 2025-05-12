@@ -15,9 +15,22 @@
   flex-direction: column;
   gap: 2rem;
   min-height: calc(100vh - 64px);
+  height: 100vh;
   background-color: #f5f5f5;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* Enable vertical scrolling when content overflows */
+  overflow-x: hidden;
+}
+
+.dashboard-container::-webkit-scrollbar {
+  width: 8px;
+}
+.dashboard-container::-webkit-scrollbar-thumb {
+  background: var(--button-base, #bdbdbd);
+  border-radius: 4px;
+}
+.dashboard-container::-webkit-scrollbar-track {
+  background: var(--background-secondary, #f0f0f0);
 }
 
 .dashboard-container::before {

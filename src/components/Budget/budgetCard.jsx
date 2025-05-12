@@ -176,7 +176,7 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
           </Box>
           <Box display="flex" flexDirection="column" gap={1} mb={2}>
             <Typography variant="body2"><FontAwesomeIcon icon={faChartLine} /> Category: {budget.category.name || 'Uncategorized'}</Typography>
-            <Typography variant="body2"><FontAwesomeIcon icon={faCalendarAlt} /> {formatDate(budget.startDate)} - {formatDate(budget.endDate)}</Typography>
+            <Typography variant="body2"><FontAwesomeIcon icon={faCalendarAlt} /> {budget.startDate ? formatDate(budget.startDate) : 'N/A'} - {budget.endDate ? formatDate(budget.endDate) : 'N/A'}</Typography>
           </Box>
         </CardContent>
         <CardActions>
@@ -236,8 +236,8 @@ BudgetCard.propTypes = {
     type: PropTypes.string.isRequired,
     amount: PropTypes.number.isRequired,
     spent: PropTypes.number,
-    startDate: PropTypes.string.isRequired,
-    endDate: PropTypes.string.isRequired,
+    startDate: PropTypes.string, // was required, now optional
+    endDate: PropTypes.string,   // was required, now optional
     walletId: PropTypes.string,
     category: PropTypes.shape({
       name: PropTypes.string
