@@ -32,7 +32,10 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
     const { isDarkMode } = useTheme();
     const { user } = useSelector(state => state.auth);
 
-    const progressPercentage = (goal.currentAmount / goal.targetAmount) * 100;
+    // Defensive progress calculation
+    const safeCurrent = typeof goal.currentAmount === 'number' && !isNaN(goal.currentAmount) ? goal.currentAmount : 0;
+    const safeTarget = typeof goal.targetAmount === 'number' && goal.targetAmount > 0 ? goal.targetAmount : 1;
+    const progressPercentage = Math.max(0, Math.min(100, (safeCurrent / safeTarget) * 100));
     
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {

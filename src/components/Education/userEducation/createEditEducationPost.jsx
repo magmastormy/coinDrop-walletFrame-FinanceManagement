@@ -155,7 +155,8 @@ const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
     );
 };
 
-const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
+const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
+    const post = initialData;
     const { theme } = useTheme();
     const [title, setTitle] = useState('');
     const [imageFiles, setImageFiles] = useState([]);
@@ -315,8 +316,10 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             let response;
             try {
                 if (isEditMode) {
+                    console.log("***[CreateEditEducationPost] update post");
                     response = await onSubmit(post._id, postData);
                 } else {
+                    console.log("***[CreateEditEducationPost] create new post");
                     response = await onSubmit(postData);
                 }
                 
@@ -505,7 +508,7 @@ MenuBar.propTypes = {
 CreateEditEducationPost.propTypes = {
     onSubmit: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired,
-    post: PropTypes.object
+    initialData: PropTypes.object
 };
 
 export default CreateEditEducationPost;

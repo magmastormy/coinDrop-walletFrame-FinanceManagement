@@ -319,28 +319,7 @@ const EducationCard = ({ education, onLike, onComment, onBookmark, currentUser }
                         </Tooltip>
                     </Box>
                     
-                    {/* Comment button with count */}
-                    <Tooltip title="Comments">
-                        <IconButton 
-                            size="small"
-                            sx={{ color: theme.text.secondary }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleReadMore();
-                            }}
-                        >
-                            <FontAwesomeIcon icon={faComment} />
-                            {education.comments?.length > 0 && (
-                                <Typography 
-                                    variant="caption" 
-                                    component="span"
-                                    sx={{ ml: 0.5 }}
-                                >
-                                    {education.comments.length}
-                                </Typography>
-                            )}
-                        </IconButton>
-                    </Tooltip>
+
                 </CardActions>
             </Card>
 

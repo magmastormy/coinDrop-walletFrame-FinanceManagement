@@ -149,31 +149,30 @@ const UserEducationManager = () => {
         return 0;
     });
 
-    const handlePostSubmit = async (postData) => {
+    const handlePostSubmit = async (postId, postData) => {
         dispatch(setLoading(true));
         try {
             let result;
             
-            if (postData._id) {
-                // Update existing post
-                result = await educationService.updateEducation(postData._id, postData);
-                dispatch(updateEducation(result));
-                toast.success('Post updated successfully');
-            } else {
-                // Create new post
-                result = await educationService.createEducation(postData);
-                console.log("***[userEducationManager - handlePostSubmit createEducation] result/response: ", result);
+            if (typeof postId === 'object' && !postData) {
+                console.log("Creating new post with data:", postId);
+                result = await educationService.createEducation(postId);
                 dispatch(addEducation(result));
                 toast.success('Post created successfully');
+            } else {
+                console.log("Updating post with ID:", postId, "and data:", postData);
+                result = await educationService.updateEducation(postId, postData);
+                dispatch(updateEducation(result));
+                toast.success('Post updated successfully');
             }
             
             setEditingPost(null);
             setShowCreateModal(false);
-            return result; // Return the result to createEditEducationPost.jsx
+            return result;
         } catch (err) {
             dispatch(setError(err.message));
             toast.error(err.message || 'Failed to save post');
-            throw err; // Rethrow to be caught by createEditEducationPost.jsx
+            throw err;
         } finally {
             dispatch(setLoading(false));
         }
@@ -254,6 +253,7 @@ const UserEducationManager = () => {
     };
 
     const handleEditClick = (post) => {
+        console.log("Setting post for editing:", post);
         setEditingPost(post);
         setShowCreateModal(true);
     };

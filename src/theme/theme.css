@@ -37,6 +37,10 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  --text-primary: #2C3E50;
+  --text-secondary: #606f7b;
+  --text-heading: #1a1a1a;
 }
 
 /* Light Theme */
@@ -45,9 +49,9 @@
   --background-secondary: var(--primary-100);
   --background-tertiary: var(--primary-200);
   
-  --text-primary: var(--primary-400);
-  --text-secondary: var(--primary-300);
-  --text-heading: var(--primary-500);
+  --text-primary: #2C3E50;
+  --text-secondary: #606f7b;
+  --text-heading: #1a1a1a;
   
   --button-base: var(--primary-200);
   --button-hover: var(--primary-300);

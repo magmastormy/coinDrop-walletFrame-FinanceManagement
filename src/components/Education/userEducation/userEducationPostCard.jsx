@@ -280,48 +280,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                         dangerouslySetInnerHTML={{ __html: post.details }}
                     />
                     
-                    {/* Analytics Section */}
-                    <Box sx={{ mt: 2, mb: 1 }}>
-                        <Box sx={{ 
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            mb: 0.5
-                        }}>
-                            <Typography variant="caption" sx={{ color: theme.text.secondary, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <FontAwesomeIcon icon={faChartBar} />
-                                Analytics
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: theme.text.secondary }}>
-                                {engagementRate}% engagement
-                            </Typography>
-                        </Box>
-                        <Box sx={{ 
-                            display: 'flex',
-                            gap: 2,
-                            justifyContent: 'space-between',
-                            mt: 1
-                        }}>
-                            <Tooltip title="Views">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <FontAwesomeIcon icon={faEye} size="xs" />
-                                    <Typography variant="caption">{totalViews}</Typography>
-                                </Box>
-                            </Tooltip>
-                            <Tooltip title="Likes">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <FontAwesomeIcon icon={faHeart} size="xs" />
-                                    <Typography variant="caption">{totalLikes}</Typography>
-                                </Box>
-                            </Tooltip>
-                            <Tooltip title="Comments">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <FontAwesomeIcon icon={faComment} size="xs" />
-                                    <Typography variant="caption">{totalComments}</Typography>
-                                </Box>
-                            </Tooltip>
-                        </Box>
-                    </Box>
+
                     
                     {/* Read Progress */}
                     {readProgress > 0 && (
@@ -400,22 +359,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                     </Tooltip>
                 </Box>
                 
-                {isAuthor && (
-                    <Box>
-                        <Tooltip title="Edit">
-                            <IconButton 
-                                size="small"
-                                sx={{ color: theme.text.secondary }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEdit(post);
-                                }}
-                            >
-                                <EditIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                )}
+
             </CardActions>
             
             {/* Comments Section */}
