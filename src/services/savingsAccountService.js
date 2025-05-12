@@ -4,9 +4,7 @@ const API_URL = '/saving-accounts';
 export const savingsAccountService = {
     createSavingsAccount: async (accountData) => {
         try {
-            console.log("[savingsAccountService - createSavingsAccount] Savings account data:", accountData);
             const response = await axiosInstance.post(API_URL, accountData);
-            console.log("[savingsAccountService - createSavingsAccount] Savings account created successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[savingsAccountService - createSavingsAccount] Error creating savings account:", error);
@@ -17,7 +15,6 @@ export const savingsAccountService = {
     getSavingsAccount: async (accountId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${accountId}`);
-            console.log("[savingsAccountService - getSavingsAccount] Savings account fetched successfully:", response);
             return response;
         } catch (error) {
             console.error("[savingsAccountService - getSavingsAccount] Error fetching savings account:", error);
@@ -32,7 +29,6 @@ export const savingsAccountService = {
     getUserSavingsAccounts: async (userId) => {
         try {
             const response = await axiosInstance.get(`${API_URL}/userId=${userId}`);
-            console.log("[savingsAccountService - getUserSavingsAccounts] User savings accounts fetched successfully:", response);
             return response;
         } catch (error) {
             console.error("[savingsAccountService - getUserSavingsAccounts] Error fetching user savings accounts:", error);
@@ -56,7 +52,6 @@ export const savingsAccountService = {
                 sourceWalletId,
                 transferType // 'manual', 'automatic-amount', 'automatic-percentage'
             });
-            console.log("[savingsAccountService - transferToSavings] Transfer to savings completed successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[savingsAccountService - transferToSavings] Error transferring to savings:", error);
@@ -71,7 +66,6 @@ export const savingsAccountService = {
                 amount,
                 targetWalletId
             });
-            console.log("[savingsAccountService - withdrawFromSavings] Withdrawal from savings completed successfully:", response.data);
             return response.data;
         } catch (error) {
             console.error("[savingsAccountService - withdrawFromSavings] Error withdrawing from savings:", error);

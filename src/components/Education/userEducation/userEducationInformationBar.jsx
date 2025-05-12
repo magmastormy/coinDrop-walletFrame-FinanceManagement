@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useTheme } from '../../../theme/ThemeContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

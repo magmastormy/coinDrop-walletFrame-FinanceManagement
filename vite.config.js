@@ -1,10 +1,35 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   css: {
     postcss: './postcss.config.js'
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          charts: ['chart.js'],
+          vendors: ['axios', 'react-redux'],
+          fonts: ["@fortawesome/fontawesome-svg-core", "@fortawesome/free-regular-svg-icons", "@fortawesome/free-solid-svg-icons", "@fortawesome/react-fontawesome"]
+        },
+        treeshake: 'recommended'
+      },
+    },
+    chunkSizeWarningLimit: 500,
+    minify: 'terser',
+    sourcemap: true,
+    target: 'esnext',
+    cssCodeSplit: false
+  },
+  optimizeDeps: {
+    include: [
+      '@mui/material/styles',
+      '@mui/material/useTheme',
+      '@mui/material/useMediaQuery'
+    ]
   }
 })

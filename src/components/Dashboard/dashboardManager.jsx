@@ -1,10 +1,17 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Box, Container, Grid, Paper, Typography, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
 import DashboardUserGreetings from './dashboardUserGreetings';
 import DashboardUserShortAnalytics from './dashboardUserShortAnalytics';
 import DashboardQuickNavLinks from './dashboardQuickNavLinks';
 import './styles/dashboardManagerStyles.css';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 // Lazy load less critical components
 const DashboardBarChart = lazy(() => import('./dashboardBarChart'));

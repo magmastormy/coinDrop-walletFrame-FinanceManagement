@@ -1,5 +1,6 @@
 import React from 'react';
-import { IconButton, Tooltip } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';

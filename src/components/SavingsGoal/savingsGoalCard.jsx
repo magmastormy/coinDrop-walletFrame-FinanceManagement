@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, Typography, IconButton, Box, LinearProgress, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField, FormControl, InputLabel, Select, ListSubheader, MenuItem } from '@mui/material';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import ListSubheader from '@mui/material/ListSubheader';
+import MenuItem from '@mui/material/MenuItem';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBullseye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
@@ -54,10 +71,6 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                 savingsAccountService.getUserSavingsAccounts(user.id)
             ]);
             
-            console.log('[SavingsGoalCard] fetchSources - wallets', walletsResponse);
-            console.log('[SavingsGoalCard] fetchSources - savingsAccounts', savingsAccounts);
-            
-            // Extract wallets array from response object if needed
             const wallets = Array.isArray(walletsResponse) 
                 ? walletsResponse 
                 : (walletsResponse?.wallets || []);
@@ -67,7 +80,6 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                 savingsAccounts: Array.isArray(savingsAccounts) ? savingsAccounts : []
             });
         } catch (error) {
-            console.error('Error fetching sources:', error);
             setError('Failed to load funding sources');
             setSources({ wallets: [], savingsAccounts: [] });
         } finally {
@@ -88,12 +100,7 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
 
             // Check which property contains the goal ID
             const goalId = goal._id || goal.id;
-            
-            console.log('Contributing to goal:', goalId, {
-                sourceType,
-                sourceId,
-                amount
-            });
+
 
             if (!goalId) {
                 throw new Error('Goal ID is missing');
@@ -114,7 +121,6 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
                 onEdit(goal);
             }
         } catch (error) {
-            console.error('Error contributing to goal:', error);
             setError(error.message || 'Failed to contribute to goal');
         }
     };

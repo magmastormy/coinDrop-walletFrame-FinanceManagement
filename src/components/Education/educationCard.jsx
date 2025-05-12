@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardMedia, Typography, Box, IconButton } from '@mui/material';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faComment, faShare, faImages, faImage } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import './styles/educationCardStyles.css';
 
 const EducationCard = ({ education }) => {

@@ -1,30 +1,24 @@
 import React, { useState } from 'react';
-import { 
-    Card,
-    CardContent,
-    CardActions,
-    Typography,
-    IconButton,
-    Button,
-    Menu,
-    MenuItem,
-    Box,
-    TextField,
-    Avatar,
-    Tooltip
-} from '@mui/material';
-import {
-    ThumbUp as ThumbUpIcon,
-    Comment as CommentIcon,
-    MoreVert as MoreVertIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon
-} from '@mui/icons-material';
 import { useTheme } from '../../../theme/ThemeContext';
 import './styles/userEducationPostCardStyles.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImages } from '@fortawesome/free-solid-svg-icons';
 import EducationImageGallery from '../educationImageGallery';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Avatar from '@mui/material/Avatar';
+
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import CommentIcon from '@mui/icons-material/Comment';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, onDelete }) => {
     const [anchorEl, setAnchorEl] = useState(null);

@@ -1,26 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Box,
-    Typography,
-    CircularProgress,
-    Grid,
-    Button,
-    Alert,
-    Container,
-    Fab,
-    IconButton,
-    Menu,
-    MenuItem
-} from '@mui/material';
-import { 
-    Add as AddIcon,
-    MoreVert as MoreVertIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon 
-} from '@mui/icons-material';
-import { useTheme } from '../../../theme/ThemeContext';
 import educationService from '../../../services/educationService';
 import { 
     setEducations, 
@@ -32,9 +12,20 @@ import {
 } from '../../../slices/educationSlice';
 import CreateEditEducationPost from './createEditEducationPost';
 import UserEducationPostCard from './userEducationPostCard';
-import UserEducationInformationBar from './userEducationInformationBar';
 import './styles/userEducationManagerStyles.css';
 import { toast } from 'react-toastify';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Container from '@mui/material/Container';
+import Fab from '@mui/material/Fab';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const UserEducationManager = () => {
     const dispatch = useDispatch();

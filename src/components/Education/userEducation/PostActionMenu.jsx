@@ -1,5 +1,9 @@
 import React from 'react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, IconButton } from '@mui/material';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import IconButton from '@mui/material/IconButton';
 import { MoreVert, Edit, Delete } from '@mui/icons-material';
 import { useTheme } from '../../../theme/ThemeContext';
 

@@ -4,7 +4,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPiggyBank, faChartPie, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import BudgetCard from './budgetCard';
-import { Box, Paper, List, ListItem, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 
 const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     const { theme } = useTheme();

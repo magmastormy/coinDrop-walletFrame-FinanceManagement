@@ -9,9 +9,13 @@ import budgetService from '../../services/budgetService';
 import CreateTransactionModal from './createTransactionModal';
 import TransactionList from './transactionList';
 import FilterTransactions from './filterTransactions';
-import TransactionSavingsAccountCard from './transactionSavingsAccountCard';
-import TransactionWalletCard from './transactionWalletCard';
-import { Box, Typography, Button, Alert, CircularProgress, Card, CardContent } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import { useTheme } from '../../theme/ThemeContext';
 import './styles/transactionManagerStyles.css';
 
@@ -51,12 +55,10 @@ const TransactionManager = () => {
             // Fetch categories
             const categoriesData = await categoryService.getUserCategories(user.id);
             setCategories(categoriesData || []);
-            console.log("[TransactionManager] Categories fetched successfully:", categoriesData);
             
             // Fetch transactions
             const transactionsResponse = await transactionService.getUserTransactions(user.id, filters);
             dispatch(setTransactions(transactionsResponse.transactions || []));
-            console.log("[TransactionManager] Transactions fetched successfully:", transactionsResponse);
         } catch (err) {
             dispatch(setError('Unable to fetch transaction data. Please try again later.'));
         } finally {
@@ -87,7 +89,6 @@ const TransactionManager = () => {
             setIsModalOpen(false);
             await fetchInitialData();
         } catch (err) {
-            console.error('Error creating transaction:', err);
             dispatch(setError('Failed to create transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
@@ -101,7 +102,6 @@ const TransactionManager = () => {
             setEditingTransaction(null);
             await fetchInitialData();
         } catch (err) {
-            console.error('Error updating transaction:', err);
             dispatch(setError('Failed to update transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
@@ -118,7 +118,6 @@ const TransactionManager = () => {
             await transactionService.deleteTransaction(transactionId);
             await fetchInitialData();
         } catch (err) {
-            console.error('Error deleting transaction:', err);
             dispatch(setError('Failed to delete transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
@@ -131,7 +130,6 @@ const TransactionManager = () => {
     };
 
     const handleWalletSelect = (walletId) => {
-        console.log("Selected Wallet ID:", walletId);
         setFilters(prev => ({ 
             ...prev, 
             walletId: walletId._id || walletId 
@@ -139,12 +137,10 @@ const TransactionManager = () => {
     };
 
     const handleSavingsSelect = (savingsAccountId) => {
-        console.log("Selected Savings Account:", savingsAccountId);
         setFilters(prev => ({ ...prev, savingsAccountId }));
     };
 
     const handleCategorySelect = (category) => {
-        console.log("Selected Category:", category);
         setFilters(prev => ({ ...prev, category }));
     };
 
@@ -169,8 +165,6 @@ const TransactionManager = () => {
         );
     }) : [];
 
-    console.log('Raw transactions:', transactions);
-    console.log('Filtered transactions:', filteredTransactions);
 
     const data = React.useMemo(() =>
         Array.isArray(transactions) ? transactions : [],

@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Box, Button, CircularProgress, Card, CardContent, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsGoalCard from './savingsGoalCard';
@@ -27,10 +32,8 @@ const SavingsGoalManager = () => {
         try {
             setIsLoading(true);
             const response = await savingsGoalService.getSavingsGoals(user.id);
-            console.log("SavingsGoalManager - fetchGoals - Response:", response);
             setGoals(response || []);
         } catch (error) {
-            console.error('Failed to fetch goals:', error);
             setError('Failed to load savings goals. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -45,7 +48,6 @@ const SavingsGoalManager = () => {
             });
             await fetchGoals();
         } catch (error) {
-            console.error('Failed to create goal:', error);
             setError('Failed to create savings goal. Please try again later.');
         }
     };

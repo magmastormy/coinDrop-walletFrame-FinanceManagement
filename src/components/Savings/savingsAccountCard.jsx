@@ -7,14 +7,12 @@ import {
     faMinus, 
     faEllipsisV
 } from '@fortawesome/free-solid-svg-icons';
-import { 
-    IconButton, 
-    Menu, 
-    MenuItem,
-    Typography,
-    Paper,
-    Box
-} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
 import { useTheme } from '../../theme/ThemeContext';
 import './styles/savingsAccountCardStyles.css';
 

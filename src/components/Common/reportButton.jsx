@@ -1,7 +1,9 @@
-//TODO: REMAKE THIS COMPONENT TO USE THE REPORTS API
-
 import React, { useState, useEffect } from 'react';
-import { Button, CircularProgress, Snackbar, Menu, MenuItem } from '@mui/material';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import reportService from '../../services/reportService';

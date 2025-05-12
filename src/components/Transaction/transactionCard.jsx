@@ -1,5 +1,9 @@
 import React from 'react';
-import { Card, CardContent, Typography, IconButton, Box } from '@mui/material';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Box from '@mui/material/Box';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';

@@ -6,7 +6,6 @@ const API_URL = '/budgets';
 export const getUserBudgets = async (userId, filters = {}) => {
     try {
         const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
-        //console.log('[BudgetService - getUserBudgets] Successfully fetched user budgets');
         return response;
     } catch (error) {
         console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);
@@ -17,9 +16,6 @@ export const getUserBudgets = async (userId, filters = {}) => {
 export const getBudgetStats = async () => {
     try {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        //console.log('[BudgetService - getBudgetStats] Successfully fetched budget stats');
-        
-        // Check if we have chart data in the response
         if (response?.data?.chartData) {
             return response.data.chartData;
         } else {
@@ -28,7 +24,6 @@ export const getBudgetStats = async () => {
         }
     } catch (error) {
         console.error('[BudgetService - getBudgetStats] Error fetching budget stats:', error);
-        // Return error object that can be handled by the component
         return { 
             error: true, 
             message: error.response?.data?.error || 'Failed to fetch budget data',
@@ -76,7 +71,6 @@ const budgetService = {
     updateBudget: async (id, budgetData) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/${id}`, budgetData);
-            //console.log('[BudgetService - updateBudget] Successfully updated budget:', response.data);
             return response.data;
         } catch (error) {
             console.error('[BudgetService - updateBudget] Error updating budget:', error);
@@ -87,7 +81,6 @@ const budgetService = {
     deleteBudget: async (id) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            //console.log('[BudgetService - deleteBudget] Successfully deleted budget:', response.data);
             return response.data;
         } catch (error) {
             console.error('[BudgetService - deleteBudget] Error deleting budget:', error);

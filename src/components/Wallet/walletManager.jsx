@@ -66,7 +66,7 @@ const WalletManager = () => {
         try {
             await walletService.updateWallet(walletId, updatedData);
             dispatch(updateWallet({ id: walletId, ...updatedData }));
-            fetchWallets(); // Refresh the wallets list
+            fetchWallets();
         } catch (err) {
             dispatch(setError(err.message));
         }
@@ -76,7 +76,7 @@ const WalletManager = () => {
         try {
             dispatch(setLoading(true));
             await walletService.transferBetweenWallets(fromWalletId, toWalletId, amount);
-            await fetchWallets(); // Refresh wallets after transfer
+            await fetchWallets();
         } catch (err) {
             dispatch(setError(err.response?.data?.error || err.message));
         } finally {
@@ -112,7 +112,7 @@ const WalletManager = () => {
                         onWalletSelect={handleWalletSelect}
                         onDelete={handleDeleteWallet}
                         onWalletUpdate={handleWalletUpdate}
-                        onTransfer={handleTransfer}  // Add this line
+                        onTransfer={handleTransfer} 
                     />
                 </div>
             ) : (

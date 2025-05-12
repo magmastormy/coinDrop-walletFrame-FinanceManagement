@@ -16,7 +16,9 @@ import { getUserTransactions } from '../../services/transactionService';
 import walletService from '../../services/walletService';
 import { getUserBudgets } from '../../services/budgetService';
 import './styles/dashboardUserShortAnalyticsStyles.css';
-import { Box, Tooltip, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
+import Button from '@mui/material/Button';
 
 const DashboardUserShortAnalytics = () => {
     const [loading, setLoading] = useState(true);

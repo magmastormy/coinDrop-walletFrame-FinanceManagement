@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Box,
-    Card,
-    CardContent,
-    Typography,
-    Switch,
-    Slider,
-    FormControl,
-    FormControlLabel,
-    Select,
-    MenuItem,
-    Button,
-    Alert,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Switch from '@mui/material/Switch';
+import Slider from '@mui/material/Slider';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
 import { useSelector } from 'react-redux';
 import savingsRuleService from '../../services/savingsRuleService';
 

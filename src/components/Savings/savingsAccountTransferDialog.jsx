@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    TextField,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    Typography,
-    Box
-} from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({

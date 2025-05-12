@@ -14,7 +14,18 @@ import {
     updateProfileSuccess,
     updateProfileFailure
 } from '../../slices/profileSlice';
-import { Box, Grid, Typography, TextField, Button, Avatar, IconButton, FormGroup, FormControlLabel, Checkbox, CircularProgress, Alert, Paper } from '@mui/material';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Avatar from '@mui/material/Avatar';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Checkbox from '@mui/material/Checkbox';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+import Paper from '@mui/material/Paper';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 

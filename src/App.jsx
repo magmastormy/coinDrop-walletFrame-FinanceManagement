@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
@@ -8,17 +8,26 @@ import DataManager from './components/userDataComponent';
 import Sidebar from './components/Sidebar/sideBar';
 import SidebarToggle from './components/Sidebar/SidebarToggle';
 import { ThemeProvider } from './theme/ThemeContext';
-import { SidebarProvider } from './components/Sidebar/SidebarContext';
+import { SidebarProvider, SidebarContext } from './components/Sidebar/SidebarContext';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
+  const { isSidebarOpen } = React.useContext(SidebarContext);
+
   const mainContentClass = useMemo(() => 
     `main-content ${isAuthenticated ? 'with-sidebar' : 'full-width'}`,
     [isAuthenticated]
   );
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      document.body.classList.toggle('sidebar-open', isSidebarOpen);
+    }
+    return () => document.body.classList.remove('sidebar-open');
+  }, [isSidebarOpen, isAuthenticated]);
 
   return (
     <div className="app">

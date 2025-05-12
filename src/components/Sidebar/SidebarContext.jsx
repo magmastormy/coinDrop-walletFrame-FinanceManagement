@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const SidebarContext = createContext();
+// Create and export the context
+export const SidebarContext = createContext();
 
 export const SidebarProvider = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.innerWidth < 768) {
-        setIsOpen(false);
+        setIsSidebarOpen(false);
       } else {
-        setIsOpen(true);
+        setIsSidebarOpen(true);
       }
     };
 
@@ -21,10 +22,10 @@ export const SidebarProvider = ({ children }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, isMobile }}>
+    <SidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, isMobile }}>
       {children}
     </SidebarContext.Provider>
   );

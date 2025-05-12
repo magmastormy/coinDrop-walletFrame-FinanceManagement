@@ -1,20 +1,23 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import Login from './components/Auth/userLoginForm';
-import Register from './components/Auth/userRegistrationForm';
-import ForgotPassword from './components/Auth/ForgotPassword';
-import Dashboard from './components/Dashboard/dashboardManager';
-import Wallet from './components/Wallet/walletManager';
-import Budget from './components/Budget/budgetManager';
-import Transaction from './components/Transaction/transactionManager';
-import Home from './pages/Home';
-import Profile from './components/Profile/profileManager';
-import Category from './components/Category/categoryManager';
-import Education from './components/Education/educationManager';
-import UserEducation from './components/Education/userEducation/userEducationManager';
-import SavingGoal from './components/SavingsGoal/savingsGoalManager';
-import SavingAccount from './components/Savings/savingsAccountManager';
-import ChatBot from './components/Chatbot/chatbotManager';
+import { lazy, Suspense } from 'react';
+import LoadingSpinner from './components/LoadingSpinner';
+
+const LoginComponent = lazy(() => import('./components/Auth/userLoginForm'));
+const RegisterComponent = lazy(() => import('./components/Auth/userRegistrationForm'));
+const ForgotPasswordComponent = lazy(() => import('./components/Auth/ForgotPassword'));
+const DashboardComponent = lazy(() => import('./components/Dashboard/dashboardManager'));
+const WalletComponent = lazy(() => import('./components/Wallet/walletManager'));
+const BudgetComponent = lazy(() => import('./components/Budget/budgetManager'));
+const TransactionComponent = lazy(() => import('./components/Transaction/transactionManager'));
+const HomeComponent = lazy(() => import('./pages/Home'));
+const ProfileComponent = lazy(() => import('./components/Profile/profileManager'));
+const CategoryComponent = lazy(() => import('./components/Category/categoryManager'));
+const EducationComponent = lazy(() => import('./components/Education/educationManager'));
+const UserEducationComponent = lazy(() => import('./components/Education/userEducation/userEducationManager'));
+const SavingGoalComponent = lazy(() => import('./components/SavingsGoal/savingsGoalManager'));
+const SavingAccountComponent = lazy(() => import('./components/Savings/savingsAccountManager'));
+const ChatBotComponent = lazy(() => import('./components/Chatbot/chatbotManager'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -46,106 +49,108 @@ const PublicRoute = ({ children }) => {
 const AppRoutes = () => {
     return (
         <div className="app-container">
-            <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={
-                    <PublicRoute>
-                        <Home />
-                    </PublicRoute>
-                } />
-                
-                <Route path="/login" element={
-                    <PublicRoute>
-                        <Login />
-                    </PublicRoute>
-                } />
-                
-                <Route path="/register" element={
-                    <PublicRoute>
-                        <Register />
-                    </PublicRoute>
-                } />
+            <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={
+                        <PublicRoute>
+                            <HomeComponent />
+                        </PublicRoute>
+                    } />
+                    
+                    <Route path="/login" element={
+                        <PublicRoute>
+                            <LoginComponent />
+                        </PublicRoute>
+                    } />
+                    
+                    <Route path="/register" element={
+                        <PublicRoute>
+                            <RegisterComponent />
+                        </PublicRoute>
+                    } />
 
-                <Route path="/forgot-password" element={
-                    <PublicRoute>
-                        <ForgotPassword />
-                    </PublicRoute>
-                } />
-                <Route path="/reset-password" element={
-                    <PublicRoute>
-                        <ForgotPassword />
-                    </PublicRoute>
-                } />
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/forgot-password" element={
+                        <PublicRoute>
+                            <ForgotPasswordComponent />
+                        </PublicRoute>
+                    } />
+                    <Route path="/reset-password" element={
+                        <PublicRoute>
+                            <ForgotPasswordComponent />
+                        </PublicRoute>
+                    } />
+                    {/* Protected Routes */}
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute>
+                            <DashboardComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/wallet" element={
-                    <ProtectedRoute>
-                        <Wallet />
-                    </ProtectedRoute>
-                } />
-                
-                <Route path="/budget" element={
-                    <ProtectedRoute>
-                        <Budget />
-                    </ProtectedRoute>
-                } />
-                
-                <Route path="/transaction" element={
-                    <ProtectedRoute>
-                        <Transaction />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/wallet" element={
+                        <ProtectedRoute>
+                            <WalletComponent />
+                        </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/budget" element={
+                        <ProtectedRoute>
+                            <BudgetComponent />
+                        </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/transaction" element={
+                        <ProtectedRoute>
+                            <TransactionComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/profile" element={
-                    <ProtectedRoute>
-                        <Profile />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/profile" element={
+                        <ProtectedRoute>
+                            <ProfileComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/category" element={
-                    <ProtectedRoute>
-                        <Category />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/category" element={
+                        <ProtectedRoute>
+                            <CategoryComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/education" element={
-                    <ProtectedRoute>
-                        <Education />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/education" element={
+                        <ProtectedRoute>
+                            <EducationComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/user-education" element={
-                    <ProtectedRoute>
-                        <UserEducation />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/user-education" element={
+                        <ProtectedRoute>
+                            <UserEducationComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/saving-goal" element={
-                    <ProtectedRoute>
-                        <SavingGoal />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/saving-goal" element={
+                        <ProtectedRoute>
+                            <SavingGoalComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/saving-account" element={
-                    <ProtectedRoute>
-                        <SavingAccount />
-                    </ProtectedRoute>
-                } />
+                    <Route path="/saving-account" element={
+                        <ProtectedRoute>
+                            <SavingAccountComponent />
+                        </ProtectedRoute>
+                    } />
 
-                <Route path="/chatbot" element={
-                    <ProtectedRoute>
-                        <ChatBot />
-                    </ProtectedRoute>
-                } />
-                
-                {/* Catch all route - redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                    <Route path="/chatbot" element={
+                        <ProtectedRoute>
+                            <ChatBotComponent />
+                        </ProtectedRoute>
+                    } />
+                    
+                    {/* Catch all route - redirect to home */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Suspense>
         </div>
     );
 };

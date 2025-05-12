@@ -60,7 +60,6 @@ const CreateNewWallet = ({ onWalletCreated }) => {
                 handleClose();
             }
         } catch (error) {
-            console.error('Failed to create wallet:', error);
             setError(error.message || 'Failed to create wallet');
         } finally {
             setIsLoading(false);

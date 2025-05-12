@@ -36,8 +36,6 @@ const FilterTransactions = ({
         });
     };
 
-    console.log('Savings Accounts:', savingsAccounts);
-
     return (
         <div className="filter-container">
             <div className="filter-header">
