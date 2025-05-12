@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -12,14 +13,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../../theme/ThemeContext';
 import './styles/createEditEducationPostStyles.css';
-import EducationImageUpload from '../educationImageUpload';
 import ImageService from '../../../services/imageService';
-import ImageUploadPreview from '../imageUploadPreview';
-import educationService from '../../../services/educationService';
 import { toast } from 'react-toastify';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_DIMENSION = 1920;
 
 const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
     if (!editor) return null;
@@ -496,6 +493,19 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             </div>
         </AnimatePresence>
     );
+};
+
+MenuBar.propTypes = {
+    editor: PropTypes.object,
+    theme: PropTypes.object.isRequired,
+    setImageFiles: PropTypes.func.isRequired,
+    setUploadedImages: PropTypes.func.isRequired
+};
+
+CreateEditEducationPost.propTypes = {
+    onSubmit: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    post: PropTypes.object
 };
 
 export default CreateEditEducationPost;

@@ -1,6 +1,7 @@
 // src/components/Education/userEducation/listUserEducationPost.jsx
 import UserEducationCard from './userEducationPostCard';
-import React, {useState} from 'react';
+import {useState} from 'react';
+import PropTypes from 'prop-types';
 import './styles/listUserEducationPostStyles.css';
 
 const ListUserEducationPost = ({ educations, onEdit, onDelete, onLike, onComment }) => {
@@ -63,5 +64,13 @@ const ListUserEducationPost = ({ educations, onEdit, onDelete, onLike, onComment
         </div>
       );
     };
+
+ListUserEducationPost.propTypes = {
+  educations: PropTypes.array.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onLike: PropTypes.func,
+  onComment: PropTypes.func
+};
 
 export default ListUserEducationPost;

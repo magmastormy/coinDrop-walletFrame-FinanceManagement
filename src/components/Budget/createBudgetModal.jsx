@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import budgetService from '../../services/budgetService';
 import dayjs from 'dayjs';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -189,6 +190,16 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             </DialogActions>
         </Dialog>
     );
+};
+
+CreateBudgetModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCreateBudget: PropTypes.func.isRequired,
+  categories: PropTypes.array.isRequired,
+  wallets: PropTypes.array,
+  userId: PropTypes.string,
+  budgetData: PropTypes.object
 };
 
 export default CreateBudgetModal;

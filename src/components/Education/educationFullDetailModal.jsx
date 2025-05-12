@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faHeart, faComment } from '@fortawesome/free-solid-svg-icons';
@@ -106,6 +107,27 @@ const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
       </motion.div>
     </AnimatePresence>
   );
+};
+
+EducationFullDetailModal.propTypes = {
+  education: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    details: PropTypes.string.isRequired,
+    author: PropTypes.shape({
+      username: PropTypes.string.isRequired,
+      profileImage: PropTypes.string
+    }).isRequired,
+    date: PropTypes.string.isRequired,
+    likes: PropTypes.array,
+    comments: PropTypes.array,
+    tags: PropTypes.array,
+    images: PropTypes.array,
+    isLiked: PropTypes.bool
+  }).isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onLike: PropTypes.func
 };
 
 export default EducationFullDetailModal;

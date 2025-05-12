@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 import './styles/profileModal.css';
 
 const ProfileModal = ({ isOpen, onClose, title, children }) => {
@@ -42,6 +43,13 @@ const ProfileModal = ({ isOpen, onClose, title, children }) => {
             </div>
         </>
     );
+};
+
+ProfileModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    title: PropTypes.string.isRequired,
+    children: PropTypes.node.isRequired
 };
 
 export default ProfileModal;

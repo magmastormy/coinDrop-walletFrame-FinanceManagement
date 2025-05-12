@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import Grid from '@mui/material/Grid';
 import BudgetCard from './budgetCard';
 
@@ -17,5 +17,19 @@ const BudgetGrid = ({ budgets = [], onEdit, onDelete, onSelect, selectedBudget }
     ))}
   </Grid>
 );
+
+BudgetGrid.propTypes = {
+  budgets: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired
+    })
+  ),
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onSelect: PropTypes.func,
+  selectedBudget: PropTypes.shape({
+    _id: PropTypes.string
+  })
+};
 
 export default BudgetGrid;

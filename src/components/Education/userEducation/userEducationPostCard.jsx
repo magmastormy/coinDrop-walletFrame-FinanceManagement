@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTheme } from '../../../theme/ThemeContext';
 import './styles/userEducationPostCardStyles.css';
 import EducationImageGallery from '../educationImageGallery';
@@ -242,6 +243,34 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
             )}
         </Card>
     );
+};
+
+UserEducationPostCard.propTypes = {
+  post: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    details: PropTypes.string.isRequired,
+    createdAt: PropTypes.string,
+    user: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        _id: PropTypes.string,
+        username: PropTypes.string,
+        profilePicture: PropTypes.string
+      })
+    ]),
+    author: PropTypes.shape({
+      username: PropTypes.string
+    }),
+    likes: PropTypes.array,
+    comments: PropTypes.array,
+    images: PropTypes.array
+  }).isRequired,
+  onLike: PropTypes.func.isRequired,
+  onComment: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  currentUser: PropTypes.object
 };
 
 export default UserEducationPostCard;

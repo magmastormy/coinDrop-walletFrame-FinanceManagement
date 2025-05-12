@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import ChatMessages from './chatMessages';
 import ChatInput from './chatInput';
 import ChatHeader from './chatHeader';
@@ -45,6 +45,14 @@ const ChatContainer = ({
             />
         </div>
     );
+};
+
+ChatContainer.propTypes = {
+    messages: PropTypes.array.isRequired,
+    onSendMessage: PropTypes.func.isRequired,
+    onInsightAction: PropTypes.func.isRequired,
+    loading: PropTypes.bool,
+    error: PropTypes.string
 };
 
 export default ChatContainer;

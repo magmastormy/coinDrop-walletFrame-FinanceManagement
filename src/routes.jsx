@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { lazy, Suspense } from 'react';
+import PropTypes from 'prop-types';
 import LoadingSpinner from './components/LoadingSpinner';
 
 const LoginComponent = lazy(() => import('./components/Auth/userLoginForm'));
@@ -153,6 +154,14 @@ const AppRoutes = () => {
             </Suspense>
         </div>
     );
+};
+
+ProtectedRoute.propTypes = {
+    children: PropTypes.node.isRequired
+};
+
+PublicRoute.propTypes = {
+    children: PropTypes.node.isRequired
 };
 
 export default AppRoutes;

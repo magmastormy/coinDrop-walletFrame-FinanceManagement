@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faChartLine, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { motion } from 'framer-motion';
@@ -226,6 +227,26 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
       </Card>
     </motion.div>
   );
+};
+
+BudgetCard.propTypes = {
+  budget: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
+    amount: PropTypes.number.isRequired,
+    spent: PropTypes.number,
+    startDate: PropTypes.string.isRequired,
+    endDate: PropTypes.string.isRequired,
+    walletId: PropTypes.string,
+    category: PropTypes.shape({
+      name: PropTypes.string
+    }).isRequired
+  }).isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onSelect: PropTypes.func,
+  isSelected: PropTypes.bool
 };
 
 export default BudgetCard;

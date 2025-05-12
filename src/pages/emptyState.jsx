@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 
 const EmptyState = ({ icon, title, description, action }) => {
@@ -21,6 +21,13 @@ const EmptyState = ({ icon, title, description, action }) => {
             )}
         </motion.div>
     );
+};
+
+EmptyState.propTypes = {
+    icon: PropTypes.node.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    action: PropTypes.node
 };
 
 export default EmptyState;

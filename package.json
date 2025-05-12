@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && postcss src/**/*.css --dir dist/css",
-    "lint": "eslint .",
+    "lint": "eslint src",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -38,9 +38,7 @@ const DashboardManager = () => {
 
     // Use a staggered approach to rendering components
     useEffect(() => {
-        // Show the dashboard immediately
         setIsVisible(true);
-        
         // Delay loading charts slightly
         const chartsTimer = setTimeout(() => {
             setShowCharts(true);

@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faPlus,
-    faEdit,
-    faTrash,
     faCheck,
     faTimes,
     faExclamationTriangle,
@@ -24,7 +22,7 @@ const CategoryManager = () => {
     const { user } = useSelector(state => state.auth);
     const [newCategory, setNewCategory] = useState('');
     const [editingCategory, setEditingCategory] = useState(null);
-    const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [, setDeleteConfirm] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [txLoading, setTxLoading] = useState(false);

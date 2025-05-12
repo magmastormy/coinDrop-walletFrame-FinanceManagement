@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -22,11 +22,7 @@ const EducationManager = () => {
     const dispatch = useDispatch();
     const { educations, loading, error } = useSelector(state => state.education);
     const { user } = useAuth();
-    const { theme, isDarkMode } = useTheme();
-
-    useEffect(() => {
-        fetchEducationPosts();
-    }, [dispatch, user]);
+    const { theme } = useTheme();
 
     const fetchEducationPosts = async () => {
         dispatch(setLoading(true));
@@ -39,6 +35,10 @@ const EducationManager = () => {
             dispatch(setLoading(false));
         }
     };
+
+    useEffect(() => {
+        fetchEducationPosts();
+    }, [dispatch, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleLike = async (postId) => {
         try {

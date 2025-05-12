@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
     faWallet, 
     faChartLine, 
     faUsers, 
-    faGear,
     faBell,
     faUser
 } from '@fortawesome/free-solid-svg-icons';
@@ -67,7 +66,7 @@ const Home = () => {
                                     </p>
                                     <div className="flex flex-wrap gap-4">
                                         <button onClick={handleSignUpClick} className="btn-primary">
-                                            Get Started - It's Free
+                                            Get Started &mdash; It&apos;s Free
                                         </button>
                                         <button onClick={handleLoginClick} className="btn-secondary">
                                             Already have an account?
