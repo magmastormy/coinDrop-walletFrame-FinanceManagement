@@ -115,7 +115,7 @@ const ChatbotManager = () => {
 
             // Send message to backend, which will handle context fetching and AI response
             console.log('ChatbotManager: Sending message to backend');
-            const chatResponse = await zhipuaiModelService.sendMessage([...messages, userMessage]);
+                const chatResponse = await zhipuaiModelService.sendMessage([...messages, userMessage]);
             const response = chatResponse.response;
 
             console.log('ChatbotManager: Response received:', response);

@@ -210,18 +210,18 @@ async function getContext(userId) {
     let monthlyExpenses = 0, monthlyIncome = 0, savingsRate = 0;
     
     try {
-      const monthlyTx = await Transaction.find({ userId, date: { $gte: firstOfMonth } });
+    const monthlyTx = await Transaction.find({ userId, date: { $gte: firstOfMonth } });
       console.log(`[contextService:getContext] Found ${monthlyTx.length} transactions for current month`);
       
       monthlyExpenses = monthlyTx
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
       monthlyIncome = monthlyTx
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0);
       savingsRate = monthlyIncome > 0
-        ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
-        : 0;
+      ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
+      : 0;
     } catch (error) {
       console.error(`[contextService:getContext] Error calculating monthly summary: ${error.message}`);
     }

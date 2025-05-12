@@ -270,7 +270,6 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
             return response.url;
         } catch (error) {
             console.error('[CreateEditEducation] Error uploading image:', error);
-            toast.error(error.message || ' [CreateEditEducation] Failed to upload image');
             return null;
         } finally {
             setIsUploading(false);
@@ -335,7 +334,6 @@ const CreateEditEducationPost = ({ onSubmit, onClose, post = null }) => {
                         }
                     });
                     
-                    toast.success(isEditMode ? '[CreateEditEducation] Post updated successfully' : '[CreateEditEducation] Post created successfully');
                     onClose();
                 } else {
                     throw new Error('[CreateEditEducation] Failed to save post');
