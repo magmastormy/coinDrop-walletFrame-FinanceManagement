@@ -77,6 +77,17 @@ export const ThemeProvider = ({ children }) => {
     document.body.style.backgroundColor = theme.background.primary;
     document.body.style.color = theme.text.primary;
     
+    // Set CSS variables for text color overrides
+    if (isDarkMode) {
+      document.documentElement.style.setProperty('--override-text-color', '#E5E5E5');
+      document.documentElement.style.setProperty('--override-text-secondary', '#B0BEC5');
+      document.documentElement.style.setProperty('--override-heading-color', '#FFFFFF');
+    } else {
+      document.documentElement.style.setProperty('--override-text-color', '#333333');
+      document.documentElement.style.setProperty('--override-text-secondary', '#555555');
+      document.documentElement.style.setProperty('--override-heading-color', '#222222');
+    }
+    
     setIsThemeLoaded(true);
   }, [isDarkMode, theme]);
 

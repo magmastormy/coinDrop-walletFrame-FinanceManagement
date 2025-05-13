@@ -63,17 +63,17 @@ const AppContent = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <SidebarProvider>
-        <Provider store={store}>
+    <Provider store={store}>
+      <ThemeProvider>
+        <SidebarProvider>
           <DataManager>
             <Router>
               <AppContent />
             </Router>
           </DataManager>
-        </Provider>
-      </SidebarProvider>
-    </ThemeProvider>
+        </SidebarProvider>
+      </ThemeProvider>
+    </Provider>
   );
 }
 

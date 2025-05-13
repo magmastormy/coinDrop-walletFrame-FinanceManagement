@@ -1,0 +1,134 @@
+.delete-wallet-dialog-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.delete-wallet-dialog {
+    background-color: var(--background-secondary, #fff);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    padding: 24px;
+    color: var(--text-primary, #333);
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.dialog-header h2 {
+    margin: 0 0 0 12px;
+    font-size: 1.5rem;
+    color: var(--text-primary, #333);
+}
+
+.warning-icon {
+    color: #ff9800;
+    font-size: 1.5rem;
+}
+
+.system-icon {
+    color: #4caf50;
+    font-size: 1.5rem;
+}
+
+.dialog-content {
+    margin-bottom: 24px;
+}
+
+.dialog-content p {
+    margin: 8px 0;
+    line-height: 1.5;
+    color: var(--text-primary, #333);
+}
+
+.balance-warning {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: rgba(255, 152, 0, 0.1);
+    border-left: 4px solid #ff9800;
+    border-radius: 4px;
+}
+
+.transfer-section {
+    margin-top: 16px;
+}
+
+.wallet-select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: var(--background-primary, #fff);
+    color: var(--text-primary, #333);
+    margin-top: 8px;
+    font-size: 1rem;
+}
+
+.system-wallet-notice {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+    padding: 12px;
+    background-color: rgba(76, 175, 80, 0.1);
+    border-left: 4px solid #4caf50;
+    border-radius: 4px;
+}
+
+.system-wallet-notice .wallet-icon {
+    color: #4caf50;
+    font-size: 1.2rem;
+    margin-right: 12px;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cancel-btn, .ok-btn {
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: none;
+    background-color: #e0e0e0;
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cancel-btn:hover, .ok-btn:hover {
+    background-color: #d0d0d0;
+}
+
+.delete-btn {
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: none;
+    background-color: #f44336;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: #e53935;
+}
+
+.delete-btn:disabled, .cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

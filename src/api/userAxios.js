@@ -121,7 +121,6 @@ axiosInstance.interceptors.response.use(
                     return Promise.reject(refreshError);
                 }
             } else {
-                // For other authentication errors, logout and redirect
                 store.dispatch(logout());
                 window.location.href = '/login';
             }

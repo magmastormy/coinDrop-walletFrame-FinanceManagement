@@ -39,17 +39,27 @@ const walletService = {
     updateWallet: async (id, walletData) => {
         try {
             const response = await axiosInstance.put(`${API_URL}/${id}`, walletData);
-            //console.log("[walletService: update Wallet] response: ", response);
-            return response.data.wallet;
+            console.log("[walletService: update Wallet] response: ", response);
+            return response.wallet;
         } catch (error) {
             throw error;
         }
     },
 
-    deleteWallet: async (id) => {
-        const response = await axiosInstance.delete(`${API_URL}/${id}`);
-        //console.log("[walletService: delete Wallet] response: ", response);
-        return response.data;
+    deleteWallet: async (id, transferToWalletId = null) => {
+        try {
+            const url = `${API_URL}/${id}`;
+            const config = transferToWalletId ? {
+                data: { transferToWalletId }
+            } : {};
+            
+            const response = await axiosInstance.delete(url, config);
+            console.log("[walletService: delete Wallet] response: ", response);
+            return response;
+        } catch (error) {
+            console.error('[walletService: delete Wallet] Error:', error);
+            throw error;
+        }
     },
 
     getWalletStats: async () => {

@@ -25,7 +25,7 @@ import Typography from '@mui/material/Typography';
 import savingsGoalService from '../../services/savingsGoalService';
 import { toast } from 'react-toastify';
 
-const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
+const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets }) => {
   const { user } = useSelector(state => state.auth);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savingsGoals, setSavingsGoals] = useState([]);
@@ -146,6 +146,13 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
     handleSaveToGoal();
   };
 
+  // Find wallet name if wallets prop is provided and budget.walletId exists
+  let walletName = '';
+  if (wallets && budget.walletId) {
+    const wallet = wallets.find(w => w._id === budget.walletId);
+    walletName = wallet ? wallet.name : '';
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
       <Card
@@ -161,6 +168,14 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected }) => {
           subheader={budget.type.charAt(0).toUpperCase() + budget.type.slice(1)}
         />
         <CardContent>
+          {/* Wallet Name Tag */}
+          {walletName && (
+            <Box mb={1}>
+              <Typography variant="caption" color="primary" sx={{ fontWeight: 600, letterSpacing: 0.5, background: '#e3f2fd', px: 1.2, py: 0.3, borderRadius: 1, display: 'inline-block' }}>
+                Wallet: {walletName}
+              </Typography>
+            </Box>
+          )}
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
             <Typography variant="body2">Progress</Typography>
             <Typography variant="body2">{calculateProgress().toFixed(1)}%</Typography>
@@ -246,7 +261,11 @@ BudgetCard.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onSelect: PropTypes.func,
-  isSelected: PropTypes.bool
+  isSelected: PropTypes.bool,
+  wallets: PropTypes.arrayOf(PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired
+  }))
 };
 
 export default BudgetCard;

@@ -127,27 +127,54 @@ export const savingsAccountService = {
 
     deleteSavingsAccount: async (accountId, transferToWalletId) => {
         try {
+            // Validate accountId
+            if (!accountId) {
+                throw new Error('Account ID is required');
+            }
+            
+            // Validate accountId format (should be a valid MongoDB ObjectId)
+            if (!/^[0-9a-fA-F]{24}$/.test(accountId)) {
+                console.error(`[savingsAccountService - deleteSavingsAccount] Invalid account ID format: ${accountId}`);
+                throw new Error('Invalid account ID format');
+            }
+            
+            // Validate transferToWalletId if provided
+            if (transferToWalletId && !/^[0-9a-fA-F]{24}$/.test(transferToWalletId)) {
+                console.error(`[savingsAccountService - deleteSavingsAccount] Invalid wallet ID format: ${transferToWalletId}`);
+                throw new Error('Invalid wallet ID format');
+            }
+            
             console.log(`[savingsAccountService - deleteSavingsAccount] Deleting account ${accountId} and transferring balance to wallet ${transferToWalletId || 'none'}`);
             
-            // Get the current user ID from your auth context
-            const userId = localStorage.getItem('userId'); // Or however you store the current user ID
-            
             const data = { 
-                transferToWalletId: transferToWalletId || null,
-                userId // Include userId in the request as a fallback
+                transferToWalletId: transferToWalletId || null
+                // Don't include userId in the request body as it should be taken from the auth token
             };
             
             console.log(`[savingsAccountService - deleteSavingsAccount] Request data:`, data);
             
+            // Make sure the auth token is being sent in the headers (handled by axiosInstance)
             const response = await axiosInstance.delete(`${API_URL}/${accountId}`, {
                 data: data
             });
             
-            console.log("[savingsAccountService - deleteSavingsAccount] Account deleted successfully:", response.data);
-            return response.data;
+            console.log("[savingsAccountService - deleteSavingsAccount] Account deleted successfully:", response);
+            return response;
         } catch (error) {
             console.error("[savingsAccountService - deleteSavingsAccount] Error deleting savings account:", error);
-            console.error("Response data:", error.response?.data);
+            
+            // Enhanced error logging
+            if (error.response) {
+                console.error("Response status:", error.response.status);
+                console.error("Response data:", error.response.data);
+                console.error("Request URL:", error.config?.url);
+                console.error("Request data:", error.config?.data);
+            } else if (error.request) {
+                console.error("No response received:", error.request);
+            } else {
+                console.error("Error setting up request:", error.message);
+            }
+            
             throw error;
         }
     },

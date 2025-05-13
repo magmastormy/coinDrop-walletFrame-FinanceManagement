@@ -80,7 +80,7 @@ const WalletList = ({ wallets = [], onWalletUpdate, onWalletDelete, onTransfer }
                                 wallet={wallet} 
                                 wallets={wallets}
                                 onUpdate={onWalletUpdate}
-                                onDelete={onWalletDelete}
+                                onDelete={onWalletDelete} /* This prop name must match what WalletCard expects */
                                 onTransfer={onTransfer}
                             />
                         </motion.div>

@@ -23,6 +23,7 @@ import savingsAccountService from '../../services/savingsAccountService';
 import walletService from '../../services/walletService';
 import { motion } from 'framer-motion';
 import './styles/savingsAccountManagerStyles.css';
+import '../shared/componentScrollFix.css';
 import ReportSection from '../Common/ReportSection';
 
 const SavingsAccountManager = () => {
@@ -147,17 +148,34 @@ const SavingsAccountManager = () => {
             
             console.log(`Deleting account with ID: ${accountToDelete._id}, transferring to wallet: ${walletIdToUse || 'none'}`);
             
-            await savingsAccountService.deleteSavingsAccount(
-                accountToDelete._id, 
-                walletIdToUse
-            );
-            
-            setAccounts(prevAccounts => 
-                prevAccounts.filter(account => account._id !== accountToDelete._id)
-            );
-            
-            if (hasBalance && walletIdToUse) {
-                await fetchWallets();
+            try {
+                // Make sure we're using the correct API endpoint and sending proper data
+                const response = await savingsAccountService.deleteSavingsAccount(
+                    accountToDelete._id, 
+                    walletIdToUse
+                );
+                
+                console.log('Delete account response:', response);
+                
+                // Update the accounts list after successful deletion
+                setAccounts(prevAccounts => 
+                    prevAccounts.filter(account => account._id !== accountToDelete._id)
+                );
+                
+                // Refresh wallets if money was transferred
+                if (hasBalance) {
+                    await fetchWallets();
+                }
+                
+                // Show success message
+                // You could add a toast notification here
+            } catch (error) {
+                console.error('Error in delete operation:', error);
+                if (error.response) {
+                    console.error('Response status:', error.response.status);
+                    console.error('Response data:', error.response.data);
+                }
+                throw error; // Re-throw to be caught by the outer catch block
             }
             
             setDeleteModalOpen(false);

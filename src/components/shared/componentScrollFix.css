@@ -1,0 +1,158 @@
+/* Component Scroll Fix - Ensures proper scrolling in all components */
+
+/* Main component containers */
+.transaction-manager,
+.savings-account-manager,
+.savings-goal-manager,
+.budget-manager {
+  height: auto;
+  min-height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+/* Global text color override for light mode */
+:root[data-theme="light"] {
+  --override-text-color: #333333;
+  --override-text-secondary: #555555;
+  --override-heading-color: #222222;
+}
+
+/* Global text color override for dark mode */
+:root[data-theme="dark"] {
+  --override-text-color: #E5E5E5;
+  --override-text-secondary: #B0BEC5;
+  --override-heading-color: #FFFFFF;
+}
+
+/* Universal text color override */
+* {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Ensure proper scrolling in main content area */
+.main-content {
+  overflow-y: auto !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  padding-bottom: 20px !important;
+}
+
+/* Override all MUI components text colors */
+
+/* Typography */
+.MuiTypography-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+.MuiTypography-colorTextSecondary {
+  color: var(--override-text-secondary, #555555) !important;
+}
+
+.MuiTypography-h1,
+.MuiTypography-h2,
+.MuiTypography-h3,
+.MuiTypography-h4,
+.MuiTypography-h5,
+.MuiTypography-h6 {
+  color: var(--override-heading-color, #222222) !important;
+}
+
+/* Cards */
+.MuiCard-root {
+  background-color: var(--background-secondary, #fff) !important;
+}
+
+.MuiCardContent-root * {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Buttons - special case for contained buttons */
+.MuiButton-contained {
+  color: white !important;
+}
+
+.MuiButton-outlined,
+.MuiButton-text {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Inputs */
+.MuiInputBase-root,
+.MuiInput-root,
+.MuiOutlinedInput-root,
+.MuiFilledInput-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Labels */
+.MuiFormLabel-root,
+.MuiInputLabel-root {
+  color: var(--override-text-secondary, #555555) !important;
+}
+
+/* Icons */
+.MuiSvgIcon-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Tables */
+.MuiTableCell-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* List items */
+.MuiListItem-root,
+.MuiListItemText-primary,
+.MuiListItemText-secondary {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Dialogs and modals */
+.MuiDialog-paper {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  background-color: var(--background-secondary, #fff) !important;
+}
+
+.MuiDialog-paper * {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Tabs */
+.MuiTab-root {
+  color: var(--override-text-secondary, #555555) !important;
+}
+
+.Mui-selected.MuiTab-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Menu items */
+.MuiMenuItem-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Checkboxes, Radio buttons, Switches */
+.MuiCheckbox-root,
+.MuiRadio-root,
+.MuiSwitch-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Special case for contained buttons to preserve their text color */
+.MuiButton-containedPrimary {
+  color: white !important;
+}
+
+/* Special case for icon buttons */
+.MuiIconButton-root {
+  color: var(--override-text-color, #333333) !important;
+}
+
+/* Fix for tooltips */
+.MuiTooltip-tooltip {
+  color: white !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}

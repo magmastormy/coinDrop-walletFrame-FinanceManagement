@@ -53,12 +53,23 @@ const WalletManager = () => {
         }
       };
 
-    const handleDeleteWallet = async (walletId) => {
+    const handleDeleteWallet = async (walletId, transferToWalletId = null) => {
         try {
-            await walletService.deleteWallet(walletId);
-            fetchWallets();
+            dispatch(setLoading(true));
+            const result = await walletService.deleteWallet(walletId, transferToWalletId);
+            
+            // Show success toast if money was transferred
+            if (result.transferredAmount > 0) {
+                // If you have a toast notification system, you can use it here
+                console.log(`Successfully transferred $${result.transferredAmount} to ${transferToWalletId ? 'selected wallet' : 'system wallet'}`);
+            }
+            
+            await fetchWallets();
         } catch (err) {
-            dispatch(setError(err.message));
+            console.error('Error deleting wallet:', err);
+            dispatch(setError(err.response?.data?.error || err.message));
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 
@@ -110,7 +121,7 @@ const WalletManager = () => {
                     <WalletList 
                         wallets={wallets}
                         onWalletSelect={handleWalletSelect}
-                        onDelete={handleDeleteWallet}
+                        onWalletDelete={handleDeleteWallet} /* Changed from onDelete to match WalletList's expected prop name */
                         onWalletUpdate={handleWalletUpdate}
                         onTransfer={handleTransfer} 
                     />

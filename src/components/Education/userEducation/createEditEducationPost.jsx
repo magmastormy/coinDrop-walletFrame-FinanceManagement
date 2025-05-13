@@ -276,7 +276,6 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
         try {
             if (isSubmitting) return;
             setIsSubmitting(true);
@@ -285,24 +284,49 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
             // Validate required fields
             if (!title.trim()) {
                 setError('Title is required');
+                setIsSubmitting(false);
                 return;
             }
             
-            // Count pending images to upload
-            const pendingImagesToUpload = uploadedImages.filter(img => img.file && !img.uploaded);
+            // First, upload any pending images
+            let processedContent = editor.getHTML();
+            const pendingImagesToUpload = uploadedImages.filter(img => img.file && !img.isUploaded && img.pendingUpload);
             console.log('[CreateEditEducation] Pending images to upload:', pendingImagesToUpload.length);
             
-            // Create the post data
+            // Upload all pending images first
+            if (pendingImagesToUpload.length > 0) {
+                toast.info(`Uploading ${pendingImagesToUpload.length} image(s)...`);
+                
+                // Upload each image and get the URLs
+                const uploadResults = [];
+                for (const img of pendingImagesToUpload) {
+                    try {
+                        const uploadedImage = await ImageService.uploadImage(img.file, 'education');
+                        if (uploadedImage && uploadedImage.url) {
+                            // Replace the blob URL in the content with the actual uploaded URL
+                            processedContent = processedContent.replace(img.preview, uploadedImage.url);
+                            uploadResults.push({
+                                ...uploadedImage,
+                                tempId: img.tempId,
+                                originalPreview: img.preview
+                            });
+                        }
+                    } catch (uploadError) {
+                        console.error('Error uploading image:', uploadError);
+                        toast.error(`Failed to upload image: ${uploadError.message || 'Unknown error'}`);
+                    }
+                }
+                
+                console.log('[CreateEditEducation] Uploaded images:', uploadResults);
+            }
+            
+            // Create the post data with the processed content that has real image URLs
             const postData = {
                 title: title,
-                details: editor.getHTML(),
-                pendingImages: pendingImagesToUpload.map(img => ({
-                    file: img.file,
-                    preview: img.preview,
-                    tempId: img.tempId
-                })),
+                details: processedContent,
+                // No need to include pendingImages as they've been uploaded and URLs replaced in the content
                 existingImageIds: uploadedImages
-                    .filter(img => img.uploaded && img._id)
+                    .filter(img => img.isExisting && img._id)
                     .map(img => img._id)
             };
             

@@ -5,18 +5,17 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%,rgb(49, 66, 92) 100%);
     padding: 2rem;
 }
 
 .registration-card {
-    background: white;
-    border-radius: 1.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    padding: 3rem;
-    width: 100%;
-    max-width: 500px;
-    transition: transform 0.3s ease;
+  background-color: #f5f7fa;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 640px; /* Adjust width as needed */
+  max-width: 90%;
 }
 
 .registration-card:hover {
@@ -97,6 +96,18 @@
     color: #7f8c8d;
     font-size: 0.85rem;
     line-height: 1.4;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none; /* For Internet Explorer/Edge */
+}
+
+input[type="password"]::-webkit-reveal,
+input[type="password"]::-webkit-outer-spin-button,
+input[type="password"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* For Chrome, Safari, Opera */
+    margin: 0;
 }
 
 .registration-submit-button {

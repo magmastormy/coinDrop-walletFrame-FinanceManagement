@@ -47,13 +47,38 @@ export const savingsGoalService = {
     },
 
     // Delete savings goal
-    deleteSavingsGoal: async (goalId) => {
+    deleteSavingsGoal: async (goalId, transferOptions = {}) => {
         try {
-            const response = await axiosInstance.delete(`${API_URL}/${goalId}`);
-            console.log("[savingsGoalService - deleteSavingsGoal] Savings goal deleted successfully:", response.data);
-            return response.data;
+            if (!goalId) {
+                throw new Error('Goal ID is required');
+            }
+            
+            // Validate goalId format (should be a valid MongoDB ObjectId)
+            if (!/^[0-9a-fA-F]{24}$/.test(goalId)) {
+                console.error(`[savingsGoalService - deleteSavingsGoal] Invalid goal ID format: ${goalId}`);
+                throw new Error('Invalid goal ID format');
+            }
+            
+            // Configure request with transfer options in the body
+            const config = {
+                data: transferOptions // Send transfer options in the request body
+            };
+            
+            console.log(`[savingsGoalService - deleteSavingsGoal] Deleting goal ${goalId} with transfer options:`, transferOptions);
+            const response = await axiosInstance.delete(`${API_URL}/${goalId}`, config);
+            console.log("[savingsGoalService - deleteSavingsGoal] response: ", response);
+            
+            // Log success with status code
+            console.log(`[savingsGoalService - deleteSavingsGoal] Savings goal deleted successfully (${response.status}):`, response.data);
+            
+            // Return the data portion of the response
+            return response;
         } catch (error) {
             console.error("[savingsGoalService - deleteSavingsGoal] Error deleting savings goal:", error);
+            if (error.response) {
+                console.error("Response status:", error.response.status);
+                console.error("Response data:", error.response.data);
+            }
             throw error;
         }
     },

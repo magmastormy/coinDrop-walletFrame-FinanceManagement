@@ -12,10 +12,12 @@ import {
     faCreditCard,
     faUniversity,
     faPiggyBank,
-    faFileDownload
+    faFileDownload,
+    faShieldAlt
 } from '@fortawesome/free-solid-svg-icons';
 import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
+import DeleteWalletDialog from './deleteWalletDialog';
 import ReportButton from '../Common/reportButton';
 import './styles/walletCardStyles.css';
 
@@ -23,10 +25,13 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
     const [showOptions, setShowOptions] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const optionsButtonRef = useRef(null);
     const [optionsPosition, setOptionsPosition] = useState({ top: 0, left: 0 });
+    
+    // Filter out the current wallet from the list of other wallets
+    const otherWallets = wallets.filter(w => w._id !== wallet._id);
 
     const formatBalance = (balance) => {
         return new Intl.NumberFormat('en-US', {
@@ -55,30 +60,37 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
     const handleOptionsToggle = (e) => {
         e.stopPropagation();
         setShowOptions(prev => !prev);
-        setShowDeleteConfirm(false);
     };
 
     const handleOutsideClick = useCallback((e) => {
         if (optionsButtonRef.current && !optionsButtonRef.current.contains(e.target)) {
             setShowOptions(false);
-            setShowDeleteConfirm(false);
         }
     }, []);
 
-    const handleDelete = () => {
-        if (showDeleteConfirm) {
-            onDelete(wallet._id);
-            setShowOptions(false);
-            setShowDeleteConfirm(false);
-        } else {
-            setShowDeleteConfirm(true);
+    const handleDeleteClick = () => {
+        setShowOptions(false);
+        setShowDeleteDialog(true);
+    };
+    
+    const handleDeleteConfirm = async (walletId, transferToWalletId) => {
+        try {
+            // Check if onDelete is a function before calling it
+            if (typeof onDelete === 'function') {
+                return await onDelete(walletId, transferToWalletId);
+            } else {
+                console.error('Error: onDelete is not a function', onDelete);
+                throw new Error('Delete function is not available');
+            }
+        } catch (error) {
+            console.error('Error deleting wallet:', error);
+            throw error;
         }
     };
 
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
             setShowOptions(false);
-            setShowDeleteConfirm(false);
         }
     };
 
@@ -182,13 +194,15 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
                                     <span>Edit</span>
                                 </motion.button>
                                 <motion.button 
-                                    onClick={handleDelete}
+                                    onClick={handleDeleteClick}
                                     role="menuitem"
-                                    className={`option-item ${showDeleteConfirm ? 'delete-confirm' : 'delete'}`}
+                                    className="option-item delete"
                                     whileHover={{ x: 5 }}
+                                    disabled={wallet.isSystemWallet && wallet.balance > 0}
+                                    title={wallet.isSystemWallet && wallet.balance > 0 ? 'Cannot delete system wallet with balance' : 'Delete wallet'}
                                 >
-                                    <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-                                    <span>{showDeleteConfirm ? 'Confirm Delete?' : 'Delete'}</span>
+                                    <FontAwesomeIcon icon={wallet.isSystemWallet ? faShieldAlt : faTrash} aria-hidden="true" />
+                                    <span>{wallet.isSystemWallet ? 'Protected' : 'Delete'}</span>
                                 </motion.button>
                                 <motion.button 
                                     onClick={() => {
@@ -275,30 +289,15 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
                 document.body
             )}
 
-            {showDeleteConfirm && createPortal(
-                <div className="modal-overlay">
-                    <div className="delete-confirm-modal">
-                        <h3>Delete Wallet</h3>
-                        <p>Are you sure you want to delete this wallet?</p>
-                        <div className="button-group">
-                            <button
-                                className="btn btn-danger"
-                                onClick={() => {
-                                    onDelete(wallet._id);
-                                    setShowDeleteConfirm(false);
-                                }}
-                            >
-                                Delete
-                            </button>
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setShowDeleteConfirm(false)}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>,
+            {showDeleteDialog && createPortal(
+                <DeleteWalletDialog
+                    isOpen={showDeleteDialog}
+                    onClose={() => setShowDeleteDialog(false)}
+                    onConfirm={handleDeleteConfirm}
+                    wallet={wallet}
+                    otherWallets={otherWallets}
+                    isSystemWallet={wallet.isSystemWallet && wallet.balance > 0}
+                />,
                 document.body
             )}
 

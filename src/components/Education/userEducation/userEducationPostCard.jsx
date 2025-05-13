@@ -5,13 +5,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
     faHeart, 
     faComment, 
-    faImages, 
-    faImage, 
-    faEye,
+    faImage,
     faCheck,
-    faChartBar
+    faCalendarAlt,
+    faUser,
+    faEllipsisV
 } from '@fortawesome/free-solid-svg-icons';
 import { faHeart as farHeart } from '@fortawesome/free-regular-svg-icons';
+import UserEducationFullDetailModal from './userEducationFullDetailModal';
 import { useTheme } from '../../../theme/ThemeContext';
 import './styles/userEducationPostCardStyles.css';
 import EducationImageGallery from '../educationImageGallery';
@@ -44,6 +45,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
     const [newComment, setNewComment] = useState('');
     const [showImageGallery, setShowImageGallery] = useState(false);
     const [showFullContent, setShowFullContent] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [readProgress, setReadProgress] = useState(
         post.readProgress?.[currentUser?.id] || 0
     );
@@ -127,180 +129,192 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                 boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
             }}
             sx={{ 
-                backgroundColor: theme.background.primary,
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                backgroundColor: theme.background.secondary,
                 color: theme.text.primary,
                 borderRadius: '12px',
                 overflow: 'hidden',
-                transition: theme.transition,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative'
+                transition: 'all 0.3s ease',
+                border: `1px solid ${theme.border || 'rgba(0,0,0,0.1)'}`,
+                cursor: 'pointer'
             }}
+            onClick={() => setIsModalOpen(true)}
         >
-            <CardActionArea onClick={handleCardClick}>
-                <CardMedia
-                    component="div"
-                    sx={{ 
-                        height: { xs: 180, md: 200 },
-                        position: 'relative',
-                        backgroundColor: theme.background.tertiary
-                    }}
-                >
-                    {post.images && post.images.length > 0 ? (
-                        <>
-                            <img
-                                src={post.images[0].url}
-                                alt={post.title}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                }}
-                                loading="lazy"
-                            />
-                            {post.images.length > 1 && (
-                                <Box 
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: '10px',
-                                        right: '10px',
-                                        bgcolor: 'rgba(0,0,0,0.6)',
-                                        color: 'white',
-                                        px: 1,
-                                        py: 0.5,
-                                        borderRadius: '12px',
-                                        fontSize: '0.75rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '4px'
-                                    }}
-                                >
-                                    <FontAwesomeIcon icon={faImages} />
-                                    {post.images.length}
-                                </Box>
-                            )}
-                        </>
-                    ) : (
-                        <Box sx={{ 
-                            bgcolor: theme.background.tertiary, 
-                            height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <FontAwesomeIcon icon={faImage} size="2x" opacity={0.4} />
-                        </Box>
-                    )}
-                </CardMedia>
-                
-                <CardContent sx={{ p: 2, pb: 1, flexGrow: 1 }}>
-                    {/* Author & Date */}
+            <CardMedia
+                component="div"
+                sx={{ 
+                    height: { xs: 180, md: 200 },
+                    position: 'relative',
+                    backgroundColor: theme.background.tertiary
+                }}
+            >
+                {post.images && post.images.length > 0 ? (
+                    <>
+                        <img
+                            src={post.images[0].url}
+                            alt={post.title}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center'
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowImageGallery(true);
+                            }}
+                        />
+                        {post.images.length > 1 && (
+                            <Box sx={{
+                                position: 'absolute',
+                                bottom: 10,
+                                right: 10,
+                                backgroundColor: 'rgba(0,0,0,0.6)',
+                                color: '#fff',
+                                borderRadius: '12px',
+                                px: 1,
+                                py: 0.5,
+                                fontSize: '0.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}>
+                                <FontAwesomeIcon icon={faImage} size="xs" />
+                                {post.images.length}
+                            </Box>
+                        )}
+                    </>
+                ) : (
                     <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        mb: 1,
-                        justifyContent: 'space-between'
+                        bgcolor: theme.background.tertiary, 
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar 
-                                src={post.user?.profilePicture} 
-                                alt={post.user?.username || 'User'}
-                                sx={{ width: 24, height: 24, mr: 1 }}
-                            />
+                        <FontAwesomeIcon icon={faImage} size="2x" opacity={0.4} />
+                    </Box>
+                )}
+            </CardMedia>
+            
+            <CardContent sx={{ p: 2, pb: 1, flexGrow: 1 }}>
+                {/* Author & Date */}
+                <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1.5
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar 
+                            src={post.user?.profilePicture} 
+                            alt={post.user?.username || 'User'}
+                            sx={{ width: 32, height: 32 }}
+                        />
+                        <Box>
                             <Typography 
-                                variant="caption"
+                                variant="subtitle2" 
+                                sx={{ 
+                                    fontWeight: 600,
+                                    color: theme.text.primary,
+                                    fontSize: '0.875rem',
+                                    lineHeight: 1.2
+                                }}
+                            >
+                                {post.author?.username || 'Anonymous User'}
+                            </Typography>
+                            <Typography 
+                                variant="caption" 
                                 sx={{ 
                                     color: theme.text.secondary,
-                                    fontWeight: 500,
+                                    fontSize: '0.75rem',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 0.5
                                 }}
                             >
-                                {post.author?.username || 'Anonymous User'}
-                                {readProgress === 100 && (
-                                    <FontAwesomeIcon icon={faCheck} style={{ color: theme.success }} />
-                                )}
+                                <FontAwesomeIcon icon={faCalendarAlt} size="xs" />
+                                {post.createdAt ? getTimeAgo(post.createdAt) : new Date(post.date).toLocaleDateString()}
                             </Typography>
                         </Box>
-                        
-                        <Typography 
-                            variant="caption"
-                            sx={{ color: theme.text.secondary }}
-                        >
-                            {post.createdAt ? getTimeAgo(post.createdAt) : new Date(post.date).toLocaleDateString()}
-                        </Typography>
-                        
-                        {/* Options Menu for author */}
-                        {isAuthor && (
-                            <IconButton 
-                                onClick={handleMenuClick}
-                                size="small"
-                                sx={{ 
-                                    color: theme.text.secondary,
-                                    ml: 1,
-                                    p: 0.5
-                                }}
-                            >
-                                <MoreVertIcon fontSize="small" />
-                            </IconButton>
-                        )}
                     </Box>
                     
-                    {/* Title */}
-                    <Typography 
-                        variant="h6" 
-                        gutterBottom
-                        sx={{ 
-                            color: theme.text.heading,
-                            fontSize: '1.1rem',
-                            fontWeight: 600,
-                            lineHeight: 1.3,
-                            mb: 1
-                        }}
-                    >
-                        {post.title}
-                    </Typography>
-
-                    {/* Content Preview - Exactly 10 lines */}
-                    <Box 
-                        className="education-content-preview"
-                        sx={{ 
-                            color: theme.text.secondary,
-                            mb: 1,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 10,
-                            WebkitBoxOrient: 'vertical',
-                            textOverflow: 'ellipsis',
-                            lineHeight: '1.4em',
-                            maxHeight: 'calc(1.4em * 10)' // Exactly 10 lines
-                        }}
-                        dangerouslySetInnerHTML={{ __html: post.details }}
-                    />
-                    
-
-                    
-                    {/* Read Progress */}
-                    {readProgress > 0 && (
-                        <Box sx={{ width: '100%', mt: 1 }}>
-                            <LinearProgress 
-                                variant="determinate" 
-                                value={readProgress} 
-                                sx={{ 
-                                    height: 4, 
-                                    borderRadius: 2,
-                                    backgroundColor: `${theme.primary}20`,
-                                    '& .MuiLinearProgress-bar': {
-                                        backgroundColor: theme.primary
-                                    }
-                                }}
-                            />
-                        </Box>
+                    {isAuthor && (
+                        <IconButton 
+                            size="small" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleMenuClick(e);
+                            }}
+                            sx={{ color: theme.text.secondary }}
+                        >
+                            <FontAwesomeIcon icon={faEllipsisV} size="xs" />
+                        </IconButton>
                     )}
-                </CardContent>
-            </CardActionArea>
+                </Box>
+
+                {/* Title */}
+                <Typography 
+                    variant="h6" 
+                    gutterBottom
+                    sx={{ 
+                        color: theme.text.heading,
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                        mb: 1
+                    }}
+                >
+                    {post.title}
+                </Typography>
+
+                {/* Content Preview - Limited to 5 lines */}
+                <Box 
+                    className="education-content-preview"
+                    sx={{ 
+                        color: theme.text.secondary,
+                        mb: 1,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 5,
+                        WebkitBoxOrient: 'vertical',
+                        textOverflow: 'ellipsis',
+                        lineHeight: '1.4em',
+                        maxHeight: 'calc(1.4em * 5)', // Exactly 5 lines
+                        cursor: 'pointer',
+                        '& img': {
+                            maxWidth: '100%',
+                            height: 'auto',
+                            display: 'block',
+                            margin: '10px 0'
+                        }
+                    }}
+                    dangerouslySetInnerHTML={{ __html: post.details }}
+                    onClick={() => setIsModalOpen(true)}
+                />
+                
+
+                
+                {/* Read Progress */}
+                {readProgress > 0 && (
+                    <Box sx={{ width: '100%', mt: 1 }}>
+                        <LinearProgress 
+                            variant="determinate" 
+                            value={readProgress} 
+                            sx={{ 
+                                height: 4, 
+                                borderRadius: 2,
+                                backgroundColor: `${theme.primary}20`,
+                                '& .MuiLinearProgress-bar': {
+                                    backgroundColor: theme.primary
+                                }
+                            }}
+                        />
+                    </Box>
+                )}
+            </CardContent>
             
             <CardActions sx={{ 
                 display: 'flex', 
@@ -444,13 +458,22 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                 </MenuItem>
             </Menu>
 
-            {showImageGallery && (
-                <EducationImageGallery
-                    images={post.images}
-                    initialIndex={0}
-                    onClose={() => setShowImageGallery(false)}
+            {showImageGallery && post.images && post.images.length > 0 && (
+                <EducationImageGallery 
+                    images={post.images.map(img => typeof img === 'string' ? img : img.url)} 
+                    onClose={() => setShowImageGallery(false)} 
                 />
             )}
+
+            {/* Full Content Modal */}
+            <UserEducationFullDetailModal
+                post={post}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onLike={onLike}
+                onComment={onComment}
+                currentUser={currentUser}
+            />
         </Card>
     );
 };

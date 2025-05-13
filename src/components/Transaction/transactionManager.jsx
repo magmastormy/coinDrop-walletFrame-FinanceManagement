@@ -18,6 +18,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import { useTheme } from '../../theme/ThemeContext';
 import './styles/transactionManagerStyles.css';
+import '../shared/componentScrollFix.css';
 
 const TransactionManager = () => {
     const dispatch = useDispatch();

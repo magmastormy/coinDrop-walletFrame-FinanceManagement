@@ -6,7 +6,7 @@ const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 const Report = require('../models/Report');
 const { format } = require('@fast-csv/format');
-const D3Node = require('d3-node');
+// Using dynamic import for d3-node instead of require
 const path = require('path');
 const fs = require('fs').promises;
 const { PDF_STYLES, EXCEL_STYLES, EXCEL_COLUMNS } = require('../utils/reportStyles');
@@ -261,51 +261,60 @@ class ReportController {
     }
 
     static async generateSVGChart(data, type = 'bar') {
-        const d3n = new D3Node();
-        const d3 = d3n.d3;
-        
-        // Set dimensions
-        const width = 600;
-        const height = 400;
-        const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-        
-        // Create SVG
-        const svg = d3n.createSVG(width, height);
-        
-        // Reference the chart styling from your frontend components
-        // See: src/components/Budget/budgetCharts.jsx lines 51-54
-        const colors = data.labels.map((_, index) => {
-            const hue = (index * 137.5) % 360;
-            return `hsl(${hue}, 70%, 50%)`;
-        });
+        try {
+            // Dynamically import d3-node
+            const D3NodeModule = await import('d3-node');
+            const D3Node = D3NodeModule.default;
+            
+            const d3n = new D3Node();
+            const d3 = d3n.d3;
+            
+            // Set dimensions
+            const width = 600;
+            const height = 400;
+            const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+            
+            // Create SVG
+            const svg = d3n.createSVG(width, height);
+            
+            // Reference the chart styling from your frontend components
+            // See: src/components/Budget/budgetCharts.jsx lines 51-54
+            const colors = data.labels.map((_, index) => {
+                const hue = (index * 137.5) % 360;
+                return `hsl(${hue}, 70%, 50%)`;
+            });
 
-        if (type === 'bar') {
-            // Create bar chart using similar styling to:
-            // src/components/Dashboard/dashboardBarChart.jsx lines 84-97
-            const x = d3.scaleBand()
-                .range([margin.left, width - margin.right])
-                .padding(0.1);
+            if (type === 'bar') {
+                // Create bar chart using similar styling to:
+                // src/components/Dashboard/dashboardBarChart.jsx lines 84-97
+                const x = d3.scaleBand()
+                    .range([margin.left, width - margin.right])
+                    .padding(0.1);
 
-            const y = d3.scaleLinear()
-                .range([height - margin.bottom, margin.top]);
+                const y = d3.scaleLinear()
+                    .range([height - margin.bottom, margin.top]);
 
-            x.domain(data.labels);
-            y.domain([0, d3.max(data.values)]);
+                x.domain(data.labels);
+                y.domain([0, d3.max(data.values)]);
 
-            // Add bars
-            svg.selectAll('rect')
-                .data(data.values)
-                .enter()
-                .append('rect')
-                .attr('x', (d, i) => x(data.labels[i]))
-                .attr('y', d => y(d))
-                .attr('width', x.bandwidth())
-                .attr('height', d => height - margin.bottom - y(d))
-                .attr('fill', (d, i) => colors[i]);
+                // Add bars
+                svg.selectAll('rect')
+                    .data(data.values)
+                    .enter()
+                    .append('rect')
+                    .attr('x', (d, i) => x(data.labels[i]))
+                    .attr('y', d => y(d))
+                    .attr('width', x.bandwidth())
+                    .attr('height', d => height - margin.bottom - y(d))
+                    .attr('fill', (d, i) => colors[i]);
+            }
+
+            return d3n.svgString();
+        } catch (error) {
+            console.error('Error generating SVG chart:', error);
+            throw error;
         }
-
-        return d3n.svgString();
     }
 }
 
-module.exports = ReportController; 
+module.exports = ReportController;

@@ -48,6 +48,10 @@ const WalletSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    isSystemWallet: {
+        type: Boolean,
+        default: false
+    },
     metadata: {
         icon: {
             type: String,
@@ -59,6 +63,9 @@ const WalletSchema = new mongoose.Schema({
         }
     },
     lastTransactionDate: {
+        type: Date
+    },
+    deletedAt: {
         type: Date
     }
 }, {

@@ -88,43 +88,254 @@ class WalletController {
 
     // Delete a wallet
     static async deleteWallet(req, res) {
+        let session = null;
+        
         try {
+            // Start a MongoDB session for transaction
+            session = await mongoose.startSession();
+            session.startTransaction();
+            
+            // Get parameters from request
             const { id } = req.params;
-
-            // Check if wallet has any transactions
-            const transactionCount = await Transaction.countDocuments({ 
-                walletId: id, 
-                userId: req.user._id || req.query.userId || req.user.userId 
-            });
-
-            if (transactionCount > 0) {
-                return res.status(400).json({ 
-                    error: 'Cannot delete wallet with existing transactions' 
-                });
-            }
-
-            const wallet = await Wallet.findOneAndDelete({
-                _id: id,
-                userId: req.user._id || req.query.userId || req.user.userId,
-            });
-
+            const { transferToWalletId } = req.body || {};
+            const userId = req.user._id || req.query.userId || req.user.userId;
+            
+            console.log(`[WalletController - deleteWallet] Deleting wallet ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
+            
+            // Find the wallet to delete
+            const wallet = await Wallet.findOne({ 
+                _id: id, 
+                userId 
+            }).session(session);
+            
+            // Check if wallet exists
             if (!wallet) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
                 return res.status(404).json({ 
                     error: 'Wallet not found or unauthorized' 
                 });
             }
+            
+            // Prevent deletion of system wallets with balance
+            if (wallet.isSystemWallet && wallet.balance > 0) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(400).json({ 
+                    error: 'Cannot delete system wallet with balance', 
+                    details: 'This is a protected wallet that holds funds from deleted accounts. Transfer all funds out before deleting.'
+                });
+            }
+            
+            // Get remaining balance and initialize targetWalletId
+            const remainingBalance = wallet.balance || 0;
+            let targetWalletId = null;
+            
+            // If wallet has balance, transfer it to another wallet
+            if (remainingBalance > 0) {
+                console.log(`[WalletController - deleteWallet] Wallet has balance: ${remainingBalance}`);
+                
+                let targetWallet = null;
+                
+                // If a specific target wallet was provided
+                if (transferToWalletId) {
+                    targetWallet = await Wallet.findOne({ 
+                        _id: transferToWalletId, 
+                        userId 
+                    }).session(session);
+                    
+                    if (!targetWallet) {
+                        if (session) {
+                            await session.abortTransaction();
+                            session.endSession();
+                        }
+                        return res.status(404).json({ 
+                            error: 'Target wallet not found', 
+                            details: 'The wallet to transfer funds to does not exist or does not belong to you'
+                        });
+                    }
+                } else {
+                    // Find another wallet or create a system wallet
+                    try {
+                        const systemWalletUtil = require('../utils/systemWalletUtil');
+                        targetWallet = await systemWalletUtil.findOrCreateTargetWallet(
+                            userId, 
+                            id, // Exclude the wallet being deleted
+                            remainingBalance,
+                            session
+                        );
+                    } catch (utilError) {
+                        console.error('[WalletController - deleteWallet] Error finding target wallet:', utilError);
+                        if (session) {
+                            await session.abortTransaction();
+                            session.endSession();
+                        }
+                        return res.status(500).json({
+                            error: 'Failed to find or create target wallet',
+                            details: utilError.message
+                        });
+                    }
+                }
+                
+                // Ensure targetWallet exists
+                if (!targetWallet) {
+                    if (session) {
+                        await session.abortTransaction();
+                        session.endSession();
+                    }
+                    return res.status(500).json({
+                        error: 'Target wallet not available',
+                        details: 'Could not find or create a wallet to transfer funds to'
+                    });
+                }
+                
+                // Store the target wallet ID for the response
+                targetWalletId = targetWallet._id;
+                
+                // Update target wallet balance
+                targetWallet.balance += remainingBalance;
+                await targetWallet.save({ session });
+                
+                console.log(`[WalletController - deleteWallet] Transferred ${remainingBalance} to wallet ${targetWallet._id}`);
+                
+                // Find or create a category for account closures
+                let accountClosureCategory = null;
+                try {
+                    accountClosureCategory = await Category.findOne({
+                        userId,
+                        name: "Account Closure"
+                    }).session(session);
 
-            res.json({
+                    if (!accountClosureCategory) {
+                        // Find any category to use as fallback
+                        const anyCategory = await Category.findOne({
+                            userId
+                        }).session(session);
+                        
+                        if (anyCategory) {
+                            accountClosureCategory = anyCategory;
+                        } else {
+                            // If no categories exist, create an Account Closure category
+                            const newCategory = new Category({
+                                userId,
+                                name: "Account Closure",
+                                description: "Funds from closed accounts"
+                            });
+                            accountClosureCategory = await newCategory.save({ session });
+                        }
+                    }
+                } catch (categoryError) {
+                    console.error('[WalletController - deleteWallet] Error with category:', categoryError);
+                    if (session) {
+                        await session.abortTransaction();
+                        session.endSession();
+                    }
+                    return res.status(500).json({
+                        error: 'Failed to process category',
+                        details: categoryError.message
+                    });
+                }
+                
+                // Ensure category exists
+                if (!accountClosureCategory) {
+                    if (session) {
+                        await session.abortTransaction();
+                        session.endSession();
+                    }
+                    return res.status(500).json({
+                        error: 'Category not available',
+                        details: 'Could not find or create a category for the transaction'
+                    });
+                }
+
+                // Record the transaction
+                try {
+                    const transaction = new Transaction({
+                        userId,
+                        amount: remainingBalance,
+                        type: 'transfer',
+                        category: accountClosureCategory._id,
+                        description: `Transferred from deleted wallet: ${wallet.name}`,
+                        walletId: targetWallet._id,
+                        fromWalletId: id,
+                        date: new Date(),
+                    });
+                    
+                    await transaction.save({ session });
+                } catch (transactionError) {
+                    console.error('[WalletController - deleteWallet] Error creating transaction:', transactionError);
+                    if (session) {
+                        await session.abortTransaction();
+                        session.endSession();
+                    }
+                    return res.status(500).json({
+                        error: 'Failed to create transaction record',
+                        details: transactionError.message
+                    });
+                }
+            }
+            
+            // Mark the wallet as inactive instead of deleting it
+            try {
+                await Wallet.updateOne(
+                    { _id: id },
+                    { 
+                        $set: { 
+                            isActive: false,
+                            balance: 0,
+                            deletedAt: new Date()
+                        } 
+                    }
+                ).session(session);
+                
+                console.log(`[WalletController - deleteWallet] Wallet ${id} marked as inactive`);
+            } catch (updateError) {
+                console.error('[WalletController - deleteWallet] Error updating wallet:', updateError);
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(500).json({
+                    error: 'Failed to mark wallet as inactive',
+                    details: updateError.message
+                });
+            }
+            
+            // Commit the transaction
+            await session.commitTransaction();
+            session.endSession();
+            session = null;
+            
+            // Send success response
+            return res.json({
                 message: 'Wallet deleted successfully',
-                wallet
+                transferredAmount: remainingBalance > 0 ? remainingBalance : 0,
+                transferredTo: targetWalletId
             });
         } catch (error) {
-            res.status(500).json({
+            console.error('[WalletController - deleteWallet] Error:', error);
+            
+            // Ensure transaction is aborted and session is ended
+            if (session) {
+                try {
+                    await session.abortTransaction();
+                    session.endSession();
+                } catch (sessionError) {
+                    console.error('[WalletController - deleteWallet] Error ending session:', sessionError);
+                }
+            }
+            
+            return res.status(500).json({
                 error: 'Wallet deletion failed',
                 details: error.message
             });
         }
-    }
+
+}
 
     // Get wallet statistics
     static async getWalletStats(req, res) {

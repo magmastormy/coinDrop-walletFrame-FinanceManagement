@@ -9,6 +9,7 @@ import CreateBudgetModal from './createBudgetModal';
 import BudgetGrid from './budgetGrid';
 import BudgetAnalytics from './budgetAnalytics';
 import './styles/budgetManagerStyles.css';
+import '../shared/componentScrollFix.css';
 import ReportSection from '../Common/ReportSection';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';

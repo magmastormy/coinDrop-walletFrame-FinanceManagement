@@ -15,6 +15,10 @@ const SavingsAccountSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
     automation: {
         type: {
             type: String,
