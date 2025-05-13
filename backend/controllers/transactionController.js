@@ -11,6 +11,7 @@ class TransactionController {
     // Create a new transaction
     static async createTransaction(req, res) {
         try {
+            console.log('[TransactionController - createTransaction] req.body:', req.body); // <-- Add this line for debugging
             const userId = req.user._id || req.query.userId || req.user.userId;
             const { amount, type, category, description, walletId, date } = req.body;
 
@@ -241,6 +242,8 @@ class TransactionController {
     // Update a transaction
     static async updateTransaction(req, res) {
         try {
+            // log the request body for debugging
+            console.log('[TransactionController - updateTransaction] req.body:', req.body); // <-- Add this line for debugging
             const { id } = req.params;
 
             // Ensure transaction belongs to the user

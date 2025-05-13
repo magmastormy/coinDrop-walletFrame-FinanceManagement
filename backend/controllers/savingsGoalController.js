@@ -10,10 +10,12 @@ class SavingsGoalController {
     static async getUserSavingsGoals(req, res) {
         try {
             const userId = req.user._id || req.query.userId || req.user.userId;
-            const goals = await SavingsGoal.find({ userId: userId });
+            // Only return active (not deleted) goals
+            const goals = await SavingsGoal.find({ userId: userId, isActive: true });
             res.json(goals);
         } catch (error) {
-            res.status(500).json({ error: 'Failed to fetch savings goals' });
+            console.error('[SavingsGoalController - getUserSavingsGoals] Error:', error);
+            res.status(500).json({ error: 'Failed to fetch savings goals', details: error.message });
         }
     }
 
@@ -39,339 +41,183 @@ class SavingsGoalController {
     }
 
     static async deleteSavingsGoal(req, res) {
-        let session = null;
-        let targetDestinationId = null;
-        let destinationType = null;
+        const operationId = req.body?.operationId || `op-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const MAX_RETRY_ATTEMPTS = 3;
 
-        try {
-            // Start a MongoDB session for transaction
-            session = await mongoose.startSession();
-            session.startTransaction();
+        // Helper: Validate and normalize ObjectId
+        const toObjectId = (id) => (typeof id === 'string' ? new mongoose.Types.ObjectId(id) : id);
 
-            // Get parameters from request
-            const { id } = req.params;
-            const { transferToSavingsAccountId, transferToWalletId } = req.body || {};
-            const userId = req.user._id || req.user.id || req.query.userId;
-            
-            // Validate MongoDB ObjectId
-            if (!mongoose.Types.ObjectId.isValid(id)) {
-                console.error(`[SavingsGoalController - deleteSavingsGoal] Invalid ObjectId format: ${id}`);
-                if (session) {
-                    await session.abortTransaction();
-                    session.endSession();
-                }
-                return res.status(400).json({ error: 'Invalid savings goal ID format' });
+        // Helper: Find or create a closure category
+        async function getGoalClosureCategory(userId, session) {
+            let cat = await Category.findOne({ userId, name: 'Goal Closure' }).session(session);
+            if (cat) return cat;
+            cat = await Category.findOne({ userId }).session(session);
+            if (cat) return cat;
+            return await new Category({ userId, name: 'Goal Closure', description: 'Funds from closed savings goals' }).save({ session });
+        }
+
+        // Helper: Transfer funds to a destination
+        async function transferFunds({
+            userId, session, savingsGoal, remainingAmount, transferToSavingsAccountId, transferToWalletId
+        }) {
+            const goalClosureCategory = await getGoalClosureCategory(userId, session);
+            // Try savings account first
+            if (transferToSavingsAccountId) {
+                const savingsAccount = await SavingsAccount.findOne({ _id: transferToSavingsAccountId, userId }).session(session);
+                if (!savingsAccount) throw new Error('Target savings account not found');
+                savingsAccount.balance += remainingAmount;
+                await savingsAccount.save({ session });
+                await new Transaction({
+                    userId,
+                    amount: remainingAmount,
+                    type: 'transfer',
+                    category: goalClosureCategory._id,
+                    description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
+                    savingsAccountId: savingsAccount._id,
+                    date: new Date(),
+                }).save({ session });
+                return { destinationId: savingsAccount._id, destinationType: 'savings_account' };
             }
-
-            console.log(`[SavingsGoalController - deleteSavingsGoal] Deleting goal ${id} with transfer to savings account ${transferToSavingsAccountId || 'none'} or wallet ${transferToWalletId || 'none'}`);
-
-            // Find the savings goal to delete
-            const savingsGoal = await SavingsGoal.findOne({
-                _id: id,
-                userId
-            }).session(session);
-
-            // Check if savings goal exists
-            if (!savingsGoal) {
-                if (session) {
-                    await session.abortTransaction();
-                    session.endSession();
-                }
-                return res.status(404).json({ error: 'Savings goal not found' });
+            // Try any savings account
+            const savingsAccounts = await SavingsAccount.find({ userId }).session(session);
+            if (savingsAccounts.length > 0) {
+                const target = savingsAccounts[0];
+                target.balance += remainingAmount;
+                await target.save({ session });
+                await new Transaction({
+                    userId,
+                    amount: remainingAmount,
+                    type: 'transfer',
+                    category: goalClosureCategory._id,
+                    description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
+                    savingsAccountId: target._id,
+                    date: new Date(),
+                }).save({ session });
+                return { destinationId: target._id, destinationType: 'savings_account' };
             }
+            // Try wallet
+            let wallet = null;
+            if (transferToWalletId) {
+                wallet = await Wallet.findOne({ _id: transferToWalletId, userId, isActive: true }).session(session);
+                if (!wallet) throw new Error('Target wallet not found');
+            } else {
+                wallet = await Wallet.findOne({ userId, isActive: true }).session(session);
+                if (!wallet) {
+                    const systemWalletUtil = require('../utils/systemWalletUtil');
+                    wallet = await systemWalletUtil.findOrCreateTargetWallet(userId, null, remainingAmount, session);
+                }
+            }
+            if (!wallet) throw new Error('No valid wallet found');
+            wallet.balance += remainingAmount;
+            await wallet.save({ session });
+            await new Transaction({
+                userId,
+                amount: remainingAmount,
+                type: 'transfer',
+                category: goalClosureCategory._id,
+                description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
+                walletId: wallet._id,
+                date: new Date(),
+            }).save({ session });
+            return { destinationId: wallet._id, destinationType: 'wallet' };
+        }
 
-            const remainingAmount = savingsGoal.currentAmount || 0;
+        // Main transaction logic
+        const attemptDelete = async () => {
+            let session = null;
+            try {
+                session = await mongoose.startSession();
+                session.startTransaction();
+                const { id } = req.params;
+                const { transferToSavingsAccountId, transferToWalletId, userId: bodyUserId } = req.body || {};
+                const userId = req.user?.userId || req.user?._id || req.user?.id || req.query?.userId || bodyUserId;
+                if (!userId) throw new Error('User ID is required');
+                if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('Invalid savings goal ID format');
+                if (transferToWalletId && !mongoose.Types.ObjectId.isValid(transferToWalletId)) throw new Error('Invalid wallet ID format');
+                if (transferToSavingsAccountId && !mongoose.Types.ObjectId.isValid(transferToSavingsAccountId)) throw new Error('Invalid savings account ID format');
+                const userObjectId = toObjectId(userId);
+                const savingsGoal = await SavingsGoal.findOne({ _id: id, userId: userObjectId, isActive: true }).session(session);
+                if (!savingsGoal) throw new Error('Savings goal not found or already deleted');
+                const remainingAmount = savingsGoal.currentAmount || 0;
+                let destinationId = null, destinationType = null;
+                if (remainingAmount > 0) {
+                    ({ destinationId, destinationType } = await transferFunds({
+                        userId: userObjectId,
+                        session,
+                        savingsGoal,
+                        remainingAmount,
+                        transferToSavingsAccountId,
+                        transferToWalletId
+                    }));
+                }
+                await SavingsGoal.updateOne(
+                    { _id: id },
+                    { $set: { isActive: false, currentAmount: 0, deletedAt: new Date(), status: 'deleted' } }
+                ).session(session);
+                await session.commitTransaction();
+                return res.json({
+                    success: true,
+                    message: 'Savings goal deleted successfully',
+                    goalId: id,
+                    transferredAmount: remainingAmount > 0 ? remainingAmount : 0,
+                    destinationType,
+                    destinationId,
+                    operationId
+                });
+            } catch (error) {
+                if (session) {
+                    try { await session.abortTransaction(); session.endSession(); } catch {}
+                }
+                throw error;
+            } finally {
+                if (session) session.endSession();
+            }
+        };
 
-            console.log(`[SavingsGoalController - deleteSavingsGoal] Found goal with amount: ${remainingAmount}`);
-
-            // If goal has money, transfer it
-            if (remainingAmount > 0) {
-                try {
-                    // Find or create a category for goal closure
-                    let goalClosureCategory = await Category.findOne({
-                        userId,
-                        name: "Goal Closure"
-                    }).session(session);
-
-                    if (!goalClosureCategory) {
-                        // Find any category to use as fallback
-                        const anyCategory = await Category.findOne({
-                            userId
-                        }).session(session);
-
-                        if (anyCategory) {
-                            goalClosureCategory = anyCategory;
-                        } else {
-                            // If no categories exist, create a Goal Closure category
-                            const newCategory = new Category({
-                                userId,
-                                name: "Goal Closure",
-                                description: "Funds from closed savings goals"
-                            });
-                            goalClosureCategory = await newCategory.save({ session });
-                        }
-                    }
-
-                    // Determine where to transfer the money
-                    if (transferToSavingsAccountId) {
-                        // Transfer to specified savings account
-                        const savingsAccount = await SavingsAccount.findOne({
-                            _id: transferToSavingsAccountId,
-                            userId
-                        }).session(session);
-
-                        if (!savingsAccount) {
-                            if (session) {
-                                await session.abortTransaction();
-                                session.endSession();
-                            }
-                            return res.status(404).json({
-                                error: 'Target savings account not found',
-                                details: 'The savings account to transfer funds to does not exist or does not belong to you'
-                            });
-                        }
-
-                        console.log(`[SavingsGoalController - deleteSavingsGoal] Transferring ${remainingAmount} to savings account ${savingsAccount._id}`);
-
-                        // Update savings account balance
-                        savingsAccount.balance = (savingsAccount.balance || 0) + remainingAmount;
-                        await savingsAccount.save({ session });
-
-                        // Record the transaction
-                        const transaction = new Transaction({
-                            userId,
-                            amount: remainingAmount,
-                            type: 'transfer',
-                            category: goalClosureCategory._id,
-                            description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
-                            savingsAccountId: savingsAccount._id,
-                            date: new Date(),
-                        });
-
-                        await transaction.save({ session });
-
-                        // Store destination info for response
-                        targetDestinationId = savingsAccount._id;
-                        destinationType = 'savings_account';
-
-                    } else {
-                        // No savings account specified, try to find one or use a wallet
-                        const savingsAccounts = await SavingsAccount.find({ userId }).session(session);
-
-                        if (savingsAccounts && savingsAccounts.length > 0) {
-                            // Transfer to the first savings account
-                            const targetAccount = savingsAccounts[0];
-
-                            console.log(`[SavingsGoalController - deleteSavingsGoal] No target account specified, transferring ${remainingAmount} to savings account ${targetAccount._id}`);
-
-                            // Update savings account balance
-                            targetAccount.balance = (targetAccount.balance || 0) + remainingAmount;
-                            await targetAccount.save({ session });
-
-                            // Record the transaction
-                            const transaction = new Transaction({
-                                userId,
-                                amount: remainingAmount,
-                                type: 'transfer',
-                                category: goalClosureCategory._id,
-                                description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
-                                savingsAccountId: targetAccount._id,
-                                date: new Date(),
-                            });
-
-                            await transaction.save({ session });
-
-                            // Store destination info for response
-                            targetDestinationId = targetAccount._id;
-                            destinationType = 'savings_account';
-
-                        } else {
-                            // No savings accounts found, transfer to wallet
-                            let targetWallet = null;
-
-                            if (transferToWalletId) {
-                                // Use specified wallet
-                                targetWallet = await Wallet.findOne({
-                                    _id: transferToWalletId,
-                                    userId,
-                                    isActive: true
-                                }).session(session);
-
-                                if (!targetWallet) {
-                                    if (session) {
-                                        await session.abortTransaction();
-                                        session.endSession();
-                                    }
-                                    return res.status(404).json({
-                                        error: 'Target wallet not found',
-                                        details: 'The wallet to transfer funds to does not exist or does not belong to you'
-                                    });
-                                }
-                            } else {
-                                // Find any active wallet
-                                targetWallet = await Wallet.findOne({
-                                    userId,
-                                    isActive: true
-                                }).session(session);
-
-                                if (!targetWallet) {
-                                    try {
-                                        // No wallet found, create a system wallet
-                                        const systemWalletUtil = require('../utils/systemWalletUtil');
-                                        targetWallet = await systemWalletUtil.findOrCreateTargetWallet(
-                                            userId,
-                                            null, // No wallet to exclude
-                                            remainingAmount,
-                                            session
-                                        );
-                                    } catch (walletError) {
-                                        console.error('[SavingsGoalController - deleteSavingsGoal] Error creating system wallet:', walletError);
-                                        if (session) {
-                                            await session.abortTransaction();
-                                            session.endSession();
-                                        }
-                                        return res.status(500).json({
-                                            error: 'Failed to create system wallet',
-                                            details: walletError.message
-                                        });
-                                    }
-                                }
-                            }
-
-                            // Ensure target wallet exists
-                            if (!targetWallet) {
-                                if (session) {
-                                    await session.abortTransaction();
-                                    session.endSession();
-                                }
-                                return res.status(500).json({
-                                    error: 'No valid wallet found',
-                                    details: 'Could not find or create a wallet to transfer funds to'
-                                });
-                            }
-
-                            console.log(`[SavingsGoalController - deleteSavingsGoal] Transferring ${remainingAmount} to wallet ${targetWallet._id}`);
-
-                            // Update wallet balance
-                            targetWallet.balance = (targetWallet.balance || 0) + remainingAmount;
-                            await targetWallet.save({ session });
-
-                            // Record the transaction
-                            const transaction = new Transaction({
-                                userId,
-                                amount: remainingAmount,
-                                type: 'transfer',
-                                category: goalClosureCategory._id,
-                                description: `Transferred from deleted savings goal: ${savingsGoal.name}`,
-                                walletId: targetWallet._id,
-                                date: new Date(),
-                            });
-
-                            await transaction.save({ session });
-
-                            // Store destination info for response
-                            targetDestinationId = targetWallet._id;
-                            destinationType = 'wallet';
-                        }
-                    }
-                } catch (transferError) {
-                    console.error('[SavingsGoalController - deleteSavingsGoal] Error transferring funds:', transferError);
-                    if (session) {
-                        await session.abortTransaction();
-                        session.endSession();
-                    }
-                    return res.status(500).json({
-                        error: 'Failed to transfer funds from savings goal',
-                        details: transferError.message
+        // Retry logic
+        for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+            try {
+                if (attempt > 0) {
+                    const delay = Math.pow(2, attempt) * 100;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                return await attemptDelete();
+            } catch (error) {
+                const isTransientError = error.errorLabels && error.errorLabels.includes('TransientTransactionError');
+                if (!isTransientError || attempt === MAX_RETRY_ATTEMPTS) {
+                    let statusCode = 500;
+                    if (error.message.includes('not found') || error.message.includes('already deleted')) statusCode = 404;
+                    else if (error.message.includes('Invalid') || error.message.includes('required')) statusCode = 400;
+                    return res.status(statusCode).json({
+                        success: false,
+                        error: 'Failed to delete savings goal',
+                        details: error.message,
+                        operationId,
+                        retryAttempts: attempt
                     });
                 }
             }
-
-            // Mark the savings goal as deleted instead of completely removing it
-            try {
-                await SavingsGoal.updateOne(
-                    { _id: id },
-                    {
-                        $set: {
-                            isActive: false,
-                            currentAmount: 0,
-                            deletedAt: new Date(),
-                            status: 'deleted'
-                        }
-                    }
-                ).session(session);
-
-                console.log(`[SavingsGoalController - deleteSavingsGoal] Savings goal ${id} marked as deleted`);
-            } catch (updateError) {
-                console.error('[SavingsGoalController - deleteSavingsGoal] Error updating savings goal:', updateError);
-                if (session) {
-                    await session.abortTransaction();
-                    session.endSession();
-                }
-                return res.status(500).json({
-                    error: 'Failed to mark savings goal as deleted',
-                    details: updateError.message
-                });
-            }
-
-            // Commit the transaction
-            await session.commitTransaction();
-            session.endSession();
-            session = null;
-
-            // Send success response
-            return res.json({
-                message: 'Savings goal deleted successfully',
-                transferredAmount: remainingAmount,
-                transferredTo: targetDestinationId,
-                destinationType: destinationType
-            });
-        } catch (error) {
-            console.error('[SavingsGoalController - deleteSavingsGoal] Error:', error);
-
-            // Ensure transaction is aborted and session is ended
-            if (session) {
-                try {
-                    await session.abortTransaction();
-                    session.endSession();
-                } catch (sessionError) {
-                    console.error('[SavingsGoalController - deleteSavingsGoal] Error ending session:', sessionError);
-                }
-            }
-
-            return res.status(500).json({
-                error: 'Failed to delete savings goal',
-                details: error.message
-            });
         }
     }
 
     static async contributeSavingsGoal(req, res) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
-        try {
+        const operationId = req.body?.operationId || `op-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        
+        // Maximum number of retry attempts for transaction
+        const MAX_RETRY_ATTEMPTS = 3;
+        
+        // Function to execute the transaction with retry logic
+        const executeTransaction = async () => {
+            const session = await mongoose.startSession();
+            session.startTransaction();
+            
+            try {
             const { goalId } = req.params;
             const { amount, sourceType, sourceId } = req.body;
             const userId = req.user._id || req.query.userId || req.user.userId;
 
             console.log("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
             console.log("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
-            
-            
-            if (!goalId || !amount || (!sourceId)) {
-                throw new Error('Missing required fields: goalId, amount, or source information');
-            }
-
-            // Find the savings goal
-            const savingsGoal = await SavingsGoal.findOne({
-                _id: goalId,
-                userId: userId
-            }).session(session);
-
-            if (!savingsGoal) {
-                throw new Error('Savings goal not found');
-            }
 
             // Find the source (wallet or savings account)
             let source;
@@ -433,6 +279,10 @@ class SavingsGoalController {
             await source.save({ session });
 
             // Update savings goal current amount
+            const savingsGoal = await SavingsGoal.findById(goalId).session(session);
+            if (!savingsGoal) {
+                throw new Error('Savings goal not found');
+            }
             savingsGoal.currentAmount += parseFloat(amount);
             await savingsGoal.save({ session });
 
@@ -444,28 +294,70 @@ class SavingsGoalController {
                 category: categoryId,
                 description: `Contribution to ${savingsGoal.name} savings goal`,
                 date: new Date(),
-                walletId: source._id,
+                walletId: sourceType === "wallet" ? source._id : undefined,
                 savingsGoalId: goalId
             });
 
             await transaction.save({ session });
 
-            await session.commitTransaction();
-
-            res.json({
-                message: 'Contribution successful',
-                savingsGoal,
-                transaction
-            });
+                await session.commitTransaction();
+                
+                res.json({
+                    success: true,
+                    message: 'Contribution successful',
+                    savingsGoal,
+                    transaction,
+                    operationId
+                });
+                return true; // Signal success to the retry mechanism
+            } catch (error) {
+                try {
+                    await session.abortTransaction();
+                } catch (abortError) {
+                    console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction:`, abortError);
+                }
+                throw error; // Rethrow for retry mechanism
+            } finally {
+                session.endSession();
+            }
+        };
+        
+        // Execute transaction with retry logic
+        try {
+            for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Retry attempt ${attempt} of ${MAX_RETRY_ATTEMPTS}`);
+                        // Add exponential backoff delay between retries
+                        const delay = Math.pow(2, attempt) * 100; // 200ms, 400ms, 800ms
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                    
+                    const result = await executeTransaction();
+                    if (result) return; // Transaction succeeded
+                } catch (error) {
+                    // Only retry if it's a transient transaction error
+                    const isTransientError = 
+                        error.errorLabels && 
+                        error.errorLabels.includes('TransientTransactionError');
+                    
+                    if (isTransientError && attempt < MAX_RETRY_ATTEMPTS) {
+                        console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Transaction failed with transient error, will retry:`, error.message);
+                        continue; // Try again
+                    }
+                    
+                    // If we've exhausted retries or it's not a transient error, rethrow
+                    throw error;
+                }
+            }
         } catch (error) {
-            await session.abortTransaction();
-            console.error('Contribution error:', error);
+            console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error:`, error);
             res.status(400).json({
+                success: false,
                 error: 'Contribution failed',
-                details: error.message
+                details: error.message,
+                operationId
             });
-        } finally {
-            session.endSession();
         }
     }
 }

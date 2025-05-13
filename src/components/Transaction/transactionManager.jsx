@@ -83,14 +83,13 @@ const TransactionManager = () => {
     const handleCreateTransaction = async (transactionData) => {
         dispatch(setLoading(true));
         try {
-            await transactionService.createTransaction({
-                ...transactionData,
-                userId: user.id
-            });
+            // Don't add userId here, it will be added by the backend from the auth token
+            await transactionService.createTransaction(transactionData);
             setIsModalOpen(false);
             await fetchInitialData();
         } catch (err) {
-            dispatch(setError('Failed to create transaction. Please try again.'));
+            console.error('Transaction creation error:', err);
+            dispatch(setError(err.response?.data?.details || 'Failed to create transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
         }
@@ -249,7 +248,10 @@ const TransactionManager = () => {
             ) : (
                 <TransactionList 
                     transactions={filteredTransactions}
-                    onEdit={setEditingTransaction}
+                    onEdit={(transaction) => {
+                        console.log('Editing transaction:', transaction);
+                        setEditingTransaction(transaction);
+                    }}
                     onDelete={handleDeleteTransaction}
                     wallets={wallets}
                     savingsAccounts={savingsAccounts}

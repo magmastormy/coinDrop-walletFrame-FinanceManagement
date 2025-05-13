@@ -62,12 +62,45 @@ const transactionService = {
 
     createTransaction: async (transactionData) => {
         try {
+            if (!transactionData) {
+                throw new Error('Transaction data is required');
+            }
+            
+            // Create a clean payload with all necessary fields
+            console.log("[transactionService - createTransaction] Creating transaction with data:", transactionData);
             const payload = {
-                ...transactionData,
-                walletId: transactionData.walletId || null,
-                savingsAccountId: transactionData.savingsAccountId || null
+                amount: transactionData.amount,
+                type: transactionData.type,
+                category: transactionData.category,
+                description: transactionData.description,
+                date: transactionData.date,
             };
             
+            // Add either walletId or savingsAccountId, but not both
+            if (transactionData.walletId && transactionData.walletId !== '[object Object]') {
+                payload.walletId = transactionData.walletId;
+            } else if (transactionData.savingsAccountId && transactionData.savingsAccountId !== '[object Object]') {
+                payload.savingsAccountId = transactionData.savingsAccountId;
+            }
+            
+            // Add budgetId if present
+            if (transactionData.budgetId) {
+                payload.budgetId = transactionData.budgetId;
+            }
+            
+            // Remove undefined/null/empty string fields
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined || payload[key] === null || payload[key] === '' || payload[key] === '[object Object]') {
+                    delete payload[key];
+                }
+            });
+            
+            // Validate required fields before sending
+            if (!payload.amount || !payload.type) {
+                throw new Error('Amount and type are required');
+            }
+            
+            // Send a single request with the clean payload
             const response = await axiosInstance.post(API_URL, payload);
             return response.data;
         } catch (error) {
@@ -78,8 +111,50 @@ const transactionService = {
 
     updateTransaction: async (id, transactionData) => {
         try {
-            //console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
-            const response = await axiosInstance.put(`${API_URL}/${id}`, transactionData);
+            if (!id) {
+                throw new Error('Transaction ID is required for updates');
+            }
+            if (!transactionData) {
+                throw new Error('Transaction data is required');
+            }
+            
+            // Create a clean payload with all necessary fields
+            console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
+            
+            const payload = {
+                amount: transactionData.amount,
+                type: transactionData.type,
+                category: transactionData.category,
+                description: transactionData.description,
+                date: transactionData.date,
+            };
+            
+            // Add either walletId or savingsAccountId, but not both
+            if (transactionData.walletId && transactionData.walletId !== '[object Object]') {
+                payload.walletId = transactionData.walletId;
+            } else if (transactionData.savingsAccountId && transactionData.savingsAccountId !== '[object Object]') {
+                payload.savingsAccountId = transactionData.savingsAccountId;
+            }
+            
+            // Add budgetId if present
+            if (transactionData.budgetId) {
+                payload.budgetId = transactionData.budgetId;
+            }
+            
+            // Remove undefined/null/empty string fields
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined || payload[key] === null || payload[key] === '' || payload[key] === '[object Object]') {
+                    delete payload[key];
+                }
+            });
+            
+            // Validate required fields before sending
+            if (!payload.amount || !payload.type) {
+                throw new Error('Amount and type are required');
+            }
+            
+            // Use PUT instead of PATCH to avoid CORS issues
+            const response = await axiosInstance.put(`${API_URL}/${id}`, payload);
             return response;
         } catch (error) {
             console.error("[transactionService - updateTransaction] Error updating transaction:", error);

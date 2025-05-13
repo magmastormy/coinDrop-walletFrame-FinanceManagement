@@ -48,6 +48,9 @@ export const savingsGoalService = {
 
     // Delete savings goal
     deleteSavingsGoal: async (goalId, transferOptions = {}) => {
+        // Generate a unique operation ID for tracing this request
+        const operationId = `op-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        
         try {
             if (!goalId) {
                 throw new Error('Goal ID is required');
@@ -55,31 +58,75 @@ export const savingsGoalService = {
             
             // Validate goalId format (should be a valid MongoDB ObjectId)
             if (!/^[0-9a-fA-F]{24}$/.test(goalId)) {
-                console.error(`[savingsGoalService - deleteSavingsGoal] Invalid goal ID format: ${goalId}`);
+                console.error(`[savingsGoalService - deleteSavingsGoal][${operationId}] Invalid goal ID format: ${goalId}`);
                 throw new Error('Invalid goal ID format');
             }
             
-            // Configure request with transfer options in the body
-            const config = {
-                data: transferOptions // Send transfer options in the request body
+            console.log(`[savingsGoalService - deleteSavingsGoal][${operationId}] Deleting goal ${goalId} and transferring balance to ${transferOptions.transferToWalletId ? 'wallet' : transferOptions.transferToSavingsAccountId ? 'savings account' : 'none'}`);
+            
+            // Get current user from localStorage
+            const userJson = localStorage.getItem('user');
+            const user = userJson ? JSON.parse(userJson) : {};
+            const userId = user.id || user._id;
+        
+            const data = { 
+                ...transferOptions,
+                operationId: operationId,
+                userId: userId
             };
             
-            console.log(`[savingsGoalService - deleteSavingsGoal] Deleting goal ${goalId} with transfer options:`, transferOptions);
-            const response = await axiosInstance.delete(`${API_URL}/${goalId}`, config);
-            console.log("[savingsGoalService - deleteSavingsGoal] response: ", response);
+            console.log(`[savingsGoalService - deleteSavingsGoal][${operationId}] Request data:`, data);
             
-            // Log success with status code
-            console.log(`[savingsGoalService - deleteSavingsGoal] Savings goal deleted successfully (${response.status}):`, response.data);
+            const response = await axiosInstance.delete(`${API_URL}/${goalId}`, {
+                data: data,
+                timeout: 10000
+            });
             
-            // Return the data portion of the response
-            return response;
+            console.log(`[savingsGoalService - deleteSavingsGoal][${operationId}] Savings goal deleted successfully:`, response);
+            
+            return {
+                success: true,
+                message: 'Savings goal deleted successfully',
+                data: response,
+                operationId: operationId
+            };
         } catch (error) {
-            console.error("[savingsGoalService - deleteSavingsGoal] Error deleting savings goal:", error);
+            // Enhanced structured error logging
+            const errorDetails = {
+                operationId,
+                timestamp: new Date().toISOString(),
+                goalId,
+                transferOptions: transferOptions || 'none',
+                errorMessage: error.message,
+                stack: error.stack
+            };
+            
             if (error.response) {
-                console.error("Response status:", error.response.status);
-                console.error("Response data:", error.response.data);
+                errorDetails.responseStatus = error.response.status;
+                errorDetails.responseData = error.response.data;
+                errorDetails.requestUrl = error.config?.url;
+                errorDetails.requestData = error.config?.data;
+                
+                console.error(`[savingsGoalService - deleteSavingsGoal][${operationId}] Response error:`, errorDetails);
+            } else if (error.request) {
+                errorDetails.requestObject = error.request;
+                console.error(`[savingsGoalService - deleteSavingsGoal][${operationId}] Network error - no response received:`, errorDetails);
+            } else {
+                console.error(`[savingsGoalService - deleteSavingsGoal][${operationId}] Request setup error:`, errorDetails);
             }
-            throw error;
+            
+            // Return a normalized error response
+            const errorResponse = {
+                success: false,
+                message: 'Failed to delete savings goal',
+                error: error.message,
+                details: error.response?.data?.details || error.message,
+                statusCode: error.response?.status || 500,
+                operationId: operationId,
+                goalId: goalId
+            };
+            
+            throw errorResponse;
         }
     },
 

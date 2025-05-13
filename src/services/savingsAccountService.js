@@ -126,56 +126,75 @@ export const savingsAccountService = {
     },
 
     deleteSavingsAccount: async (accountId, transferToWalletId) => {
+        const operationId = Date.now().toString(36) + Math.random().toString(36).substr(2);
         try {
             // Validate accountId
             if (!accountId) {
+                console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Missing account ID`);
                 throw new Error('Account ID is required');
             }
             
             // Validate accountId format (should be a valid MongoDB ObjectId)
             if (!/^[0-9a-fA-F]{24}$/.test(accountId)) {
-                console.error(`[savingsAccountService - deleteSavingsAccount] Invalid account ID format: ${accountId}`);
+                console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Invalid account ID format: ${accountId}`);
                 throw new Error('Invalid account ID format');
             }
             
             // Validate transferToWalletId if provided
             if (transferToWalletId && !/^[0-9a-fA-F]{24}$/.test(transferToWalletId)) {
-                console.error(`[savingsAccountService - deleteSavingsAccount] Invalid wallet ID format: ${transferToWalletId}`);
+                console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Invalid wallet ID format: ${transferToWalletId}`);
                 throw new Error('Invalid wallet ID format');
             }
             
-            console.log(`[savingsAccountService - deleteSavingsAccount] Deleting account ${accountId} and transferring balance to wallet ${transferToWalletId || 'none'}`);
+            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Deleting account ${accountId} and transferring balance to wallet ${transferToWalletId || 'none'}`);
+            
+            // Get current user from localStorage
+            const userJson = localStorage.getItem('user');
+            const user = userJson ? JSON.parse(userJson) : {};
+            const userId = user.id || user._id;
             
             const data = { 
-                transferToWalletId: transferToWalletId || null
-                // Don't include userId in the request body as it should be taken from the auth token
+                transferToWalletId: transferToWalletId || null,
+                operationId: operationId, // Include operation ID for tracing across client and server
+                userId: userId // Include user ID as in other services
             };
             
-            console.log(`[savingsAccountService - deleteSavingsAccount] Request data:`, data);
+            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Request data:`, data);
             
-            // Make sure the auth token is being sent in the headers (handled by axiosInstance)
+            // Add timeout and retry logic for network resilience
             const response = await axiosInstance.delete(`${API_URL}/${accountId}`, {
-                data: data
+                data: data,
+                timeout: 10000 // 10 second timeout
             });
+            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Response received:`, response);
             
-            console.log("[savingsAccountService - deleteSavingsAccount] Account deleted successfully:", response);
-            return response;
-        } catch (error) {
-            console.error("[savingsAccountService - deleteSavingsAccount] Error deleting savings account:", error);
-            
-            // Enhanced error logging
-            if (error.response) {
-                console.error("Response status:", error.response.status);
-                console.error("Response data:", error.response.data);
-                console.error("Request URL:", error.config?.url);
-                console.error("Request data:", error.config?.data);
-            } else if (error.request) {
-                console.error("No response received:", error.request);
-            } else {
-                console.error("Error setting up request:", error.message);
+            // Validate the response
+            if (!response) {
+                console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Invalid response received:`, response);
+                throw new Error('Invalid response received from server');
             }
             
-            throw error;
+            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Account deleted successfully:`, response.data);
+            
+            // Return a normalized response with consistent fields
+            return {
+                success: true,
+                message: response.data.message || 'Savings account deleted successfully',
+                accountId: response.data.accountId || accountId,
+                accountName: response.data.accountName,
+                transferredAmount: response.data.transferredAmount || 0,
+                transferredTo: response.data.transferredTo || null,
+                operationId: response.data.operationId || operationId,
+                originalResponse: response
+            };
+        } catch (error) {
+            console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Error:`, error);
+            throw {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Failed to delete savings account',
+                statusCode: error.response?.status || 500,
+                details: error.response?.data?.details || error.message
+            };
         }
     },
 

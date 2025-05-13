@@ -65,7 +65,6 @@ const SavingsGoalManager = () => {
     };
 
     const handleDeleteGoal = async (goalId) => {
-        // Find the goal to get its current amount
         const goalToDelete = goals.find(goal => goal._id === goalId);
         
         if (!goalToDelete) {
@@ -73,12 +72,10 @@ const SavingsGoalManager = () => {
             return;
         }
         
-        // Check if the goal has money that needs to be transferred
         const hasAmount = goalToDelete.currentAmount > 0;
         let transferOptions = {};
         
         if (hasAmount) {
-            // If there's money in the goal, ask the user where to transfer it
             const transferConfirm = window.confirm(
                 `This goal has ${new Intl.NumberFormat('en-US', {
                     style: 'currency',
@@ -88,12 +85,8 @@ const SavingsGoalManager = () => {
             );
             
             if (transferConfirm) {
-                // Here you would ideally show a dropdown to select a savings account
-                // For now, we'll just transfer to the first available savings account
-                // or let the backend handle it automatically
                 transferOptions = { transferToSavingsAccount: true };
             } else {
-                // User chose not to transfer to a savings account, will go to wallet
                 transferOptions = { transferToWallet: true };
             }
         }
@@ -102,11 +95,21 @@ const SavingsGoalManager = () => {
             try {
                 setIsLoading(true);
                 console.log(`Deleting goal ${goalId} with transfer options:`, transferOptions);
-                await savingsGoalService.deleteSavingsGoal(goalId, transferOptions);
-                await fetchGoals();
+                
+                const result = await savingsGoalService.deleteSavingsGoal(goalId, transferOptions);
+                
+                if (result.success) {
+                    console.log(`Goal deleted successfully with operation ID: ${result.operationId}`);
+                    await fetchGoals();
+                } else {
+                    // This shouldn't happen as errors are thrown, but just in case
+                    setError(result.message || 'Failed to delete savings goal');
+                }
             } catch (error) {
                 console.error('Failed to delete goal:', error);
-                setError('Failed to delete savings goal. Please try again later.');
+                // Use the structured error response
+                const errorMessage = error.message || error.details || 'Failed to delete savings goal';
+                setError(`Failed to delete savings goal: ${errorMessage}. Please try again later.`);
             } finally {
                 setIsLoading(false);
             }

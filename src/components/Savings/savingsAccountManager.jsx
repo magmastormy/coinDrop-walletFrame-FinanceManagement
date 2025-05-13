@@ -122,70 +122,49 @@ const SavingsAccountManager = () => {
         const account = accounts.find(acc => acc._id === accountId);
         setAccountToDelete(account);
         
-        // Default to first wallet or empty string, ensuring it's not undefined
         setTransferWalletId(wallets.length > 0 ? wallets[0]._id : '');
         setDeleteModalOpen(true);
     };
 
     const confirmDelete = async () => {
         if (!accountToDelete) return;
-        
         try {
             setIsDeleting(true);
             setDeleteError('');
-            
-            // Enhanced validation to handle zero-balance accounts
             const hasBalance = accountToDelete.balance > 0;
-            
             if (hasBalance && !transferWalletId) {
                 setDeleteError('Please select a wallet to transfer the remaining balance');
                 setIsDeleting(false);
                 return;
             }
-            
-            // Only pass the wallet ID if there's a balance to transfer
             const walletIdToUse = hasBalance ? transferWalletId : null;
-            
-            console.log(`Deleting account with ID: ${accountToDelete._id}, transferring to wallet: ${walletIdToUse || 'none'}`);
-            
             try {
-                // Make sure we're using the correct API endpoint and sending proper data
-                const response = await savingsAccountService.deleteSavingsAccount(
-                    accountToDelete._id, 
+                const result = await savingsAccountService.deleteSavingsAccount(
+                    accountToDelete._id,
                     walletIdToUse
                 );
-                
-                console.log('Delete account response:', response);
-                
-                // Update the accounts list after successful deletion
-                setAccounts(prevAccounts => 
-                    prevAccounts.filter(account => account._id !== accountToDelete._id)
-                );
-                
-                // Refresh wallets if money was transferred
-                if (hasBalance) {
-                    await fetchWallets();
+                if (result.success) {
+                    setAccounts(prevAccounts => prevAccounts.filter(account => account._id !== accountToDelete._id));
+                    if (result.transferredAmount > 0) {
+                        await fetchWallets();
+                    }
+                    setDeleteModalOpen(false);
+                    setAccountToDelete(null);
+                    setTransferWalletId('');
+                    setDeleteError('');
+                } else {
+                    setDeleteError(result.message || 'Failed to delete account');
                 }
-                
-                // Show success message
-                // You could add a toast notification here
             } catch (error) {
-                console.error('Error in delete operation:', error);
-                if (error.response) {
-                    console.error('Response status:', error.response.status);
-                    console.error('Response data:', error.response.data);
+                let errorMessage = error.message || error.details || 'Failed to delete the account.';
+                if (error.statusCode === 404) {
+                    errorMessage = 'Account not found or already deleted';
+                    setAccounts(prevAccounts => prevAccounts.filter(account => account._id !== accountToDelete._id));
+                } else if (error.statusCode === 400) {
+                    errorMessage = 'Invalid account or wallet ID format';
                 }
-                throw error; // Re-throw to be caught by the outer catch block
+                setDeleteError(errorMessage);
             }
-            
-            setDeleteModalOpen(false);
-            setAccountToDelete(null);
-            setTransferWalletId('');
-            setDeleteError('');
-            
-        } catch (error) {
-            console.error('Failed to delete account:', error);
-            setDeleteError('Failed to delete the account. Please try again later.');
         } finally {
             setIsDeleting(false);
         }
@@ -389,6 +368,10 @@ const SavingsAccountManager = () => {
                 >
                     <SavingsAccountTransactionTable 
                         accountId={selectedAccount}
+                        wallets={wallets}
+                        savingsAccounts={accounts}
+                        budgets={[]}
+                        categories={[]}
                     />
                 </Box>
             )}

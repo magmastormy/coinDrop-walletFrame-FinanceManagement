@@ -33,6 +33,14 @@ const SavingsGoalSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    status: {
+        type: String,
+        enum: ['active', 'deleted'],
+        default: 'active'
+    },
+    deletedAt: {
+        type: Date
     }
 }, {
     timestamps: true

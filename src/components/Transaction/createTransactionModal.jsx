@@ -19,6 +19,94 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         budgetId: ''
     });
 
+    // Always reflect initialData changes (for edit mode)
+    useEffect(() => {
+        if (initialData) {
+            // Log the initialData for debugging
+            console.log('Initializing modal with data:', initialData);
+            
+            // Handle wallet and savings account IDs properly
+            let walletId = '';
+            let savingsAccountId = '';
+            
+            // Check if walletId exists and is a valid ID
+            if (initialData.walletId) {
+                if (typeof initialData.walletId === 'string') {
+                    walletId = initialData.walletId;
+                } else if (initialData.walletId._id) {
+                    // If it's an object with _id property, use that
+                    walletId = initialData.walletId._id;
+                }
+            }
+            
+            // Check if savingsAccountId exists and is a valid ID
+            if (initialData.savingsAccountId) {
+                if (typeof initialData.savingsAccountId === 'string') {
+                    savingsAccountId = initialData.savingsAccountId;
+                } else if (initialData.savingsAccountId._id) {
+                    // If it's an object with _id property, use that
+                    savingsAccountId = initialData.savingsAccountId._id;
+                }
+            }
+            
+            // Handle budget ID properly
+            let budgetId = '';
+            if (initialData.budgetId) {
+                if (typeof initialData.budgetId === 'string') {
+                    budgetId = initialData.budgetId;
+                } else if (initialData.budgetId._id) {
+                    budgetId = initialData.budgetId._id;
+                }
+            }
+            
+            // This is needed because sometimes the budget is not populated as an object
+            if (!budgetId) {
+                // Check for _doc property (MongoDB document)
+                if (initialData._doc && initialData._doc.budgetId) {
+                    budgetId = initialData._doc.budgetId.toString();
+                }
+                // Direct property access
+                else if (initialData.budgetId) {
+                    budgetId = initialData.budgetId.toString();
+                }
+            }
+            
+            console.log('[createTransactionModal] Budget ID extracted:', budgetId, 'from initialData:', initialData);
+            
+            // Handle category ID properly
+            let category = '';
+            if (initialData.category) {
+                if (typeof initialData.category === 'string') {
+                    category = initialData.category;
+                } else if (initialData.category._id) {
+                    category = initialData.category._id;
+                }
+            }
+            
+            setTransactionData({
+                amount: initialData.amount ?? '',
+                type: initialData.type ?? 'expense',
+                category: category,
+                description: initialData.description ?? '',
+                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                walletId: walletId,
+                savingsAccountId: savingsAccountId,
+                budgetId: budgetId
+            });
+        } else {
+            setTransactionData({
+                amount: '',
+                type: 'expense',
+                category: '',
+                description: '',
+                date: new Date().toISOString().split('T')[0],
+                walletId: '',
+                savingsAccountId: '',
+                budgetId: ''
+            });
+        }
+    }, [initialData, isOpen]);
+
     const handleEscapeKey = useCallback((event) => {
         if (event.key === 'Escape') {
             onClose();
@@ -41,42 +129,67 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         setIsSubmitting(true);
         
         try {
+            // Validate amount first
+            const amount = parseFloat(transactionData.amount);
+            if (isNaN(amount) || amount <= 0) {
+                throw new Error('Please enter a valid positive amount');
+            }
+
+            // Validate transaction type
+            if (!transactionData.type) {
+                throw new Error('Please select a transaction type');
+            }
+
+            // Validate category or description
+            if (!transactionData.category && (!transactionData.description || transactionData.description.trim() === '')) {
+                throw new Error('Please select a category or provide a description');
+            }
+
+            // Validate wallet or savings account selection
+            const hasWallet = transactionData.walletId && transactionData.walletId.trim() !== '';
+            const hasSavings = transactionData.savingsAccountId && transactionData.savingsAccountId.trim() !== '';
+            
+            if (!hasWallet && !hasSavings) {
+                throw new Error('Please select a wallet or savings account');
+            }
+
+            // Ensure only one of wallet or savings account is selected
             const cleanTransactionData = {
-                amount: parseFloat(transactionData.amount),
+                amount: amount,
                 type: transactionData.type,
                 category: transactionData.category || undefined,
                 description: transactionData.description || '',
                 date: transactionData.date || new Date().toISOString().split('T')[0],
-                walletId: transactionData.walletId || null,
-                savingsAccountId: transactionData.savingsAccountId || null,
-                budgetId: transactionData.budgetId || undefined
             };
+
+            // Add either walletId or savingsAccountId, not both
+            if (hasWallet) {
+                cleanTransactionData.walletId = transactionData.walletId;
+            } else if (hasSavings) {
+                cleanTransactionData.savingsAccountId = transactionData.savingsAccountId;
+            }
+
+            // Add budgetId if present and valid
+            if (transactionData.budgetId && transactionData.budgetId.trim() !== '') {
+                cleanTransactionData.budgetId = transactionData.budgetId;
+            }
+
             console.log("[create Transaction Modal - handleSubmit] cleanTransactionData: ", cleanTransactionData);
 
-            // Validate required fields
-            if (!cleanTransactionData.amount || isNaN(cleanTransactionData.amount)) {
-                throw new Error('Amount must be a valid number');
+            let response;
+            if (initialData && initialData._id) {
+                // Update mode
+                response = await transactionService.updateTransaction(initialData._id, cleanTransactionData);
+                onTransactionCreated(response.data ? response.data.transaction : response);
+            } else {
+                // Create mode
+                response = await transactionService.createTransaction(cleanTransactionData);
+                onTransactionCreated(response);
             }
-
-            if (!cleanTransactionData.type) {
-                throw new Error('Transaction type is required');
-            }
-
-            if (!cleanTransactionData.walletId && !cleanTransactionData.savingsAccountId) {
-                throw new Error('Please select either a wallet or a savings account');
-            }
-
-            // Ensure at least a category or a description is provided
-            if (!cleanTransactionData.category && (!cleanTransactionData.description || !cleanTransactionData.description.trim())) {
-                throw new Error('Please provide a category or description');
-            }
-
-            const response = await transactionService.createTransaction(cleanTransactionData);
-            onTransactionCreated(response);
             onClose();
-        } catch (error) {
-            setError(error.message || 'Failed to create transaction');
-            console.error('Transaction creation failed:', error);
+        } catch (err) {
+            console.error('[create Transaction Modal - handleSubmit] Error submitting transaction:', err);
+            setError(err.message || 'An error occurred while creating the transaction');
         } finally {
             setIsSubmitting(false);
         }
@@ -160,11 +273,11 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                         <select
                             id="wallet"
                             value={transactionData.walletId}
-                            onChange={e => setTransactionData({ ...transactionData, walletId: e.target.value, savingsAccountId: '' })}
+                            onChange={e => setTransactionData({ ...transactionData, walletId: String(e.target.value), savingsAccountId: '' })}
                         >
                             <option value="">Select a wallet</option>
                             {Array.isArray(wallets) && wallets.map(wallet => (
-                                <option key={wallet._id} value={wallet._id}>
+                                <option key={wallet._id} value={String(wallet._id)}>
                                     {wallet.name}
                                 </option>
                             ))}
@@ -175,11 +288,11 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                         <select
                             id="savingsAccount"
                             value={transactionData.savingsAccountId}
-                            onChange={e => setTransactionData({ ...transactionData, savingsAccountId: e.target.value, walletId: '' })}
+                            onChange={e => setTransactionData({ ...transactionData, savingsAccountId: String(e.target.value), walletId: '' })}
                         >
                             <option value="">Select a savings account</option>
                             {Array.isArray(savingsAccounts) && savingsAccounts.map(account => (
-                                <option key={account._id} value={account._id}>
+                                <option key={account._id} value={String(account._id)}>
                                     {account.name}
                                 </option>
                             ))}

@@ -18,7 +18,10 @@ const NewGoalCard = ({ onCreate }) => {
   const [form, setForm] = useState({ name: '', targetAmount: '', targetDate: null, description: '' });
   const [error, setError] = useState('');
 
-  const handleToggle = () => setOpen(prev => !prev);
+  const handleToggle = () => {
+    console.log('[NewGoalCard] handleToggle called. open before:', open);
+    setOpen(prev => !prev);
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -26,6 +29,7 @@ const NewGoalCard = ({ onCreate }) => {
   const handleDateChange = (value) => setForm(prev => ({ ...prev, targetDate: value }));
 
   const handleSubmit = async () => {
+    console.log('[NewGoalCard] handleSubmit called. form:', form);
     if (!form.name.trim()) return setError('Name is required');
     if (!form.targetAmount || parseFloat(form.targetAmount) <= 0) return setError('Target must be greater than 0');
     if (!form.targetDate) return setError('Date is required');
@@ -48,8 +52,8 @@ const NewGoalCard = ({ onCreate }) => {
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">New Goal</Typography>
-            <IconButton onClick={handleToggle} size="small">
-              <FontAwesomeIcon icon={faPlus} rotation={open ? 45 : 0} />
+            <IconButton onClick={handleToggle} size="large" sx={{ width: 48, height: 48 }}>
+              <FontAwesomeIcon icon={faPlus} rotation={open ? 90 : 0} size="2x" />
             </IconButton>
           </Box>
           <AnimatePresence>

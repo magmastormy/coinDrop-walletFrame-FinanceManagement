@@ -5,7 +5,7 @@ import savingsAccountService from '../../services/savingsAccountService';
 import EditTransactionModal from './editTransactionModal';
 import './styles/savingsTransactionTableStyles.css';
 
-const SavingsAccountTransactionTable = ({ accountId }) => {
+const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccounts = [], budgets = [], categories = [] }) => {
     const dispatch = useDispatch();
     const [transactions, setTransactions] = useState([]);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -93,6 +93,10 @@ const SavingsAccountTransactionTable = ({ accountId }) => {
                 onClose={() => setEditModalOpen(false)}
                 transaction={selectedTransaction}
                 onUpdate={handleUpdateTransaction}
+                wallets={wallets}
+                savingsAccounts={savingsAccounts}
+                budgets={budgets}
+                categories={categories}
             />
         </div>
     );
