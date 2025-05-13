@@ -106,7 +106,7 @@ function releaseProcess(proc) {
  * @param {number} [options.timeoutMs=30000] - Timeout in milliseconds.
  * @returns {Promise<string>} - AI response content.
  */
-async function send(messages, { timeoutMs = 30000 } = {}) {
+async function send(messages, { timeoutMs = 60000 } = {}) {
   const t0 = performance.now();
   let proc = null;
   
@@ -200,7 +200,7 @@ async function send(messages, { timeoutMs = 30000 } = {}) {
  * @param {Object} options - Optional settings.
  * @returns {Promise<string>} - AI response content.
  */
-async function fallbackSend(messages, { timeoutMs = 30000 } = {}) {
+async function fallbackSend(messages, { timeoutMs = 60000 } = {}) {
   console.log('[aiClient] Using fallback implementation');
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');

@@ -199,19 +199,6 @@ exports.sendMessage = async (req, res, next) => {
         const userMessage = lastUser.content.toLowerCase();
         console.log(`[ZhipuaiController - sendMessage] User message: "${lastUser.content.substring(0, 50)}${lastUser.content.length > 50 ? '...' : ''}"`);
         
-        // Check for general greetings or simple messages that don't need context
-        const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessage);
-        
-        // Check for very short messages (likely not requiring financial context)
-        const isVeryShortMessage = userMessage.trim().split(/\s+/).length <= 2;
-        
-        // Check for general questions that don't relate to finances
-        const isGeneralQuestion = /\b(what is|who is|how do|can you|tell me about|explain|define|where is|when is|why is|which)\b/i.test(userMessage) && 
-                                !isFinancialQuery;
-        
-        // Check for chat-like interactions
-        const isChatInteraction = /\b(how are you|what do you think|your opinion|can you help|what can you do|your capabilities|tell me a joke|fun fact)\b/i.test(userMessage);
-        
         // Detect query type for better context formatting
         const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessage);
         const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessage);
@@ -219,6 +206,20 @@ exports.sendMessage = async (req, res, next) => {
         const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessage);
         const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
                                 /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessage);
+        
+        // Check for general greetings or simple messages that don't need context
+        const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessage);
+        
+        // Check for very short messages (likely not requiring financial context)
+        const isVeryShortMessage = userMessage.trim().split(/\s+/).length <= 2;
+        
+        // Check for general questions that don't relate to finances
+        // Expanded to catch philosophical questions and general knowledge queries
+        const isGeneralQuestion = (/\b(what is|who is|how do|can you|tell me about|explain|define|where is|when is|why is|which)\b/i.test(userMessage) && !isFinancialQuery) ||
+                                 /\b(life|universe|philosophy|meaning|existence|theory|science|biology|physics|religion|god|spirituality|consciousness|mind|soul|ethics|morality)\b/i.test(userMessage) && !isFinancialQuery;
+        
+        // Check for chat-like interactions
+        const isChatInteraction = /\b(how are you|what do you think|your opinion|can you help|what can you do|your capabilities|tell me a joke|fun fact)\b/i.test(userMessage);
         
         // Skip context for general greetings, very short non-financial messages, general questions, or chat interactions
         const skipContext = isGeneralGreeting || 
@@ -230,6 +231,8 @@ exports.sendMessage = async (req, res, next) => {
         console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
         
         let prompt = '';
+        // Initialize ctx variable with an empty object
+        let ctx = {};
         
         // Skip context for general greetings or very short non-financial messages
         if (skipContext) {
