@@ -57,9 +57,34 @@ const TransactionManager = () => {
             const categoriesData = await categoryService.getUserCategories(user.id);
             setCategories(categoriesData || []);
             
-            // Fetch transactions
-            const transactionsResponse = await transactionService.getUserTransactions(user.id, filters);
-            dispatch(setTransactions(transactionsResponse.transactions || []));
+            // Fetch transactions - set a high limit to get all transactions
+            const transactionsResponse = await transactionService.getUserTransactions(user.id, { ...filters, limit: 1000 });
+            
+            // Log the full response to debug
+            console.log('Transaction response:', transactionsResponse);
+            
+            // Extract transactions from the response
+            let transactions = [];
+            
+            if (transactionsResponse) {
+                if (transactionsResponse.data) {
+                    // Most common case: transactions are in response.data.transactions
+                    if (transactionsResponse.data.transactions && Array.isArray(transactionsResponse.data.transactions)) {
+                        transactions = transactionsResponse.data.transactions;
+                    }
+                    // Case: transactions are directly in response.data as an array
+                    else if (Array.isArray(transactionsResponse.data)) {
+                        transactions = transactionsResponse.data;
+                    }
+                }
+                // Case: transactions are directly in the response
+                else if (transactionsResponse.transactions && Array.isArray(transactionsResponse.transactions)) {
+                    transactions = transactionsResponse.transactions;
+                }
+            }
+            
+            console.log(`Fetched ${transactions.length} transactions from database:`, transactions);
+            dispatch(setTransactions(transactions));
         } catch (err) {
             dispatch(setError('Unable to fetch transaction data. Please try again later.'));
         } finally {
@@ -81,43 +106,104 @@ const TransactionManager = () => {
     };
 
     const handleCreateTransaction = async (transactionData) => {
-        dispatch(setLoading(true));
-        try {
-            // Don't add userId here, it will be added by the backend from the auth token
-            await transactionService.createTransaction(transactionData);
+        // Validate transaction data
+        if (!transactionData || typeof transactionData !== 'object') {
+            console.error('Invalid transaction data received:', transactionData);
+            dispatch(setError('Invalid transaction data. Please try again.'));
+            return;
+        }
+
+        // Check if it's already a response object (prevent double processing)
+        if (transactionData.message && transactionData.transaction) {
+            console.log('Received response object instead of transaction data, skipping create');
             setIsModalOpen(false);
             await fetchInitialData();
+            await fetchBudgets();
+            return;
+        }
+
+        dispatch(setLoading(true));
+        try {
+            console.log('Creating transaction with data:', transactionData);
+            await transactionService.createTransaction(transactionData);
+            console.log('Transaction created successfully');
+            
+            // Close modal and refresh data
+            setIsModalOpen(false);
+            
+            // Force a complete refresh of data
+            setTimeout(async () => {
+                await fetchInitialData();
+                await fetchBudgets();
+                console.log('Data refreshed after transaction creation');
+            }, 300);
         } catch (err) {
             console.error('Transaction creation error:', err);
-            dispatch(setError(err.response?.data?.details || 'Failed to create transaction. Please try again.'));
+            dispatch(setError(err.response?.data?.message || err.message || 'Failed to create transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
         }
     };
 
     const handleUpdateTransaction = async (transactionId, updatedData) => {
+        // Validate transaction ID
+        if (!transactionId) {
+            console.error('No transaction ID provided for update');
+            dispatch(setError('Transaction ID is required for updates'));
+            return;
+        }
+
+        // Validate transaction data
+        if (!updatedData || typeof updatedData !== 'object') {
+            console.error('Invalid transaction data received for update:', updatedData);
+            dispatch(setError('Invalid transaction data. Please try again.'));
+            return;
+        }
+
+        // Check if it's already a response object (prevent double processing)
+        if (updatedData.message && updatedData.transaction) {
+            console.log('Received response object instead of transaction data, skipping update');
+            setEditingTransaction(null);
+            setIsModalOpen(false);
+            await fetchInitialData();
+            await fetchBudgets();
+            return;
+        }
+
         dispatch(setLoading(true));
         try {
+            console.log('Updating transaction:', transactionId, 'with data:', updatedData);
             await transactionService.updateTransaction(transactionId, updatedData);
+            console.log('Transaction updated successfully');
+            
+            // Reset state and close modal
             setEditingTransaction(null);
-            await fetchInitialData();
+            setIsModalOpen(false);
+            
+            // Force a complete refresh of data with a slight delay
+            setTimeout(async () => {
+                await fetchInitialData();
+                await fetchBudgets();
+                console.log('Data refreshed after transaction update');
+            }, 300);
         } catch (err) {
-            dispatch(setError('Failed to update transaction. Please try again.'));
+            console.error('Error updating transaction:', err);
+            dispatch(setError(err.response?.data?.message || err.message || 'Failed to update transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
         }
     };
 
     const handleDeleteTransaction = async (transactionId) => {
-        if (!window.confirm('Are you sure you want to delete this transaction?')) {
-            return;
-        }
-
         dispatch(setLoading(true));
         try {
             await transactionService.deleteTransaction(transactionId);
+            // Refresh the transactions list
             await fetchInitialData();
+            // Also refresh budgets to update analytics
+            await fetchBudgets();
         } catch (err) {
+            console.error('Error deleting transaction:', err);
             dispatch(setError('Failed to delete transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));
@@ -130,14 +216,27 @@ const TransactionManager = () => {
     };
 
     const handleWalletSelect = (walletId) => {
+        // Clear savings account filter when selecting a wallet
         setFilters(prev => ({ 
             ...prev, 
-            walletId: walletId._id || walletId 
+            walletId: walletId?._id || walletId || '',
+            savingsAccountId: '' // Clear savings account filter when selecting a wallet
         }));
+        
+        // Refresh data with new filters
+        fetchInitialData();
     };
 
     const handleSavingsSelect = (savingsAccountId) => {
-        setFilters(prev => ({ ...prev, savingsAccountId }));
+        // Clear wallet filter when selecting a savings account
+        setFilters(prev => ({ 
+            ...prev, 
+            savingsAccountId: savingsAccountId?._id || savingsAccountId || '',
+            walletId: '' // Clear wallet filter when selecting a savings account
+        }));
+        
+        // Refresh data with new filters
+        fetchInitialData();
     };
 
     const handleCategorySelect = (category) => {
@@ -154,22 +253,54 @@ const TransactionManager = () => {
         }
     };
 
-    const filteredTransactions = Array.isArray(transactions) ? transactions.filter(transaction => {
-        return (
-            (!filters.category || transaction.category === filters.category) &&
-            (!filters.walletId || (transaction.walletId && transaction.walletId._id === filters.walletId)) &&
-            (!filters.savingsAccountId || transaction.savingsAccount === filters.savingsAccountId) &&
-            (!filters.startDate || new Date(transaction.date) >= new Date(filters.startDate)) &&
-            (!filters.endDate || new Date(transaction.date) <= new Date(filters.endDate)) &&
-            (!filters.type || transaction.type === filters.type)
-        );
-    }) : [];
+    // Apply filters to transactions with improved handling of different property formats
+    const filteredTransactions = React.useMemo(() => {
+        if (!Array.isArray(transactions)) return [];
+        
+        console.log('Filtering transactions with filters:', filters);
+        console.log('Total transactions before filtering:', transactions.length);
+        
+        const filtered = transactions.filter(transaction => {
+            // Handle category filter - could be string ID or object with _id
+            const categoryMatch = !filters.category || 
+                transaction.category === filters.category || 
+                (transaction.category && transaction.category._id === filters.category);
+            
+            // Handle wallet filter - could be string ID or object with _id
+            const walletMatch = !filters.walletId || filters.walletId === '' || 
+                transaction.walletId === filters.walletId || 
+                (transaction.walletId && transaction.walletId._id === filters.walletId) ||
+                (typeof transaction.walletId === 'string' && transaction.walletId === filters.walletId);
+            
+            // Handle savings account filter
+            const savingsMatch = !filters.savingsAccountId || filters.savingsAccountId === '' || 
+                transaction.savingsAccountId === filters.savingsAccountId || 
+                (transaction.savingsAccountId && transaction.savingsAccountId._id === filters.savingsAccountId) ||
+                (typeof transaction.savingsAccountId === 'string' && transaction.savingsAccountId === filters.savingsAccountId);
+            
+            // Handle date filters
+            const startDateMatch = !filters.startDate || 
+                new Date(transaction.date) >= new Date(filters.startDate);
+                
+            const endDateMatch = !filters.endDate || 
+                new Date(transaction.date) <= new Date(filters.endDate);
+            
+            // Handle type filter
+            const typeMatch = !filters.type || transaction.type === filters.type;
+            
+            return categoryMatch && walletMatch && savingsMatch && startDateMatch && endDateMatch && typeMatch;
+        });
+        
+        console.log('Filtered transactions count:', filtered.length);
+        return filtered;
+    }, [transactions, filters]);
 
 
-    const data = React.useMemo(() =>
-        Array.isArray(transactions) ? transactions : [],
-        [transactions]
-    );
+    // We don't need this anymore since we're using filteredTransactions directly
+    // const data = React.useMemo(() =>
+    //     Array.isArray(transactions) ? transactions : [],
+    //     [transactions]
+    // );
 
     // Summary stats for displayed transactions
     const totalIncome = filteredTransactions.reduce((sum, tx) => tx.type === 'income' ? sum + tx.amount : sum, 0);
@@ -251,6 +382,7 @@ const TransactionManager = () => {
                     onEdit={(transaction) => {
                         console.log('Editing transaction:', transaction);
                         setEditingTransaction(transaction);
+                        setIsModalOpen(true);
                     }}
                     onDelete={handleDeleteTransaction}
                     wallets={wallets}

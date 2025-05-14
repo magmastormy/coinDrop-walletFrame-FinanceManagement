@@ -176,17 +176,33 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
 
             console.log("[create Transaction Modal - handleSubmit] cleanTransactionData: ", cleanTransactionData);
 
-            let response;
-            if (initialData && initialData._id) {
-                // Update mode
-                response = await transactionService.updateTransaction(initialData._id, cleanTransactionData);
-                onTransactionCreated(response.data ? response.data.transaction : response);
-            } else {
-                // Create mode
-                response = await transactionService.createTransaction(cleanTransactionData);
-                onTransactionCreated(response);
+            try {
+                if (initialData && initialData._id) {
+                    // Update mode
+                    console.log(`[createTransactionModal - handleSubmit - Update]Updating transaction ${initialData._id} with data:`, cleanTransactionData);
+                    const response = await transactionService.updateTransaction(initialData._id, cleanTransactionData);
+                    console.log('[createTransactionModal - handleSubmit - Update] Update response:', response);
+                    
+                    // Handle different response formats
+                    if (response && typeof onTransactionCreated === 'function') {
+                        onTransactionCreated(cleanTransactionData);
+                    }
+                } else {
+                    // Create mode
+                    console.log('[createTransactionModal - handleSubmit - Create] Creating new transaction with data:', cleanTransactionData);
+                    const response = await transactionService.createTransaction(cleanTransactionData);
+                    console.log('[createTransactionModal - handleSubmit - Create] response:', response);
+                    
+                    // Handle different response formats
+                    if (response && typeof onTransactionCreated === 'function') {
+                        onTransactionCreated(cleanTransactionData);
+                    }
+                }
+                onClose();
+            } catch (innerError) {
+                console.error('Error in transaction API call:', innerError);
+                throw new Error(innerError.message || 'Failed to process transaction');
             }
-            onClose();
         } catch (err) {
             console.error('[create Transaction Modal - handleSubmit] Error submitting transaction:', err);
             setError(err.message || 'An error occurred while creating the transaction');

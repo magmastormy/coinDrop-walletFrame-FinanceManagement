@@ -20,12 +20,29 @@ export const getUserTransactions = async (userId, filters = {}) => {
 const transactionService = {
     getUserTransactions: async (userId, filters = {}) => {
         try {
+            // Always request a high limit to get all transactions
+            const enhancedFilters = {
+                ...filters,
+                limit: 1000, // Set a very high limit to get all transactions
+                noLimit: true // Add a flag for the backend to ignore pagination limits
+            };
+            
             const queryParams = new URLSearchParams({
                 userId,
-               ...filters
+                ...enhancedFilters
             }).toString();
-            //console.log(`[transactionService - getUserTransactions] Fetching transactions with userId: ${userId} and filters: ${JSON.stringify(filters)}`);
+            
+            console.log(`[transactionService - getUserTransactions] Fetching transactions with userId: ${userId} and filters:`, enhancedFilters);
             const response = await axiosInstance.get(`${API_URL}?${queryParams}`);
+            
+            // Log the full response structure to debug
+            console.log('[transactionService - getUserTransactions] Response structure:', response);
+            
+            // Count transactions based on the actual response structure
+            const transactionCount = response?.data?.transactions?.length || 
+                                    (Array.isArray(response?.data) ? response.data.length : 0) || 0;
+            
+            console.log(`[transactionService - getUserTransactions] Received ${transactionCount} transactions`);
             return response; 
         } catch (error) {
             console.error("[transactionService - getUserTransactions] Error fetching transactions:", error);
@@ -62,6 +79,12 @@ const transactionService = {
 
     createTransaction: async (transactionData) => {
         try {
+            // Check if transactionData is already a response object (to prevent double calls)
+            if (transactionData && transactionData.message && transactionData.transaction) {
+                console.log("[transactionService - createTransaction] Received response object instead of transaction data, returning directly");
+                return transactionData;
+            }
+            
             if (!transactionData) {
                 throw new Error('Transaction data is required');
             }
@@ -100,9 +123,12 @@ const transactionService = {
                 throw new Error('Amount and type are required');
             }
             
+            console.log("[transactionService - createTransaction] - payload: ", payload);
             // Send a single request with the clean payload
             const response = await axiosInstance.post(API_URL, payload);
-            return response.data;
+
+            console.log("[transactionService - createTransaction] response: ", response);
+            return response.data; // Return response.data instead of the full response
         } catch (error) {
             console.error("[transactionService - createTransaction] Error creating transaction:", error);
             throw error;
@@ -111,16 +137,23 @@ const transactionService = {
 
     updateTransaction: async (id, transactionData) => {
         try {
+            console.log("[transactionService - updateTransaction] Updating transaction with id:", id, "and data:", transactionData);
+            
             if (!id) {
                 throw new Error('Transaction ID is required for updates');
             }
+            
+            // Check if transactionData is already a response object (to prevent double calls)
+            if (transactionData && transactionData.message && transactionData.transaction) {
+                console.log("[transactionService - updateTransaction] Received response object instead of transaction data, returning directly");
+                return transactionData;
+            }
+            
             if (!transactionData) {
                 throw new Error('Transaction data is required');
             }
             
             // Create a clean payload with all necessary fields
-            console.log(`[transactionService - updateTransaction] Updating transaction with id: ${id} and data:`, transactionData);
-            
             const payload = {
                 amount: transactionData.amount,
                 type: transactionData.type,
@@ -153,9 +186,13 @@ const transactionService = {
                 throw new Error('Amount and type are required');
             }
             
+            console.log("[transactionService - updateTransaction] - payload: ", payload);
+            
             // Use PUT instead of PATCH to avoid CORS issues
             const response = await axiosInstance.put(`${API_URL}/${id}`, payload);
-            return response;
+            console.log("[transactionService - updateTransaction] response: ", response);
+            
+            return response.data; // Return response.data instead of the full response
         } catch (error) {
             console.error("[transactionService - updateTransaction] Error updating transaction:", error);
             throw error;
