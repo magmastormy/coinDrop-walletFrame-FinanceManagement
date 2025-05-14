@@ -245,5 +245,12 @@ function generateContextSuggestions(ctx) {
 
 module.exports = {
   formatContext,
-  generateContextSuggestions
+  generateContextSuggestions,
+  formatBalanceSection,
+  formatBudgetSection,
+  formatTransactionsSection,
+  formatBillsSection,
+  formatSavingsGoalsSection,
+  formatFinancialSummarySection,
+  formatNetWorthSection
 };

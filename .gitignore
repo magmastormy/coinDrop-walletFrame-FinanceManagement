@@ -61,3 +61,6 @@ backend/routes/testRoutes.js
 # Documentation files
 *.md
 !README.md
+docker-compose.yml
+docker-compose.override.yml
+.eslintignore

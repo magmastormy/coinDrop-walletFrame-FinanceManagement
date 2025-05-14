@@ -155,8 +155,8 @@ export const savingsAccountService = {
             
             const data = { 
                 transferToWalletId: transferToWalletId || null,
-                operationId: operationId, // Include operation ID for tracing across client and server
-                userId: userId // Include user ID as in other services
+                operationId: operationId,
+                userId: userId
             };
             
             console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Request data:`, data);
@@ -168,23 +168,17 @@ export const savingsAccountService = {
             });
             console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Response received:`, response);
             
-            // Validate the response
             if (!response) {
                 console.error(`[savingsAccountService - deleteSavingsAccount][${operationId}] Invalid response received:`, response);
                 throw new Error('Invalid response received from server');
             }
             
-            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Account deleted successfully:`, response.data);
+            console.log(`[savingsAccountService - deleteSavingsAccount][${operationId}] Account deleted successfully:`, response);
             
             // Return a normalized response with consistent fields
             return {
                 success: true,
-                message: response.data.message || 'Savings account deleted successfully',
-                accountId: response.data.accountId || accountId,
-                accountName: response.data.accountName,
-                transferredAmount: response.data.transferredAmount || 0,
-                transferredTo: response.data.transferredTo || null,
-                operationId: response.data.operationId || operationId,
+                message: 'Savings account deleted successfully',
                 originalResponse: response
             };
         } catch (error) {

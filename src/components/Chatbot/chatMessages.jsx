@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLightbulb, faInfoCircle, faWallet, faPiggyBank, faChartPie, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import { faLightbulb, faInfoCircle, faWallet, faPiggyBank, faChartPie, faExclamationCircle, faUser, faRobot } from '@fortawesome/free-solid-svg-icons';
 import ReactMarkdown from 'react-markdown';
 import './styles/chatMessagesStyles.css';
 
@@ -148,12 +148,16 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                          message.content.includes('saving') ? 'savings' :
                          message.content.includes('budget') ? 'budget' : 'general') 
                         : null;
-                    
+                    const isUser = message.role === 'user';
+                    const isAssistant = message.role === 'assistant';
                     return (
                         <div 
                             key={`${message.role}-${index}-${message.timestamp}`}
                             className={`message ${message.role} ${message.type === 'proactive' ? 'proactive' : ''} ${isInsight ? 'insight ' + insightType : ''}`}
                         >
+                            {/* Avatar */}
+                            {isUser && <div className="avatar user-avatar"><FontAwesomeIcon icon={faUser} /></div>}
+                            {isAssistant && <div className="avatar assistant-avatar"><FontAwesomeIcon icon={faRobot} /></div>}
                             <div className="message-bubble">
                                 {isInsight && (
                                     <div className="insight-icon">
@@ -161,7 +165,7 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                                     </div>
                                 )}
                                 
-                                <div className={`message-content ${message.role === 'assistant' ? 'ai-message' : ''}`}>
+                                <div className={`message-content ${isAssistant ? 'ai-message' : ''}`}>
                                     {renderInsightContent(message.content)}
                                 </div>
                                 

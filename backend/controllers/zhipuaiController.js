@@ -1,6 +1,8 @@
 const Wallet = require('../models/Wallet');
 const aiClient = require('../services/aiClient');
 const contextService = require('../services/zhipuaiContextService');
+const questionAnalyzer = require('../services/questionAnalyzer');
+const enhancedContextFormatter = require('../services/formatters/enhancedContextFormatter');
 
 const analyzeUserActivity = async (transactions, budgets) => {
     try {
@@ -196,36 +198,79 @@ exports.sendMessage = async (req, res, next) => {
         }
         
         const lastUser = userMsgs[userMsgs.length - 1];
-        const userMessage = lastUser.content.toLowerCase();
+        const userMessage = lastUser.content;
         console.log(`[ZhipuaiController - sendMessage] User message: "${lastUser.content.substring(0, 50)}${lastUser.content.length > 50 ? '...' : ''}"`);
         
+        // Analyze the question using the question analyzer
+        const questionAnalysis = questionAnalyzer.analyzeQuestion(userMessage);
+        console.log(`[ZhipuaiController - sendMessage] Question analysis: ${JSON.stringify({
+            isMultiPart: questionAnalysis.isMultiPart,
+            parts: questionAnalysis.parts.length,
+            specificDataRequests: Object.entries(questionAnalysis.specificDataRequests)
+                .filter(([_, value]) => value)
+                .map(([key, _]) => key)
+        })}`);
+        
         // Detect query type for better context formatting
-        const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessage);
-        const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessage);
-        const isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessage);
-        const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessage);
+        const userMessageLower = userMessage.toLowerCase();
+        const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessageLower);
+        const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessageLower);
+        const isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessageLower);
+        const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessageLower);
         const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
-                                /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessage);
+                                /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessageLower) ||
+                                questionAnalysis.specificDataRequests.lastTransaction || 
+                                questionAnalysis.specificDataRequests.specificTransaction ||
+                                questionAnalysis.specificDataRequests.transactionByCategory;
         
         // Check for general greetings or simple messages that don't need context
-        const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessage);
+        const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessageLower);
         
         // Check for very short messages (likely not requiring financial context)
-        const isVeryShortMessage = userMessage.trim().split(/\s+/).length <= 2;
+        const isVeryShortMessage = userMessageLower.trim().split(/\s+/).length <= 2;
         
         // Check for general questions that don't relate to finances
         // Expanded to catch philosophical questions and general knowledge queries
-        const isGeneralQuestion = (/\b(what is|who is|how do|can you|tell me about|explain|define|where is|when is|why is|which)\b/i.test(userMessage) && !isFinancialQuery) ||
-                                 /\b(life|universe|philosophy|meaning|existence|theory|science|biology|physics|religion|god|spirituality|consciousness|mind|soul|ethics|morality)\b/i.test(userMessage) && !isFinancialQuery;
+        const isGeneralQuestion = (/\b(what is|who is|how do|can you|tell me about|explain|define|where is|when is|why is|which)\b/i.test(userMessageLower) && !isFinancialQuery) ||
+                                 /\b(life|universe|philosophy|meaning|existence|theory|science|biology|physics|religion|god|spirituality|consciousness|mind|soul|ethics|morality)\b/i.test(userMessageLower) && !isFinancialQuery;
         
         // Check for chat-like interactions
-        const isChatInteraction = /\b(how are you|what do you think|your opinion|can you help|what can you do|your capabilities|tell me a joke|fun fact)\b/i.test(userMessage);
+        const isChatInteraction = /\b(how are you|what do you think|your opinion|can you help|what can you do|your capabilities|tell me a joke|fun fact)\b/i.test(userMessageLower);
+        
+        // Check for transaction-related terms that should always trigger financial context
+        const hasTransactionTerms = /\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|spend|spending|bought|paid)\b/i.test(userMessageLower);
+        
+        // Check for budget and savings terms
+        const hasBudgetTerms = /\b(budget|budgets)\b/i.test(userMessageLower);
+        const hasSavingsTerms = /\b(saving|savings|goal|goals)\b/i.test(userMessageLower);
+        
+        // Update financial query detection to include transaction, budget, and savings terms
+        if (hasTransactionTerms) {
+            console.log(`[ZhipuaiController - sendMessage] Detected transaction terms, treating as financial query`);
+            isFinancialQuery = true;
+        }
+        
+        if (hasBudgetTerms) {
+            console.log(`[ZhipuaiController - sendMessage] Detected budget terms, treating as financial query`);
+            isFinancialQuery = true;
+            isBudgetQuery = true;
+        }
+        
+        if (hasSavingsTerms) {
+            console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            isFinancialQuery = true;
+            isSavingsQuery = true;
+        }
         
         // Skip context for general greetings, very short non-financial messages, general questions, or chat interactions
-        const skipContext = isGeneralGreeting || 
-                          (isVeryShortMessage && !isFinancialQuery) || 
-                          isGeneralQuestion || 
-                          isChatInteraction;
+        // BUT don't skip if we have specific data requests from question analysis or transaction terms
+        const hasSpecificDataRequests = Object.values(questionAnalysis.specificDataRequests).some(value => value);
+        const skipContext = (isGeneralGreeting || 
+                           (isVeryShortMessage && !isFinancialQuery) || 
+                           isGeneralQuestion || 
+                           isChatInteraction) && 
+                           !hasSpecificDataRequests && 
+                           !hasTransactionTerms;
         
         console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
         console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
@@ -306,14 +351,37 @@ If the user is asking about your capabilities, explain that you're an AI assista
             else if (isSavingsQuery) formatType = 'savings';
             else if (isBillQuery) formatType = 'bills';
             
-            // Format the context for the AI prompt
-            prompt = contextService.formatContext(ctx, formatType);
+            // Use enhanced context formatter for better handling of specific data requests
+            if (hasSpecificDataRequests || questionAnalysis.isMultiPart) {
+                console.log(`[ZhipuaiController - sendMessage] Using enhanced context formatter for specific data requests`);
+                prompt = enhancedContextFormatter.formatEnhancedContext(ctx, formatType, questionAnalysis);
+                
+                // Add any additional context based on question analysis
+                try {
+                    const additionalContext = questionAnalyzer.generateAdditionalContext(questionAnalysis, ctx);
+                    if (additionalContext && additionalContext.length > 0) {
+                        prompt += '\n\n' + additionalContext;
+                        console.log(`[ZhipuaiController - sendMessage] Added ${additionalContext.length} chars of additional context`);
+                    }
+                } catch (error) {
+                    console.error(`[ZhipuaiController - sendMessage] Error generating additional context: ${error.message}`);
+                }
+            } else {
+                // Use standard formatter for simple queries
+                prompt = contextService.formatContext(ctx, formatType);
+            }
             console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
         }
         
         // Add a directive to encourage broader thinking beyond the immediate context
-        const systemPrompt = skipContext ? prompt : 
+        let systemPrompt = skipContext ? prompt : 
             `${prompt}\n\nAdditional instructions:\n1. Feel free to draw on your general knowledge beyond the provided context when appropriate.\n2. Keep your response concise and avoid unnecessary line breaks.\n3. If the user's question isn't directly related to their financial data, you can provide general advice.\n4. Format your response with proper spacing - use single line breaks between paragraphs instead of multiple empty lines.\n5. When appropriate, consider broader financial concepts and principles that might be helpful to the user.\n6. You can reference external financial resources or concepts if they would be helpful to the user.`;
+        
+        // Enhance the prompt with question-specific instructions if needed
+        if (!skipContext && (questionAnalysis.isMultiPart || hasSpecificDataRequests)) {
+            systemPrompt = questionAnalyzer.enhancePrompt(systemPrompt, questionAnalysis);
+            console.log(`[ZhipuaiController - sendMessage] Enhanced prompt with question-specific instructions`);
+        }
         
         const aiInput = [
             { role: 'system', content: systemPrompt },
