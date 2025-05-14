@@ -213,11 +213,11 @@ exports.sendMessage = async (req, res, next) => {
         
         // Detect query type for better context formatting
         const userMessageLower = userMessage.toLowerCase();
-        const isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessageLower);
-        const isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessageLower);
-        const isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessageLower);
-        const isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessageLower);
-        const isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
+        let isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessageLower);
+        let isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessageLower);
+        let isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessageLower);
+        let isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessageLower);
+        let isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
                                 /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessageLower) ||
                                 questionAnalysis.specificDataRequests.lastTransaction || 
                                 questionAnalysis.specificDataRequests.specificTransaction ||

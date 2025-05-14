@@ -3,9 +3,9 @@ import { check, sleep } from 'k6';
 
 export let options = {
   stages: [
-    { duration: '30s', target: 5 }, // ramp up to 5 users
-    { duration: '1m', target: 5 },   // stay at 5 users
-    { duration: '30s', target: 0 },  // ramp down
+    { duration: '1m', target: 50 }, // ramp up to 50 users
+    { duration: '3m', target: 200 }, // stay at 200 users
+    { duration: '1m', target: 0 },   // ramp down
   ],
 };
 
@@ -50,7 +50,7 @@ export default function () {
   // Only call AI endpoint if we have a token and userId
   if (token && userId) {
     const aiPayload = JSON.stringify({
-      messages: [{ role: 'user', content: 'Test AI prompt' }],
+      messages: [{ role: 'user', content: 'Tell me a long story about life, budgets and finances using a quantum physics theme' }],
       userId: userId
     });
     http.post('http://localhost:5001/api/zhipuai/send', aiPayload, {
