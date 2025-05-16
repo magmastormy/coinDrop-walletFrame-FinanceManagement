@@ -2,7 +2,7 @@
 // Usage: node mongo-benchmark.js
 const { MongoClient } = require('mongodb');
 
-const uri = 'mongodb://root:example@localhost:27017/coinDrop?authSource=admin'; // Docker Compose MongoDB
+const uri = process.env.MONGO_URI;
 const dbName = 'coinDrop';
 const collectionName = 'benchmarkTest';
 const iterations = 10000;

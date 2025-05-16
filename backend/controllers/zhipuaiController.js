@@ -307,7 +307,8 @@ If the user is asking about your capabilities, explain that you're an AI assista
                 console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
             }
             
-            const ctx = await contextService.getContext(userId);
+            // Fixed variable shadowing issue by using the existing ctx variable
+            ctx = await contextService.getContext(userId);
             console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
                 JSON.stringify({
                     budgets: ctx.budgets?.length || 0,
@@ -389,13 +390,56 @@ If the user is asking about your capabilities, explain that you're an AI assista
         ];
 
         console.log("[ZhipuaiController - sendMessage] Sending request to AI service");
-        const aiResponse = await aiClient.send(aiInput);
-        console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
-
-        return res.json({ response: aiResponse, context: ctx });
+        
+        try {
+            // Add timeout to prevent hanging requests
+            const aiResponsePromise = aiClient.send(aiInput, { timeoutMs: 25000 });
+            
+            // Use Promise.race to implement a controller-level timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Controller timeout exceeded')), 28000);
+            });
+            
+            const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]);
+            console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
+            
+            // Check if response has already been sent before attempting to send another
+            if (!res.headersSent) {
+                return res.json({ response: aiResponse, context: ctx });
+            } else {
+                console.warn('[ZhipuaiController - sendMessage] Headers already sent, skipping response');
+                return; // Return without sending another response
+            }
+        } catch (aiError) {
+            console.error(`[ZhipuaiController - sendMessage] AI service error: ${aiError.message}`);
+            
+            // Check if response has already been sent
+            if (!res.headersSent) {
+                if (aiError.message.includes('timeout')) {
+                    return res.status(503).json({
+                        error: 'AI Service Timeout',
+                        message: 'The AI service is currently experiencing high load. Please try again later.'
+                    });
+                } else {
+                    return res.status(500).json({
+                        error: 'AI Service Error',
+                        message: 'An error occurred while processing your request.'
+                    });
+                }
+            } else {
+                console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot send error response');
+                return; // Return without sending another response
+            }
+        }
     } catch (err) {
         console.error('[ZhipuaiController - sendMessage] Error:', err);
-        next(err);
+        
+        // Check if response has already been sent
+        if (!res.headersSent) {
+            next(err);
+        } else {
+            console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot forward error to middleware');
+        }
     }
 };
 

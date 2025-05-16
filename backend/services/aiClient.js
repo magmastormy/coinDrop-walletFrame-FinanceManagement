@@ -4,8 +4,54 @@ const { performance } = require('perf_hooks');
 
 // Process pool for Python processes
 const processPool = [];
-const MAX_POOL_SIZE = 2; // Adjust based on server capacity
+const MAX_POOL_SIZE = 3; // Reduced to prevent resource exhaustion
 let isInitialized = false;
+let requestQueue = [];
+let processingCount = 0;
+const MAX_CONCURRENT_REQUESTS = 5; // Reduced to prevent overwhelming the system
+
+// Circuit breaker pattern implementation
+const circuitBreaker = {
+  state: 'CLOSED', // CLOSED, OPEN, HALF_OPEN
+  failureCount: 0,
+  lastFailureTime: 0,
+  failureThreshold: 3,
+  resetTimeout: 30000, // 30 seconds
+  
+  // Record a failure and potentially open the circuit
+  recordFailure() {
+    this.failureCount++;
+    this.lastFailureTime = Date.now();
+    
+    if (this.failureCount >= this.failureThreshold && this.state === 'CLOSED') {
+      console.log(`[aiClient] Circuit breaker opened after ${this.failureCount} failures`);
+      this.state = 'OPEN';
+    }
+  },
+  
+  // Record a success and potentially close the circuit
+  recordSuccess() {
+    if (this.state === 'HALF_OPEN') {
+      console.log('[aiClient] Circuit breaker closed after successful request');
+      this.state = 'CLOSED';
+      this.failureCount = 0;
+    }
+  },
+  
+  // Check if the circuit is open
+  isOpen() {
+    if (this.state === 'OPEN') {
+      // Check if it's time to try again
+      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        console.log('[aiClient] Circuit breaker transitioning to HALF_OPEN state');
+        this.state = 'HALF_OPEN';
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+};
 
 /**
  * Initialize the process pool
@@ -99,19 +145,77 @@ function releaseProcess(proc) {
 }
 
 /**
- * Sends messages to the AI model via Python script and returns the response.
- * Uses a process pool to reduce startup overhead with improved error handling and retry logic.
- * @param {Array} messages - Array of message objects { role, content }.
- * @param {Object} [options] - Optional settings.
- * @param {number} [options.timeoutMs=90000] - Timeout in milliseconds.
- * @param {number} [options.maxRetries=1] - Maximum number of retries on timeout.
- * @returns {Promise<string>} - AI response content.
+ * Queues a request to be processed when resources are available
+ * @private
+ * @param {Array} messages - Array of message objects { role, content }
+ * @param {Object} options - Request options
+ * @returns {Promise<string>} - AI response content
  */
-async function send(messages, { timeoutMs = 90000, maxRetries = 1 } = {}) {
+function queueRequest(messages, options) {
+  return new Promise((resolve, reject) => {
+    const request = {
+      messages,
+      options,
+      resolve,
+      reject,
+      timestamp: Date.now()
+    };
+    
+    requestQueue.push(request);
+    console.log(`[aiClient] Request queued. Queue length: ${requestQueue.length}`);
+    
+    // Process the queue if we're not at max capacity
+    processQueue();
+  });
+}
+
+/**
+ * Process requests from the queue if resources are available
+ * @private
+ */
+async function processQueue() {
+  // If we're at max capacity or the queue is empty, do nothing
+  if (processingCount >= MAX_CONCURRENT_REQUESTS || requestQueue.length === 0) {
+    return;
+  }
+  
+  // Get the next request from the queue
+  const request = requestQueue.shift();
+  processingCount++;
+  
+  // Log queue stats
+  console.log(`[aiClient] Processing request. Queue length: ${requestQueue.length}, Active: ${processingCount}/${MAX_CONCURRENT_REQUESTS}`);
+  
+  try {
+    // Process the request
+    const result = await processRequestWithRetries(request.messages, request.options);
+    request.resolve(result);
+  } catch (err) {
+    request.reject(err);
+  } finally {
+    // Decrement the processing count
+    processingCount--;
+    
+    // Process the next request in the queue
+    processQueue();
+  }
+}
+
+/**
+ * Process a request with retry logic and improved error handling
+ * @private
+ * @param {Array} messages - Array of message objects { role, content }
+ * @param {Object} options - Request options
+ * @returns {Promise<string>} - AI response content
+ */
+async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetries = 1 } = {}) {
   const t0 = performance.now();
   let proc = null;
   let retryCount = 0;
   let lastError = null;
+  
+  // Use a shorter timeout for the first attempt to fail fast if the system is overloaded
+  let currentTimeoutMs = Math.min(timeoutMs, 15000); // Start with a shorter timeout
   
   // Implement retry logic
   while (retryCount <= maxRetries) {
@@ -119,56 +223,78 @@ async function send(messages, { timeoutMs = 90000, maxRetries = 1 } = {}) {
       // If this is a retry, log it
       if (retryCount > 0) {
         console.log(`[aiClient] Retry attempt ${retryCount}/${maxRetries} after error: ${lastError?.message}`);
+        // Use full timeout for retries
+        currentTimeoutMs = timeoutMs;
       }
       
-      // Get a process from the pool
-      proc = await getProcess();
+      // Get a process from the pool or create a new one if needed
+      try {
+        proc = await Promise.race([
+          getProcess(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Process acquisition timeout')), 5000))
+        ]);
+      } catch (procError) {
+        console.error(`[aiClient] Failed to acquire process: ${procError.message}`);
+        // If we can't get a process, try fallback immediately
+        if (retryCount >= maxRetries) {
+          console.log('[aiClient] All process acquisition attempts failed, using fallback');
+          return fallbackSend(messages, { timeoutMs: currentTimeoutMs });
+        }
+        
+        // Increment retry count and continue
+        retryCount++;
+        continue;
+      }
       
-      // Calculate timeout for this attempt (progressive backoff)
-      const attemptTimeout = Math.min(timeoutMs, timeoutMs * (1 + (retryCount * 0.5)));
-      console.log(`[aiClient] Using timeout of ${attemptTimeout}ms for attempt ${retryCount + 1}/${maxRetries + 1}`);
+      // Process the request with timeout
+      console.log(`[aiClient] Using timeout of ${currentTimeoutMs}ms for attempt ${retryCount + 1}/${maxRetries + 1}`);
       
       // Process the request
-      const result = await processRequest(proc, messages, attemptTimeout, t0);
+      const result = await processRequest(proc, messages, currentTimeoutMs, t0);
       
-      // If we get here, the request was successful
+      // Return the result
       return result;
     } catch (err) {
       lastError = err;
+      console.error(`[aiClient] Error in attempt ${retryCount + 1}/${maxRetries + 1}: ${err.message}`);
       
-      // Clean up the process if we got one but failed to use it
+      // If we have a process and it failed, don't reuse it
       if (proc) {
-        try { 
-          // Don't return timed-out processes to the pool
-          if (err.message && err.message.includes('timeout')) {
-            console.log(`[aiClient] Killing timed-out process instead of returning to pool`);
-            proc.kill(); 
-          } else {
-            // For other errors, we might still be able to reuse the process
-            console.log(`[aiClient] Returning process to pool despite error`);
-            releaseProcess(proc);
-          }
-        } catch (e) { 
-          console.error(`[aiClient] Error cleaning up process: ${e.message}`);
+        try {
+          console.log('[aiClient] Killing failed process');
+          proc.kill('SIGKILL');
+        } catch (killErr) {
+          console.error(`[aiClient] Error killing process: ${killErr.message}`);
         }
       }
       
-      // If we've exhausted retries or this isn't a timeout error, don't retry
-      if (retryCount >= maxRetries || !(err.message && err.message.includes('timeout'))) {
-        break;
+      // If we've reached the max retries, try fallback or throw the error
+      if (retryCount >= maxRetries) {
+        // For timeout errors, try the fallback implementation as a last resort
+        if (err.message && err.message.includes('timeout')) {
+          console.log('[aiClient] All attempts timed out, using fallback implementation');
+          try {
+            return await fallbackSend(messages, { timeoutMs: currentTimeoutMs });
+          } catch (fallbackErr) {
+            console.error(`[aiClient] Fallback also failed: ${fallbackErr.message}`);
+            throw new Error(`AI service unavailable: ${fallbackErr.message}`);
+          }
+        }
+        throw err;
       }
       
-      // Increment retry counter
+      // Increment retry count
       retryCount++;
+      
+      // Wait before retrying (exponential backoff)
+      const backoffMs = Math.min(1000 * Math.pow(2, retryCount), 10000);
+      console.log(`[aiClient] Waiting ${backoffMs}ms before retrying...`);
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
   
-  // If we get here, all retries failed or we had a non-timeout error
-  console.error(`[aiClient] All attempts failed or non-retryable error. Falling back to one-time process.`);
-  console.error(`[aiClient] Last error: ${lastError?.message}`);
-  
-  // Fall back to the original implementation
-  return fallbackSend(messages, { timeoutMs });
+  // This should never be reached due to the checks above, but just in case
+  throw lastError || new Error('Unknown error in processRequestWithRetries');
 }
 
 /**
@@ -330,6 +456,88 @@ async function fallbackSend(messages, { timeoutMs = 60000 } = {}) {
       reject(new Error(`AI client: failed to start process: ${err.message}`));
     });
   });
+}
+
+/**
+ * Sends messages to the AI model via Python script and returns the response.
+ * Uses a process pool to reduce startup overhead with improved error handling and retry logic.
+ * Implements request queuing and circuit breaker for high concurrency scenarios.
+ * @param {Array} messages - Array of message objects { role, content }.
+ * @param {Object} [options] - Optional settings.
+ * @param {number} [options.timeoutMs=30000] - Timeout in milliseconds (reduced from 90000).
+ * @param {number} [options.maxRetries=1] - Maximum number of retries on timeout.
+ * @param {boolean} [options.priority=false] - Whether this request should be prioritized in the queue.
+ * @param {boolean} [options.bypassCircuitBreaker=false] - Whether to bypass the circuit breaker.
+ * @returns {Promise<string>} - AI response content.
+ */
+async function send(messages, { timeoutMs = 30000, maxRetries = 1, priority = false, bypassCircuitBreaker = false } = {}) {
+  // Check circuit breaker first
+  if (circuitBreaker.isOpen() && !bypassCircuitBreaker) {
+    console.log('[aiClient] Circuit breaker is open, fast-failing request');
+    return Promise.reject(new Error('AI service is temporarily unavailable due to multiple failures. Please try again later.'));
+  }
+  
+  // Simplify messages to reduce payload size if they're too large
+  const simplifiedMessages = messages.map(msg => {
+    // If content is very large, truncate it
+    if (msg.content && msg.content.length > 4000) {
+      console.log(`[aiClient] Truncating large message from ${msg.content.length} to 4000 chars`);
+      return {
+        role: msg.role,
+        content: msg.content.substring(0, 4000) + '... [truncated]'
+      };
+    }
+    return msg;
+  });
+  
+  // If we're under high load, queue the request
+  if (processingCount >= MAX_CONCURRENT_REQUESTS || requestQueue.length > 0) {
+    console.log(`[aiClient] System under load (${processingCount}/${MAX_CONCURRENT_REQUESTS} active, ${requestQueue.length} queued)`);
+    
+    // If queue is getting too long, start rejecting non-priority requests
+    if (requestQueue.length > 10 && !priority) {
+      console.log('[aiClient] Queue too long, rejecting non-priority request');
+      return Promise.reject(new Error('AI service is currently under high load. Please try again later.'));
+    }
+    
+    // If this is a priority request, add it to the front of the queue
+    const options = { timeoutMs, maxRetries, bypassCircuitBreaker };
+    if (priority) {
+      console.log('[aiClient] Priority request added to front of queue');
+      return new Promise((resolve, reject) => {
+        requestQueue.unshift({
+          messages: simplifiedMessages,
+          options,
+          resolve,
+          reject,
+          timestamp: Date.now()
+        });
+        processQueue();
+      });
+    } else {
+      return queueRequest(simplifiedMessages, options);
+    }
+  }
+  
+  // If we're not under load, process the request immediately
+  processingCount++;
+  try {
+    const result = await processRequestWithRetries(simplifiedMessages, { timeoutMs, maxRetries });
+    // Record success in circuit breaker
+    circuitBreaker.recordSuccess();
+    return result;
+  } catch (err) {
+    // Record failure in circuit breaker
+    circuitBreaker.recordFailure();
+    throw err;
+  } finally {
+    processingCount--;
+    
+    // Process any queued requests
+    if (requestQueue.length > 0) {
+      processQueue();
+    }
+  }
 }
 
 module.exports = { send };
