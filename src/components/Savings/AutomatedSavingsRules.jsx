@@ -20,7 +20,11 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
         saveBudgetUnderflow: false,
         savePercentage: 0,
         roundUpTransactions: false,
-        savingsPriority: 'medium'
+        savingsPriority: 'medium',
+        triggerType: 'scheduled', // Required field with default value
+        name: 'Automated Savings Rule', // Required field
+        scheduleFrequency: 'monthly', // Required for scheduled trigger type
+        active: true
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -48,24 +52,45 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
         try {
             setLoading(true);
             setError(null);
+            
+            // Prepare the rule data with all required fields
+            const ruleData = {
+                ...formData,
+                userId: user.id,
+                goalId,
+                // Set appropriate triggerType based on selected options
+                triggerType: formData.roundUpTransactions ? 'roundUp' : 
+                             formData.saveBudgetUnderflow ? 'budgetUnderflow' : 
+                             formData.savePercentage > 0 ? 'income' : 'scheduled',
+                // Ensure name is set
+                name: formData.name || `Savings Rule for Goal ${goalId}`,
+                // Set appropriate schedule frequency if it's a scheduled rule
+                scheduleFrequency: formData.triggerType === 'scheduled' ? 'monthly' : 'none'
+            };
+            
+            console.log('Saving rule with data:', ruleData);
+            
             if (formData._id) {
-                await savingsRuleService.updateRule(formData._id, formData);
+                await savingsRuleService.updateRule(formData._id, ruleData);
             } else {
-                await savingsRuleService.createRule({
-                    ...formData,
-                    userId: user.id,
-                    goalId
-                });
+                await savingsRuleService.createRule(ruleData);
             }
+            
             setSuccess(true);
             if (onRuleChange) {
-                onRuleChange(formData);
+                onRuleChange(ruleData);
             }
             setTimeout(() => setSuccess(false), 3000);
             fetchRules();
         } catch (err) {
-            setError('Failed to save rules');
-            console.error(err);
+            // Extract validation error details if available
+            if (err.response?.data?.details) {
+                const errorDetails = err.response.data.details.map(detail => detail.message).join(', ');
+                setError(`Validation error: ${errorDetails}`);
+            } else {
+                setError('Failed to save rules: ' + (err.response?.data?.error || err.message || 'Unknown error'));
+            }
+            console.error('Error saving rule:', err);
         } finally {
             setLoading(false);
         }

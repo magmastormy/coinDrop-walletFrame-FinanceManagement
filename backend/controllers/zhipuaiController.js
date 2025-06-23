@@ -215,13 +215,22 @@ exports.sendMessage = async (req, res, next) => {
         const userMessageLower = userMessage.toLowerCase();
         let isBalanceQuery = /\b(balance|account|wallet|how much|check balance|money in)\b/i.test(userMessageLower);
         let isBudgetQuery = /\b(budgets?|spending|expenses|spent|overspent)\b/i.test(userMessageLower);
-        let isSavingsQuery = /\b(saving|goal|target|emergency fund|tuition)\b/i.test(userMessageLower);
+        
+        // Enhanced savings query detection
+        let isSavingsQuery = /\b(saving|savings|goal|target|emergency fund|tuition|save up|put away|set aside)\b/i.test(userMessageLower) ||
+                           questionAnalysis.specificDataRequests.savingsGoals ||
+                           questionAnalysis.specificDataRequests.savingsAdvice;
+                           
         let isBillQuery = /\b(bills?|payment|due|upcoming|recurring|subscription)\b/i.test(userMessageLower);
+        
+        // Enhanced financial query detection
         let isFinancialQuery = isBalanceQuery || isBudgetQuery || isSavingsQuery || isBillQuery || 
-                                /\b(money|financial|finance|income|automations|transfer)\b/i.test(userMessageLower) ||
+                                /\b(money|financial|finance|income|automations|transfer|invest|investing|investment)\b/i.test(userMessageLower) ||
                                 questionAnalysis.specificDataRequests.lastTransaction || 
                                 questionAnalysis.specificDataRequests.specificTransaction ||
-                                questionAnalysis.specificDataRequests.transactionByCategory;
+                                questionAnalysis.specificDataRequests.transactionByCategory ||
+                                questionAnalysis.specificDataRequests.financialPlanning ||
+                                questionAnalysis.specificDataRequests.savingsAdvice;
         
         // Check for general greetings or simple messages that don't need context
         const isGeneralGreeting = /^\s*(hi|hello|hey|howdy|greetings|good morning|good afternoon|good evening|bye|goodbye|see you|thanks|thank you|ok|okay|sure|yes|no|maybe|cool|great|awesome|nice|good|got it)\s*[.!?]*\s*$/i.test(userMessageLower);
@@ -242,12 +251,19 @@ exports.sendMessage = async (req, res, next) => {
         
         // Check for budget and savings terms
         const hasBudgetTerms = /\b(budget|budgets)\b/i.test(userMessageLower);
-        const hasSavingsTerms = /\b(saving|savings|goal|goals)\b/i.test(userMessageLower);
+        const hasSavingsTerms = /\b(saving|savings|goal|goals|save up|put away|set aside)\b/i.test(userMessageLower);
         
         // Update financial query detection to include transaction, budget, and savings terms
         if (hasTransactionTerms) {
             console.log(`[ZhipuaiController - sendMessage] Detected transaction terms, treating as financial query`);
             isFinancialQuery = true;
+        }
+        
+        // Ensure savings-related queries always get appropriate context
+        if (hasSavingsTerms || questionAnalysis.specificDataRequests.savingsGoals || questionAnalysis.specificDataRequests.savingsAdvice) {
+            console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            isFinancialQuery = true;
+            isSavingsQuery = true;
         }
         
         if (hasBudgetTerms) {

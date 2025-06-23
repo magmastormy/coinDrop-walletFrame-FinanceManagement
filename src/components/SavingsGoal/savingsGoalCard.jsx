@@ -22,6 +22,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBullseye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
 import AutomatedSavingsRules from '../Savings/AutomatedSavingsRules';
 import walletService from '../../services/walletService';
 import savingsAccountService from '../../services/savingsAccountService';
@@ -104,26 +105,58 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
             // Check which property contains the goal ID
             const goalId = goal._id || goal.id;
 
-
             if (!goalId) {
                 throw new Error('Goal ID is missing');
             }
 
-            await savingsGoalService.contributeToGoal(goalId, {
-                amount: contributionAmount,
-                sourceType: sourceType,
-                sourceId: sourceId,
-            });
+            try {
+                await savingsGoalService.contributeToGoal(goalId, {
+                    amount: contributionAmount,
+                    sourceType: sourceType,
+                    sourceId: sourceId,
+                });
 
-            setShowContributeDialog(false);
-            setContributionAmount('');
-            setSelectedSource('');
-            
-            // Refresh goal data
-            if (onEdit) {
-                onEdit(goal);
+                // Show success toast
+                toast.success('Successfully contributed to goal!', {
+                    position: 'top-right',
+                    autoClose: 3000
+                });
+
+                setShowContributeDialog(false);
+                setContributionAmount('');
+                setSelectedSource('');
+                
+                // Refresh goal data
+                if (onEdit) {
+                    onEdit(goal);
+                }
+            } catch (apiError) {
+                console.error('Contribution error:', apiError);
+                
+                // Check for insufficient balance error
+                if (apiError.response?.data?.details === 'Insufficient balance in source') {
+                    toast.error('Insufficient balance in selected source', {
+                        position: 'top-right',
+                        autoClose: 5000
+                    });
+                } else if (apiError.response?.data?.error) {
+                    toast.error(apiError.response.data.error, {
+                        position: 'top-right',
+                        autoClose: 5000
+                    });
+                } else {
+                    toast.error('Failed to contribute to goal', {
+                        position: 'top-right',
+                        autoClose: 5000
+                    });
+                }
             }
         } catch (error) {
+            console.error('Form validation error:', error);
+            toast.error(error.message || 'Invalid contribution data', {
+                position: 'top-right',
+                autoClose: 5000
+            });
             setError(error.message || 'Failed to contribute to goal');
         }
     };

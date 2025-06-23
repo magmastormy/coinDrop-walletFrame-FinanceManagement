@@ -299,11 +299,17 @@ function formatNetWorthSection(ctx, lines) {
 function formatEnhancedTransactionsSection(ctx, lines, questionAnalysis) {
   lines.push('', '## RECENT TRANSACTIONS');
   
+  // Define expenses at the function level to ensure it's accessible throughout
+  let expenses = [];
+  
   if (ctx.recentTransactions && ctx.recentTransactions.length > 0) {
     // Sort transactions by date (newest first)
     const sortedTransactions = [...ctx.recentTransactions].sort((a, b) => 
       new Date(b.date) - new Date(a.date)
     );
+    
+    // Define expenses early to ensure it's available throughout the function
+    expenses = sortedTransactions.filter(t => t.type === 'expense');
     
     // Determine how many transactions to show based on question analysis
     let transactionLimit = 5; // Default
@@ -386,7 +392,7 @@ function formatEnhancedTransactionsSection(ctx, lines, questionAnalysis) {
       
       // Expense transactions
       lines.push('', '### Expenses');
-      const expenses = sortedTransactions.filter(t => t.type === 'expense');
+      // expenses is already defined at the function level
       
       if (expenses.length > 0) {
         expenses.slice(0, 5).forEach(t => {

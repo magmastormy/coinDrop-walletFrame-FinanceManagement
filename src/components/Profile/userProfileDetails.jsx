@@ -128,25 +128,36 @@ const UserProfileDetails = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Validate profilePicture field
-            if (formData.profilePicture && !isValidUrl(formData.profilePicture)) {
-                throw new Error('Profile picture must be a valid URL');
+            // Prepare the form data for submission
+            const profileData = { ...formData };
+            
+            // Handle profilePicture validation - could be a string URL or an object with url property
+            if (profileData.profilePicture) {
+                // If it's an object with a url property, extract just the URL
+                if (typeof profileData.profilePicture === 'object' && profileData.profilePicture.url) {
+                    profileData.profilePicture = profileData.profilePicture.url;
+                }
+                
+                // Now validate the URL
+                if (typeof profileData.profilePicture === 'string' && !isValidUrl(profileData.profilePicture)) {
+                    throw new Error('Profile picture must be a valid URL');
+                }
             }
 
             // Validate interests
-            const invalidInterests = formData.interests.filter(interest => !allowedInterests.includes(interest));
+            const invalidInterests = profileData.interests.filter(interest => !allowedInterests.includes(interest));
             if (invalidInterests.length > 0) {
                 throw new Error(`Invalid interests: ${invalidInterests.join(', ')}`);
             }
 
-            console.log('[userProfileDetails] Submitting form data:', formData);
+            console.log('[userProfileDetails] Submitting form data:', profileData);
             if (!profile) {
                 dispatch(createProfileStart());
-                const result = await profileService.createUserProfile(user.id, formData);
+                const result = await profileService.createUserProfile(user.id, profileData);
                 dispatch(createProfileSuccess(result.profile));
             } else {
                 dispatch(updateProfileStart());
-                const result = await profileService.updateUserProfile(user.id, formData);
+                const result = await profileService.updateUserProfile(user.id, profileData);
                 dispatch(updateProfileSuccess(result.profile));
             }
             setIsEditing(false);
@@ -163,14 +174,27 @@ const UserProfileDetails = () => {
             const result = await profileService.uploadProfileImage(user.id, file);
             console.log('[UserProfileDetails] Upload Image result:', result);
 
-            if (result && result.profile) {
+            // Check if we have a result with a URL
+            if (result && result.url) {
+                // Set the profile picture as a string URL
                 setFormData(prev => ({
                     ...prev,
-                    profilePicture: {
-                        url: result.profile.profilePicture,
-                        publicId: result.profile.publicId
-                    }
+                    profilePicture: result.url
                 }));
+                
+                // Show success message
+                dispatch(updateProfileSuccess({
+                    ...profile,
+                    profilePicture: result.url
+                }));
+            } else if (result && result.profile && result.profile.profilePicture) {
+                // Alternative format - profile object with profilePicture
+                setFormData(prev => ({
+                    ...prev,
+                    profilePicture: result.profile.profilePicture
+                }));
+                
+                dispatch(updateProfileSuccess(result.profile));
             } else {
                 throw new Error('Image upload failed. Please try again.');
             }
