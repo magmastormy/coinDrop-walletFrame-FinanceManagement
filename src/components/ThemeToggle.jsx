@@ -1,33 +1,26 @@
 import React from 'react';
-import IconButton from '@mui/material/IconButton';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../theme/ThemeContext';
+import { Button } from './ui/Button';
 
 const ThemeToggle = () => {
   const { isDarkMode, toggleTheme, theme } = useTheme();
 
-  if (!theme) return null; // Don't render if theme is not available yet
+  if (!theme) return null;
 
   return (
-    <IconButton
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={toggleTheme}
-      style={{
-        color: theme.text.primary,
-        backgroundColor: theme.background.secondary,
-        transition: 'all 0.3s ease-in-out',
-        padding: '8px',
-        margin: '8px',
-      }}
-      sx={{
-        '&:hover': {
-          backgroundColor: isDarkMode ? theme.button.hover : theme.button.base,
-          transform: 'scale(1.1)',
-        },
-      }}
+      className="transition-all hover:scale-110"
     >
-      {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-    </IconButton>
+      {isDarkMode ? (
+        <Sun className="w-5 h-5 text-foreground" />
+      ) : (
+        <Moon className="w-5 h-5 text-foreground" />
+      )}
+    </Button>
   );
 };
 

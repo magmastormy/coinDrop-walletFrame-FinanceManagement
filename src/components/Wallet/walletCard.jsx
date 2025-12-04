@@ -1,283 +1,141 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faEllipsisV, 
-    faTrash, 
-    faEdit, 
-    faArrowRight, 
-    faWallet,
-    faMoneyBillWave,
-    faCreditCard,
-    faUniversity,
-    faPiggyBank,
-    faFileDownload,
-    faShieldAlt
-} from '@fortawesome/free-solid-svg-icons';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+    Wallet, CreditCard, Building2, PiggyBank, MoreVertical,
+    Trash2, Edit2, ArrowRightLeft, FileText, Shield
+} from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
 import DeleteWalletDialog from './deleteWalletDialog';
 import ReportButton from '../Common/reportButton';
-import './styles/walletCardStyles.css';
 
 const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
-    const [showOptions, setShowOptions] = useState(false);
-    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showTransferModal, setShowTransferModal] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
-    const optionsButtonRef = useRef(null);
-    const [optionsPosition, setOptionsPosition] = useState({ top: 0, left: 0 });
-    
-    // Filter out the current wallet from the list of other wallets
+
+    const getIcon = (type) => {
+        switch (type?.toLowerCase()) {
+            case 'cash': return Wallet;
+            case 'credit card': return CreditCard;
+            case 'bank': return Building2;
+            case 'savings': return PiggyBank;
+            default: return Wallet;
+        }
+    };
+
+    const Icon = getIcon(wallet.type);
     const otherWallets = wallets.filter(w => w._id !== wallet._id);
 
-    const formatBalance = (balance) => {
+    const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(balance);
+        }).format(amount);
     };
-
-    const getWalletIcon = (type) => {
-        switch (type?.toLowerCase()) {
-            case 'cash':
-                return faMoneyBillWave;
-            case 'credit card':
-                return faCreditCard;
-            case 'bank':
-                return faUniversity;
-            case 'savings':
-                return faPiggyBank;
-            default:
-                return faWallet;
-        }
-    };
-
-    const handleOptionsToggle = (e) => {
-        e.stopPropagation();
-        setShowOptions(prev => !prev);
-    };
-
-    const handleOutsideClick = useCallback((e) => {
-        if (optionsButtonRef.current && !optionsButtonRef.current.contains(e.target)) {
-            setShowOptions(false);
-        }
-    }, []);
-
-    const handleDeleteClick = () => {
-        setShowOptions(false);
-        setShowDeleteDialog(true);
-    };
-    
-    const handleDeleteConfirm = async (walletId, transferToWalletId) => {
-        try {
-            // Check if onDelete is a function before calling it
-            if (typeof onDelete === 'function') {
-                return await onDelete(walletId, transferToWalletId);
-            } else {
-                console.error('Error: onDelete is not a function', onDelete);
-                throw new Error('Delete function is not available');
-            }
-        } catch (error) {
-            console.error('Error deleting wallet:', error);
-            throw error;
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
-            setShowOptions(false);
-        }
-    };
-
-    const updateOptionsPosition = useCallback(() => {
-        if (optionsButtonRef.current) {
-            const rect = optionsButtonRef.current.getBoundingClientRect();
-            setOptionsPosition({
-                top: rect.bottom + window.scrollY + 5,
-                left: rect.right - 150 // 150px is the width of the menu
-            });
-        }
-    }, []);
-
-    useEffect(() => {
-        if (showOptions) {
-            updateOptionsPosition();
-            window.addEventListener('scroll', updateOptionsPosition);
-            window.addEventListener('resize', updateOptionsPosition);
-        }
-        return () => {
-            window.removeEventListener('scroll', updateOptionsPosition);
-            window.removeEventListener('resize', updateOptionsPosition);
-        };
-    }, [showOptions, updateOptionsPosition]);
-
-    useEffect(() => {
-        if (showOptions) {
-            document.addEventListener('click', handleOutsideClick);
-            document.addEventListener('keydown', handleKeyDown);
-        }
-        return () => {
-            document.removeEventListener('click', handleOutsideClick);
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [showOptions, handleOutsideClick]);
 
     return (
         <>
-            <motion.div 
-                className="wallet-card"
-                role="article"
-                aria-label={`Wallet: ${wallet.name}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
-                whileHover={{ y: -5 }}
+            <GlassCard
+                className="relative group overflow-visible transition-all duration-300 hover:translate-y-[-4px]"
+                hoverEffect={true}
             >
-                <div className="wallet-card-header">
-                    <motion.div 
-                        className="wallet-icon-container"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                    >
-                        <FontAwesomeIcon 
-                            icon={getWalletIcon(wallet.type)} 
-                            className="wallet-icon" 
-                            aria-hidden="true" 
-                        />
-                    </motion.div>
-                    <div className="wallet-options">
-                        <motion.button 
-                            ref={optionsButtonRef}
-                            type="button" 
-                            className="options-btn"
-                            onClick={handleOptionsToggle}
-                            aria-label="Wallet options"
-                            aria-expanded={showOptions}
-                            aria-haspopup="true"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
+                <div className="flex justify-between items-start mb-6">
+                    <div className={cn(
+                        "p-3 rounded-xl bg-gradient-to-br",
+                        wallet.type === 'credit card' ? "from-purple-500/20 to-pink-500/20 text-purple-500" :
+                            wallet.type === 'savings' ? "from-green-500/20 to-emerald-500/20 text-green-500" :
+                                "from-blue-500/20 to-cyan-500/20 text-blue-500"
+                    )}>
+                        <Icon className="w-6 h-6" />
+                    </div>
+                    <div className="relative">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setShowMenu(!showMenu)}
                         >
-                            <FontAwesomeIcon icon={faEllipsisV} aria-hidden="true" />
-                        </motion.button>
+                            <MoreVertical className="w-4 h-4" />
+                        </Button>
 
-                        {showOptions && createPortal(
-                            <motion.div 
-                                className="options-menu" 
-                                role="menu" 
-                                aria-label="Wallet options"
-                                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                transition={{ duration: 0.1 }}
-                                style={{
-                                    position: 'absolute',
-                                    top: optionsPosition.top,
-                                    left: optionsPosition.left,
-                                }}
-                            >
-                                <motion.button 
-                                    onClick={() => {
-                                        setShowEditModal(true);
-                                        setShowOptions(false);
-                                    }}
-                                    role="menuitem"
-                                    className="option-item"
-                                    whileHover={{ x: 5 }}
+                        {showMenu && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setShowMenu(false)}
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    className="absolute right-0 top-full mt-2 w-48 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-xl overflow-hidden p-1"
                                 >
-                                    <FontAwesomeIcon icon={faEdit} aria-hidden="true" />
-                                    <span>Edit</span>
-                                </motion.button>
-                                <motion.button 
-                                    onClick={handleDeleteClick}
-                                    role="menuitem"
-                                    className="option-item delete"
-                                    whileHover={{ x: 5 }}
-                                    disabled={wallet.isSystemWallet && wallet.balance > 0}
-                                    title={wallet.isSystemWallet && wallet.balance > 0 ? 'Cannot delete system wallet with balance' : 'Delete wallet'}
-                                >
-                                    <FontAwesomeIcon icon={wallet.isSystemWallet ? faShieldAlt : faTrash} aria-hidden="true" />
-                                    <span>{wallet.isSystemWallet ? 'Protected' : 'Delete'}</span>
-                                </motion.button>
-                                <motion.button 
-                                    onClick={() => {
-                                        setShowTransferModal(true);
-                                        setShowOptions(false);
-                                    }}
-                                    role="menuitem"
-                                    className="option-item"
-                                    whileHover={{ x: 5 }}
-                                >
-                                    <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
-                                    <span>Transfer</span>
-                                </motion.button>
-                                <motion.button 
-                                    onClick={() => {
-                                        setShowReportModal(true);
-                                        setShowOptions(false);
-                                    }}
-                                    role="menuitem"
-                                    className="option-item"
-                                    whileHover={{ x: 5 }}
-                                >
-                                    <FontAwesomeIcon icon={faFileDownload} aria-hidden="true" />
-                                    <span>Generate Report</span>
-                                </motion.button>
-                            </motion.div>,
-                            document.body
+                                    <button
+                                        onClick={() => { setShowEditModal(true); setShowMenu(false); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <Edit2 className="w-4 h-4" /> Edit
+                                    </button>
+                                    <button
+                                        onClick={() => { setShowTransferModal(true); setShowMenu(false); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <ArrowRightLeft className="w-4 h-4" /> Transfer
+                                    </button>
+                                    <button
+                                        onClick={() => { setShowReportModal(true); setShowMenu(false); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <FileText className="w-4 h-4" /> Report
+                                    </button>
+                                    <div className="h-px bg-border my-1" />
+                                    <button
+                                        onClick={() => { setShowDeleteDialog(true); setShowMenu(false); }}
+                                        disabled={wallet.isSystemWallet && wallet.balance > 0}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        {wallet.isSystemWallet ? <Shield className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                                        {wallet.isSystemWallet ? 'Protected' : 'Delete'}
+                                    </button>
+                                </motion.div>
+                            </>
                         )}
                     </div>
                 </div>
 
-                <motion.div 
-                    className="wallet-card-content"
-                    initial={false}
-                    animate={{ scale: showOptions ? 0.98 : 1 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <h3 className="wallet-name" title={wallet.name}>
-                        {wallet.name}
+                <div>
+                    <p className="text-sm text-muted-foreground font-medium mb-1">{wallet.name}</p>
+                    <h3 className={cn(
+                        "text-2xl font-display font-bold",
+                        wallet.balance < 0 ? "text-red-500" : "text-foreground"
+                    )}>
+                        {formatCurrency(wallet.balance)}
                     </h3>
-                    <div className="wallet-type" title={wallet.type}>
-                        {wallet.type}
-                    </div>
-                    <motion.div 
-                        className={`wallet-balance ${wallet.balance >= 0 ? 'positive' : 'negative'}`}
-                        aria-label={`Balance: ${formatBalance(wallet.balance)}`}
-                        initial={false}
-                        animate={{ 
-                            scale: [1, 1.05, 1],
-                            transition: { duration: 0.3 }
-                        }}
-                        key={wallet.balance}
-                    >
-                        {formatBalance(wallet.balance)}
-                    </motion.div>
-                </motion.div>
-            </motion.div>
+                    <p className="text-xs text-muted-foreground mt-2 capitalize">{wallet.type}</p>
+                </div>
+            </GlassCard>
 
-            {/* Modals rendered using Portal */}
-            {showEditModal && createPortal(
-                <div className="modal-overlay">
-                    <div className="modal-content">
+            {/* Legacy Modals - To be refactored later if needed, or kept as wrappers */}
+            {showEditModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
                         <EditWalletModal
                             wallet={wallet}
                             onClose={() => setShowEditModal(false)}
                             onUpdate={onUpdate}
                         />
                     </div>
-                </div>,
-                document.body
+                </div>
             )}
 
-            {showTransferModal && createPortal(
-                <div className="modal-overlay">
-                    <div className="modal-content">
+            {showTransferModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
                         <WalletTransfer
                             sourceWallet={wallet}
                             wallets={wallets}
@@ -285,44 +143,39 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
                             onTransfer={onTransfer}
                         />
                     </div>
-                </div>,
-                document.body
+                </div>
             )}
 
-            {showDeleteDialog && createPortal(
+            {showDeleteDialog && (
                 <DeleteWalletDialog
                     isOpen={showDeleteDialog}
                     onClose={() => setShowDeleteDialog(false)}
-                    onConfirm={handleDeleteConfirm}
+                    onConfirm={onDelete}
                     wallet={wallet}
                     otherWallets={otherWallets}
                     isSystemWallet={wallet.isSystemWallet && wallet.balance > 0}
-                />,
-                document.body
+                />
             )}
 
-            {showReportModal && createPortal(
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="report-modal">
-                            <h3>Generate Wallet Report</h3>
-                            <p>Generate a report for {wallet.name}</p>
-                            <ReportButton 
-                                accountId={wallet._id}
-                                label="Generate Report"
-                                defaultReportType="wallet-report"
-                                isGlobal={false}
-                            />
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setShowReportModal(false)}
-                            >
-                                Close
-                            </button>
-                        </div>
+            {showReportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
+                        <h3 className="text-lg font-bold mb-4">Generate Wallet Report</h3>
+                        <ReportButton
+                            accountId={wallet._id}
+                            label="Generate Report"
+                            defaultReportType="wallet-report"
+                            isGlobal={false}
+                        />
+                        <Button
+                            variant="outline"
+                            className="w-full mt-4"
+                            onClick={() => setShowReportModal(false)}
+                        >
+                            Close
+                        </Button>
                     </div>
-                </div>,
-                document.body
+                </div>
             )}
         </>
     );

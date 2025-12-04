@@ -1,12 +1,12 @@
-// src/components/Wallet/editWalletModal.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { X } from 'lucide-react';
 import WalletIconOptions from './newWalletIcons';
 import walletService from '../../services/walletService';
 import { updateWallet } from '../../slices/walletSlice';
-import './styles/editWalletStyles.css';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { GlassCard } from '../ui/GlassCard';
 
 const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
     const dispatch = useDispatch();
@@ -14,7 +14,7 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
         name: wallet.name,
         type: wallet.type,
         balance: wallet.balance,
-        icon: wallet.icon || 'default-wallet-icon'
+        icon: wallet.icon || 'Wallet'
     });
     const [error, setError] = useState(null);
 
@@ -33,7 +33,7 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
                 ...walletData,
                 balance
             });
-            
+
             dispatch(updateWallet(updatedWallet));
             onUpdate?.(updatedWallet);
             onClose();
@@ -43,21 +43,27 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
     };
 
     return (
-        <div className="wallet-edit-modal">
-            <div className="wallet-content">
-                <div className="edit-header">
-                    <h2>Edit Wallet</h2>
-                    <button className="modal-close" onClick={onClose}>
-                        <FontAwesomeIcon icon={faTimes} />
-                    </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <GlassCard className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-foreground">Edit Wallet</h2>
+                    <Button variant="ghost" size="icon" onClick={onClose}>
+                        <X className="w-5 h-5" />
+                    </Button>
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                {error && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
+                        {error}
+                    </div>
+                )}
 
-                <form onSubmit={handleSubmit}>
-                    <div className="edit-form-group">
-                        <label htmlFor="walletName">Wallet Name</label>
-                        <input
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label htmlFor="walletName" className="block text-sm font-medium text-foreground mb-2">
+                            Wallet Name
+                        </label>
+                        <Input
                             id="walletName"
                             type="text"
                             value={walletData.name}
@@ -68,9 +74,12 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
                             required
                         />
                     </div>
-                    <div className="edit-form-group">
-                        <label htmlFor="walletBalance">Wallet Balance</label>
-                        <input
+
+                    <div>
+                        <label htmlFor="walletBalance" className="block text-sm font-medium text-foreground mb-2">
+                            Wallet Balance
+                        </label>
+                        <Input
                             id="walletBalance"
                             type="number"
                             min="0"
@@ -84,8 +93,10 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
                         />
                     </div>
 
-                    <div className="edit-form-group">
-                        <label htmlFor="walletType">Wallet Type</label>
+                    <div>
+                        <label htmlFor="walletType" className="block text-sm font-medium text-foreground mb-2">
+                            Wallet Type
+                        </label>
                         <select
                             id="walletType"
                             value={walletData.type}
@@ -93,6 +104,7 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
                                 ...prev,
                                 type: e.target.value
                             }))}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                             <option value="bank">Bank Account</option>
                             <option value="cash">Cash</option>
@@ -103,21 +115,26 @@ const EditWalletModal = ({ wallet, onClose, onUpdate }) => {
                         </select>
                     </div>
 
-                    <WalletIconOptions
-                        selectedIcon={walletData.icon}
-                        onSelectIcon={icon => setWalletData(prev => ({ ...prev, icon }))}
-                    />
+                    <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                            Wallet Icon
+                        </label>
+                        <WalletIconOptions
+                            selectedIcon={walletData.icon}
+                            onSelect={icon => setWalletData(prev => ({ ...prev, icon }))}
+                        />
+                    </div>
 
-                    <div className="edit-actions">
-                        <button type="button" className="cancel-btn" onClick={onClose}>
+                    <div className="flex gap-3 pt-4">
+                        <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
                             Cancel
-                        </button>
-                        <button type="submit" className="save-btn">
+                        </Button>
+                        <Button type="submit" className="flex-1">
                             Save Changes
-                        </button>
+                        </Button>
                     </div>
                 </form>
-            </div>
+            </GlassCard>
         </div>
     );
 };

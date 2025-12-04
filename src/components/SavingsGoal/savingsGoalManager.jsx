@@ -1,192 +1,177 @@
 import React, { useState, useEffect } from 'react';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsGoalCard from './savingsGoalCard';
 import NewGoalCard from './NewGoalCard';
-import EditGoalModal from './editGoalModal';
 import savingsGoalService from '../../services/savingsGoalService';
-import './styles/savingsGoalManagerStyles.css';
-import '../shared/componentScrollFix.css';
+import walletService from '../../services/walletService';
+import Confetti from 'react-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Target, Loader2 } from 'lucide-react';
 import ReportSection from '../Common/ReportSection';
+import { GlassCard } from '../ui/GlassCard';
 
 const SavingsGoalManager = () => {
     const { user } = useAuth();
-    const { isDarkMode } = useTheme();
+    const { theme } = useTheme();
     const [goals, setGoals] = useState([]);
+    const [wallets, setWallets] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [editingGoal, setEditingGoal] = useState(null);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [windowSize, setWindowSize] = useState({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         if (user?.id) {
-            fetchGoals();
+            fetchData();
         }
     }, [user]);
 
-    const fetchGoals = async () => {
+    const fetchData = async () => {
         try {
             setIsLoading(true);
-            const response = await savingsGoalService.getSavingsGoals(user.id);
-            setGoals(response || []);
+            const [goalsData, walletsData] = await Promise.all([
+                savingsGoalService.getUserGoals(user.id),
+                walletService.getAllWallets(user.id)
+            ]);
+            setGoals(goalsData || []);
+            setWallets(walletsData || []);
         } catch (error) {
-            setError('Failed to load savings goals. Please try again later.');
+            console.error('Failed to fetch data:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleCreateGoal = async (newGoal) => {
+    const handleCreateGoal = async (goalData) => {
         try {
-            await savingsGoalService.createSavingsGoal({
-                ...newGoal,
+            await savingsGoalService.createGoal({
+                ...goalData,
                 userId: user.id
             });
-            await fetchGoals();
+            fetchData();
         } catch (error) {
-            setError('Failed to create savings goal. Please try again later.');
+            console.error('Failed to create goal:', error);
         }
     };
 
-    const handleUpdateGoal = async (goalId, updatedData) => {
+    const handleUpdateGoal = async (goalId, updates) => {
         try {
-            await savingsGoalService.updateSavingsGoal(goalId, updatedData);
-            await fetchGoals();
-            setEditingGoal(null);
+            await savingsGoalService.updateGoal(goalId, updates);
+            fetchData();
         } catch (error) {
             console.error('Failed to update goal:', error);
-            setError('Failed to update savings goal. Please try again later.');
         }
     };
 
     const handleDeleteGoal = async (goalId) => {
-        const goalToDelete = goals.find(goal => goal._id === goalId);
-        
-        if (!goalToDelete) {
-            setError('Goal not found. Please refresh the page and try again.');
-            return;
-        }
-        
-        const hasAmount = goalToDelete.currentAmount > 0;
-        let transferOptions = {};
-        
-        if (hasAmount) {
-            const transferConfirm = window.confirm(
-                `This goal has ${new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
-                }).format(goalToDelete.currentAmount)} in it. ` +
-                'Do you want to transfer this amount to a savings account?'
-            );
-            
-            if (transferConfirm) {
-                transferOptions = { transferToSavingsAccount: true };
-            } else {
-                transferOptions = { transferToWallet: true };
-            }
-        }
-        
-        if (window.confirm('Are you sure you want to delete this savings goal?')) {
+        if (window.confirm('Are you sure you want to delete this goal?')) {
             try {
-                setIsLoading(true);
-                console.log(`Deleting goal ${goalId} with transfer options:`, transferOptions);
-                
-                const result = await savingsGoalService.deleteSavingsGoal(goalId, transferOptions);
-                
-                if (result.success) {
-                    console.log(`Goal deleted successfully with operation ID: ${result.operationId}`);
-                    await fetchGoals();
-                } else {
-                    // This shouldn't happen as errors are thrown, but just in case
-                    setError(result.message || 'Failed to delete savings goal');
-                }
+                await savingsGoalService.deleteGoal(goalId);
+                fetchData();
             } catch (error) {
                 console.error('Failed to delete goal:', error);
-                // Use the structured error response
-                const errorMessage = error.message || error.details || 'Failed to delete savings goal';
-                setError(`Failed to delete savings goal: ${errorMessage}. Please try again later.`);
-            } finally {
-                setIsLoading(false);
             }
+        }
+    };
+
+    const handleContribute = async (goalId, amount, walletId) => {
+        try {
+            const result = await savingsGoalService.contributeToGoal(goalId, amount, walletId);
+            if (result.goal.currentAmount >= result.goal.targetAmount) {
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 5000);
+            }
+            fetchData();
+        } catch (error) {
+            console.error('Failed to contribute:', error);
         }
     };
 
     if (isLoading) {
         return (
-            <Box className="loading-container">
-                <CircularProgress className="progress-indicator" />
-            </Box>
-        );
-    }
-
-    if (error) {
-        return (
-            <Box className="error-container">
-                {error}
-            </Box>
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
         );
     }
 
     return (
-        <div className="savings-goal-manager">
-            <Box className="header-section">
-                <h2>Savings Goals</h2>
-            </Box>
+        <div className="space-y-8 pb-8">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
+                        <Target className="w-8 h-8 text-primary" />
+                        Savings Goals
+                    </h2>
+                    <p className="text-muted-foreground mt-1">Track and achieve your financial targets</p>
+                </div>
+            </div>
 
             {/* Summary Section */}
-            <Box className="summary-section" sx={{ mb: 3 }}>
-                <Card>
-                    <CardContent sx={{ display: 'flex', justifyContent: 'space-around' }}>
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6">Total Saved</Typography>
-                            <Typography variant="h4">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-                                    .format(goals.reduce((sum, g) => sum + g.currentAmount, 0))}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6">Total Target</Typography>
-                            <Typography variant="h4">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-                                    .format(goals.reduce((sum, g) => sum + g.targetAmount, 0))}
-                            </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6">Goals</Typography>
-                            <Typography variant="h4">{goals.length}</Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'center' }}>
-                            <ReportSection title="Savings Goals Report" accountId={user?.id} reportType="savings-report" />
-                        </Box>
-                    </CardContent>
-                </Card>
-            </Box>
+            <GlassCard className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground mb-1">Total Saved</p>
+                        <p className="text-2xl font-bold text-foreground">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+                                .format(goals.reduce((sum, g) => sum + g.currentAmount, 0))}
+                        </p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground mb-1">Total Target</p>
+                        <p className="text-2xl font-bold text-foreground">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+                                .format(goals.reduce((sum, g) => sum + g.targetAmount, 0))}
+                        </p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground mb-1">Goals</p>
+                        <p className="text-2xl font-bold text-foreground">{goals.length}</p>
+                    </div>
+                    <div className="text-center">
+                        <ReportSection title="Savings Report" accountId={user?.id} reportType="savings-report" />
+                    </div>
+                </div>
+            </GlassCard>
 
-            <Grid container spacing={3} className="goals-grid">
-                <Grid item xs={12} sm={6} md={4}>
-                    <NewGoalCard onCreate={handleCreateGoal} />
-                </Grid>
+            {/* Goals Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <NewGoalCard onCreate={handleCreateGoal} />
                 {goals.map(goal => (
-                    <Grid item xs={12} sm={6} md={4} key={goal._id}>
-                        <SavingsGoalCard
-                            goal={goal}
-                            onEdit={setEditingGoal}
-                            onDelete={handleDeleteGoal}
-                        />
-                    </Grid>
+                    <SavingsGoalCard
+                        key={goal._id}
+                        goal={goal}
+                        onUpdate={handleUpdateGoal}
+                        onDelete={handleDeleteGoal}
+                        onContribute={handleContribute}
+                        wallets={wallets}
+                    />
                 ))}
-            </Grid>
-            {editingGoal && (
-                <EditGoalModal
-                    open={Boolean(editingGoal)}
-                    goal={editingGoal}
-                    onClose={() => setEditingGoal(null)}
-                    onSave={(updatedData) => handleUpdateGoal(editingGoal._id, updatedData)}
+            </div>
+
+            {/* Confetti celebration */}
+            {showConfetti && (
+                <Confetti
+                    width={windowSize.width}
+                    height={windowSize.height}
+                    recycle={false}
+                    numberOfPieces={500}
                 />
             )}
         </div>

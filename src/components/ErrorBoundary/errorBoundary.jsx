@@ -1,10 +1,10 @@
 import React from 'react';
-import './styles/errorBoundaryStyles.css';
+
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { 
+        this.state = {
             hasError: false,
             error: null,
             errorInfo: null
@@ -31,7 +31,7 @@ class ErrorBoundary extends React.Component {
                     <div className="error-boundary-content">
                         <h2>Oops! Something went wrong</h2>
                         <p>We apologize for the inconvenience. Please try refreshing the page or contact support if the problem persists.</p>
-                        <button 
+                        <button
                             onClick={() => window.location.reload()}
                             className="refresh-button"
                         >

@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-    faPlus,
-    faCheck,
-    faTimes,
-    faExclamationTriangle,
-    faSpinner
-} from '@fortawesome/free-solid-svg-icons';
+import { Plus, Check, X, AlertTriangle, Loader } from 'lucide-react';
 import { setCategories, setLoading, setError } from '../../slices/categorySlice';
 import categoryService from '../../services/categoryService';
 import transactionService from '../../services/transactionService';
 import CategoryPanel from './categoryPanel';
 import ExpensesByCategoryChart from './expensesbycategoryChart';
-import './styles/categoryManagerStyles.css';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { GlassCard } from '../ui/GlassCard';
 
 const CategoryManager = () => {
     const dispatch = useDispatch();
@@ -114,91 +109,81 @@ const CategoryManager = () => {
         }
     };
 
-    const handlePanelAdd = () => {
-        setEditingCategory(null);
-        setNewCategory('');
-    };
-
     return (
-        <motion.div 
-            className="category-manager"
+        <motion.div
+            className="container mx-auto px-4 py-6 space-y-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <div className="manager-header">
-                <h2>Manage Categories</h2>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-foreground">Manage Categories</h1>
                 {loading && (
                     <motion.div
-                        className="loading-spinner"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     >
-                        <FontAwesomeIcon icon={faSpinner} />
+                        <Loader className="w-5 h-5 text-primary" />
                     </motion.div>
                 )}
             </div>
 
+            {/* Error Message */}
             {error && (
-                <motion.div 
-                    className="error-message"
+                <motion.div
+                    className="p-4 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 flex items-center gap-3"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                 >
-                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                     <span>{error}</span>
                 </motion.div>
             )}
 
-            <form 
-                className="category-form"
-                onSubmit={editingCategory ? handleEditCategory : handleCreateCategory}
-            >
-                <div className="input-group">
-                    <input
+            {/* Create/Edit Form */}
+            <GlassCard className="p-6">
+                <form
+                    onSubmit={editingCategory ? handleEditCategory : handleCreateCategory}
+                    className="flex flex-col sm:flex-row gap-3"
+                >
+                    <Input
                         type="text"
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value)}
                         placeholder="Category Name"
-                        aria-label="Category name"
+                        className="flex-1"
                         required
                     />
-                    <div className="form-buttons">
+                    <div className="flex gap-2">
                         {editingCategory ? (
                             <>
-                                <button 
-                                    type="submit"
-                                    className="btn-primary"
-                                    aria-label="Update category"
-                                >
-                                    <FontAwesomeIcon icon={faCheck} />
+                                <Button type="submit" className="gap-2">
+                                    <Check className="w-4 h-4" />
                                     Update
-                                </button>
-                                <button 
+                                </Button>
+                                <Button
                                     type="button"
-                                    className="btn-secondary"
+                                    variant="secondary"
                                     onClick={handleCancelEdit}
-                                    aria-label="Cancel editing"
+                                    className="gap-2"
                                 >
-                                    <FontAwesomeIcon icon={faTimes} />
+                                    <X className="w-4 h-4" />
                                     Cancel
-                                </button>
+                                </Button>
                             </>
                         ) : (
-                            <button 
-                                type="submit"
-                                className="btn-primary"
-                                aria-label="Create new category"
-                            >
-                                <FontAwesomeIcon icon={faPlus} />
+                            <Button type="submit" className="gap-2">
+                                <Plus className="w-4 h-4" />
                                 Create Category
-                            </button>
+                            </Button>
                         )}
                     </div>
-                </div>
-            </form>
+                </form>
+            </GlassCard>
 
+            {/* Category Panel */}
             <CategoryPanel
                 categories={categories}
                 selectedCategory={selectedCategory}
@@ -207,13 +192,12 @@ const CategoryManager = () => {
                 onDeleteCategory={handleDeleteCategory}
             />
 
-            <div className="charts-container">
-                <ExpensesByCategoryChart
-                    transactions={transactions}
-                    categories={categories}
-                    loading={loading || txLoading}
-                />
-            </div>
+            {/* Charts */}
+            <ExpensesByCategoryChart
+                transactions={transactions}
+                categories={categories}
+                loading={loading || txLoading}
+            />
         </motion.div>
     );
 };

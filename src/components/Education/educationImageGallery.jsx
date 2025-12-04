@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faTimes } from '@fortawesome/free-solid-svg-icons';
-import './styles/educationImageGalleryStyles.css';
+
 
 const EducationImageGallery = ({ images, initialIndex = 0, onClose }) => {
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
-    
+
     if (!images || images.length === 0) return null;
 
     const handleNext = (e) => {
@@ -26,13 +26,13 @@ const EducationImageGallery = ({ images, initialIndex = 0, onClose }) => {
     };
 
     return (
-        <div 
+        <div
             className="image-gallery-overlay"
             onClick={onClose}
             onKeyDown={handleKeyDown}
             tabIndex={0}
         >
-            <motion.div 
+            <motion.div
                 className="image-gallery-content"
                 onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -59,14 +59,14 @@ const EducationImageGallery = ({ images, initialIndex = 0, onClose }) => {
 
                 {images.length > 1 && (
                     <>
-                        <button 
+                        <button
                             className="nav-button prev"
                             onClick={handlePrev}
                             aria-label="Previous image"
                         >
                             <FontAwesomeIcon icon={faChevronLeft} />
                         </button>
-                        <button 
+                        <button
                             className="nav-button next"
                             onClick={handleNext}
                             aria-label="Next image"
@@ -88,8 +88,8 @@ const EducationImageGallery = ({ images, initialIndex = 0, onClose }) => {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                         >
-                            <img 
-                                src={image.url} 
+                            <img
+                                src={image.url}
                                 alt={`Thumbnail ${index + 1}`}
                                 loading="lazy"
                             />

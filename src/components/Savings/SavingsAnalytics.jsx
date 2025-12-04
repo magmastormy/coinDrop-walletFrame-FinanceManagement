@@ -1,20 +1,12 @@
 import React from 'react';
-import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import useTheme from '@mui/material/styles/useTheme';
 import { Line } from 'react-chartjs-2';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faWallet, 
-    faPiggyBank, 
-    faChartLine, 
-    faPercent 
-} from '@fortawesome/free-solid-svg-icons';
+import { Wallet, PiggyBank, TrendingUp, Percent } from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
+import { useTheme } from '../../theme/ThemeContext';
+import { cn } from '../../lib/utils';
 
 const SavingsAnalytics = ({ accounts }) => {
-    const theme = useTheme();
+    const { theme } = useTheme();
 
     const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
     const totalGoals = accounts.reduce((sum, account) => sum + (account.goal || 0), 0);
@@ -27,14 +19,18 @@ const SavingsAnalytics = ({ accounts }) => {
                 style: 'currency',
                 currency: 'USD'
             }).format(totalBalance),
-            icon: faWallet,
+            icon: Wallet,
             trend: '+15%',
-            trendUp: true
+            trendUp: true,
+            color: 'text-blue-400',
+            bg: 'bg-blue-400/10'
         },
         {
             title: 'Active Accounts',
             value: accounts.length,
-            icon: faPiggyBank
+            icon: PiggyBank,
+            color: 'text-purple-400',
+            bg: 'bg-purple-400/10'
         },
         {
             title: 'Total Goals',
@@ -42,14 +38,18 @@ const SavingsAnalytics = ({ accounts }) => {
                 style: 'currency',
                 currency: 'USD'
             }).format(totalGoals),
-            icon: faChartLine
+            icon: TrendingUp,
+            color: 'text-emerald-400',
+            bg: 'bg-emerald-400/10'
         },
         {
             title: 'Goal Progress',
             value: goalProgress.toFixed(1) + '%',
-            icon: faPercent,
+            icon: Percent,
             trend: '-5%',
-            trendUp: false
+            trendUp: false,
+            color: 'text-amber-400',
+            bg: 'bg-amber-400/10'
         }
     ];
 
@@ -61,9 +61,13 @@ const SavingsAnalytics = ({ accounts }) => {
                 label: 'Balance Trend',
                 data: [200, 250, 300, 350, 400, 450, 500],
                 fill: true,
-                borderColor: theme.palette.primary.main,
-                backgroundColor: theme.palette.primary.main + '20',
-                tension: 0.4
+                borderColor: '#8b5cf6', // Primary purple
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.4,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#8b5cf6'
             }
         ]
     };
@@ -74,106 +78,83 @@ const SavingsAnalytics = ({ accounts }) => {
         plugins: {
             legend: {
                 display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: false
             }
         },
         scales: {
             x: {
                 grid: {
                     display: false,
-                    color: theme.palette.divider
+                    color: 'rgba(255, 255, 255, 0.1)'
                 },
                 ticks: {
-                    color: theme.palette.text.secondary
+                    color: 'rgba(255, 255, 255, 0.5)'
                 }
             },
             y: {
                 grid: {
-                    color: theme.palette.divider
+                    color: 'rgba(255, 255, 255, 0.1)'
                 },
                 ticks: {
-                    color: theme.palette.text.secondary
+                    color: 'rgba(255, 255, 255, 0.5)'
                 }
             }
         }
     };
 
     return (
-        <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" sx={{ mb: 3, color: theme.palette.text.primary }}>
+        <div className="mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-6">
                 Savings Analytics
-            </Typography>
-            
-            <Grid container spacing={3} sx={{ mb: 3 }}>
-                {analyticsCards.map((card, index) => (
-                    <Grid item xs={12} sm={6} md={3} key={index}>
-                        <Paper
-                            sx={{
-                                p: 3,
-                                height: '100%',
-                                bgcolor: theme.palette.background.paper,
-                                borderRadius: 2,
-                                boxShadow: theme.shadows[2],
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between'
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <Box>
-                                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
-                                        {card.title}
-                                    </Typography>
-                                    <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
-                                        {card.value}
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    sx={{
-                                        p: 1,
-                                        borderRadius: 1,
-                                        bgcolor: theme.palette.primary.main + '20',
-                                        color: theme.palette.primary.main,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    <FontAwesomeIcon icon={card.icon} />
-                                </Box>
-                            </Box>
-                            {card.trend && (
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        mt: 2,
-                                        color: card.trendUp ? theme.palette.success.main : theme.palette.error.main
-                                    }}
-                                >
-                                    {card.trend}
-                                </Typography>
-                            )}
-                        </Paper>
-                    </Grid>
-                ))}
-            </Grid>
+            </h2>
 
-            <Paper
-                sx={{
-                    p: 3,
-                    bgcolor: theme.palette.background.paper,
-                    borderRadius: 2,
-                    boxShadow: theme.shadows[2],
-                    height: '300px'
-                }}
-            >
-                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.text.primary }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                {analyticsCards.map((card, index) => {
+                    const Icon = card.icon;
+                    return (
+                        <GlassCard key={index} className="p-6 flex flex-col justify-between">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm text-muted-foreground mb-1">
+                                        {card.title}
+                                    </p>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                        {card.value}
+                                    </h3>
+                                </div>
+                                <div className={cn("p-3 rounded-xl", card.bg, card.color)}>
+                                    <Icon className="w-5 h-5" />
+                                </div>
+                            </div>
+                            {card.trend && (
+                                <p className={cn(
+                                    "text-sm font-medium",
+                                    card.trendUp ? "text-emerald-400" : "text-red-400"
+                                )}>
+                                    {card.trend}
+                                </p>
+                            )}
+                        </GlassCard>
+                    );
+                })}
+            </div>
+
+            <GlassCard className="p-6 h-[300px]">
+                <h3 className="text-lg font-semibold text-foreground mb-4">
                     Balance Trend
-                </Typography>
-                <Box sx={{ height: 'calc(100% - 40px)' }}>
+                </h3>
+                <div className="h-[calc(100%-40px)] w-full">
                     <Line data={chartData} options={chartOptions} />
-                </Box>
-            </Paper>
-        </Box>
+                </div>
+            </GlassCard>
+        </div>
     );
 };
 

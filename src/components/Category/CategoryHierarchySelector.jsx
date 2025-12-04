@@ -4,13 +4,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import categoryService from '../../services/categoryService';
 import { useSelector } from 'react-redux';
-import './styles/categoryHierarchySelector.css';
 
-const CategoryHierarchySelector = ({ 
-    onSelect, 
+
+const CategoryHierarchySelector = ({
+    onSelect,
     selectedCategory,
     allowSubcategories = true,
-    budgetType = null 
+    budgetType = null
 }) => {
     const [categories, setCategories] = useState([]);
     const [expanded, setExpanded] = useState([]);
@@ -67,8 +67,8 @@ const CategoryHierarchySelector = ({
             nodeId={nodes._id}
             label={
                 <div className="category-tree-item">
-                    <FontAwesomeIcon 
-                        icon={nodes.icon} 
+                    <FontAwesomeIcon
+                        icon={nodes.icon}
                         style={{ color: nodes.color }}
                         className="category-icon"
                     />

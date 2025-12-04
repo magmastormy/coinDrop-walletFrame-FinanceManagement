@@ -1,23 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faPiggyBank, 
-    faPlus, 
-    faMinus, 
-    faEllipsisV
-} from '@fortawesome/free-solid-svg-icons';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
+import { PiggyBank, Plus, Minus, MoreVertical, Edit, ArrowRightLeft, Trash } from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
 import { useTheme } from '../../theme/ThemeContext';
-import './styles/savingsAccountCardStyles.css';
+import { cn } from '../../lib/utils';
 
-const SavingsAccountCard = ({ 
-    account, 
+const SavingsAccountCard = ({
+    account,
     onDeposit,
     onWithdraw,
     onEdit,
@@ -27,7 +17,7 @@ const SavingsAccountCard = ({
     isSelected
 }) => {
     const { isDarkMode } = useTheme();
-    const [anchorEl, setAnchorEl] = useState(null);
+    const [showMenu, setShowMenu] = useState(false);
 
     const formatCurrency = (balance) => {
         return new Intl.NumberFormat('en-US', {
@@ -36,124 +26,119 @@ const SavingsAccountCard = ({
         }).format(balance);
     };
 
-    const handleMenuClick = (event) => {
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
+    const handleMenuClick = (e) => {
+        e.stopPropagation();
+        setShowMenu(!showMenu);
     };
 
-    const handleMenuClose = (event) => {
-        event.stopPropagation();
-        setAnchorEl(null);
+    const handleAction = (action, handler) => (e) => {
+        e.stopPropagation();
+        setShowMenu(false);
+        handler(account._id);
     };
 
-    const handleOptionClick = (action) => (event) => {
-        event.stopPropagation();
-        handleMenuClose(event);
-        switch(action) {
-            case 'edit':
-                onEdit(account._id);
-                break;
-            case 'transfer':
-                onTransfer(account._id);
-                break;
-            case 'delete':
-                onDelete(account._id);
-                break;
-            default:
-                break;
+    // Close menu when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = () => setShowMenu(false);
+        if (showMenu) {
+            document.addEventListener('click', handleClickOutside);
         }
-    };
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showMenu]);
 
     return (
-        <Paper 
-            component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+        <GlassCard
+            className={cn(
+                "relative h-[280px] flex flex-col p-6 transition-all duration-300 cursor-pointer group",
+                isSelected ? "ring-2 ring-primary bg-primary/5" : "hover:bg-white/5"
+            )}
             onClick={() => onSelect(account._id)}
-            elevation={2}
-            className={`savings-account-card ${isSelected ? 'selected' : ''}`}
-            sx={{
-                borderRadius: 2,
-                p: 3,
-                position: 'relative',
-                height: '280px',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
         >
-            <Box className="card-header">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <div className="savings-icon-container">
-                        <FontAwesomeIcon icon={faPiggyBank} size="lg" />
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-primary/20 text-primary">
+                        <PiggyBank className="w-6 h-6" />
                     </div>
-                    <Typography variant="h6" className="account-name">
+                    <h3 className="text-lg font-semibold text-foreground truncate max-w-[150px]">
                         {account.name}
-                    </Typography>
-                </Box>
-                <IconButton
-                    onClick={handleMenuClick}
-                    size="small"
-                    className="menu-button"
-                >
-                    <FontAwesomeIcon icon={faEllipsisV} />
-                </IconButton>
-            </Box>
+                    </h3>
+                </div>
 
-            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', mb: 3 }}>
-                <Typography variant="h4" className="balance">
+                <div className="relative">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleMenuClick}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                        <MoreVertical className="w-5 h-5" />
+                    </Button>
+
+                    {showMenu && (
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-xl">
+                            <button
+                                onClick={handleAction('edit', onEdit)}
+                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                            >
+                                <Edit className="w-4 h-4" /> Edit
+                            </button>
+                            <button
+                                onClick={handleAction('transfer', onTransfer)}
+                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                            >
+                                <ArrowRightLeft className="w-4 h-4" /> Transfer
+                            </button>
+                            <button
+                                onClick={handleAction('delete', onDelete)}
+                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                            >
+                                <Trash className="w-4 h-4" /> Delete
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Balance */}
+            <div className="flex-1 flex flex-col justify-center items-center text-center mb-6">
+                <span className="text-sm text-muted-foreground mb-1">Current Balance</span>
+                <h2 className="text-4xl font-bold text-foreground tracking-tight">
                     {formatCurrency(account.balance)}
-                </Typography>
-                <Typography variant="body2" className="goal-text">
-                    Goal: {formatCurrency(account.goal || 0)}
-                </Typography>
-            </Box>
+                </h2>
+                {account.goal > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                        Goal: {formatCurrency(account.goal)}
+                    </p>
+                )}
+            </div>
 
-            <Box sx={{ 
-                display: 'flex', 
-                gap: 2, 
-                justifyContent: 'center'
-            }}>
-                <button 
-                    className="action-btn deposit"
+            {/* Actions */}
+            <div className="flex gap-3 mt-auto">
+                <Button
+                    variant="outline"
+                    className="flex-1 gap-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30"
                     onClick={(e) => {
                         e.stopPropagation();
                         onDeposit(account._id);
                     }}
                 >
-                    <FontAwesomeIcon icon={faPlus} /> Deposit
-                </button>
-                <button 
-                    className="action-btn withdraw"
+                    <Plus className="w-4 h-4" /> Deposit
+                </Button>
+                <Button
+                    variant="outline"
+                    className="flex-1 gap-2 bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30"
                     onClick={(e) => {
                         e.stopPropagation();
                         onWithdraw(account._id);
                     }}
                 >
-                    <FontAwesomeIcon icon={faMinus} /> Withdraw
-                </button>
-            </Box>
-
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                    sx: {
-                        mt: 1,
-                        minWidth: 120,
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                    }
-                }}
-            >
-                <MenuItem onClick={handleOptionClick('edit')}>Edit</MenuItem>
-                <MenuItem onClick={handleOptionClick('transfer')}>Transfer</MenuItem>
-                <MenuItem onClick={handleOptionClick('delete')} sx={{ color: 'red' }}>
-                    Delete
-                </MenuItem>
-            </Menu>
-        </Paper>
+                    <Minus className="w-4 h-4" /> Withdraw
+                </Button>
+            </div>
+        </GlassCard>
     );
 };
 

@@ -1,13 +1,13 @@
 import React from 'react';
-import './styles/profileStyles.css';
+
 
 
 
 const UserProfileDetailsViewMode = ({ user, profile }) => {
-    return(
+    return (
         <div>
             <div className="info-group">
-                
+
                 <label>Name:</label>
                 <span>{`${user?.firstName} ${user?.lastName}`}</span>
             </div>
@@ -36,6 +36,7 @@ const UserProfileDetailsViewMode = ({ user, profile }) => {
                 <span>{profile?.following?.length || 0}</span>
             </div>
         </div>
-)};
+    )
+};
 
 export default UserProfileDetailsViewMode;

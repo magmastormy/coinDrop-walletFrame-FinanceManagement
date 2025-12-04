@@ -1,6 +1,6 @@
 // src/components/Wallet/WalletBudgetList.jsx
 import React from 'react';
-import './styles/walletBudgetStyles.css';
+
 import BudgetCard from '../Budget/budgetCard';
 
 const WalletBudgetList = ({ budgets }) => {
@@ -8,7 +8,7 @@ const WalletBudgetList = ({ budgets }) => {
         <div className="wallet-budgets">
             <div className="budgets-container">
                 {budgets.map(budget => (
-                    <BudgetCard 
+                    <BudgetCard
                         key={budget._id}
                         budget={budget}
                     />

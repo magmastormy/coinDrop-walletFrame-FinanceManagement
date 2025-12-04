@@ -1,67 +1,32 @@
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Plus, User, FileText } from 'lucide-react';
 import { useTheme } from '../../../theme/ThemeContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faFileLines } from '@fortawesome/free-solid-svg-icons';
-import './styles/userEducationInformationBarStyles.css';
+import { Button } from '../../ui/Button';
+import { GlassCard } from '../../ui/GlassCard';
 
 const UserEducationInformation = ({ totalPosts, user, onCreateClick }) => {
     const { theme } = useTheme();
 
     return (
-        <Box 
-            className="user-education-information-bar"
-            style={{
-                backgroundColor: theme.background.secondary,
-                color: theme.text.primary,
-                borderColor: theme.border
-            }}
-        >
-            <Box className="user-info">
-                <FontAwesomeIcon icon={faUser} className="user-icon" style={{ color: theme.text.primary }} />
-                <div className="user-details">
-                    <Typography 
-                        variant="body1" 
-                        component="span"
-                        style={{ color: theme.text.primary }}
-                    >
-                        {user?.username}
-                    </Typography>
-                    <Typography 
-                        variant="body2" 
-                        component="span"
-                        style={{ color: theme.text.secondary }}
-                    >
-                        {user?.email}
-                    </Typography>
+        <GlassCard className="flex items-center justify-between p-6">
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+                    <User className="w-5 h-5 text-primary" />
+                    <div>
+                        <p className="text-foreground font-medium">{user?.username}</p>
+                        <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    </div>
                 </div>
-            </Box>
-            <Box className="post-stats">
-                <FontAwesomeIcon icon={faFileLines} className="post-icon" style={{ color: theme.text.primary }} />
-                <Typography 
-                    variant="body1" 
-                    component="span"
-                    style={{ color: theme.text.primary }}
-                >
-                    Total Posts: {totalPosts}
-                </Typography>
-            </Box>
-            <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={onCreateClick}
-                className="create-button"
-                style={{
-                    backgroundColor: theme.button.base,
-                    color: theme.button.text
-                }}
-            >
+                <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <p className="text-foreground font-medium">Total Posts: {totalPosts}</p>
+                </div>
+            </div>
+            <Button onClick={onCreateClick}>
+                <Plus className="w-4 h-4 mr-2" />
                 Create Post
             </Button>
-        </Box>
+        </GlassCard>
     );
 };
 

@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Snackbar from '@mui/material/Snackbar';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { Download, ChevronDown, Loader2 } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { toast } from 'react-toastify';
 import reportService from '../../services/reportService';
 import { ErrorBoundary } from 'react-error-boundary';
 
-const ReportButton = ({ 
-  accountId, 
-  label = "Generate Report", 
-  isGlobal = false, 
+const ReportButton = ({
+  accountId,
+  label = "Generate Report",
+  isGlobal = false,
   defaultFormat = "PDF",
   defaultReportType = "financial-summary"
 }) => {
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info' });
   const [selectedFormat, setSelectedFormat] = useState(defaultFormat);
   const [selectedType, setSelectedType] = useState(defaultReportType);
   const [reportTypes, setReportTypes] = useState([]);
@@ -28,16 +23,12 @@ const ReportButton = ({
       // Check if blob is valid
       if (!(blob instanceof Blob)) {
         console.error('Invalid blob object:', blob);
-        setSnackbar({ 
-          open: true, 
-          message: 'Error: Downloaded file is not in the correct format', 
-          type: 'error' 
-        });
+        toast.error('Error: Downloaded file is not in the correct format');
         return;
       }
-      
+
       console.log('Creating URL for blob:', blob.size, blob.type);
-      
+
       // Create URL and download
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -45,40 +36,31 @@ const ReportButton = ({
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
-      
+
       // Clean up
       setTimeout(() => {
         link.remove();
         window.URL.revokeObjectURL(url);
       }, 100);
-      
-      setSnackbar({ 
-        open: true, 
-        message: 'Report downloaded successfully', 
-        type: 'success' 
-      });
+
+      toast.success('Report downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
-      setSnackbar({ 
-        open: true, 
-        message: `Error downloading file: ${error.message}`, 
-        type: 'error' 
-      });
+      toast.error(`Error downloading file: ${error.message}`);
     }
   };
 
   const handleGenerateReport = async () => {
     try {
       setLoading(true);
-      setSnackbar({ open: false, message: '', type: 'info' });
-      
+
       console.log('Generating report with:', {
         accountId,
         isGlobal,
         format: selectedFormat,
         reportType: selectedType
       });
-      
+
       const response = await reportService.generateReport({
         accountId,
         isGlobal,
@@ -87,23 +69,23 @@ const ReportButton = ({
       });
 
       console.log('Report generation response:', response);
-      
+
       if (response && response.reportId) {
         // Poll for report completion
         const checkStatus = async () => {
           const statusResponse = await reportService.getReportStatus(response.reportId);
           const status = statusResponse.data || statusResponse;
-          
+
           console.log('Report status:', status);
-          
+
           if (status.status === 'completed') {
             const reportBlob = await reportService.downloadReport(response.reportId);
             handleDownload(reportBlob, `${selectedType}-${new Date().toISOString()}.${selectedFormat.toLowerCase()}`);
             setLoading(false);
-            setSnackbar({ open: true, message: 'Report generated successfully', type: 'success' });
+            toast.success('Report generated successfully');
           } else if (status.status === 'failed') {
             setLoading(false);
-            setSnackbar({ open: true, message: 'Failed to generate report', type: 'error' });
+            toast.error('Failed to generate report');
           } else {
             setTimeout(checkStatus, 1000);
           }
@@ -116,11 +98,7 @@ const ReportButton = ({
     } catch (error) {
       console.error('Error generating report:', error);
       setLoading(false);
-      setSnackbar({ 
-        open: true, 
-        message: `Error generating report: ${error.response?.data?.error || error.message}`, 
-        type: 'error' 
-      });
+      toast.error(`Error generating report: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -152,50 +130,56 @@ const ReportButton = ({
   }, []);
 
   return (
-    <>
+    <div className="relative">
       <Button
-        variant="contained"
-        color="primary"
         onClick={handleMenuClick}
         disabled={loading}
-        startIcon={loading ? <CircularProgress size={20} /> : <FontAwesomeIcon icon={faFileDownload} />}
-        endIcon={<FontAwesomeIcon icon={faChevronDown} />}
+        className="flex items-center gap-2"
       >
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
         {label}
+        <ChevronDown className="w-4 h-4" />
       </Button>
 
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        {reportTypes.map(type => (
-          type.formats.map(format => (
-            <MenuItem 
-              key={`${type.id}-${format}`}
-              onClick={() => {
-                handleReportTypeSelect(type.id, format);
-                handleGenerateReport();
-              }}
-            >
-              {type.name} ({format})
-            </MenuItem>
-          ))
-        ))}
-      </Menu>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        message={snackbar.message}
-      />
-    </>
+      {anchorEl && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={handleMenuClose}
+          />
+          <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[200px] z-50">
+            {reportTypes.map(type => (
+              type.formats.map(format => (
+                <button
+                  key={`${type.id}-${format}`}
+                  onClick={() => {
+                    handleReportTypeSelect(type.id, format);
+                    handleGenerateReport();
+                    handleMenuClose();
+                  }}
+                  className="w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors text-foreground"
+                >
+                  {type.name} ({format})
+                </button>
+              ))
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
 const ReportErrorComponent = () => {
-  return <div>Error loading report types. Please try again later.</div>;
+  return (
+    <div className="text-destructive p-4">
+      Error loading report types. Please try again later.
+    </div>
+  );
 };
 
 export default () => (

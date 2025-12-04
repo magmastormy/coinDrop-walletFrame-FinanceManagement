@@ -1,16 +1,11 @@
 import React from 'react';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import IconButton from '@mui/material/IconButton';
-import { MoreVert, Edit, Delete } from '@mui/icons-material';
+import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useTheme } from '../../../theme/ThemeContext';
 
 const PostActionMenu = ({ post, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const { isDarkMode } = useTheme();
-  
+  const { theme } = useTheme();
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -31,43 +26,39 @@ const PostActionMenu = ({ post, onEdit, onDelete }) => {
 
   return (
     <>
-      <IconButton 
-        aria-label="more" 
-        aria-controls="post-menu" 
-        aria-haspopup="true"
+      <button
         onClick={handleClick}
-        size="small"
+        className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+        aria-label="more actions"
       >
-        <MoreVert />
-      </IconButton>
-      <Menu
-        id="post-menu"
-        anchorEl={anchorEl}
-        keepMounted
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-        PaperProps={{
-          sx: {
-            bgcolor: isDarkMode ? 'background.paper' : 'white',
-            boxShadow: '0px 2px 10px rgba(0, 0, 0, 0.1)',
-          }
-        }}
-      >
-        <MenuItem onClick={handleEdit}>
-          <ListItemIcon>
-            <Edit fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="Edit Post" />
-        </MenuItem>
-        <MenuItem onClick={handleDelete}>
-          <ListItemIcon>
-            <Delete fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText primary="Delete Post" sx={{ color: 'error.main' }} />
-        </MenuItem>
-      </Menu>
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {anchorEl && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={handleClose}
+          />
+          <div className="absolute z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[150px] mt-2">
+            <button
+              onClick={handleEdit}
+              className="w-full px-4 py-2.5 text-sm text-left hover:bg-muted flex items-center gap-3 text-foreground transition-colors"
+            >
+              <Edit className="w-4 h-4" />
+              <span>Edit Post</span>
+            </button>
+            <button
+              onClick={handleDelete}
+              className="w-full px-4 py-2.5 text-sm text-left hover:bg-muted flex items-center gap-3 text-destructive transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Post</span>
+            </button>
+          </div>
+        </>
+      )}
     </>
   );
 };
 
-export default PostActionMenu; 
+export default PostActionMenu;

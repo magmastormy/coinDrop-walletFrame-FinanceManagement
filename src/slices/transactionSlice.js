@@ -1,4 +1,4 @@
-import {createSlice} from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     transactions: [],
@@ -30,7 +30,7 @@ const transactionSlice = createSlice({
         },
         updateTransaction: (state, action) => {
             const index = state.transactions.findIndex((transaction) => transaction._id === action.payload._id);
-            if (index !== -1){
+            if (index !== -1) {
                 state.transactions[index] = action.payload;
             }
         },
@@ -49,5 +49,21 @@ export const {
     updateTransaction,
     deleteTransaction,
 } = transactionSlice.actions;
+
+// Memoized Selectors
+export const selectAllTransactions = (state) => state.transaction.transactions;
+export const selectTransactionLoading = (state) => state.transaction.loading;
+export const selectTransactionError = (state) => state.transaction.error;
+export const selectSelectedTransaction = (state) => state.transaction.selectedTransaction;
+
+// Derived selectors
+export const selectRecentTransactions = (state, limit = 10) =>
+    state.transaction.transactions.slice(0, limit);
+
+export const selectTransactionsByCategory = (state, categoryId) =>
+    state.transaction.transactions.filter(tx => tx.categoryId === categoryId);
+
+export const selectTransactionById = (state, transactionId) =>
+    state.transaction.transactions.find(tx => tx._id === transactionId);
 
 export default transactionSlice.reducer;

@@ -1,27 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {setBudgets, setLoading, setError } from '../../slices/budgetSlice';
+import { Plus, Wallet, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
+
+import { setBudgets, setLoading, setError } from '../../slices/budgetSlice';
 import budgetService from '../../services/budgetService';
 import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
 import walletService from '../../services/walletService';
+
 import CreateBudgetModal from './createBudgetModal';
 import BudgetGrid from './budgetGrid';
 import BudgetAnalytics from './budgetAnalytics';
-import './styles/budgetManagerStyles.css';
-import '../shared/componentScrollFix.css';
 import ReportSection from '../Common/ReportSection';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import AddIcon from '@mui/icons-material/Add';
-import { toast } from 'react-toastify';
+import CategoryManager from '../Category/categoryManager';
+import { Button } from '../ui/Button';
+import { GlassCard } from '../ui/GlassCard';
 
-const BudgetManager = () => 
-{
+const BudgetManager = () => {
     const dispatch = useDispatch();
     const { budgets, loading, error } = useSelector(state => state.budget);
     const { user } = useSelector(state => state.auth);
@@ -33,13 +29,15 @@ const BudgetManager = () =>
     const [filter, setFilter] = useState({ category: '', dateRange: '' });
     const [wallets, setWallets] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedBudgetId, setSelectedBudgetId] = useState(null);
-    
+    const [activeTab, setActiveTab] = useState('budgets');
+
     useEffect(() => {
-        fetchBudgets();
-        fetchCategories();
-        fetchWallets();
-    }, [dispatch]);
+        if (user?.id) {
+            fetchBudgets();
+            fetchCategories();
+            fetchWallets();
+        }
+    }, [dispatch, user?.id]);
 
     const fetchCategories = async () => {
         try {
@@ -54,7 +52,6 @@ const BudgetManager = () =>
         dispatch(setLoading(true));
         try {
             const fetchedBudgets = await budgetService.getUserBudgets(user.id);
-            console.log('[BudgetManager] Budgets fetched:', fetchedBudgets);
             dispatch(setBudgets(fetchedBudgets.budgets));
         } catch (error) {
             dispatch(setError(`Budget fetch failed: ${error.message}`));
@@ -62,7 +59,7 @@ const BudgetManager = () =>
             dispatch(setLoading(false));
         }
     };
-    
+
     const fetchWallets = async () => {
         try {
             const fetchedWallets = await walletService.getAllWallets(user.id);
@@ -74,17 +71,16 @@ const BudgetManager = () =>
 
     const handleBudgetSelect = async (budgetId) => {
         try {
-            setSelectedBudgetId(budgetId);
+            const budget = budgets.find(b => b._id === budgetId);
+            setSelectedBudget(budget);
             setIsLoading(true);
-            
+
             // Fetch budget transactions
             const transactions = await transactionService.getBudgetTransactions(budgetId);
             setTransactions(transactions?.data?.transactions || []);
         } catch (error) {
             console.error(error);
-            // Provide a fallback for missing transactions
             setTransactions([]);
-            // Only show error if it's not a 404 (endpoint missing during development)
             if (error?.response?.status !== 404) {
                 toast.error("Failed to load budget transactions");
             }
@@ -94,88 +90,134 @@ const BudgetManager = () =>
     };
 
     const handleBudgetCreated = () => {
-        console.log('Budget created callback triggered!');
         fetchBudgets();
         setIsModalOpen(false);
     };
 
-    const handleEditBudget = (budget) => {
-        setEditingBudget(budget);
-        setIsModalOpen(true);
-    };
-
     const handleDeleteBudget = async (budgetId) => {
-       try {
-           await budgetService.deleteBudget(budgetId);
-           fetchBudgets();
-       } catch (err) {
-           dispatch(setError(err.message));
-       }
-   };
-
-    const handleFilterChange = (e) => {
-       setFilter({ ...filter, [e.target.name]: e.target.value });
-   };
-
-    const handleCreateBudget = async (newBudget) => {
         try {
-            if (editingBudget) {
-                await budgetService.updateBudget(editingBudget._id, newBudget);
-            } else {
-                await budgetService.createBudget(newBudget);
+            await budgetService.deleteBudget(budgetId);
+            fetchBudgets();
+            if (selectedBudget?._id === budgetId) {
+                setSelectedBudget(null);
             }
-            await fetchBudgets();
-            setIsModalOpen(false);
-        } catch (error) {
-            dispatch(setError(`Budget save failed: ${error.message}`));
+        } catch (err) {
+            dispatch(setError(err.message));
         }
     };
 
+    const handleFilterChange = (e) => {
+        setFilter({ ...filter, [e.target.name]: e.target.value });
+    };
+
+    if (loading && !budgets.length) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     return (
-        <Box sx={{ p: 2 }}>
-            <AppBar position="static" color="transparent" elevation={0}>
-                <Toolbar disableGutters>
-                    <Typography variant="h5" sx={{ flexGrow: 1 }}>Budget Management</Typography>
-                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditingBudget(null); setIsModalOpen(true); }}>
-                        Create Budget
-                    </Button>
-                    <ReportSection
-                        title="Budget Report"
-                        accountId={selectedBudget?._id || user?.id}
-                        reportType="budget-performance"
-                    />
-                </Toolbar>
-            </AppBar>
-            {error && <Typography color="error">{error}</Typography>}
-            <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={12}>
-                    <BudgetGrid
-                        budgets={budgets}
-                        onEdit={b => { setEditingBudget(b); setIsModalOpen(true); }}
-                        onDelete={handleDeleteBudget}
-                        onSelect={handleBudgetSelect}
-                        selectedBudget={selectedBudget}
-                    />
-                </Grid>
-                <Grid item xs={12}>
-                    <BudgetAnalytics
-                        budget={selectedBudget}
-                        transactions={transactions}
-                        filter={filter}
-                        onFilterChange={handleFilterChange}
-                    />
-                </Grid>
-            </Grid>
+        <div className="space-y-8 pb-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-display font-bold text-foreground">Budget & Category Management</h2>
+                    <p className="text-muted-foreground">Track spending limits and organize expenses</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {activeTab === 'budgets' && (
+                        <Button
+                            onClick={() => { setEditingBudget(null); setIsModalOpen(true); }}
+                            className="gap-2"
+                        >
+                            <Plus className="w-4 h-4" /> Create Budget
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-border">
+                <button
+                    onClick={() => setActiveTab('budgets')}
+                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'budgets'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    Budgets
+                </button>
+                <button
+                    onClick={() => setActiveTab('categories')}
+                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'categories'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    Categories
+                </button>
+            </div>
+
+            {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500">
+                    {error}
+                </div>
+            )}
+
+            {/* Content based on active tab */}
+            {activeTab === 'budgets' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Main Content - Budget Grid */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <BudgetGrid
+                            budgets={budgets}
+                            onEdit={b => { setEditingBudget(b); setIsModalOpen(true); }}
+                            onDelete={handleDeleteBudget}
+                            onSelect={handleBudgetSelect}
+                            selectedBudget={selectedBudget}
+                            wallets={wallets}
+                        />
+                    </div>
+
+                    {/* Sidebar - Analytics & Reports */}
+                    <div className="space-y-6">
+                        <GlassCard className="p-6">
+                            <ReportSection
+                                title="Budget Report"
+                                accountId={selectedBudget?._id || user?.id}
+                                reportType="budget-performance"
+                            />
+                        </GlassCard>
+
+                        {selectedBudget && (
+                            <GlassCard className="p-6">
+                                <h3 className="text-lg font-bold mb-4">Budget Analytics</h3>
+                                <BudgetAnalytics
+                                    budget={selectedBudget}
+                                    transactions={transactions}
+                                    filter={filter}
+                                    onFilterChange={handleFilterChange}
+                                />
+                            </GlassCard>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <CategoryManager />
+            )}
+
             <CreateBudgetModal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setEditingBudget(null); }}
                 onCreateBudget={handleBudgetCreated}
                 categories={categories}
                 wallets={wallets}
-                userId={user.id}
+                userId={user?.id}
                 budgetData={editingBudget}
             />
-        </Box>
+        </div>
     );
 };
 

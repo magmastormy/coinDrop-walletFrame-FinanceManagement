@@ -1,43 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Box from '@mui/material/Box';
-import LinearProgress from '@mui/material/LinearProgress';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
-import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import ListSubheader from '@mui/material/ListSubheader';
-import MenuItem from '@mui/material/MenuItem';
-import { motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBullseye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useTheme } from '../../theme/ThemeContext';
-import { useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import AutomatedSavingsRules from '../Savings/AutomatedSavingsRules';
-import walletService from '../../services/walletService';
-import savingsAccountService from '../../services/savingsAccountService';
-import savingsGoalService from '../../services/savingsGoalService';
-import './styles/savingsGoalsCardStyles.css';
+import React, { useState } from 'react';
+import {
+    Target,
+    Calendar,
+    MoreVertical,
+    Edit,
+    Trash,
+    Plus,
+    CheckCircle2
+} from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import Modal from '../ui/Modal';
+import { cn } from '../../lib/utils';
 
-const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
-    const { isDarkMode } = useTheme();
-    const { user } = useSelector(state => state.auth);
+const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) => {
+    const [showMenu, setShowMenu] = useState(false);
+    const [isContributeOpen, setIsContributeOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [contributionAmount, setContributionAmount] = useState('');
+    const [selectedWalletId, setSelectedWalletId] = useState('');
+    const [editForm, setEditForm] = useState({
+        name: goal.name,
+        targetAmount: goal.targetAmount,
+        deadline: goal.deadline ? goal.deadline.split('T')[0] : '',
+        color: goal.color || '#8b5cf6'
+    });
 
-    // Defensive progress calculation
-    const safeCurrent = typeof goal.currentAmount === 'number' && !isNaN(goal.currentAmount) ? goal.currentAmount : 0;
-    const safeTarget = typeof goal.targetAmount === 'number' && goal.targetAmount > 0 ? goal.targetAmount : 1;
-    const progressPercentage = Math.max(0, Math.min(100, (safeCurrent / safeTarget) * 100));
-    
+    const progress = (goal.currentAmount / goal.targetAmount) * 100;
+    const isCompleted = progress >= 100;
+
+    const handleContribute = (e) => {
+        e.preventDefault();
+        onContribute(goal._id, Number(contributionAmount), selectedWalletId);
+        setIsContributeOpen(false);
+        setContributionAmount('');
+        setSelectedWalletId('');
+    };
+
+    const handleUpdate = (e) => {
+        e.preventDefault();
+        onUpdate(goal._id, {
+            ...editForm,
+            targetAmount: Number(editForm.targetAmount)
+        });
+        setIsEditOpen(false);
+    };
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -45,309 +54,208 @@ const SavingsGoalCard = ({ goal, onEdit, onDelete }) => {
         }).format(amount);
     };
 
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('en-US', {
-            year: 'numeric',
+    const formatDate = (dateString) => {
+        if (!dateString) return 'No deadline';
+        return new Date(dateString).toLocaleDateString('en-US', {
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            year: 'numeric'
         });
     };
 
-    const [showRules, setShowRules] = useState(false);
-    const [showContributeDialog, setShowContributeDialog] = useState(false);
-    const [contributionAmount, setContributionAmount] = useState('');
-    const [selectedSource, setSelectedSource] = useState('');
-    const [sources, setSources] = useState({ wallets: [], savingsAccounts: [] });
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        fetchSources();
-    }, [user?.id]);
-
-    const fetchSources = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            const [walletsResponse, savingsAccounts] = await Promise.all([
-                walletService.getAllWallets(user.id),
-                savingsAccountService.getUserSavingsAccounts(user.id)
-            ]);
-            
-            const wallets = Array.isArray(walletsResponse) 
-                ? walletsResponse 
-                : (walletsResponse?.wallets || []);
-                
-            setSources({
-                wallets: Array.isArray(wallets) ? wallets : [],
-                savingsAccounts: Array.isArray(savingsAccounts) ? savingsAccounts : []
-            });
-        } catch (error) {
-            setError('Failed to load funding sources');
-            setSources({ wallets: [], savingsAccounts: [] });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleContribute = async () => {
-        try {
-            if (!selectedSource || !contributionAmount) return;
-
-            const [sourceType, sourceId] = selectedSource.split('-');
-            const amount = parseFloat(contributionAmount);
-
-            if (isNaN(amount) || amount <= 0) {
-                throw new Error('Invalid contribution amount');
-            }
-
-            // Check which property contains the goal ID
-            const goalId = goal._id || goal.id;
-
-            if (!goalId) {
-                throw new Error('Goal ID is missing');
-            }
-
-            try {
-                await savingsGoalService.contributeToGoal(goalId, {
-                    amount: contributionAmount,
-                    sourceType: sourceType,
-                    sourceId: sourceId,
-                });
-
-                // Show success toast
-                toast.success('Successfully contributed to goal!', {
-                    position: 'top-right',
-                    autoClose: 3000
-                });
-
-                setShowContributeDialog(false);
-                setContributionAmount('');
-                setSelectedSource('');
-                
-                // Refresh goal data
-                if (onEdit) {
-                    onEdit(goal);
-                }
-            } catch (apiError) {
-                console.error('Contribution error:', apiError);
-                
-                // Check for insufficient balance error
-                if (apiError.response?.data?.details === 'Insufficient balance in source') {
-                    toast.error('Insufficient balance in selected source', {
-                        position: 'top-right',
-                        autoClose: 5000
-                    });
-                } else if (apiError.response?.data?.error) {
-                    toast.error(apiError.response.data.error, {
-                        position: 'top-right',
-                        autoClose: 5000
-                    });
-                } else {
-                    toast.error('Failed to contribute to goal', {
-                        position: 'top-right',
-                        autoClose: 5000
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Form validation error:', error);
-            toast.error(error.message || 'Invalid contribution data', {
-                position: 'top-right',
-                autoClose: 5000
-            });
-            setError(error.message || 'Failed to contribute to goal');
-        }
-    };
-
     return (
-        <motion.div 
-            className={`savings-goal-card ${isDarkMode ? 'dark' : ''}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-        >
-            <Card className="goal-card">
-                <CardContent>
-                    <Box className="card-header">
-                        <Box className="title-section">
-                            <FontAwesomeIcon icon={faBullseye} className="goal-icon" />
-                            <div className="title-content">
-                                <Typography variant="h6" className="goal-title">
-                                    {goal.name}
-                                </Typography>
-                                <Typography variant="body2" className="goal-deadline">
-                                    Target Date: {formatDate(goal.deadline)}
-                                </Typography>
+        <>
+            <GlassCard className="relative h-full flex flex-col p-6 group hover:border-primary/50 transition-all duration-300">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={cn(
+                            "p-3 rounded-xl",
+                            isCompleted ? "bg-emerald-500/20 text-emerald-500" : "bg-primary/20 text-primary"
+                        )}>
+                            {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-foreground">{goal.name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span>{formatDate(goal.deadline)}</span>
                             </div>
-                        </Box>
-                        <Box className="action-buttons">
-                            <IconButton 
-                                onClick={() => onEdit(goal)}
-                                className="edit-button"
-                                size="small"
-                                aria-label="Edit goal"
-                            >
-                                <FontAwesomeIcon icon={faEdit} />
-                            </IconButton>
-                            <IconButton 
-                                onClick={() => onDelete(goal._id)}
-                                className="delete-button"
-                                size="small"
-                                aria-label="Delete goal"
-                            >
-                                <FontAwesomeIcon icon={faTrash} />
-                            </IconButton>
-                        </Box>
-                    </Box>
+                        </div>
+                    </div>
 
-                    <Box className="progress-section">
-                        <Typography variant="body2" className="progress-text">
-                            Progress: {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
-                        </Typography>
-                        <LinearProgress 
-                            variant="determinate" 
-                            value={progressPercentage}
-                            className="progress-bar"
+                    <div className="relative">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </Button>
+
+                        {showMenu && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setShowMenu(false)}
+                                />
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-xl">
+                                    <button
+                                        onClick={() => {
+                                            setIsEditOpen(true);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                                    >
+                                        <Edit className="w-4 h-4" /> Edit Goal
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            onDelete(goal._id);
+                                            setShowMenu(false);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                    >
+                                        <Trash className="w-4 h-4" /> Delete Goal
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Progress */}
+                <div className="mb-6">
+                    <div className="flex justify-between items-end mb-2">
+                        <div>
+                            <span className="text-2xl font-bold text-foreground">
+                                {formatCurrency(goal.currentAmount)}
+                            </span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                                of {formatCurrency(goal.targetAmount)}
+                            </span>
+                        </div>
+                        <span className={cn(
+                            "text-sm font-medium",
+                            isCompleted ? "text-emerald-500" : "text-primary"
+                        )}>
+                            {progress.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                            className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                isCompleted ? "bg-emerald-500" : "bg-primary"
+                            )}
+                            style={{ width: `${Math.min(progress, 100)}%` }}
                         />
-                    </Box>
+                    </div>
+                </div>
 
-                    {goal.description && (
-                        <Typography 
-                            variant="body2" 
-                            className="goal-description"
-                            sx={{ mt: 2 }}
-                        >
-                            {goal.description}
-                        </Typography>
-                    )}
+                {/* Actions */}
+                <div className="mt-auto">
+                    <Button
+                        className="w-full gap-2"
+                        onClick={() => setIsContributeOpen(true)}
+                        disabled={isCompleted}
+                    >
+                        <Plus className="w-4 h-4" /> Contribute
+                    </Button>
+                </div>
+            </GlassCard>
 
-                    <Box sx={{ mt: 2 }}>
-                        <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => setShowContributeDialog(true)}
-                            fullWidth
-                            sx={{ mb: 1 }}
-                        >
-                            Contribute to Goal
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            color="secondary"
-                            onClick={() => setShowRules(true)}
-                            fullWidth
-                        >
-                            Automation Rules
-                        </Button>
-                    </Box>
-                </CardContent>
-            </Card>
-
-            <Dialog 
-                open={showContributeDialog} 
-                onClose={() => setShowContributeDialog(false)}
-                fullWidth
-                maxWidth="sm"
+            {/* Contribute Modal */}
+            <Modal
+                isOpen={isContributeOpen}
+                onClose={() => setIsContributeOpen(false)}
+                title={`Contribute to ${goal.name}`}
+                maxWidth="max-w-md"
             >
-                <DialogTitle>Contribute to {goal.name}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText sx={{ mb: 2 }}>
-                        Current progress: {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}
-                    </DialogContentText>
-                    
-                    {error && (
-                        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-                            {error}
-                        </Typography>
-                    )}
-                    
-                    <TextField
+                <form onSubmit={handleContribute} className="space-y-4">
+                    <Input
                         label="Amount"
                         type="number"
-                        fullWidth
                         value={contributionAmount}
                         onChange={(e) => setContributionAmount(e.target.value)}
-                        margin="dense"
-                        inputProps={{ min: 0.01, step: 0.01 }}
+                        min="0"
+                        step="0.01"
                         required
-                        sx={{ mb: 2 }}
+                        placeholder="0.00"
                     />
-                    
-                    <FormControl fullWidth margin="dense">
-                        <InputLabel id="source-select-label">Source</InputLabel>
-                        <Select
-                            labelId="source-select-label"
-                            value={selectedSource}
-                            onChange={(e) => setSelectedSource(e.target.value)}
-                            label="Source"
-                            required
-                            disabled={isLoading}
-                        >
-                            {sources.wallets.length === 0 && sources.savingsAccounts.length === 0 && (
-                                <MenuItem disabled>No funding sources available</MenuItem>
-                            )}
-                            
-                            {sources.wallets.length > 0 && [
-                                <ListSubheader key="wallets-header">Wallets</ListSubheader>,
-                                ...sources.wallets.map(wallet => (
-                                    <MenuItem 
-                                        key={`wallet-${wallet._id}`} 
-                                        value={`wallet-${wallet._id}`}
-                                        disabled={wallet.balance <= 0}
-                                    >
-                                        {wallet.name} ({formatCurrency(wallet.balance)})
-                                    </MenuItem>
-                                ))
-                            ]}
-                            
-                            {sources.savingsAccounts.length > 0 && [
-                                <ListSubheader key="savings-header">Savings Accounts</ListSubheader>,
-                                ...sources.savingsAccounts.map(account => (
-                                    <MenuItem 
-                                        key={`savings-${account._id}`} 
-                                        value={`savings-${account._id}`}
-                                        disabled={account.balance <= 0}
-                                    >
-                                        {account.name} ({formatCurrency(account.balance)})
-                                    </MenuItem>
-                                ))
-                            ]}
-                        </Select>
-                    </FormControl>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setShowContributeDialog(false)}>Cancel</Button>
-                    <Button 
-                        onClick={handleContribute} 
-                        color="primary"
-                        disabled={!selectedSource || !contributionAmount || isLoading}
-                    >
-                        {isLoading ? 'Processing...' : 'Contribute'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
-            <Dialog
-                open={showRules}
-                onClose={() => setShowRules(false)}
-                fullWidth
-                maxWidth="sm"
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">From Wallet</label>
+                        <select
+                            value={selectedWalletId}
+                            onChange={(e) => setSelectedWalletId(e.target.value)}
+                            required
+                            className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        >
+                            <option value="">Select a wallet</option>
+                            {wallets.map(wallet => (
+                                <option key={wallet._id} value={wallet._id}>
+                                    {wallet.name} ({formatCurrency(wallet.balance)})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <Button variant="ghost" type="button" onClick={() => setIsContributeOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={!contributionAmount || !selectedWalletId}>
+                            Confirm Contribution
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Edit Modal */}
+            <Modal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                title="Edit Goal"
+                maxWidth="max-w-md"
             >
-                <DialogTitle>Automation Rules for {goal.name}</DialogTitle>
-                <DialogContent>
-                    <AutomatedSavingsRules
-                        goalId={goal._id || goal.id}
-                        onRuleChange={(rules) => console.log('Rules updated:', rules)}
+                <form onSubmit={handleUpdate} className="space-y-4">
+                    <Input
+                        label="Goal Name"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        required
                     />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setShowRules(false)}>Close</Button>
-                </DialogActions>
-            </Dialog>
-        </motion.div>
+
+                    <Input
+                        label="Target Amount"
+                        type="number"
+                        value={editForm.targetAmount}
+                        onChange={(e) => setEditForm({ ...editForm, targetAmount: e.target.value })}
+                        min="0"
+                        step="0.01"
+                        required
+                    />
+
+                    <Input
+                        label="Deadline"
+                        type="date"
+                        value={editForm.deadline}
+                        onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })}
+                    />
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <Button variant="ghost" type="button" onClick={() => setIsEditOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit">
+                            Save Changes
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 

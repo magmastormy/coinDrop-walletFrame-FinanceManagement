@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faMicrophone } from '@fortawesome/free-solid-svg-icons';
-import './styles/chatInputStyles.css';
+import { Send } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 const ChatInput = ({ onSendMessage, disabled = false, placeholder = "Type a message..." }) => {
     const [message, setMessage] = useState('');
@@ -21,24 +21,25 @@ const ChatInput = ({ onSendMessage, disabled = false, placeholder = "Type a mess
     };
 
     return (
-        <div className="chat-input-container">
-            <form onSubmit={handleSubmit} className="chat-input-form">
-                <input
+        <div className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-md rounded-b-2xl">
+            <form onSubmit={handleSubmit} className="flex gap-2">
+                <Input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className="chat-input"
+                    className="flex-1 bg-black/20 border-white/10 focus:border-primary/50"
                 />
-                <button 
-                    type="submit" 
-                    className={`send-button ${!message.trim() || disabled ? 'disabled' : ''}`}
+                <Button
+                    type="submit"
                     disabled={!message.trim() || disabled}
+                    size="icon"
+                    className="shrink-0"
                 >
-                    <FontAwesomeIcon icon={faPaperPlane} />
-                </button>
+                    <Send className="w-4 h-4" />
+                </Button>
             </form>
         </div>
     );

@@ -32,6 +32,7 @@
     "axios": "^1.8.2",
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.4.7",
+    "clsx": "^2.1.1",
     "d3-node": "^4.0.1",
     "dompurify": "^3.2.3",
     "exceljs": "^4.4.0",
@@ -39,10 +40,12 @@
     "glob": "^11.0.2",
     "is-online": "^11.0.0",
     "lru-cache": "^11.1.0",
+    "lucide-react": "^0.554.0",
     "pdfkit": "^0.16.0",
     "pdfkit-table": "^0.1.99",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.5",
     "react-error-boundary": "^5.0.0",
@@ -54,6 +57,7 @@
     "rimraf": "^6.0.1",
     "rollup": "^4.40.2",
     "styled-components": "^6.1.15",
+    "tailwind-merge": "^3.4.0",
     "terser": "^5.39.0"
   },
   "devDependencies": {

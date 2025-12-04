@@ -1,21 +1,11 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import budgetService from '../../services/budgetService';
+import Modal from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
+import { Loader2, Calendar, Wallet, Tag, DollarSign, PieChart } from 'lucide-react';
 import dayjs from 'dayjs';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 
 const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets = [], userId, budgetData }) => {
     // Ensure wallets is an array
@@ -28,8 +18,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         walletId: '',
         type: 'expense',
         period: 'monthly',
-        startDate: dayjs(),
-        endDate: null,
+        startDate: dayjs().format('YYYY-MM-DD'),
+        endDate: '',
         metadata: {
             icon: 'budget',
             color: '#007bff'
@@ -47,21 +37,23 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 type: budgetData.type,
                 categoryId: budgetData.categoryId,
                 walletId: budgetData.walletId,
-                startDate: budgetData.startDate ? dayjs(budgetData.startDate) : dayjs(),
-                endDate: budgetData.endDate ? dayjs(budgetData.endDate) : null,
+                startDate: budgetData.startDate ? dayjs(budgetData.startDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+                endDate: budgetData.endDate ? dayjs(budgetData.endDate).format('YYYY-MM-DD') : '',
                 metadata: {
                     icon: (budgetData.metadata && budgetData.metadata.icon) ? budgetData.metadata.icon : 'budget',
                     color: (budgetData.metadata && budgetData.metadata.color) ? budgetData.metadata.color : '#007bff'
                 }
             });
+        } else {
+            resetForm();
         }
-    }, [budgetData]);
+    }, [budgetData, isOpen]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
-        
+
         // Validate required fields
         if (!budgetFormData.name || !budgetFormData.amount || !budgetFormData.categoryId || !budgetFormData.walletId || !budgetFormData.type) {
             setError('All fields are required: name, amount, category, wallet, and type');
@@ -78,27 +70,32 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         }
 
         try {
-            const budgetData = {
+            const budgetPayload = {
                 name: budgetFormData.name,
                 amount: amount,
                 categoryId: budgetFormData.categoryId,
                 walletId: budgetFormData.walletId,
                 userId: userId,
                 type: budgetFormData.type,
-                startDate: budgetFormData.startDate ? budgetFormData.startDate.toISOString().split('T')[0] : dayjs().toISOString().split('T')[0],
+                startDate: budgetFormData.startDate,
+                endDate: budgetFormData.endDate || null,
                 period: budgetFormData.period || 'monthly',
             };
 
-            console.log('[DEBUG] Budget data being sent:', budgetData);
-            const result = await budgetService.createBudget(budgetData);
-            console.log('[DEBUG] Budget creation result:', result);
+            console.log('[DEBUG] Budget data being sent:', budgetPayload);
+
+            if (budgetData) {
+                await budgetService.updateBudget(budgetData._id, budgetPayload);
+            } else {
+                await budgetService.createBudget(budgetPayload);
+            }
 
             onCreateBudget();
             resetForm();
             onClose();
         } catch (err) {
             console.error('[DEBUG] Budget creation error:', err);
-            setError(err.message || 'Failed to create budget. Please try again.');
+            setError(err.message || 'Failed to save budget. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -112,94 +109,152 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             walletId: '',
             type: 'expense',
             period: 'monthly',
-            startDate: dayjs(),
-            endDate: null,
+            startDate: dayjs().format('YYYY-MM-DD'),
+            endDate: '',
             metadata: {
                 icon: 'budget',
                 color: '#007bff'
             }
         });
-    };
-
-    const validateBudget = (budget) => {
-        const amount = parseFloat(budget.amount);
-        if (isNaN(amount) || amount <= 0) {
-            return 'Amount must be a positive number';
-        }
-        if (!budget.category) {
-            return 'Category is required';
-        }
-        return null;
+        setError(null);
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle>{budgetData ? 'Edit Budget' : 'Create New Budget'}</DialogTitle>
-            <DialogContent>
-                <Box component="form" onSubmit={handleSubmit} sx={{ display:'grid', gap:2, pt:1 }}>
-                    <TextField label="Name" value={budgetFormData.name} onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })} required fullWidth />
-                    <TextField label="Amount" type="number" value={budgetFormData.amount} onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })} required fullWidth />
-                    <FormControl fullWidth>
-                        <InputLabel>Type</InputLabel>
-                        <Select value={budgetFormData.type} onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}>
-                            <MenuItem value="expense">Expense</MenuItem>
-                            <MenuItem value="income">Income</MenuItem>
-                            <MenuItem value="savings">Savings</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                        <InputLabel>Category</InputLabel>
-                        <Select value={budgetFormData.categoryId} onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })} required>
-                            {categories.map(cat => <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>)}
-                        </Select>
-                    </FormControl>
-                    <FormControl fullWidth>
-                        <InputLabel id="wallet-select-label">Wallet</InputLabel>
-                        <Select
-                            labelId="wallet-select-label"
-                            id="wallet-select"
-                            value={budgetFormData.walletId}
-                            label="Wallet"
-                            onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={budgetData ? 'Edit Budget' : 'Create New Budget'}
+            className="max-w-md"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                    label="Budget Name"
+                    value={budgetFormData.name}
+                    onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })}
+                    placeholder="e.g., Monthly Groceries"
+                    required
+                    fullWidth
+                />
+
+                <Input
+                    label="Amount"
+                    type="number"
+                    value={budgetFormData.amount}
+                    onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })}
+                    placeholder="0.00"
+                    icon={DollarSign}
+                    required
+                    fullWidth
+                />
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Type</label>
+                    <div className="relative">
+                        <PieChart className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <select
+                            value={budgetFormData.type}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
+                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                        >
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                            <option value="savings">Savings</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Category</label>
+                    <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <select
+                            value={budgetFormData.categoryId}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
+                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
                             required
                         >
-                            <MenuItem value="" disabled>Select Wallet</MenuItem>
-                            {walletOptions.map(w => <MenuItem key={w._id} value={w._id}>{w.name}</MenuItem>)}
-                        </Select>
-                    </FormControl>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker
-                            label="Start Date"
-                            value={budgetFormData.startDate}
-                            onChange={date => setBudgetFormData({ ...budgetFormData, startDate: date })}
-                            slotProps={{ textField: { fullWidth: true } }}
-                        />
-                        <DatePicker
-                            label="End Date"
-                            value={budgetFormData.endDate}
-                            onChange={date => setBudgetFormData({ ...budgetFormData, endDate: date })}
-                            slotProps={{ textField: { fullWidth: true, required: true } }}
-                        />
-                    </LocalizationProvider>
-                    {error && <Typography color="error">{error}</Typography>}
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
-            </DialogActions>
-        </Dialog>
+                            <option value="" disabled>Select Category</option>
+                            {categories.map(cat => (
+                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Wallet</label>
+                    <div className="relative">
+                        <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <select
+                            value={budgetFormData.walletId}
+                            onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
+                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                            required
+                        >
+                            <option value="" disabled>Select Wallet</option>
+                            {walletOptions.map(w => (
+                                <option key={w._id} value={w._id}>{w.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Start Date</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="date"
+                                value={budgetFormData.startDate}
+                                onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
+                                className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">End Date</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="date"
+                                value={budgetFormData.endDate}
+                                onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
+                                className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        {error}
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {budgetData ? 'Update Budget' : 'Create Budget'}
+                    </Button>
+                </div>
+            </form>
+        </Modal>
     );
 };
 
 CreateBudgetModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onCreateBudget: PropTypes.func.isRequired,
-  categories: PropTypes.array.isRequired,
-  wallets: PropTypes.array,
-  userId: PropTypes.string,
-  budgetData: PropTypes.object
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onCreateBudget: PropTypes.func.isRequired,
+    categories: PropTypes.array.isRequired,
+    wallets: PropTypes.array,
+    userId: PropTypes.string,
+    budgetData: PropTypes.object
 };
 
 export default CreateBudgetModal;

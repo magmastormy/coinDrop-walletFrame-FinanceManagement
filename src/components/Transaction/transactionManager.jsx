@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Plus, ArrowDownLeft, ArrowUpRight, DollarSign, Loader2 } from 'lucide-react';
 import { setTransactions, setLoading, setError } from '../../slices/transactionSlice';
 import walletService from '../../services/walletService';
 import savingsAccountService from '../../services/savingsAccountService';
@@ -7,24 +8,15 @@ import transactionService from '../../services/transactionService';
 import categoryService from '../../services/categoryService';
 import budgetService from '../../services/budgetService';
 import CreateTransactionModal from './createTransactionModal';
-import TransactionList from './transactionList';
+import TransactionTable from './transactionTable';
 import FilterTransactions from './filterTransactions';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import { useTheme } from '../../theme/ThemeContext';
-import './styles/transactionManagerStyles.css';
-import '../shared/componentScrollFix.css';
+import { Button } from '../ui/Button';
+import { GlassCard } from '../ui/GlassCard';
 
 const TransactionManager = () => {
     const dispatch = useDispatch();
     const { transactions = [], loading, error } = useSelector(state => state.transaction || {});
     const { user } = useSelector(state => state.auth || {});
-    const { isDarkMode } = useTheme();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [categories, setCategories] = useState([]);
@@ -42,371 +34,147 @@ const TransactionManager = () => {
 
     const fetchInitialData = async () => {
         if (!user?.id) return;
-        
         dispatch(setLoading(true));
         try {
-            // Fetch wallets
-            const walletsResponse = await walletService.getAllWallets(user.id);
-            setLocalWallets(walletsResponse || []);
+            const [walletsRes, savingsRes, categoriesRes, transactionsRes] = await Promise.all([
+                walletService.getAllWallets(user.id),
+                savingsAccountService.getUserSavingsAccounts(user.id),
+                categoryService.getUserCategories(user.id),
+                transactionService.getUserTransactions(user.id, { ...filters, limit: 1000 })
+            ]);
 
-            //Fetch Savings Accounts
-            const savingsAccountsResponse = await savingsAccountService.getUserSavingsAccounts(user.id);
-            setSavingsAccounts(savingsAccountsResponse || []);
-            
-            // Fetch categories
-            const categoriesData = await categoryService.getUserCategories(user.id);
-            setCategories(categoriesData || []);
-            
-            // Fetch transactions - set a high limit to get all transactions
-            const transactionsResponse = await transactionService.getUserTransactions(user.id, { ...filters, limit: 1000 });
-            
-            // Log the full response to debug
-            console.log('Transaction response:', transactionsResponse);
-            
-            // Extract transactions from the response
-            let transactions = [];
-            
-            if (transactionsResponse) {
-                if (transactionsResponse.data) {
-                    // Most common case: transactions are in response.data.transactions
-                    if (transactionsResponse.data.transactions && Array.isArray(transactionsResponse.data.transactions)) {
-                        transactions = transactionsResponse.data.transactions;
-                    }
-                    // Case: transactions are directly in response.data as an array
-                    else if (Array.isArray(transactionsResponse.data)) {
-                        transactions = transactionsResponse.data;
-                    }
-                }
-                // Case: transactions are directly in the response
-                else if (transactionsResponse.transactions && Array.isArray(transactionsResponse.transactions)) {
-                    transactions = transactionsResponse.transactions;
-                }
-            }
-            
-            console.log(`Fetched ${transactions.length} transactions from database:`, transactions);
-            dispatch(setTransactions(transactions));
+            setLocalWallets(walletsRes || []);
+            setSavingsAccounts(savingsRes || []);
+            setCategories(categoriesRes || []);
+
+            let txs = [];
+            if (transactionsRes?.data?.transactions) txs = transactionsRes.data.transactions;
+            else if (Array.isArray(transactionsRes?.data)) txs = transactionsRes.data;
+            else if (Array.isArray(transactionsRes?.transactions)) txs = transactionsRes.transactions;
+
+            dispatch(setTransactions(txs));
         } catch (err) {
-            dispatch(setError('Unable to fetch transaction data. Please try again later.'));
+            dispatch(setError('Unable to fetch transaction data.'));
         } finally {
             dispatch(setLoading(false));
         }
     };
 
     const fetchBudgets = async () => {
-        dispatch(setLoading(true));
         try {
-            const budgetsResponse = await budgetService.getUserBudgets(user.id);
-            setBudgets(budgetsResponse.budgets || []);
+            const res = await budgetService.getUserBudgets(user.id);
+            setBudgets(res.budgets || []);
         } catch (err) {
             console.error('Error fetching budgets:', err);
-            dispatch(setError('Unable to fetch budgets. Please try again later.'));
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
-
-    const handleCreateTransaction = async (transactionData) => {
-        // Validate transaction data
-        if (!transactionData || typeof transactionData !== 'object') {
-            console.error('Invalid transaction data received:', transactionData);
-            dispatch(setError('Invalid transaction data. Please try again.'));
-            return;
-        }
-
-        // Check if it's already a response object (prevent double processing)
-        if (transactionData.message && transactionData.transaction) {
-            console.log('Received response object instead of transaction data, skipping create');
-            setIsModalOpen(false);
-            await fetchInitialData();
-            await fetchBudgets();
-            return;
-        }
-
-        dispatch(setLoading(true));
-        try {
-            console.log('Creating transaction with data:', transactionData);
-            await transactionService.createTransaction(transactionData);
-            console.log('Transaction created successfully');
-            
-            // Close modal and refresh data
-            setIsModalOpen(false);
-            
-            // Force a complete refresh of data
-            setTimeout(async () => {
-                await fetchInitialData();
-                await fetchBudgets();
-                console.log('Data refreshed after transaction creation');
-            }, 300);
-        } catch (err) {
-            console.error('Transaction creation error:', err);
-            dispatch(setError(err.response?.data?.message || err.message || 'Failed to create transaction. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
-        }
-    };
-
-    const handleUpdateTransaction = async (transactionId, updatedData) => {
-        // Validate transaction ID
-        if (!transactionId) {
-            console.error('No transaction ID provided for update');
-            dispatch(setError('Transaction ID is required for updates'));
-            return;
-        }
-
-        // Validate transaction data
-        if (!updatedData || typeof updatedData !== 'object') {
-            console.error('Invalid transaction data received for update:', updatedData);
-            dispatch(setError('Invalid transaction data. Please try again.'));
-            return;
-        }
-
-        // Check if it's already a response object (prevent double processing)
-        if (updatedData.message && updatedData.transaction) {
-            console.log('Received response object instead of transaction data, skipping update');
-            setEditingTransaction(null);
-            setIsModalOpen(false);
-            await fetchInitialData();
-            await fetchBudgets();
-            return;
-        }
-
-        dispatch(setLoading(true));
-        try {
-            console.log('Updating transaction:', transactionId, 'with data:', updatedData);
-            await transactionService.updateTransaction(transactionId, updatedData);
-            console.log('Transaction updated successfully');
-            
-            // Reset state and close modal
-            setEditingTransaction(null);
-            setIsModalOpen(false);
-            
-            // Force a complete refresh of data with a slight delay
-            setTimeout(async () => {
-                await fetchInitialData();
-                await fetchBudgets();
-                console.log('Data refreshed after transaction update');
-            }, 300);
-        } catch (err) {
-            console.error('Error updating transaction:', err);
-            dispatch(setError(err.response?.data?.message || err.message || 'Failed to update transaction. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
         }
     };
 
     const handleDeleteTransaction = async (transactionId) => {
-        dispatch(setLoading(true));
         try {
             await transactionService.deleteTransaction(transactionId);
-            // Refresh the transactions list
-            await fetchInitialData();
-            // Also refresh budgets to update analytics
-            await fetchBudgets();
+            fetchInitialData();
+            fetchBudgets();
         } catch (err) {
             console.error('Error deleting transaction:', err);
-            dispatch(setError('Failed to delete transaction. Please try again.'));
-        } finally {
-            dispatch(setLoading(false));
         }
     };
 
-    const handleFilterChange = (newFilters) => {
-        setFilters(newFilters);
-        fetchInitialData();
-    };
-
-    const handleWalletSelect = (walletId) => {
-        // Clear savings account filter when selecting a wallet
-        setFilters(prev => ({ 
-            ...prev, 
-            walletId: walletId?._id || walletId || '',
-            savingsAccountId: '' // Clear savings account filter when selecting a wallet
-        }));
-        
-        // Refresh data with new filters
-        fetchInitialData();
-    };
-
-    const handleSavingsSelect = (savingsAccountId) => {
-        // Clear wallet filter when selecting a savings account
-        setFilters(prev => ({ 
-            ...prev, 
-            savingsAccountId: savingsAccountId?._id || savingsAccountId || '',
-            walletId: '' // Clear wallet filter when selecting a savings account
-        }));
-        
-        // Refresh data with new filters
-        fetchInitialData();
-    };
-
-    const handleCategorySelect = (category) => {
-        setFilters(prev => ({ ...prev, category }));
-    };
-
-    const handleTransfer = async (fromWalletId, toWalletId, amount) => {
-        try {
-            await walletService.transferFunds(fromWalletId, toWalletId, amount);
-            await fetchInitialData();
-        } catch (err) {
-            console.error('Error during transfer:', err);
-            dispatch(setError('Failed to transfer funds. Please try again.'));
-        }
-    };
-
-    // Apply filters to transactions with improved handling of different property formats
-    const filteredTransactions = React.useMemo(() => {
+    const filteredTransactions = useMemo(() => {
         if (!Array.isArray(transactions)) return [];
-        
-        console.log('Filtering transactions with filters:', filters);
-        console.log('Total transactions before filtering:', transactions.length);
-        
-        const filtered = transactions.filter(transaction => {
-            // Handle category filter - could be string ID or object with _id
-            const categoryMatch = !filters.category || 
-                transaction.category === filters.category || 
-                (transaction.category && transaction.category._id === filters.category);
-            
-            // Handle wallet filter - could be string ID or object with _id
-            const walletMatch = !filters.walletId || filters.walletId === '' || 
-                transaction.walletId === filters.walletId || 
-                (transaction.walletId && transaction.walletId._id === filters.walletId) ||
-                (typeof transaction.walletId === 'string' && transaction.walletId === filters.walletId);
-            
-            // Handle savings account filter
-            const savingsMatch = !filters.savingsAccountId || filters.savingsAccountId === '' || 
-                transaction.savingsAccountId === filters.savingsAccountId || 
-                (transaction.savingsAccountId && transaction.savingsAccountId._id === filters.savingsAccountId) ||
-                (typeof transaction.savingsAccountId === 'string' && transaction.savingsAccountId === filters.savingsAccountId);
-            
-            // Handle date filters
-            const startDateMatch = !filters.startDate || 
-                new Date(transaction.date) >= new Date(filters.startDate);
-                
-            const endDateMatch = !filters.endDate || 
-                new Date(transaction.date) <= new Date(filters.endDate);
-            
-            // Handle type filter
-            const typeMatch = !filters.type || transaction.type === filters.type;
-            
-            return categoryMatch && walletMatch && savingsMatch && startDateMatch && endDateMatch && typeMatch;
+
+        return transactions.filter(t => {
+            const categoryMatch = !filters.category || t.category === filters.category || t.category?._id === filters.category;
+            const walletMatch = !filters.walletId || t.walletId === filters.walletId || t.walletId?._id === filters.walletId;
+            const savingsMatch = !filters.savingsAccountId || t.savingsAccountId === filters.savingsAccountId || t.savingsAccountId?._id === filters.savingsAccountId;
+            const startDateMatch = !filters.startDate || new Date(t.date) >= new Date(filters.startDate);
+            const endDateMatch = !filters.endDate || new Date(t.date) <= new Date(filters.endDate);
+
+            return categoryMatch && walletMatch && savingsMatch && startDateMatch && endDateMatch;
         });
-        
-        console.log('Filtered transactions count:', filtered.length);
-        return filtered;
     }, [transactions, filters]);
 
+    const stats = useMemo(() => {
+        const income = filteredTransactions.reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum, 0);
+        const expense = filteredTransactions.reduce((sum, t) => t.type === 'expense' ? sum + t.amount : sum, 0);
+        return { income, expense, net: income - expense };
+    }, [filteredTransactions]);
 
-    // We don't need this anymore since we're using filteredTransactions directly
-    // const data = React.useMemo(() =>
-    //     Array.isArray(transactions) ? transactions : [],
-    //     [transactions]
-    // );
-
-    // Summary stats for displayed transactions
-    const totalIncome = filteredTransactions.reduce((sum, tx) => tx.type === 'income' ? sum + tx.amount : sum, 0);
-    const totalExpense = filteredTransactions.reduce((sum, tx) => tx.type === 'expense' ? sum + tx.amount : sum, 0);
-    const net = totalIncome - totalExpense;
-
-    if (loading) {
+    if (loading && !transactions.length) {
         return (
-            <Box className="loading-container">
-                <CircularProgress className="progress-indicator" />
-            </Box>
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
         );
     }
 
     return (
-        <div className="transaction-manager">
-            <Box className="header-section">
-                <Typography variant="h5" className="page-title">
-                    Transactions
-                </Typography>
-            </Box>
-            <Box className="summary-section" sx={{ mb: 3 }}>
-                <Card>
-                    <CardContent sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-                        <Box textAlign="center">
-                            <Typography variant="subtitle1">Income</Typography>
-                            <Typography variant="h6">${totalIncome.toFixed(2)}</Typography>
-                        </Box>
-                        <Box textAlign="center">
-                            <Typography variant="subtitle1">Expense</Typography>
-                            <Typography variant="h6">${totalExpense.toFixed(2)}</Typography>
-                        </Box>
-                        <Box textAlign="center">
-                            <Typography variant="subtitle1">Net</Typography>
-                            <Typography variant="h6">${net.toFixed(2)}</Typography>
-                        </Box>
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                setEditingTransaction(null);
-                                setIsModalOpen(true);
-                            }}
-                            sx={{ height: 40 }}
-                        >
-                            New Transaction
-                        </Button>
-                    </CardContent>
-                </Card>
-            </Box>
+        <div className="space-y-8 pb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-end gap-4">
+                <div>
+                    <h2 className="text-3xl font-display font-bold text-foreground">Transactions</h2>
+                    <p className="text-muted-foreground">Track your income and expenses</p>
+                </div>
+                <Button onClick={() => { setEditingTransaction(null); setIsModalOpen(true); }} className="gap-2">
+                    <Plus className="w-4 h-4" /> New Transaction
+                </Button>
+            </div>
 
-            {error && (
-                <Box className="error-container">
-                    <Alert severity="error" className="error-alert">
-                        {error}
-                    </Alert>
-                </Box>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <GlassCard className="p-6 flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500">
+                        <ArrowDownLeft className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground font-medium">Total Income</p>
+                        <p className="text-2xl font-bold text-emerald-500">${stats.income.toFixed(2)}</p>
+                    </div>
+                </GlassCard>
+                <GlassCard className="p-6 flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-red-500/10 text-red-500">
+                        <ArrowUpRight className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground font-medium">Total Expense</p>
+                        <p className="text-2xl font-bold text-red-500">${stats.expense.toFixed(2)}</p>
+                    </div>
+                </GlassCard>
+                <GlassCard className="p-6 flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
+                        <DollarSign className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground font-medium">Net Balance</p>
+                        <p className="text-2xl font-bold text-foreground">${stats.net.toFixed(2)}</p>
+                    </div>
+                </GlassCard>
+            </div>
 
-            <FilterTransactions 
+            <FilterTransactions
                 filters={filters}
                 setFilters={setFilters}
                 wallets={wallets}
                 savingsAccounts={savingsAccounts}
-                onWalletSelect={handleWalletSelect}
-                onSavingsSelect={handleSavingsSelect}
                 categories={categories}
-                onCategorySelect={handleCategorySelect}
             />
 
-            {!loading && filteredTransactions.length === 0 ? (
-                <Box textAlign="center" my={4}>
-                    <Typography variant="body1" color="text.secondary">
-                        No transactions found. Create a new transaction to get started!
-                    </Typography>
-                </Box>
-            ) : (
-                <TransactionList 
-                    transactions={filteredTransactions}
-                    onEdit={(transaction) => {
-                        console.log('Editing transaction:', transaction);
-                        setEditingTransaction(transaction);
-                        setIsModalOpen(true);
-                    }}
-                    onDelete={handleDeleteTransaction}
-                    wallets={wallets}
-                    savingsAccounts={savingsAccounts}
-                />
-            )}
+            <TransactionTable
+                transactions={filteredTransactions}
+                onEdit={(t) => { setEditingTransaction(t); setIsModalOpen(true); }}
+                onDelete={handleDeleteTransaction}
+                wallets={wallets}
+                savingsAccounts={savingsAccounts}
+            />
 
-            {(isModalOpen || editingTransaction) && (
-                <CreateTransactionModal
-                    isOpen={isModalOpen || !!editingTransaction}
-                    onClose={() => {
-                        setIsModalOpen(false);
-                        setEditingTransaction(null);
-                    }}
-                    onTransactionCreated={editingTransaction ? 
-                        (data) => handleUpdateTransaction(editingTransaction._id, data) : 
-                        handleCreateTransaction}
-                    initialData={editingTransaction}
-                    categories={categories}
-                    wallets={wallets}
-                    budgets={budgets}
-                    savingsAccounts={savingsAccounts}
-                />
-            )}
+            <CreateTransactionModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setEditingTransaction(null); }}
+                onTransactionCreated={() => { fetchInitialData(); fetchBudgets(); }}
+                initialData={editingTransaction}
+                categories={categories}
+                wallets={wallets}
+                budgets={budgets}
+                savingsAccounts={savingsAccounts}
+            />
         </div>
     );
 };

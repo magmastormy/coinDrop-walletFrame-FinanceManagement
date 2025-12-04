@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faTimes, 
-    faExchangeAlt, 
-    faArrowRight,
-    faWallet,
-    faMoneyBillWave
-} from '@fortawesome/free-solid-svg-icons';
-import './styles/walletTransferStyles.css';
+import { X, ArrowLeftRight, ArrowRight, Wallet as WalletIcon, DollarSign } from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 
 const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
     const [formData, setFormData] = useState({
@@ -98,49 +93,43 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
     };
 
     return (
-        <motion.div 
-            className="modal-overlay"
+        <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             role="dialog"
             aria-labelledby="transfer-title"
             aria-modal="true"
-            onClick={(e) => e.target.className === 'modal-overlay' && handleClose()}
+            onClick={(e) => e.target.className.includes('fixed') && handleClose()}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
         >
-            <motion.div 
-                className="wallet-transfer-modal"
+            <motion.div
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
             >
-                <div className="transfer-content">
-                    <div className="transfer-header">
-                        <motion.h2 
+                <GlassCard className="w-full max-w-md">
+                    <div className="flex items-center justify-between mb-6">
+                        <motion.h2
                             id="transfer-title"
+                            className="text-2xl font-bold text-foreground flex items-center gap-3"
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
                         >
-                            <FontAwesomeIcon icon={faExchangeAlt} aria-hidden="true" />
+                            <ArrowLeftRight className="w-6 h-6 text-primary" />
                             Transfer Money
                         </motion.h2>
-                        <motion.button 
-                            className="modal-close"
-                            onClick={handleClose}
-                            aria-label="Close transfer modal"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <FontAwesomeIcon icon={faTimes} aria-hidden="true" />
-                        </motion.button>
+                        <Button variant="ghost" size="icon" onClick={handleClose}>
+                            <X className="w-5 h-5" />
+                        </Button>
                     </div>
 
                     <AnimatePresence mode="wait">
                         {error && (
-                            <motion.div 
-                                className="error-message" 
+                            <motion.div
+                                className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm"
                                 role="alert"
                                 aria-live="polite"
                                 initial={{ opacity: 0, y: -10 }}
@@ -152,18 +141,20 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
                         )}
                     </AnimatePresence>
 
-                    <form onSubmit={handleSubmit} noValidate>
-                        <div className="transfer-form-group">
-                            <label htmlFor="fromWalletId">From Wallet:</label>
-                            <div className="wallet-select-wrapper">
-                                <FontAwesomeIcon icon={faWallet} className="wallet-icon" aria-hidden="true" />
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                        <div>
+                            <label htmlFor="fromWalletId" className="block text-sm font-medium text-foreground mb-2">
+                                From Wallet:
+                            </label>
+                            <div className="relative">
+                                <WalletIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                 <select
                                     id="fromWalletId"
                                     name="fromWalletId"
                                     value={formData.fromWalletId}
                                     onChange={handleChange}
                                     disabled
-                                    aria-label="Source wallet"
+                                    className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground disabled:opacity-50"
                                 >
                                     <option value={sourceWallet._id}>
                                         {sourceWallet.name} ({formatBalance(sourceWallet.balance)})
@@ -172,26 +163,27 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
                             </div>
                         </div>
 
-                        <motion.div 
-                            className="transfer-arrow"
+                        <motion.div
+                            className="flex justify-center text-muted-foreground"
                             animate={{ y: [0, 5, 0] }}
                             transition={{ repeat: Infinity, duration: 1.5 }}
                         >
-                            <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
+                            <ArrowRight className="w-6 h-6" />
                         </motion.div>
 
-                        <div className="transfer-form-group">
-                            <label htmlFor="toWalletId">To Wallet:</label>
-                            <div className="wallet-select-wrapper">
-                                <FontAwesomeIcon icon={faWallet} className="wallet-icon" aria-hidden="true" />
+                        <div>
+                            <label htmlFor="toWalletId" className="block text-sm font-medium text-foreground mb-2">
+                                To Wallet:
+                            </label>
+                            <div className="relative">
+                                <WalletIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                 <select
                                     id="toWalletId"
                                     name="toWalletId"
                                     value={formData.toWalletId}
                                     onChange={handleChange}
                                     required
-                                    aria-label="Destination wallet"
-                                    aria-invalid={error && !formData.toWalletId ? 'true' : 'false'}
+                                    className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
                                     <option value="">Select Wallet</option>
                                     {wallets && wallets.filter(wallet => wallet._id !== sourceWallet._id)
@@ -205,11 +197,13 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
                             </div>
                         </div>
 
-                        <div className="transfer-form-group">
-                            <label htmlFor="amount">Amount:</label>
-                            <div className="amount-input-wrapper">
-                                <FontAwesomeIcon icon={faMoneyBillWave} className="amount-icon" aria-hidden="true" />
-                                <input
+                        <div>
+                            <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-2">
+                                Amount:
+                            </label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
                                     id="amount"
                                     type="number"
                                     name="amount"
@@ -219,56 +213,52 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
                                     min="0.01"
                                     step="0.01"
                                     placeholder="0.00"
-                                    aria-label="Transfer amount"
-                                    aria-invalid={error && !formData.amount ? 'true' : 'false'}
+                                    className="pl-10"
                                 />
                             </div>
-                            <div className="available-balance">
+                            <div className="mt-2 text-sm text-muted-foreground">
                                 Available: {formatBalance(sourceWallet.balance)}
                             </div>
                         </div>
 
                         <AnimatePresence mode="wait">
-                            {showConfirmation ? (
-                                <motion.div 
-                                    className="confirmation-message"
+                            {showConfirmation && (
+                                <motion.div
+                                    className="p-4 rounded-lg bg-primary/10 border border-primary/20"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
                                     role="alert"
                                 >
-                                    <h3>Confirm Transfer</h3>
-                                    <p>
+                                    <h3 className="font-semibold text-foreground mb-2">Confirm Transfer</h3>
+                                    <p className="text-sm text-muted-foreground">
                                         Transfer {formatBalance(parseFloat(formData.amount))} from{' '}
-                                        <strong>{sourceWallet.name}</strong> to{' '}
-                                        <strong>{getDestinationWallet()?.name}</strong>?
+                                        <strong className="text-foreground">{sourceWallet.name}</strong> to{' '}
+                                        <strong className="text-foreground">{getDestinationWallet()?.name}</strong>?
                                     </p>
                                 </motion.div>
-                            ) : null}
+                            )}
                         </AnimatePresence>
 
-                        <div className="transfer-actions">
-                            <motion.button 
-                                type="submit" 
-                                className={`create-btn ${isLoading ? 'loading' : ''}`}
-                                disabled={isLoading}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                {isLoading ? 'Transferring...' : (showConfirmation ? 'Confirm Transfer' : 'Transfer')}
-                            </motion.button>
-                            <motion.button 
-                                type="button" 
-                                className="cancel-btn" 
+                        <div className="flex gap-3 pt-4">
+                            <Button
+                                type="button"
+                                variant="secondary"
                                 onClick={handleClose}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
+                                className="flex-1"
                             >
                                 Cancel
-                            </motion.button>
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="flex-1"
+                            >
+                                {isLoading ? 'Transferring...' : (showConfirmation ? 'Confirm Transfer' : 'Transfer')}
+                            </Button>
                         </div>
                     </form>
-                </div>
+                </GlassCard>
             </motion.div>
         </motion.div>
     );

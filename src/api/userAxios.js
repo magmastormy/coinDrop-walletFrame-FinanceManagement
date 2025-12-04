@@ -29,39 +29,34 @@ const refreshToken = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token available');
 
-    const response = await axiosInstance.post('/auth/refresh-token', { refreshToken });
-    return response.token; // Match backend response structure
+    const response = await axios.post('http://localhost:5001/api/auth/refresh-token', { refreshToken });
+    return response.data.accessToken || response.data.token;
 };
 
 let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 // Add request interceptor to handle auth token
 axiosInstance.interceptors.request.use(
     async (config) => {
-        // Skip token refresh for refresh and login endpoints
+        // Skip token refresh for auth endpoints
         if (config.url === '/auth/refresh-token' || config.url === '/auth/login' || config.url === '/auth/register') {
-            console.log('Skipping token check for:', config.url);
             return config;
         }
+
         const token = localStorage.getItem('token');
-
-        if (!token) {
-            return config;
-        }
-
-        if (isTokenExpired(token)) {
-            try {
-                const newToken = await refreshToken();
-                localStorage.setItem('token', newToken);
-                config.headers.Authorization = `Bearer ${newToken}`;
-            } catch (error) {
-                console.error('Token refresh failed:', error);
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                window.location.href = '/login';
-                return Promise.reject(error);
-            }
-        } else {
+        if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
 
@@ -72,95 +67,65 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Add response interceptor for handling authentication errors
-axiosInstance.interceptors.response.use(
-    response => response,
-    async error => {
-        const originalRequest = error.config;
-        
-        // Avoid infinite loops
-        if (originalRequest._retry || !error.response) {
-            return Promise.reject(error);
-        }
-        
-        // Handle authentication errors
-        if (error.response.status === 401) {
-            // Check error code
-            const errorCode = error.response.data?.code;
-            
-            if (errorCode === 'TOKEN_EXPIRED' && !originalRequest._retry) {
-                originalRequest._retry = true;
-                
-                try {
-                    // Try to refresh the token
-                    const refreshToken = localStorage.getItem('refreshToken');
-                    
-                    if (!refreshToken) {
-                        // No refresh token, redirect to login
-                        store.dispatch(logout());
-                        window.location.href = '/login';
-                        return Promise.reject(error);
-                    }
-                    
-                    const response = await axios.post('/api/auth/refresh-token', { refreshToken });
-                    
-                    // Update tokens in storage
-                    localStorage.setItem('token', response.data.accessToken);
-                    localStorage.setItem('refreshToken', response.data.refreshToken);
-                    
-                    // Update authorization header and retry request
-                    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
-                    originalRequest.headers['Authorization'] = `Bearer ${response.data.accessToken}`;
-                    
-                    return axiosInstance(originalRequest);
-                } catch (refreshError) {
-                    // If refresh fails, logout and redirect
-                    console.error('Token refresh failed:', refreshError);
-                    store.dispatch(logout());
-                    window.location.href = '/login';
-                    return Promise.reject(refreshError);
-                }
-            } else {
-                store.dispatch(logout());
-                window.location.href = '/login';
-            }
-        }
-        
-        return Promise.reject(error);
-    }
-);
-
-// Add response interceptor to extract data
+// Add single consolidated response interceptor
 axiosInstance.interceptors.response.use(
     (response) => {
-        //console.log('User axios - Response Data:', response.data);
-        // Return the data directly
+        // Return the data directly for successful responses
         return response.data;
     },
     async (error) => {
-        console.error('User-axios - Axios error:', error);
         const originalRequest = error.config;
-        
-        // Prevent infinite loops
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            if (isRefreshing) return Promise.reject(error);
-            
+
+        // Handle network errors
+        if (!error.response) {
+            console.error('Network error:', error.message);
+            return Promise.reject(new Error('Network error. Please check your connection.'));
+        }
+
+        // Handle 401 errors with token refresh (only once per request)
+        if (error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
+
+            if (isRefreshing) {
+                // If already refreshing, queue this request
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then(token => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return axiosInstance(originalRequest);
+                    })
+                    .catch(err => Promise.reject(err));
+            }
+
             isRefreshing = true;
 
             try {
                 const newToken = await refreshToken();
+                localStorage.setItem('token', newToken);
+                
+                // Update headers
                 axiosInstance.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+                processQueue(null, newToken);
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
-                console.error('Refresh token failed:', refreshError);
-                window.location.href = '/login'; // Immediate redirect on failure
+                processQueue(refreshError, null);
+                
+                // Clear tokens and redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                store.dispatch(logout());
+                window.location.href = '/login';
+                
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
-        
+
+        // For other errors, just reject
         return Promise.reject(error);
     }
 );

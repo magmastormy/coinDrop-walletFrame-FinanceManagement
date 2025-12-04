@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-    faTimes, 
+import {
+    faTimes,
     faTrash,
     faPaperPlane,
     faSpinner
 } from '@fortawesome/free-solid-svg-icons';
 import { useSelector } from 'react-redux';
-import './styles/commentModalStyles.css';
+
 
 const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
     const [comment, setComment] = useState('');
@@ -100,7 +100,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
 
     return (
         <AnimatePresence>
-            <motion.div 
+            <motion.div
                 className="modal-overlay"
                 variants={overlayVariants}
                 initial="hidden"
@@ -108,7 +108,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
                 exit="exit"
                 onClick={onClose}
             >
-                <motion.div 
+                <motion.div
                     className="comment-modal"
                     variants={modalVariants}
                     initial="hidden"
@@ -134,7 +134,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
                                 <p>No comments yet. Be the first to comment!</p>
                             </div>
                         ) : (
-                            <motion.div 
+                            <motion.div
                                 className="comments-list"
                                 initial="hidden"
                                 animate="visible"
@@ -147,7 +147,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
                                 }}
                             >
                                 {comments.map(comment => (
-                                    <motion.div 
+                                    <motion.div
                                         key={comment._id}
                                         className="comment"
                                         variants={{
@@ -157,8 +157,8 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
                                     >
                                         <div className="comment-header">
                                             <div className="comment-author">
-                                                <img 
-                                                    src={comment.author?.avatar || '/default-avatar.png'} 
+                                                <img
+                                                    src={comment.author?.avatar || '/default-avatar.png'}
                                                     alt={comment.author?.name}
                                                 />
                                                 <div className="author-info">
@@ -167,7 +167,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
                                                 </div>
                                             </div>
                                             {comment.author?._id === user.id && (
-                                                <button 
+                                                <button
                                                     className="delete-btn"
                                                     onClick={() => handleDelete(comment._id)}
                                                 >

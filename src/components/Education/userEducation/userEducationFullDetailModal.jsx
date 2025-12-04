@@ -2,21 +2,10 @@ import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faHeart, faComment, faImage } from '@fortawesome/free-solid-svg-icons';
-import { faHeart as farHeart } from '@fortawesome/free-regular-svg-icons';
+import { X, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
 import { useTheme } from '../../../theme/ThemeContext';
+import { Button } from '../../ui/Button';
 
-// MUI Components
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-
-import '../styles/educationModalStyles.css';
 
 // Create a portal container for the modal
 let portalRoot = document.getElementById('modal-root');
@@ -31,14 +20,14 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [modalElement] = useState(() => document.createElement('div'));
-  
+
   // Update like state when post changes
   useEffect(() => {
     if (post && currentUser) {
       setIsLiked(post.likes?.some(like => like === currentUser?._id || like === currentUser?.id) || false);
     }
   }, [post, currentUser]);
-  
+
   // Set up portal for modal
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +35,7 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
       // Prevent body scrolling when modal is open
       document.body.style.overflow = 'hidden';
     }
-    
+
     return () => {
       if (portalRoot.contains(modalElement)) {
         portalRoot.removeChild(modalElement);
@@ -55,7 +44,7 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
       document.body.style.overflow = '';
     };
   }, [isOpen, modalElement]);
-  
+
   if (!isOpen || !post) return null;
 
   const handleBackdropClick = (e) => {
@@ -100,212 +89,143 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="modal-backdrop"
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          style={{
+            backgroundColor: `${theme.background.primary}CC`,
+            isolation: 'isolate'
+          }}
           onClick={handleBackdropClick}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          style={{ 
-            backgroundColor: `${theme.background.primary}CC`,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            willChange: 'opacity',
-            isolation: 'isolate'
-          }}
         >
-        <motion.div
-          className="modal-content"
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 50, opacity: 0 }}
-          transition={{ type: "spring", damping: 25 }}
-          onClick={(e) => e.stopPropagation()}
-          style={{ 
-            backgroundColor: theme.background.secondary,
-            color: theme.text.primary,
-            maxWidth: '800px',
-            width: '90%',
-            maxHeight: '90vh',
-            borderRadius: '12px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-            position: 'relative',
-            overflow: 'hidden',
-            willChange: 'transform, opacity'
-          }}
-        >
-          <Box className="modal-header" sx={{ 
-            p: 3, 
-            display: 'flex', 
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: `1px solid ${theme.border || 'rgba(0,0,0,0.1)'}` 
-          }}>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: theme.text.heading }}>
-              {post.title}
-            </Typography>
-            <IconButton 
-              className="close-button" 
-              onClick={onClose}
-              sx={{ color: theme.text.secondary }}
-            >
-              <FontAwesomeIcon icon={faTimes} />
-            </IconButton>
-          </Box>
-
-          <Box className="modal-body" sx={{ 
-            p: 3, 
-            maxHeight: 'calc(90vh - 180px)', 
-            overflowY: 'auto',
-            '& img': {
-              maxWidth: '100%',
-              height: 'auto',
-              borderRadius: '8px',
-              margin: '16px 0'
-            }
-          }}>
-            <Box className="author-info" sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mb: 2 
-            }}>
-              <Avatar 
-                src={post.author?.profilePicture} 
-                alt={post.author?.name || 'User'}
-                sx={{ width: 40, height: 40, mr: 1.5 }}
-              />
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                  {post.author?.name || 'Anonymous User'}
-                </Typography>
-                <Typography variant="caption" sx={{ color: theme.text.secondary }}>
-                  {formatDate(post.createdAt)}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box 
-              className="post-content" 
-              sx={{ 
-                my: 3,
-                '& p': { mb: 2 },
-                '& h1, & h2, & h3, & h4, & h5, & h6': { 
-                  color: theme.text.heading,
-                  mt: 3,
-                  mb: 2
-                }
-              }}
-              dangerouslySetInnerHTML={{ __html: post.details }}
-            />
-
-            <Divider sx={{ my: 3 }} />
-
-            <Box className="post-actions" sx={{ display: 'flex', gap: 2, mb: 3 }}>
-              <Button 
-                variant="outlined" 
-                startIcon={<FontAwesomeIcon icon={isLiked ? faHeart : farHeart} />}
-                onClick={handleLike}
-                sx={{ 
-                  color: isLiked ? theme.error : theme.text.secondary,
-                  borderColor: isLiked ? theme.error : theme.text.secondary,
-                  '&:hover': {
-                    borderColor: theme.error,
-                    backgroundColor: `${theme.error}10`
-                  }
-                }}
+          <motion.div
+            className="bg-card border border-border rounded-xl shadow-2xl relative overflow-hidden w-[90%] max-w-3xl max-h-[90vh] flex flex-col"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ type: "spring", damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-border">
+              <h2 className="text-xl font-bold text-foreground">{post.title}</h2>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
               >
-                {isLiked ? 'Liked' : 'Like'} {post.likes?.length > 0 && `(${post.likes.length})`}
-              </Button>
-            </Box>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <Box className="comments-section">
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Comments {post.comments?.length > 0 && `(${post.comments.length})`}
-              </Typography>
-              
-              <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
-                <TextField
-                  fullWidth
-                  placeholder="Add a comment..."
-                  variant="outlined"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  sx={{
-                    mb: 1,
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: theme.background.primary,
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.primary
-                      },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.primary
-                      }
-                    }
-                  }}
-                />
-                <Button 
-                  type="submit"
-                  variant="contained"
-                  disabled={!newComment.trim()}
-                  sx={{ 
-                    backgroundColor: theme.primary,
-                    '&:hover': {
-                      backgroundColor: theme.primaryDark || theme.primary
-                    }
-                  }}
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1 education-modal-content">
+              {/* Author Info */}
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mr-4">
+                  {post.author?.profilePicture ? (
+                    <img
+                      src={post.author.profilePicture}
+                      alt={post.author?.name || 'User'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-primary font-semibold">
+                      {(post.author?.name || 'A')[0].toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{post.author?.name || 'Anonymous User'}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(post.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div
+                className="prose dark:prose-invert max-w-none mb-6"
+                style={{
+                  '--tw-prose-body': theme.text.primary,
+                  '--tw-prose-headings': theme.text.heading
+                }}
+                dangerouslySetInnerHTML={{ __html: post.details }}
+              />
+
+              <hr className="border-border my-6" />
+
+              {/* Actions */}
+              <div className="flex gap-3 mb-6">
+                <Button
+                  variant="outline"
+                  onClick={handleLike}
+                  className={isLiked ? 'border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20' : ''}
                 >
-                  Post Comment
+                  <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                  {isLiked ? 'Liked' : 'Like'} {post.likes?.length > 0 && `(${post.likes.length})`}
                 </Button>
-              </Box>
+              </div>
 
-              {post.comments && post.comments.length > 0 ? (
-                <Box className="comments-list" sx={{ mt: 2 }}>
-                  {post.comments.map((comment, index) => (
-                    <Box 
-                      key={comment._id || index} 
-                      sx={{ 
-                        mb: 2, 
-                        p: 2, 
-                        backgroundColor: theme.background.primary,
-                        borderRadius: '8px'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Avatar 
-                          src={comment.author?.profilePicture} 
-                          alt={comment.author?.name || 'User'}
-                          sx={{ width: 32, height: 32, mr: 1 }}
-                        />
-                        <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                            {comment.author?.name || 'Anonymous User'}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: theme.text.secondary }}>
-                            {formatDate(comment.createdAt)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Typography variant="body2" sx={{ ml: 5 }}>
-                        {comment.text}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2" sx={{ color: theme.text.secondary, fontStyle: 'italic' }}>
-                  No comments yet. Be the first to comment!
-                </Typography>
-              )}
-            </Box>
-          </Box>
+              {/* Comments Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">
+                  Comments {post.comments?.length > 0 && `(${post.comments.length})`}
+                </h3>
+
+                <form onSubmit={handleCommentSubmit} className="mb-6">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!newComment.trim()}
+                  >
+                    Post Comment
+                  </Button>
+                </form>
+
+                {post.comments && post.comments.length > 0 ? (
+                  <div className="space-y-4">
+                    {post.comments.map((comment, index) => (
+                      <div
+                        key={comment._id || index}
+                        className="p-4 bg-muted/30 rounded-lg"
+                      >
+                        <div className="flex items-center mb-2">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden mr-3">
+                            {comment.author?.profilePicture ? (
+                              <img
+                                src={comment.author.profilePicture}
+                                alt={comment.author?.name || 'User'}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-primary font-semibold text-sm">
+                                {(comment.author?.name || 'A')[0].toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{comment.author?.name || 'Anonymous User'}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground ml-11">{comment.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground italic text-sm">
+                    No comments yet. Be the first to comment!
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
       )}
     </AnimatePresence>,
     modalElement

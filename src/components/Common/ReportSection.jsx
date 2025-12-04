@@ -1,29 +1,17 @@
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import ReportButton from './reportButton';
 
 const ReportSection = ({ title, accountId, reportType }) => {
     return (
-        <Box 
-            sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                mb: 2,
-                p: 2,
-                backgroundColor: 'background.paper',
-                borderRadius: 1
-            }}
-        >
-            <Typography variant="h6">{title}</Typography>
-            <ReportButton 
+        <div className="flex items-center justify-between p-4 mb-4 bg-card border border-border rounded-lg">
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <ReportButton
                 accountId={accountId}
                 defaultReportType={reportType}
                 label={`Export ${title}`}
             />
-        </Box>
+        </div>
     );
 };
 
-export default ReportSection; 
+export default ReportSection;

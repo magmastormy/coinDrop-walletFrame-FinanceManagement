@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import LoadingSpinner from './components/LoadingSpinner';
+import MainLayout from './components/Layout/MainLayout';
 
 const LoginComponent = lazy(() => import('./components/Auth/userLoginForm'));
 const RegisterComponent = lazy(() => import('./components/Auth/userRegistrationForm'));
@@ -24,26 +25,26 @@ const ChatBotComponent = lazy(() => import('./components/Chatbot/chatbotManager'
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
     const location = useLocation();
-    
+
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    
-    return children;
+
+    return <MainLayout>{children}</MainLayout>;
 };
 
 // Public Route Component - redirects to dashboard if already authenticated
 const PublicRoute = ({ children }) => {
     const { isAuthenticated } = useSelector(state => state.auth);
     const location = useLocation();
-    
+
     if (isAuthenticated) {
         if (location.pathname === '/') {
             return children;
         }
         return <Navigate to="/dashboard" replace />;
     }
-    
+
     return children;
 };
 
@@ -58,13 +59,13 @@ const AppRoutes = () => {
                             <HomeComponent />
                         </PublicRoute>
                     } />
-                    
+
                     <Route path="/login" element={
                         <PublicRoute>
                             <LoginComponent />
                         </PublicRoute>
                     } />
-                    
+
                     <Route path="/register" element={
                         <PublicRoute>
                             <RegisterComponent />
@@ -81,6 +82,7 @@ const AppRoutes = () => {
                             <ForgotPasswordComponent />
                         </PublicRoute>
                     } />
+
                     {/* Protected Routes */}
                     <Route path="/dashboard" element={
                         <ProtectedRoute>
@@ -93,13 +95,13 @@ const AppRoutes = () => {
                             <WalletComponent />
                         </ProtectedRoute>
                     } />
-                    
+
                     <Route path="/budget" element={
                         <ProtectedRoute>
                             <BudgetComponent />
                         </ProtectedRoute>
                     } />
-                    
+
                     <Route path="/transaction" element={
                         <ProtectedRoute>
                             <TransactionComponent />
@@ -112,11 +114,6 @@ const AppRoutes = () => {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/category" element={
-                        <ProtectedRoute>
-                            <CategoryComponent />
-                        </ProtectedRoute>
-                    } />
 
                     <Route path="/education" element={
                         <ProtectedRoute>
@@ -147,7 +144,7 @@ const AppRoutes = () => {
                             <ChatBotComponent />
                         </ProtectedRoute>
                     } />
-                    
+
                     {/* Catch all route - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

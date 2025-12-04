@@ -1,29 +1,15 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faChartLine, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
-import CardContent from '@mui/material/CardContent';
-import CardActions from '@mui/material/CardActions';
-import LinearProgress from '@mui/material/LinearProgress';
-import Typography from '@mui/material/Typography';
+import { Edit2, Trash2, TrendingUp, Calendar, PiggyBank, Wallet, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 import savingsGoalService from '../../services/savingsGoalService';
-import { toast } from 'react-toastify';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
+import Modal from '../ui/Modal';
+import { cn } from '../../lib/utils';
 
 const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets }) => {
   const { user } = useSelector(state => state.auth);
@@ -34,15 +20,17 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    fetchSavingsGoals();
-  }, [user.id]);
+    if (user?.id) {
+      fetchSavingsGoals();
+    }
+  }, [user?.id]);
 
   const fetchSavingsGoals = async () => {
     try {
       const goals = await savingsGoalService.getSavingsGoals(user.id);
       setSavingsGoals(goals);
     } catch (error) {
-      toast.error('Failed to fetch savings goals');
+      console.error('Failed to fetch savings goals:', error);
     }
   };
 
@@ -71,9 +59,9 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
 
   const getStatusColor = () => {
     const progress = calculateProgress();
-    if (progress >= 90) return 'var(--error)';
-    if (progress >= 70) return 'var(--warning)';
-    return 'var(--accent-2)';
+    if (progress >= 90) return 'bg-red-500';
+    if (progress >= 70) return 'bg-amber-500';
+    return 'bg-emerald-500';
   };
 
   const calculateSavings = () => {
@@ -86,64 +74,49 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
       setError('Please select a savings goal');
       return;
     }
-    
+
     const savingsAmount = calculateSavings();
     if (savingsAmount <= 0) {
       setError('No surplus available to save');
       return;
     }
-    
+
     try {
       setIsProcessing(true);
       setError('');
-      
+
       const walletId = budget.walletId;
-      
+
       if (!walletId) {
         throw new Error('This budget does not have an associated wallet');
       }
-      
-      console.log('Contributing to goal:', selectedGoal, {
-        sourceType: 'wallet',
-        sourceId: walletId,
-        amount: savingsAmount
-      });
-      
+
       await savingsGoalService.contributeToGoal(selectedGoal, {
         sourceType: 'wallet',
         sourceId: walletId,
         amount: parseFloat(savingsAmount)
       });
-      
+
       toast.success(`Successfully saved $${savingsAmount.toFixed(2)} to your goal!`);
       setSelectedGoal(null);
       setShowSaveDialog(false);
-      
+
       if (onEdit) {
         onEdit(budget);
       }
     } catch (error) {
       console.error('Failed to save to goal:', error);
-      
+
       if (error.response?.data?.details === 'Insufficient balance in source wallet') {
         toast.error('Insufficient funds in wallet to complete this transfer');
       } else {
         toast.error('Failed to contribute to goal');
       }
-      
+
       setError(error.message || 'Failed to contribute to goal');
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleGoalSelect = (event) => {
-    setSelectedGoal(event.target.value);
-    setError(''); 
-  };
-
-  const handleSaveClick = () => {
-    handleSaveToGoal();
   };
 
   // Find wallet name if wallets prop is provided and budget.walletId exists
@@ -153,94 +126,156 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
     walletName = wallet ? wallet.name : '';
   }
 
+  const savingsAmount = calculateSavings();
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-      <Card
+    <>
+      <GlassCard
+        className={cn(
+          "relative overflow-hidden transition-all duration-300 hover:scale-[1.02]",
+          isSelected && "ring-2 ring-primary"
+        )}
         onClick={() => onSelect?.(budget)}
-        sx={{
-          mb: 2,
-          cursor: onSelect ? 'pointer' : 'default',
-          border: isSelected ? '2px solid #1976d2' : undefined
-        }}
       >
-        <CardHeader
-          title={budget.name}
-          subheader={budget.type.charAt(0).toUpperCase() + budget.type.slice(1)}
-        />
-        <CardContent>
-          {/* Wallet Name Tag */}
-          {walletName && (
-            <Box mb={1}>
-              <Typography variant="caption" color="primary" sx={{ fontWeight: 600, letterSpacing: 0.5, background: '#e3f2fd', px: 1.2, py: 0.3, borderRadius: 1, display: 'inline-block' }}>
-                Wallet: {walletName}
-              </Typography>
-            </Box>
+        <div className="p-5 space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-foreground">{budget.name}</h3>
+              <span className="text-sm text-muted-foreground capitalize">{budget.type}</span>
+            </div>
+            {walletName && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <Wallet className="w-3 h-3" />
+                {walletName}
+              </div>
+            )}
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium">{calculateProgress().toFixed(1)}%</span>
+            </div>
+            <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+              <motion.div
+                className={cn("h-full rounded-full", getStatusColor())}
+                initial={{ width: 0 }}
+                animate={{ width: `${calculateProgress()}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Spent: {formatCurrency(budget.spent || 0)}</span>
+              <span>Limit: {formatCurrency(budget.amount)}</span>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="space-y-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="w-4 h-4" />
+              <span>Category: {budget.category?.name || 'Uncategorized'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span>
+                {budget.startDate ? formatDate(budget.startDate) : 'N/A'} - {budget.endDate ? formatDate(budget.endDate) : 'N/A'}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+              onClick={(e) => { e.stopPropagation(); onEdit(budget); }}
+            >
+              <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+              onClick={(e) => { e.stopPropagation(); onDelete(budget._id); }}
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 text-xs"
+              onClick={(e) => { e.stopPropagation(); setShowSaveDialog(true); }}
+              disabled={savingsAmount <= 0}
+            >
+              <PiggyBank className="w-4 h-4 mr-1.5" />
+              Save ${savingsAmount.toFixed(0)}
+            </Button>
+          </div>
+        </div>
+      </GlassCard>
+
+      <Modal
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        title="Save Budget Surplus"
+        className="max-w-md"
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-3">
+            <PiggyBank className="w-5 h-5 text-emerald-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-emerald-500">Surplus Available</h4>
+              <p className="text-sm text-emerald-500/80">
+                You have <span className="font-bold">${savingsAmount.toFixed(2)}</span> remaining in this budget.
+                Would you like to move it to a savings goal?
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Select Savings Goal</label>
+            <select
+              value={selectedGoal || ''}
+              onChange={(e) => {
+                setSelectedGoal(e.target.value);
+                setError('');
+              }}
+              className="w-full h-10 pl-3 pr-8 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+            >
+              <option value="" disabled>Choose a goal...</option>
+              {savingsGoals.map(goal => (
+                <option key={goal._id} value={goal._id}>
+                  {goal.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
           )}
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-            <Typography variant="body2">Progress</Typography>
-            <Typography variant="body2">{calculateProgress().toFixed(1)}%</Typography>
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={calculateProgress()}
-            sx={{ height: 10, borderRadius: 5, backgroundColor: '#eee', '& .MuiLinearProgress-bar': { backgroundColor: getStatusColor() } }}
-          />
-          <Box display="flex" justifyContent="space-between" mt={1} mb={2}>
-            <Typography variant="caption">Spent: {formatCurrency(budget.spent || 0)}</Typography>
-            <Typography variant="caption">of {formatCurrency(budget.amount)}</Typography>
-          </Box>
-          <Box display="flex" flexDirection="column" gap={1} mb={2}>
-            <Typography variant="body2"><FontAwesomeIcon icon={faChartLine} /> Category: {budget.category.name || 'Uncategorized'}</Typography>
-            <Typography variant="body2"><FontAwesomeIcon icon={faCalendarAlt} /> {budget.startDate ? formatDate(budget.startDate) : 'N/A'} - {budget.endDate ? formatDate(budget.endDate) : 'N/A'}</Typography>
-          </Box>
-        </CardContent>
-        <CardActions>
-          <Button size="small" onClick={e => { e.stopPropagation(); onEdit(budget); }} startIcon={<FontAwesomeIcon icon={faEdit} />}>Edit</Button>
-          <Button size="small" color="error" onClick={e => { e.stopPropagation(); onDelete(budget._id); }} startIcon={<FontAwesomeIcon icon={faTrash} />}>Delete</Button>
-          <Button size="small" variant="outlined" onClick={e => { e.stopPropagation(); setShowSaveDialog(true); }} disabled={calculateSavings() <= 0}>Save Surplus (${calculateSavings().toFixed(2)})</Button>
-        </CardActions>
-        <Dialog open={showSaveDialog} onClose={() => setShowSaveDialog(false)}>
-          <DialogTitle>Save Budget Surplus</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              You have ${calculateSavings().toFixed(2)} available to save. Choose a goal:
-            </DialogContentText>
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel>Savings Goal</InputLabel>
-              <Select
-                value={selectedGoal || ''}
-                onChange={handleGoalSelect}
-                fullWidth
-              >
-                <MenuItem value="" disabled>
-                  Select a savings goal
-                </MenuItem>
-                {savingsGoals.map(goal => (
-                  <MenuItem 
-                    key={goal._id} 
-                    value={goal._id}
-                  >
-                    {goal.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowSaveDialog(false)} color="secondary">
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setShowSaveDialog(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSaveClick} 
-              color="primary"
-              disabled={isProcessing || !selectedGoal || calculateSavings() <= 0}
+            <Button
+              onClick={handleSaveToGoal}
+              disabled={isProcessing || !selectedGoal || savingsAmount <= 0}
             >
-              {isProcessing ? 'Saving...' : 'Save'}
+              {isProcessing ? 'Saving...' : 'Confirm Transfer'}
             </Button>
-          </DialogActions>
-        </Dialog>
-      </Card>
-    </motion.div>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };
 
@@ -251,12 +286,12 @@ BudgetCard.propTypes = {
     type: PropTypes.string.isRequired,
     amount: PropTypes.number.isRequired,
     spent: PropTypes.number,
-    startDate: PropTypes.string, // was required, now optional
-    endDate: PropTypes.string,   // was required, now optional
+    startDate: PropTypes.string,
+    endDate: PropTypes.string,
     walletId: PropTypes.string,
     category: PropTypes.shape({
       name: PropTypes.string
-    }).isRequired
+    })
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,

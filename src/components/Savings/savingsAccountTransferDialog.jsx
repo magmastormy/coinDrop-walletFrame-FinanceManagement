@@ -1,36 +1,7 @@
 import React, { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import { styled } from '@mui/material/styles';
-
-const StyledDialog = styled(Dialog)(({ theme }) => ({
-    '& .MuiDialog-paper': {
-        borderRadius: '16px',
-        padding: theme.spacing(2),
-        minWidth: '400px'
-    }
-}));
-
-const StyledDialogTitle = styled(DialogTitle)({
-    textAlign: 'center',
-    fontSize: '1.5rem',
-    fontWeight: 600
-});
-
-const StyledFormControl = styled(FormControl)(({ theme }) => ({
-    marginBottom: theme.spacing(2),
-    width: '100%'
-}));
+import Modal from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 
 export const SavingsAccountTransferDialog = ({
     open,
@@ -45,7 +16,7 @@ export const SavingsAccountTransferDialog = ({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         // Validate amount
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount) || numAmount <= 0) {
@@ -79,66 +50,57 @@ export const SavingsAccountTransferDialog = ({
     if (!sourceAccount) return null;
 
     return (
-        <StyledDialog open={open} onClose={handleClose}>
-            <form onSubmit={handleSubmit}>
-                <StyledDialogTitle>
-                    Transfer from {sourceAccount.name}
-                </StyledDialogTitle>
-                
-                <DialogContent>
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Available Balance: ${sourceAccount.balance.toFixed(2)}
-                        </Typography>
-                    </Box>
+        <Modal
+            isOpen={open}
+            onClose={handleClose}
+            title={`Transfer from ${sourceAccount.name}`}
+            maxWidth="max-w-md"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
+                    <p className="text-2xl font-bold text-primary">${sourceAccount.balance.toFixed(2)}</p>
+                </div>
 
-                    <StyledFormControl>
-                        <InputLabel>Transfer To</InputLabel>
-                        <Select
-                            value={targetAccountId}
-                            onChange={(e) => setTargetAccountId(e.target.value)}
-                            label="Transfer To"
-                            required
-                        >
-                            {accounts.map(account => (
-                                <MenuItem key={account._id} value={account._id}>
-                                    {account.name} (${account.balance.toFixed(2)})
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </StyledFormControl>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Transfer To</label>
+                    <select
+                        value={targetAccountId}
+                        onChange={(e) => setTargetAccountId(e.target.value)}
+                        required
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="" disabled>Select an account</option>
+                        {accounts.map(account => (
+                            <option key={account._id} value={account._id}>
+                                {account.name} (${account.balance.toFixed(2)})
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                    <StyledFormControl>
-                        <TextField
-                            label="Amount"
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            required
-                            inputProps={{
-                                min: 0,
-                                step: "0.01"
-                            }}
-                        />
-                    </StyledFormControl>
+                <Input
+                    label="Amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    error={error}
+                />
 
-                    {error && (
-                        <Typography color="error" sx={{ mt: 1 }}>
-                            {error}
-                        </Typography>
-                    )}
-                </DialogContent>
-
-                <DialogActions sx={{ padding: 2 }}>
-                    <Button onClick={handleClose} color="inherit">
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <Button variant="ghost" onClick={handleClose} type="button">
                         Cancel
                     </Button>
-                    <Button type="submit" variant="contained" color="primary">
+                    <Button type="submit">
                         Transfer
                     </Button>
-                </DialogActions>
+                </div>
             </form>
-        </StyledDialog>
+        </Modal>
     );
 };
 

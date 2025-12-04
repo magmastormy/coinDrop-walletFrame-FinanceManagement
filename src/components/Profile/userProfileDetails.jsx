@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { Edit, Save, Loader2 } from 'lucide-react';
 import ViewProfileDetailsOnly from './userProfileDetailsViewMode';
 import ImageUpload from './imageUpload';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 import profileService from '../../services/profileService';
 import {
     fetchProfileStart,
@@ -14,25 +17,11 @@ import {
     updateProfileSuccess,
     updateProfileFailure
 } from '../../slices/profileSlice';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
-import Paper from '@mui/material/Paper';
-import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
 
 const UserProfileDetails = () => {
     const [isEditing, setIsEditing] = useState(false);
     const dispatch = useDispatch();
-    
+
     const { user } = useSelector(state => state.auth);
     const { profile, loading, error } = useSelector(state => state.profile);
 
@@ -75,12 +64,12 @@ const UserProfileDetails = () => {
     useEffect(() => {
         const fetchUserProfile = async () => {
             if (!user?.id) return;
-            
+
             try {
                 dispatch(fetchProfileStart());
                 const profileData = await profileService.getUserProfile(user.id);
                 console.log('[Profile] Profile data:', profileData);
-                
+
                 if (profileData.profile) {
                     dispatch(fetchProfileSuccess(profileData.profile));
                 } else {
@@ -92,7 +81,7 @@ const UserProfileDetails = () => {
                     setIsEditing(true);
                     dispatch(fetchProfileSuccess(null));
                 } else {
-                    dispatch(fetchProfileFailure(error.message)); 
+                    dispatch(fetchProfileFailure(error.message));
                 }
             }
         };
@@ -102,7 +91,7 @@ const UserProfileDetails = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        
+
         if (name === 'interests') {
             setFormData(prev => ({
                 ...prev,
@@ -130,14 +119,14 @@ const UserProfileDetails = () => {
         try {
             // Prepare the form data for submission
             const profileData = { ...formData };
-            
+
             // Handle profilePicture validation - could be a string URL or an object with url property
             if (profileData.profilePicture) {
                 // If it's an object with a url property, extract just the URL
                 if (typeof profileData.profilePicture === 'object' && profileData.profilePicture.url) {
                     profileData.profilePicture = profileData.profilePicture.url;
                 }
-                
+
                 // Now validate the URL
                 if (typeof profileData.profilePicture === 'string' && !isValidUrl(profileData.profilePicture)) {
                     throw new Error('Profile picture must be a valid URL');
@@ -181,7 +170,7 @@ const UserProfileDetails = () => {
                     ...prev,
                     profilePicture: result.url
                 }));
-                
+
                 // Show success message
                 dispatch(updateProfileSuccess({
                     ...profile,
@@ -193,7 +182,7 @@ const UserProfileDetails = () => {
                     ...prev,
                     profilePicture: result.profile.profilePicture
                 }));
-                
+
                 dispatch(updateProfileSuccess(result.profile));
             } else {
                 throw new Error('Image upload failed. Please try again.');
@@ -228,47 +217,129 @@ const UserProfileDetails = () => {
     };
 
     return (
-        <Paper sx={{ p: 2, position: 'relative' }}>
-            {loading && <Box position="absolute" inset={0} display="flex" justifyContent="center" alignItems="center" bgcolor="rgba(255,255,255,0.7)"><CircularProgress/></Box>}
-            {error && <Alert severity="error">{error}</Alert>}
-            <Grid container spacing={2}>
-                <Grid item xs={12} md={4} display="flex" flexDirection="column" alignItems="center">
+        <div className="relative">
+            {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/70 z-10 rounded-lg">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            )}
+            {error && (
+                <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                    {error}
+                </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Left Column - Profile Image */}
+                <div className="flex flex-col items-center space-y-4">
                     {isEditing ? (
-                        <ImageUpload onImageUpload={handleProfileImageUpload} onImageRemove={handleProfileImageRemove} currentImage={formData.profilePicture} imageType="profile" />
+                        <ImageUpload
+                            onImageUpload={handleProfileImageUpload}
+                            onImageRemove={handleProfileImageRemove}
+                            currentImage={formData.profilePicture}
+                            imageType="profile"
+                        />
                     ) : (
-                        <Avatar src={formData.profilePicture || ''} sx={{ width: 120, height: 120 }} />
+                        <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                            {formData.profilePicture ? (
+                                <img
+                                    src={formData.profilePicture}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-4xl text-muted-foreground">
+                                    {user?.username?.[0]?.toUpperCase() || 'U'}
+                                </span>
+                            )}
+                        </div>
                     )}
                     {!isEditing && (
-                        <Button startIcon={<EditIcon />} onClick={() => setIsEditing(true)} sx={{ mt: 2 }}>
+                        <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+                            <Edit className="w-4 h-4" />
                             {profile ? 'Edit Profile' : 'Create Profile'}
                         </Button>
                     )}
-                </Grid>
-                <Grid item xs={12} md={8}>
-                    <Typography variant="h5" gutterBottom>{user?.username}'s Profile</Typography>
+                </div>
+
+                {/* Right Column - Profile Information */}
+                <div className="md:col-span-2">
+                    <h2 className="text-2xl font-semibold text-foreground mb-6">{user?.username}'s Profile</h2>
                     {isEditing ? (
-                        <Box component="form" onSubmit={handleSubmit} display="grid" gap={2}>
-                            <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleInputChange} required fullWidth />
-                            <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleInputChange} required fullWidth />
-                            <TextField label="Email" name="email" value={formData.email} onChange={handleInputChange} required fullWidth disabled />
-                            <TextField label="Phone" name="phone" value={formData.phone} onChange={handleInputChange} fullWidth />
-                            <TextField label="Bio" name="bio" value={formData.bio} onChange={handleInputChange} multiline rows={3} fullWidth />
-                            <FormGroup row>
-                                {allowedInterests.map(interest => (
-                                    <FormControlLabel key={interest} control={<Checkbox checked={formData.interests.includes(interest)} onChange={() => handleCheckboxChange(interest)} />} label={interest} />
-                                ))}
-                            </FormGroup>
-                            <Box display="flex" gap={2}>
-                                <Button type="submit" variant="contained" startIcon={<SaveIcon />}>Save</Button>
-                                <Button variant="outlined" onClick={() => setIsEditing(false)}>Cancel</Button>
-                            </Box>
-                        </Box>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <Input
+                                label="First Name"
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <Input
+                                label="Last Name"
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <Input
+                                label="Email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                                disabled
+                            />
+                            <Input
+                                label="Phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                            />
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-2">Bio</label>
+                                <textarea
+                                    name="bio"
+                                    value={formData.bio}
+                                    onChange={handleInputChange}
+                                    rows={3}
+                                    className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-3">Interests</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    {allowedInterests.map(interest => (
+                                        <label key={interest} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.interests.includes(interest)}
+                                                onChange={() => handleCheckboxChange(interest)}
+                                                className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                                            />
+                                            <span className="text-sm text-foreground capitalize">{interest}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <Button type="submit" className="flex items-center gap-2">
+                                    <Save className="w-4 h-4" />
+                                    Save
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setIsEditing(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </form>
                     ) : (
                         <ViewProfileDetailsOnly user={user} profile={profile} />
                     )}
-                </Grid>
-            </Grid>
-        </Paper>
+                </div>
+            </div>
+        </div>
     );
 };
 

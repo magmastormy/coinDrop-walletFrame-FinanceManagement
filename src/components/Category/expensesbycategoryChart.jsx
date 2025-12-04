@@ -4,7 +4,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartPie, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import './styles/chartStyles.css';
+
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -42,7 +42,7 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
             labels: sortedCategories.map(([category]) => category),
             datasets: [{
                 data: sortedCategories.map(([, amount]) => amount),
-                backgroundColor: sortedCategories.map((_, index) => 
+                backgroundColor: sortedCategories.map((_, index) =>
                     generateColor(index, sortedCategories.length)
                 ),
                 borderColor: 'white',
@@ -88,7 +88,7 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
     };
 
     return (
-        <motion.div 
+        <motion.div
             className="chart-container"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

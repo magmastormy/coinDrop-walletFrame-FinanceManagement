@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import {
+    Plus, Loader2, AlertCircle, LayoutGrid, List,
+    ArrowUpDown, RefreshCw, X
+} from 'lucide-react';
 import educationService from '../../../services/educationService';
-import { 
-    setEducations, 
-    setLoading, 
+import {
+    setEducations,
+    setLoading,
     setError,
     addEducation,
     updateEducation,
@@ -17,42 +21,13 @@ import CreateEditEducationPost from './createEditEducationPost';
 import UserEducationPostCard from './userEducationPostCard';
 import EducationNavBar from '../educationNavBar';
 import EducationSearchBar from '../educationSearchBar';
-
-// MUI Components
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import Fab from '@mui/material/Fab';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
-
-// Icons
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import SortIcon from '@mui/icons-material/Sort';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import ViewListIcon from '@mui/icons-material/ViewList';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import EditIcon from '@mui/icons-material/Edit';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { Button } from '../../ui/Button';
 
 // Toast notifications
 import { toast } from 'react-toastify';
 
 // Theme
 import { useTheme } from '../../../theme/ThemeContext';
-
-// Styles
-import './styles/userEducationManagerStyles.css';
 
 const UserEducationManager = () => {
     const dispatch = useDispatch();
@@ -61,11 +36,10 @@ const UserEducationManager = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { theme } = useTheme();
-    
+
     // UI State
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
-    const [anchorEl, setAnchorEl] = useState(null);
     const [selectedPost, setSelectedPost] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -79,7 +53,7 @@ const UserEducationManager = () => {
             fetchUserEducationPosts();
         }
     }, [user?.id]);
-    
+
     // Parse URL query parameters for filtering
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -97,7 +71,7 @@ const UserEducationManager = () => {
 
     const fetchUserEducationPosts = async () => {
         if (!user?.id) return;
-        
+
         dispatch(setLoading(true));
         try {
             const response = await educationService.getUserEducations(user.id);
@@ -110,31 +84,31 @@ const UserEducationManager = () => {
             dispatch(setLoading(false));
         }
     };
-    
+
     const handleSearch = (query) => {
         setSearchQuery(query);
     };
-    
+
     const handleSortChange = (sortOption) => {
         setSortBy(sortOption);
     };
-    
+
     const handleViewModeChange = () => {
         setViewMode(viewMode === 'grid' ? 'list' : 'grid');
     };
-    
+
     const toggleFilters = () => {
         setShowFilters(!showFilters);
     };
-    
+
     // Filter and sort education posts
     const filteredEducations = educations?.filter(post => {
         // Search filter
-        return searchQuery === '' || 
+        return searchQuery === '' ||
             post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             post.details?.toLowerCase().includes(searchQuery.toLowerCase());
     });
-    
+
     // Sort filtered posts
     const sortedEducations = [...(filteredEducations || [])].sort((a, b) => {
         if (sortBy === 'newest') {
@@ -153,7 +127,7 @@ const UserEducationManager = () => {
         dispatch(setLoading(true));
         try {
             let result;
-            
+
             if (typeof postId === 'object' && !postData) {
                 console.log("Creating new post with data:", postId);
                 result = await educationService.createEducation(postId);
@@ -165,7 +139,7 @@ const UserEducationManager = () => {
                 dispatch(updateEducation(result));
                 toast.success('Post updated successfully');
             }
-            
+
             setEditingPost(null);
             setShowCreateModal(false);
             return result;
@@ -181,29 +155,29 @@ const UserEducationManager = () => {
     const handleDeletePost = async (postId) => {
         try {
             setIsLoading(true);
-            
+
             if (!postId) {
                 toast.error('No post ID provided for deletion');
                 return;
             }
-            
+
             // Show confirmation dialog
             const confirmed = window.confirm('Are you sure you want to delete this post?');
             if (!confirmed) {
                 return;
             }
-            
+
             console.log(`[userEducationManager] Deleting post with ID: ${postId}`);
-            
+
             // Attempt to delete the post
             await educationService.deleteEducation(postId);
-            
+
             // Update the UI after successful deletion
             dispatch(deleteEducation(postId));
             toast.success('Post deleted successfully');
         } catch (error) {
             console.error('[userEducationManager] Error deleting post:', error);
-            
+
             // User-friendly error message
             toast.error(error.message || 'Failed to delete post. Please try again later.');
         } finally {
@@ -228,41 +202,24 @@ const UserEducationManager = () => {
                 toast.error('Post ID and comment are required');
                 return;
             }
-            
+
             console.log(`[userEducationManager] Adding comment to post ${postId}: ${comment}`);
             await educationService.addComment(postId, comment);
-            
+
             // Refresh the posts to show the new comment
             fetchUserEducationPosts();
             toast.success('Comment added successfully');
         } catch (err) {
-            console.error('[userEducationManager] Error adding comment:', err);
+            console.error('[userEducation Manager] Error adding comment:', err);
             dispatch(setError(err.message));
             toast.error(err.message || 'Failed to add comment');
         }
-    };
-
-    const handleMenuOpen = (event, post) => {
-        setAnchorEl(event.currentTarget);
-        setSelectedPost(post);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-        setSelectedPost(null);
     };
 
     const handleEditClick = (post) => {
         console.log("Setting post for editing:", post);
         setEditingPost(post);
         setShowCreateModal(true);
-    };
-
-    const handleDeleteClick = () => {
-        if (selectedPost) {
-            handleDeletePost(selectedPost.id);
-        }
-        handleMenuClose();
     };
 
     // Get page title based on filter type
@@ -275,7 +232,7 @@ const UserEducationManager = () => {
             return 'My Education Posts';
         }
     };
-    
+
     // Get empty state message based on filter type
     const getEmptyStateMessage = () => {
         if (filterType === 'liked') {
@@ -289,161 +246,90 @@ const UserEducationManager = () => {
 
     if (loading) {
         return (
-            <Box 
-                className="user-education-loading" 
-                style={{ 
-                    backgroundColor: theme.background.primary,
-                    color: theme.text.primary 
-                }}
-            >
-                <CircularProgress style={{ color: theme.button.base }} />
-            </Box>
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            </div>
         );
     }
 
-    // Create a completely new layout structure
     return (
-        <div style={{ 
-            display: 'flex',
-            flexDirection: 'row',
-            height: 'calc(100vh - 64px)',
-            width: '100%',
-            backgroundColor: theme.background.primary,
-            color: theme.text.primary,
-            overflow: 'hidden'
-        }}>
+        <div className="flex flex-row h-[calc(100vh-64px)] w-full bg-background overflow-hidden">
             {/* Left Sidebar - Fixed width */}
-            <div style={{ 
-                width: '250px',
-                minWidth: '250px',
-                padding: '16px',
-                height: '100%',
-                overflowY: 'auto',
-                borderRight: `1px solid ${theme.border || 'rgba(0,0,0,0.1)'}`,
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
+            <div className="w-64 min-w-[250px] p-4 h-full overflow-y-auto border-r border-border flex flex-col">
                 <EducationNavBar />
-                
-                <Divider sx={{ my: 2 }} />
-                
-                <Typography 
-                    variant="subtitle2" 
-                    sx={{ 
-                        fontWeight: 600, 
-                        mb: 2,
-                        color: theme.text.heading,
-                        fontSize: '0.875rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                    }}
-                >
+
+                <div className="my-6 border-t border-border" />
+
+                <h3 className="text-xs font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
                     My Content
-                </Typography>
-                
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                    <Chip
-                        label="Other Posts"
+                </h3>
+
+                <div className="flex flex-col gap-2 mb-4">
+                    <button
                         onClick={() => {
                             setFilterType('all');
                             navigate('/education');
                         }}
-                        color={filterType === 'all' ? 'primary' : 'default'}
-                        variant={filterType === 'all' ? 'filled' : 'outlined'}
-                        sx={{ mb: 1 }}
-                    />
-                </Box>
-                
-                <Box sx={{ marginTop: 'auto', paddingTop: 2, borderTop: `1px solid ${theme.border || 'rgba(0,0,0,0.1)'}` }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<AddIcon />}
-                        onClick={() => setShowCreateModal(true)}
-                        fullWidth
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'all'
+                                ? 'bg-primary text-white'
+                                : 'bg-muted text-foreground hover:bg-muted/80'
+                            }`}
                     >
+                        Other Posts
+                    </button>
+                </div>
+
+                <div className="mt-auto pt-4 border-t border-border">
+                    <Button
+                        onClick={() => setShowCreateModal(true)}
+                        className="w-full flex items-center justify-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
                         Create Post
                     </Button>
-                </Box>
+                </div>
             </div>
-            
+
             {/* Main Content Area */}
-            <div style={{ 
-                flexGrow: 1,
-                height: '100%',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                overflowY: 'hidden',
-                padding: '16px 24px'
-            }}>
+            <div className="flex-grow h-full w-full flex flex-col overflow-y-hidden p-6">
                 {/* Header with Search and Controls */}
-                <Box 
-                    sx={{ 
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        justifyContent: 'space-between',
-                        alignItems: { xs: 'stretch', sm: 'center' },
-                        mb: 2,
-                        gap: 2
-                    }}
-                >
-                    <Typography 
-                        variant="h5" 
-                        component="h1"
-                        sx={{ 
-                            fontWeight: 600,
-                            color: theme.text.heading,
-                            flexShrink: 0
-                        }}
-                    >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h1 className="text-3xl font-semibold text-foreground flex-shrink-0">
                         {getPageTitle()}
-                    </Typography>
-                    
-                    <Box 
-                        sx={{ 
-                            display: 'flex',
-                            gap: 1,
-                            alignItems: 'center',
-                            width: { xs: '100%', sm: 'auto' },
-                        }}
-                    >
-                        <Box sx={{ flexGrow: 1, maxWidth: '300px' }}>
+                    </h1>
+
+                    <div className="flex gap-2 items-center w-full sm:w-auto">
+                        <div className="flex-grow max-w-xs">
                             <EducationSearchBar onSearch={handleSearch} />
-                        </Box>
-                        
-                        <Tooltip title="Toggle view mode">
-                            <IconButton 
-                                onClick={handleViewModeChange}
-                                sx={{ color: theme.text.secondary }}
-                            >
-                                {viewMode === 'grid' ? <ViewListIcon /> : <ViewModuleIcon />}
-                            </IconButton>
-                        </Tooltip>
-                        
-                        <Tooltip title="Sort posts">
-                            <IconButton 
-                                onClick={toggleFilters}
-                                sx={{ 
-                                    color: showFilters ? theme.primary : theme.text.secondary,
-                                    backgroundColor: showFilters ? `${theme.primary}10` : 'transparent'
-                                }}
-                            >
-                                <SortIcon />
-                            </IconButton>
-                        </Tooltip>
-                        
-                        <Tooltip title="Refresh">
-                            <IconButton 
-                                onClick={fetchUserEducationPosts}
-                                sx={{ color: theme.text.secondary }}
-                            >
-                                <RefreshIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                </Box>
-                
+                        </div>
+
+                        <button
+                            onClick={handleViewModeChange}
+                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                            title="Toggle view mode"
+                        >
+                            {viewMode === 'grid' ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                        </button>
+
+                        <button
+                            onClick={toggleFilters}
+                            className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
+                                }`}
+                            title="Sort posts"
+                        >
+                            <ArrowUpDown className="w-5 h-5" />
+                        </button>
+
+                        <button
+                            onClick={fetchUserEducationPosts}
+                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                            title="Refresh"
+                        >
+                            <RefreshCw className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
                 {/* Sort Options */}
                 <AnimatePresence>
                     {showFilters && (
@@ -453,171 +339,116 @@ const UserEducationManager = () => {
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
                         >
-                            <Paper 
-                                elevation={0} 
-                                sx={{ 
-                                    p: 2, 
-                                    mb: 2, 
-                                    backgroundColor: theme.background.secondary,
-                                    borderRadius: '12px',
-                                    width: '100%'
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                                    <Typography variant="subtitle2" sx={{ mr: 1, alignSelf: 'center' }}>
-                                        Sort by:
-                                    </Typography>
+                            <div className="p-4 mb-6 bg-muted/30 rounded-xl">
+                                <div className="flex flex-wrap items-center justify-center gap-3">
+                                    <span className="text-sm font-medium text-foreground">Sort by:</span>
                                     {['newest', 'oldest', 'popular'].map(option => (
-                                        <Chip 
+                                        <button
                                             key={option}
-                                            label={option.charAt(0).toUpperCase() + option.slice(1)}
                                             onClick={() => handleSortChange(option)}
-                                            color={sortBy === option ? 'primary' : 'default'}
-                                            variant={sortBy === option ? 'filled' : 'outlined'}
-                                            size="small"
-                                        />
+                                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${sortBy === option
+                                                    ? 'bg-primary text-white'
+                                                    : 'bg-background text-foreground border border-border hover:bg-muted'
+                                                }`}
+                                        >
+                                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                                        </button>
                                     ))}
-                                </Box>
-                            </Paper>
+                                </div>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
-                
+
                 {/* Error Alert */}
                 {error && (
-                    <Alert 
-                        severity="error" 
-                        sx={{ mb: 2 }}
-                        onClose={() => dispatch(setError(null))}
-                    >
-                        {error}
-                    </Alert>
-                )}
-                
-                {/* Education Posts Grid/List */}
-                <Box 
-                    sx={{ 
-                        flexGrow: 1,
-                        overflowY: 'auto',
-                        pr: 1, // Space for scrollbar
-                        scrollbarWidth: 'thin',
-                        '&::-webkit-scrollbar': {
-                            width: '6px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: '3px',
-                        }
-                    }}
-                >
-                    {!sortedEducations || sortedEducations.length === 0 ? (
-                        <Box 
-                            sx={{ 
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                textAlign: 'center',
-                                height: '100%',
-                                p: 4
-                            }}
+                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="text-destructive text-sm">{error}</p>
+                        </div>
+                        <button
+                            onClick={() => dispatch(setError(null))}
+                            className="text-destructive hover:text-destructive/80 transition-colors"
                         >
-                            <Typography variant="h6" sx={{ mb: 1, color: theme.text.heading }}>
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Education Posts Grid/List */}
+                <div className="flex-grow overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                    {!sortedEducations || sortedEducations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center h-full p-8">
+                            <h3 className="text-xl font-semibold text-foreground mb-2">
                                 {getEmptyStateMessage()}
-                            </Typography>
-                            
+                            </h3>
+
                             {filterType === 'all' && (
-                                <Button 
-                                    variant="contained" 
-                                    color="primary" 
+                                <Button
                                     onClick={() => setShowCreateModal(true)}
-                                    startIcon={<AddIcon />}
-                                    sx={{ mt: 2 }}
+                                    className="mt-4 flex items-center gap-2"
                                 >
+                                    <Plus className="w-4 h-4" />
                                     Create your first post
                                 </Button>
                             )}
-                            
+
                             {filterType !== 'all' && (
-                                <Typography variant="body2" sx={{ color: theme.text.secondary, maxWidth: '500px' }}>
-                                    {filterType === 'liked' ? 
+                                <p className="text-muted-foreground max-w-md mt-2">
+                                    {filterType === 'liked' ?
                                         "Explore the Education Center to find posts you might want to like." :
                                         "Browse the Education Center to discover educational content."}
-                                </Typography>
+                                </p>
                             )}
-                        </Box>
+                        </div>
                     ) : (
-                        <Grid 
-                            container 
-                            spacing={3} 
-                            sx={{ 
-                                mt: 0.5,
-                                width: '100%',
-                                mx: 0,
-                                // List view adjustments
-                                '& .MuiGrid-item': {
-                                    width: viewMode === 'list' ? '100%' : 'auto',
-                                }
-                            }}
-                        >
+                        <div className={`grid gap-6 ${viewMode === 'list'
+                                ? 'grid-cols-1'
+                                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                            }`}>
                             <AnimatePresence>
                                 {sortedEducations.map(post => (
-                                    <Grid 
-                                        item 
-                                        xs={12} 
-                                        sm={viewMode === 'list' ? 12 : 6} 
-                                        md={viewMode === 'list' ? 12 : 4} 
-                                        lg={viewMode === 'list' ? 12 : 4}
-                                        xl={viewMode === 'list' ? 12 : 3}
+                                    <motion.div
                                         key={post._id}
+                                        layout
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        transition={{ duration: 0.3 }}
                                     >
-                                        <motion.div
-                                            layout
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -20 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <UserEducationPostCard
-                                                post={post}
-                                                onLike={handleLike}
-                                                onComment={handleComment}
-                                                onEdit={handleEditClick}
-                                                onDelete={handleDeletePost}
-                                                currentUser={user}
-                                                viewMode={viewMode}
-                                            />
-                                        </motion.div>
-                                    </Grid>
+                                        <UserEducationPostCard
+                                            post={post}
+                                            onLike={handleLike}
+                                            onComment={handleComment}
+                                            onEdit={handleEditClick}
+                                            onDelete={handleDeletePost}
+                                            currentUser={user}
+                                            viewMode={viewMode}
+                                        />
+                                    </motion.div>
                                 ))}
                             </AnimatePresence>
-                        </Grid>
+                        </div>
                     )}
-                </Box>
+                </div>
             </div>
-            
+
             {/* Floating Action Button - Mobile Only */}
             {filterType === 'all' && (
-                <Fab 
-                    color="primary" 
-                    aria-label="add" 
-                    className="fab-button"
+                <button
                     onClick={() => setShowCreateModal(true)}
-                    sx={{ 
-                        position: 'fixed',
-                        bottom: 20,
-                        right: 20,
-                        display: { xs: 'flex', sm: 'none' }
-                    }}
+                    className="fixed bottom-5 right-5 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors sm:hidden z-50"
+                    aria-label="add"
                 >
-                    <AddIcon />
-                </Fab>
+                    <Plus className="w-6 h-6" />
+                </button>
             )}
 
             {/* Create/Edit Modal */}
             <AnimatePresence>
                 {showCreateModal && (
-                    <CreateEditEducationPost 
+                    <CreateEditEducationPost
                         isOpen={showCreateModal}
                         onClose={() => {
                             setShowCreateModal(false);
@@ -628,35 +459,6 @@ const UserEducationManager = () => {
                     />
                 )}
             </AnimatePresence>
-
-            {/* Post Action Menu */}
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                    sx: {
-                        backgroundColor: theme.background.secondary,
-                        color: theme.text.primary,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        borderRadius: '8px',
-                        minWidth: '150px'
-                    }
-                }}
-            >
-                <MenuItem onClick={handleEditClick} sx={{ py: 1.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <EditIcon fontSize="small" />
-                        <Typography>Edit Post</Typography>
-                    </Box>
-                </MenuItem>
-                <MenuItem onClick={handleDeleteClick} sx={{ py: 1.5, color: theme.error }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <DeleteIcon fontSize="small" />
-                        <Typography>Delete Post</Typography>
-                    </Box>
-                </MenuItem>
-            </Menu>
         </div>
     );
 };

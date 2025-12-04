@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Loader } from 'lucide-react';
 import { registerUser } from '../../services/authService';
-import './styles/userRegistrationStyles.css';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { GlassCard } from '../ui/GlassCard';
 
 const UserRegistration = () => {
     const navigate = useNavigate();
@@ -29,8 +33,7 @@ const UserRegistration = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Validation checks
+
         if (formData.password !== formData.confirmPassword) {
             toast.error('Passwords do not match');
             return;
@@ -51,7 +54,7 @@ const UserRegistration = () => {
             toast.error('Please enter a valid email address');
             return;
         }
-        
+
         try {
             setLoading(true);
             console.log('📝 Registration attempt:', formData.email);
@@ -61,7 +64,6 @@ const UserRegistration = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error('❌ Registration failed:', err);
-            // Handle specific error cases
             if (err.response?.data?.details) {
                 const errors = err.response.data.details;
                 errors.forEach(error => {
@@ -78,185 +80,196 @@ const UserRegistration = () => {
     };
 
     return (
-        <div className="registration-container">
-            <div className="registration-card">
-                <div className="registration-header">
-                    <h2 className="registration-title">
-                        Create your account
-                    </h2>
-                    <p className="registration-subtitle">
-                        Or{' '}
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="auth-link"
-                        >
-                            sign in to your account
-                        </button>
-                    </p>
-                </div>
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-background/80">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-2xl"
+            >
+                <GlassCard className="p-8">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-foreground mb-2">Create your account</h1>
+                        <p className="text-muted-foreground">
+                            Or{' '}
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="text-primary hover:underline font-medium"
+                            >
+                                sign in to your account
+                            </button>
+                        </p>
+                    </div>
 
-                <form className="registration-form" onSubmit={handleSubmit}>
-                    <div className="registration-form-fields-container">
-                        <div className="registration-form-grid">
-                            <div className="form-field">
-                                <label htmlFor="firstName" className="sr-only">First Name</label>
-                                <input
-                                    id="firstName"
-                                    name="firstName"
-                                    type="text"
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Name Fields */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                                    First Name
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                    <Input
+                                        id="firstName"
+                                        name="firstName"
+                                        type="text"
+                                        required
+                                        placeholder="First Name"
+                                        value={formData.firstName}
+                                        onChange={handleChange}
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                                    Last Name
+                                </label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                    <Input
+                                        id="lastName"
+                                        name="lastName"
+                                        type="text"
+                                        required
+                                        placeholder="Last Name"
+                                        value={formData.lastName}
+                                        onChange={handleChange}
+                                        className="pl-10"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Email */}
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                                Email address
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
                                     required
-                                    className="form-input"
-                                    placeholder="First Name"
-                                    value={formData.firstName}
+                                    placeholder="Email address"
+                                    value={formData.email}
                                     onChange={handleChange}
+                                    className="pl-10"
                                 />
                             </div>
-                            <div className="form-field">
-                                <label htmlFor="lastName" className="sr-only">Last Name</label>
-                                <input
-                                    id="lastName"
-                                    name="lastName"
+                        </div>
+
+                        {/* Username */}
+                        <div className="space-y-2">
+                            <label htmlFor="username" className="text-sm font-medium text-foreground">
+                                Username
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="username"
+                                    name="username"
                                     type="text"
                                     required
-                                    className="form-input"
-                                    placeholder="Last Name"
-                                    value={formData.lastName}
+                                    placeholder="Username"
+                                    value={formData.username}
                                     onChange={handleChange}
+                                    className="pl-10"
                                 />
                             </div>
                         </div>
 
-                        <div className="form-field">
-                            <label htmlFor="email" className="sr-only">Email address</label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                className="form-input"
-                                placeholder="Email address"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="username" className="sr-only">Username</label>
-                            <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                required
-                                className="form-input"
-                                placeholder="Username"
-                                value={formData.username}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div className="form-field">
-                            <label htmlFor="password" className="sr-only">Password</label>
-                            <div className="password-field" style={{ position: 'relative' }}>
-                                <input
+                        {/* Password */}
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="text-sm font-medium text-foreground">
+                                Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
                                     id="password"
                                     name="password"
                                     type={showPassword ? 'text' : 'password'}
                                     required
-                                    className="form-input"
                                     placeholder="Password"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    className="pl-10 pr-10"
                                 />
                                 <button
                                     type="button"
-                                    className="toggle-password-visibility"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    tabIndex={-1}
-                                    style={{
-                                        position: 'absolute',
-                                        right: 10,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: 0,
-                                        fontSize: '1.2em',
-                                        color: '#888'
-                                    }}
-                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
-                                    {showPassword ? '🙈' : '👁️'}
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <small className="password-requirements">
+                            <p className="text-xs text-muted-foreground">
                                 Password must be at least 8 characters and include uppercase, lowercase, number, and special character (@$!%*?&_)
-                            </small>
+                            </p>
                         </div>
 
-                        <div className="form-field">
-                            <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
-                            <div className="password-field" style={{ position: 'relative' }}>
-                                <input
+                        {/* Confirm Password */}
+                        <div className="space-y-2">
+                            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                                Confirm Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
                                     id="confirmPassword"
                                     name="confirmPassword"
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     required
-                                    className="form-input"
                                     placeholder="Confirm Password"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
+                                    className="pl-10 pr-10"
                                 />
                                 <button
                                     type="button"
-                                    className="toggle-password-visibility"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    tabIndex={-1}
-                                    style={{
-                                        position: 'absolute',
-                                        right: 10,
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: 0,
-                                        fontSize: '1.2em',
-                                        color: '#888'
-                                    }}
-                                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
-                                    {showConfirmPassword ? '🙈' : '👁️'}
+                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="form-field">
-                            <label htmlFor="phone" className="sr-only">Phone Number</label>
-                            <input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                required
-                                className="form-input"
-                                placeholder="Phone Number"
-                                value={formData.phone}
-                                onChange={handleChange}
-                            />
+                        {/* Phone */}
+                        <div className="space-y-2">
+                            <label htmlFor="phone" className="text-sm font-medium text-foreground">
+                                Phone Number
+                            </label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    required
+                                    placeholder="Phone Number"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    className="pl-10"
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <button
+                        <Button
                             type="submit"
                             disabled={loading}
-                            className={`registration-submit-button ${loading ? 'button-disabled' : ''}`}
+                            className="w-full gap-2"
                         >
+                            {loading && <Loader className="w-4 h-4 animate-spin" />}
                             {loading ? 'Creating account...' : 'Create account'}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        </Button>
+                    </form>
+                </GlassCard>
+            </motion.div>
         </div>
     );
 };

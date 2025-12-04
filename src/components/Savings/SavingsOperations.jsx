@@ -1,14 +1,7 @@
 import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
+import Modal from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 
 const SavingsOperations = ({
     modalState,
@@ -34,61 +27,62 @@ const SavingsOperations = ({
         const isOpen = modalState[type].open;
         const title = type.charAt(0).toUpperCase() + type.slice(1);
         const needsWallet = ['deposit', 'withdraw', 'transfer'].includes(type);
-        
+
         return (
-            <Dialog 
-                open={isOpen} 
+            <Modal
+                isOpen={isOpen}
                 onClose={() => handleClose(type)}
-                aria-labelledby={`${type}-dialog-title`}
+                title={`${title} Funds`}
+                maxWidth="max-w-md"
             >
-                <DialogTitle id={`${type}-dialog-title`}>{title} Funds</DialogTitle>
-                <DialogContent>
-                    <TextField
+                <div className="space-y-4">
+                    <Input
                         autoFocus
-                        margin="dense"
                         label="Amount"
                         type="number"
-                        fullWidth
                         value={transactionAmount}
                         onChange={(e) => setTransactionAmount(e.target.value)}
-                        inputProps={{ min: 0 }}
+                        min="0"
+                        placeholder="0.00"
                     />
+
                     {needsWallet && (
-                        <FormControl fullWidth sx={{ mt: 2 }}>
-                            <InputLabel id={`${type}-wallet-label`}>Select Wallet</InputLabel>
-                            <Select
-                                labelId={`${type}-wallet-label`}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-muted-foreground">Select Wallet</label>
+                            <select
                                 value={selectedWallet}
                                 onChange={(e) => setSelectedWallet(e.target.value)}
-                                label="Select Wallet"
+                                className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
                             >
+                                <option value="" disabled>Select a wallet</option>
                                 {wallets.map((wallet) => (
-                                    <MenuItem key={wallet._id} value={wallet._id}>
+                                    <option key={wallet._id} value={wallet._id}>
                                         {wallet.name} ({new Intl.NumberFormat('en-US', {
                                             style: 'currency',
                                             currency: 'USD'
                                         }).format(wallet.balance)})
-                                    </MenuItem>
+                                    </option>
                                 ))}
-                            </Select>
-                        </FormControl>
+                            </select>
+                        </div>
                     )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => handleClose(type)}>Cancel</Button>
-                    <Button 
-                        onClick={() => {
-                            handleTransaction(type, selectedAccount, transactionAmount, selectedWallet);
-                            handleClose(type);
-                        }}
-                        disabled={!transactionAmount || (needsWallet && !selectedWallet)}
-                        variant="contained"
-                        color="primary"
-                    >
-                        Confirm
-                    </Button>
-                </DialogActions>
-            </Dialog>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                        <Button variant="ghost" onClick={() => handleClose(type)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                handleTransaction(type, selectedAccount, transactionAmount, selectedWallet);
+                                handleClose(type);
+                            }}
+                            disabled={!transactionAmount || (needsWallet && !selectedWallet)}
+                        >
+                            Confirm
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         );
     };
 

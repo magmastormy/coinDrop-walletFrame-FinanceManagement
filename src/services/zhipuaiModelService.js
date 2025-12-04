@@ -1,85 +1,103 @@
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/zhipuai';
+const isDev = process.env.NODE_ENV === 'development';
 
+/**
+ * ZhipuAI Model Service
+ * Handles all AI-related API calls with proper user isolation
+ * Note: userId is validated on backend via auth token
+ */
 const zhipuaiModelService = {
-    async sendMessage(messages) {
+    /**
+     * Send a message to the AI chatbot
+     * @param {Array} messages - Array of message objects with role and content
+     * @param {string} userId - User ID for context (validated by backend)
+     * @returns {Promise} API response with AI message
+     */
+    async sendMessage(messages, userId) {
         try {
-            // Get userId from localStorage for debugging
-            let userId = null;
-            try {
-                const tokenData = localStorage.getItem('token');
-                if (tokenData) {
-                    const base64Url = tokenData.split('.')[1];
-                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                    const payload = JSON.parse(atob(base64));
-                    userId = payload.id || payload._id || payload.userId;
-                }
-            } catch (e) {
-                console.error('Error extracting userId from token:', e);
-            }
-            
-            console.log('***[ZhipuAI Service - sendMessage] User ID from token:', userId);
-            console.log('***[ZhipuAI Service - sendMessage] Sending message:', messages);
-            
-            const response = await axiosInstance.post(`${API_URL}/send`, { 
+            if (isDev) console.log('[ZhipuAI] Sending message for user:', userId);
+
+            const response = await axiosInstance.post(`${API_URL}/send`, {
                 messages,
-                userId // Explicitly include userId in payload
+                userId
             });
-            console.log('***[ZhipuAI Service - sendMessage] - Chat response:', response);
+
+            if (isDev) console.log('[ZhipuAI] Response received');
             return response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error sending message:', error);
+            console.error('[ZhipuAI] Error sending message:', error.message);
             throw error;
         }
     },
 
+    /**
+     * Get user financial context
+     * @param {string} userId - User ID
+     * @returns {Promise} User context data
+     */
     async getUserContext(userId) {
         try {
-            console.log("***--->[ZhipuAIService - getUserContext] - getting contexted advice")
+            if (isDev) console.log('[ZhipuAI] Fetching context for user:', userId);
+
             const response = await axiosInstance.get(`${API_URL}/user-context/${userId}`);
-            console.log('***--->[ZhipuAIService - getUserContext] - getting contexted advice response:', response);
+
+            if (isDev) console.log('[ZhipuAI] Context received');
             return response;
         } catch (error) {
-            console.error('[ZhipuAIService - getUserContext] - Error sending message:', error);
+            console.error('[ZhipuAI] Error fetching context:', error.message);
             throw error;
         }
     },
 
+    /**
+     * Get context-aware suggestions for the user
+     * @param {string} userId - User ID
+     * @returns {Promise} Suggestions object
+     */
     async getContextSuggestions(userId) {
-        console.log("**[zhipuaiModelService - getContextSuggestions] route hit");
         try {
+            if (isDev) console.log('[ZhipuAI] Fetching suggestions for user:', userId);
+
             const response = await axiosInstance.get(`${API_URL}/context-suggestions/${userId}`);
             return response.suggestions || response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error fetching context suggestions:', error);
+            console.error('[ZhipuAI] Error fetching suggestions:', error.message);
             throw error;
         }
     },
 
-    async getContextAwareSuggestions(userId) {
-        // alias for backward compatibility
-        return this.getContextSuggestions(userId);
-    },
-
+    /**
+     * Get user account information
+     * @param {string} userId - User ID
+     * @returns {Promise} Account info
+     */
     async getUserAccountInfo(userId) {
-        console.log("**[zhipuaiModelService - getUserAccountInfo] route hit");
         try {
+            if (isDev) console.log('[ZhipuAI] Fetching account info for user:', userId);
+
             const response = await axiosInstance.get(`${API_URL}/user-account-info/${userId}`);
             return response.context || response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error fetching user account info:', error);
+            console.error('[ZhipuAI] Error fetching account info:', error.message);
             throw error;
         }
     },
 
+    /**
+     * Get proactive financial insights
+     * @param {string} userId - User ID
+     * @returns {Promise} Insights array
+     */
     async getProactiveInsights(userId) {
-        console.log("**[zhipuaiModelService - getProactiveInsights] route hit");
         try {
+            if (isDev) console.log('[ZhipuAI] Fetching insights for user:', userId);
+
             const response = await axiosInstance.get(`${API_URL}/proactive-insights/${userId}`);
             return response.insights || response;
         } catch (error) {
-            console.error('ZhipuAI Service - Error fetching proactive insights:', error);
+            console.error('[ZhipuAI] Error fetching insights:', error.message);
             throw error;
         }
     }

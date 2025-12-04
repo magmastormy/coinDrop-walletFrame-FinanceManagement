@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Modal from '@mui/material/Modal';
-import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import AddIcon from '@mui/icons-material/Add';
+import { Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsAccountCard from './savingsAccountCard';
@@ -21,10 +10,10 @@ import SavingsAccountTransactionTable from './savingsAccountTransactionTable';
 import SavingsAnalytics from './SavingsAnalytics';
 import savingsAccountService from '../../services/savingsAccountService';
 import walletService from '../../services/walletService';
-import { motion } from 'framer-motion';
-import './styles/savingsAccountManagerStyles.css';
-import '../shared/componentScrollFix.css';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReportSection from '../Common/ReportSection';
+import { Button } from '../ui/Button';
+import Modal from '../ui/Modal';
 
 const SavingsAccountManager = () => {
     const { user } = useAuth();
@@ -121,7 +110,7 @@ const SavingsAccountManager = () => {
     const handleDelete = (accountId) => {
         const account = accounts.find(acc => acc._id === accountId);
         setAccountToDelete(account);
-        
+
         setTransferWalletId(wallets.length > 0 ? wallets[0]._id : '');
         setDeleteModalOpen(true);
     };
@@ -203,178 +192,151 @@ const SavingsAccountManager = () => {
 
     const renderDeleteModal = () => {
         if (!accountToDelete) return null;
-        
+
         return (
             <Modal
-                open={deleteModalOpen}
+                isOpen={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
-                aria-labelledby="delete-savings-account-modal"
+                title="Delete Savings Account"
+                maxWidth="max-w-md"
             >
-                <Box sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: 400,
-                    bgcolor: 'background.paper',
-                    boxShadow: 24,
-                    p: 4,
-                    borderRadius: 2
-                }}>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                        Delete Savings Account
-                    </Typography>
-                    
-                    <Typography variant="body1" sx={{ mb: 2 }}>
+                <div className="space-y-4">
+                    <p className="text-muted-foreground">
                         Are you sure you want to delete the savings account "{accountToDelete.name}"?
-                    </Typography>
-                    
+                    </p>
+
                     {accountToDelete.balance > 0 && (
                         <>
-                            <Box sx={{ 
-                                bgcolor: 'warning.light', 
-                                color: 'warning.contrastText',
-                                p: 2,
-                                borderRadius: 1,
-                                mb: 2 
-                            }}>
-                                <Typography variant="body2">
-                                    This account has a balance of ${accountToDelete.balance.toFixed(2)}. 
-                                    Please select a wallet to transfer this amount to:
-                                </Typography>
-                            </Box>
-                            
-                            <FormControl fullWidth sx={{ mb: 2 }}>
-                                <InputLabel id="transfer-wallet-label">Transfer Balance to Wallet</InputLabel>
-                                <Select
-                                    labelId="transfer-wallet-label"
-                                    id="transfer-wallet-select"
+                            <div className="p-3 rounded-lg bg-amber-500/10 text-amber-500 text-sm border border-amber-500/20">
+                                This account has a balance of ${accountToDelete.balance.toFixed(2)}.
+                                Please select a wallet to transfer this amount to:
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-muted-foreground">Transfer Balance to Wallet</label>
+                                <select
                                     value={transferWalletId}
-                                    label="Transfer Balance to Wallet"
                                     onChange={(e) => setTransferWalletId(e.target.value)}
                                     required
+                                    className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
                                 >
-                                    <MenuItem value="">
-                                        <em>Select a wallet</em>
-                                    </MenuItem>
+                                    <option value="">Select a wallet</option>
                                     {wallets.map(wallet => (
-                                        <MenuItem key={wallet._id} value={wallet._id}>
+                                        <option key={wallet._id} value={wallet._id}>
                                             {wallet.name} (${wallet.balance.toFixed(2)})
-                                        </MenuItem>
+                                        </option>
                                     ))}
-                                </Select>
-                            </FormControl>
+                                </select>
+                            </div>
                         </>
                     )}
-                    
+
                     {deleteError && (
-                        <Box sx={{ 
-                            bgcolor: 'error.light', 
-                            color: 'error.contrastText',
-                            p: 2,
-                            borderRadius: 1,
-                            mb: 2 
-                        }}>
-                            <Typography variant="body2">{deleteError}</Typography>
-                        </Box>
+                        <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm border border-red-500/20">
+                            {deleteError}
+                        </div>
                     )}
-                    
-                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
                         <Button
-                            variant="outlined"
-                            color="primary"
+                            variant="ghost"
                             onClick={() => setDeleteModalOpen(false)}
                         >
                             Cancel
                         </Button>
                         <Button
-                            variant="contained"
-                            color="error"
+                            variant="destructive"
                             onClick={confirmDelete}
                             disabled={isDeleting || (accountToDelete.balance > 0 && !transferWalletId)}
                         >
                             {isDeleting ? 'Deleting...' : 'Delete Account'}
                         </Button>
-                    </Box>
-                </Box>
+                    </div>
+                </div>
             </Modal>
         );
     };
 
     if (isLoading) {
         return (
-            <div className="loading-container">
-                Loading...
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="error-message">
+            <div className="p-4 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20">
                 {error}
             </div>
         );
     }
 
     return (
-        <div 
-            className="savings-account-manager"
-        >
-            <ReportSection 
-                title="Savings Accounts Report" 
-                accountId={selectedAccount || user?.id} 
+        <div className="space-y-8 pb-8">
+            <ReportSection
+                title="Savings Accounts Report"
+                accountId={selectedAccount || user?.id}
                 reportType="savings-report"
             />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h5" component="h2">
-                    Your Savings Accounts
-                </Typography>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
-                    startIcon={<AddIcon />}
-                    onClick={handleCreateAccount}
-                >
-                    Create Account
-                </Button>
-            </Box>
-            <SavingsAnalytics accounts={accounts} />
-            
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                {accounts.map(account => (
-                    <Grid item xs={12} sm={6} md={4} key={account._id}>
-                        <SavingsAccountCard
-                            account={account}
-                            onDeposit={handleDeposit}
-                            onWithdraw={handleWithdraw}
-                            onEdit={handleEdit}
-                            onTransfer={handleTransfer}
-                            onDelete={handleDelete}
-                            onSelect={handleCardSelect}
-                            isSelected={selectedAccount === account._id}
-                        />
-                    </Grid>
-                ))}
-            </Grid>
 
-            {selectedAccount && (
-                <Box 
-                    component={motion.div}
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    sx={{ mb: 4 }}
+            <div className="flex justify-between items-center">
+                <h2 className="text-3xl font-bold text-foreground">
+                    Your Savings Accounts
+                </h2>
+                <Button
+                    onClick={handleCreateAccount}
+                    className="gap-2"
                 >
-                    <SavingsAccountTransactionTable 
-                        accountId={selectedAccount}
-                        wallets={wallets}
-                        savingsAccounts={accounts}
-                        budgets={[]}
-                        categories={[]}
-                    />
-                </Box>
-            )}
+                    <Plus className="w-4 h-4" /> Create Account
+                </Button>
+            </div>
+
+            <SavingsAnalytics accounts={accounts} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence>
+                    {accounts.map(account => (
+                        <motion.div
+                            key={account._id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                            <SavingsAccountCard
+                                account={account}
+                                onDeposit={handleDeposit}
+                                onWithdraw={handleWithdraw}
+                                onEdit={handleEdit}
+                                onTransfer={handleTransfer}
+                                onDelete={handleDelete}
+                                onSelect={handleCardSelect}
+                                isSelected={selectedAccount === account._id}
+                            />
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
+            <AnimatePresence>
+                {selectedAccount && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                    >
+                        <SavingsAccountTransactionTable
+                            accountId={selectedAccount}
+                            wallets={wallets}
+                            savingsAccounts={accounts}
+                            budgets={[]}
+                            categories={[]}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <SavingsOperations
                 modalState={modalState}

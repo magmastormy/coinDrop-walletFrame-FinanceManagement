@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { setLoading, setError } from '../../slices/transactionSlice';
 import savingsAccountService from '../../services/savingsAccountService';
 import EditTransactionModal from './editTransactionModal';
-import './styles/savingsTransactionTableStyles.css';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 
 const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccounts = [], budgets = [], categories = [] }) => {
     const dispatch = useDispatch();
@@ -39,7 +41,7 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
         try {
             dispatch(setLoading(true));
             await savingsAccountService.updateTransaction(accountId, updatedTransaction);
-            setTransactions(prev => prev.map(t => 
+            setTransactions(prev => prev.map(t =>
                 t._id === updatedTransaction._id ? updatedTransaction : t
             ));
             setEditModalOpen(false);
@@ -52,41 +54,60 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
     };
 
     if (!accountId) {
-        return <div className="no-account-selected">No account selected</div>;
+        return <div className="text-center text-muted-foreground p-8">No account selected</div>;
     }
 
     return (
-        <div className="transaction-table-container">
-            <div className="transaction-grid-header">
-                <div>Date</div>
-                <div>Amount</div>
-                <div>Type</div>
-                <div>Description</div>
-                <div>Actions</div>
+        <GlassCard className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead>
+                        <tr className="border-b border-white/10">
+                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Description</th>
+                            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {transactions.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    No transactions found
+                                </td>
+                            </tr>
+                        ) : (
+                            transactions.map(transaction => (
+                                <tr key={transaction._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                    <td className="py-3 px-4 text-sm">
+                                        {new Date(transaction.date).toLocaleDateString()}
+                                    </td>
+                                    <td className={cn(
+                                        "py-3 px-4 text-sm font-medium",
+                                        transaction.type === 'income' ? "text-emerald-400" :
+                                            transaction.type === 'expense' ? "text-red-400" : "text-blue-400"
+                                    )}>
+                                        ${transaction.amount.toFixed(2)}
+                                    </td>
+                                    <td className="py-3 px-4 text-sm capitalize">{transaction.type}</td>
+                                    <td className="py-3 px-4 text-sm text-muted-foreground">{transaction.description}</td>
+                                    <td className="py-3 px-4 text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleEditClick(transaction)}
+                                        >
+                                            Edit
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
-            
-            {transactions.length === 0 ? (
-                <div className="no-transactions">No transactions found</div>
-            ) : (
-                transactions.map(transaction => (
-                    <div className="transaction-grid-row" key={transaction._id}>
-                        <div>{new Date(transaction.date).toLocaleDateString()}</div>
-                        <div className={`amount ${transaction.type.toLowerCase()}`}>
-                            ${transaction.amount.toFixed(2)}
-                        </div>
-                        <div>{transaction.type}</div>
-                        <div>{transaction.description}</div>
-                        <div>
-                            <button 
-                                className="edit-button"
-                                onClick={() => handleEditClick(transaction)}
-                            >
-                                Edit
-                            </button>
-                        </div>
-                    </div>
-                ))
-            )}
 
             <EditTransactionModal
                 isOpen={isEditModalOpen}
@@ -98,7 +119,7 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
                 budgets={budgets}
                 categories={categories}
             />
-        </div>
+        </GlassCard>
     );
 };
 

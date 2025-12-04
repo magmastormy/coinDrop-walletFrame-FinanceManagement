@@ -50,4 +50,20 @@ export const {
     deleteBudget,
 } = budgetSlice.actions;
 
+// Memoized Selectors
+export const selectAllBudgets = (state) => state.budget.budgets;
+export const selectBudgetLoading = (state) => state.budget.loading;
+export const selectBudgetError = (state) => state.budget.error;
+export const selectSelectedBudget = (state) => state.budget.selectedBudget;
+
+// Derived selectors
+export const selectActiveBudgets = (state) =>
+    state.budget.budgets.filter(budget => budget.isActive !== false);
+
+export const selectTotalBudgetAmount = (state) =>
+    state.budget.budgets.reduce((total, budget) => total + (budget.amount || 0), 0);
+
+export const selectBudgetById = (state, budgetId) =>
+    state.budget.budgets.find(budget => budget._id === budgetId);
+
 export default budgetSlice.reducer;

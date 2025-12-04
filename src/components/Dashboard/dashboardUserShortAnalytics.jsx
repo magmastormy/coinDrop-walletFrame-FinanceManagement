@@ -1,24 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-    faWallet,
-    faChartLine,
-    faChartPie,
-    faArrowTrendUp,
-    faSpinner,
-    faMoneyBill,
-    faExclamationTriangle,
-    faPiggyBank
-} from '@fortawesome/free-solid-svg-icons';
+    Wallet,
+    TrendingUp,
+    PieChart,
+    DollarSign,
+    AlertTriangle,
+    PiggyBank,
+    Loader2
+} from 'lucide-react';
 import { getUserTransactions } from '../../services/transactionService';
 import walletService from '../../services/walletService';
 import { getUserBudgets } from '../../services/budgetService';
-import './styles/dashboardUserShortAnalyticsStyles.css';
-import Box from '@mui/material/Box';
-import Tooltip from '@mui/material/Tooltip';
-import Button from '@mui/material/Button';
+import { Button } from '../ui/Button';
+
 
 const DashboardUserShortAnalytics = () => {
     const [loading, setLoading] = useState(true);
@@ -38,7 +34,7 @@ const DashboardUserShortAnalytics = () => {
 
     const fetchAnalytics = async () => {
         if (!user?.id) return;
-        
+
         try {
             setLoading(true);
             setError(null);
@@ -53,8 +49,8 @@ const DashboardUserShortAnalytics = () => {
             // Process results safely with error handling
             const wallets = walletResponse.status === 'fulfilled' ? walletResponse.value?.wallets || [] : [];
             const budgets = budgetResponse.status === 'fulfilled' ? budgetResponse.value?.budgets || [] : [];
-            const transactions = transactionResponse.status === 'fulfilled' 
-                ? transactionResponse.value?.transactions || [] 
+            const transactions = transactionResponse.status === 'fulfilled'
+                ? transactionResponse.value?.transactions || []
                 : [];
 
             // Calculate total balance from wallets
@@ -81,72 +77,52 @@ const DashboardUserShortAnalytics = () => {
             const monthlyIncome = currentMonthIncome.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
             // Calculate savings rate
-            const savingsRate = monthlyIncome > 0 
-                ? Math.min(100, Math.max(0, ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100))
-                : 0;
+            const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
 
             // Calculate budget adherence
-            let budgetAdherence = 0;
+            let budgetAdherence = 100;
             if (budgets.length > 0) {
-                const adherentBudgets = budgets.filter(budget => {
-                    if (!budget.amount) return false;
-                    
-                    const budgetCategory = budget.category?._id || budget.categoryId;
-                    if (!budgetCategory) return false;
-                    
-                    const categoryExpenses = currentMonthExpenses
-                        .filter(t => (t.category?._id || t.categoryId) === budgetCategory)
+                const budgetsInBudget = budgets.filter(b => {
+                    const budgetExpenses = currentMonthExpenses
+                        .filter(t => t.category === b.category)
                         .reduce((sum, t) => sum + (Math.abs(Number(t.amount)) || 0), 0);
-                    
-                    return categoryExpenses <= Number(budget.amount);
+                    return budgetExpenses <= b.amount;
                 });
-                
-                budgetAdherence = (adherentBudgets.length / budgets.length) * 100;
+                budgetAdherence = (budgetsInBudget.length / budgets.length) * 100;
             }
 
             // Calculate most frequent category
-            const categoryMap = {};
+            const categoryCount = {};
             transactions.forEach(t => {
-                const categoryName = t.category?.name || 'Uncategorized';
-                categoryMap[categoryName] = (categoryMap[categoryName] || 0) + 1;
-            });
-            
-            let mostFrequentCategory = 'None';
-            let maxCount = 0;
-            
-            Object.entries(categoryMap).forEach(([category, count]) => {
-                if (count > maxCount && category !== 'Uncategorized' && category !== 'None') {
-                    mostFrequentCategory = category;
-                    maxCount = count;
+                if (t.category) {
+                    categoryCount[t.category] = (categoryCount[t.category] || 0) + 1;
                 }
             });
+            const mostFrequentCategory = Object.keys(categoryCount).length > 0
+                ? Object.keys(categoryCount).reduce((a, b) => categoryCount[a] > categoryCount[b] ? a : b)
+                : '';
 
-            // Calculate yearly metrics
+            // Calculate yearly expenses vs income
             const startOfYear = new Date(currentYear, 0, 1);
-            
             const yearlyExpenses = transactions
                 .filter(t => new Date(t.date) >= startOfYear && t.type === 'expense')
                 .reduce((sum, t) => sum + (Math.abs(Number(t.amount)) || 0), 0);
-                
             const yearlyIncome = transactions
                 .filter(t => new Date(t.date) >= startOfYear && t.type === 'income')
                 .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-            // Calculate net worth growth rate - FIXED: Use transaction history for accuracy
-            // First, calculate current net worth (sum of all wallet balances)
+            // Calculate net worth growth rate
             const currentNetWorth = totalBalance;
-            
-            // Next, determine start of year net worth by subtracting this year's net transactions
             let startOfYearNetWorth = currentNetWorth;
-            
+
             // For each wallet, adjust the starting net worth based on this year's transactions
             wallets.forEach(wallet => {
                 // Get all transactions for this wallet from this year
-                const walletYearTransactions = transactions.filter(t => 
-                    new Date(t.date) >= startOfYear && 
+                const walletYearTransactions = transactions.filter(t =>
+                    new Date(t.date) >= startOfYear &&
                     t.walletId === wallet._id
                 );
-                
+
                 // Calculate net effect of this year's transactions
                 const yearNetChange = walletYearTransactions.reduce((net, t) => {
                     if (t.type === 'income') {
@@ -156,16 +132,16 @@ const DashboardUserShortAnalytics = () => {
                     }
                     return net;
                 }, 0);
-                
+
                 // Subtract the net change to get start of year value
                 startOfYearNetWorth -= yearNetChange;
             });
-            
+
             // Calculate growth rate
-            const netWorthGrowthRate = startOfYearNetWorth > 0 
-                ? ((currentNetWorth - startOfYearNetWorth) / startOfYearNetWorth) * 100 
+            const netWorthGrowthRate = startOfYearNetWorth > 0
+                ? ((currentNetWorth - startOfYearNetWorth) / startOfYearNetWorth) * 100
                 : (currentNetWorth > 0 ? 100 : 0); // If we started with 0, any positive is 100% growth
-                
+
             setAnalytics({
                 totalBalance,
                 totalWallets,
@@ -173,8 +149,8 @@ const DashboardUserShortAnalytics = () => {
                 savingsRate: Number(savingsRate.toFixed(1)),
                 budgetAdherence: Number(budgetAdherence.toFixed(1)),
                 mostFrequentCategory,
-                yearlyExpensesVsIncome: { 
-                    expenses: yearlyExpenses, 
+                yearlyExpensesVsIncome: {
+                    expenses: yearlyExpenses,
                     income: yearlyIncome,
                     ratio: yearlyIncome > 0 ? (yearlyExpenses / yearlyIncome) * 100 : 0
                 },
@@ -201,50 +177,60 @@ const DashboardUserShortAnalytics = () => {
         }).format(amount);
     };
 
+    // Icon mapping for lucide-react
+    const iconMap = {
+        'Wallet': Wallet,
+        'DollarSign': DollarSign,
+        'PiggyBank': PiggyBank,
+        'PieChart': PieChart,
+        'TrendingUp': TrendingUp,
+        'TrendingUp2': TrendingUp
+    };
+
     // More focused, important analytics items
     const analyticsItems = [
         {
             title: 'Total Balance',
             value: formatCurrency(analytics.totalBalance),
-            icon: faWallet,
+            icon: 'Wallet',
             color: 'blue',
             tooltip: `Across ${analytics.totalWallets} wallets`
         },
         {
             title: 'Monthly Expenses',
             value: formatCurrency(analytics.monthlyExpenses),
-            icon: faMoneyBill,
+            icon: 'DollarSign',
             color: 'red',
             tooltip: 'Total spending this month'
         },
         {
             title: 'Savings Rate',
             value: `${analytics.savingsRate}%`,
-            icon: faPiggyBank,
+            icon: 'PiggyBank',
             color: 'green',
             tooltip: 'Portion of income saved this month'
         },
         {
             title: 'Budget Adherence',
             value: `${analytics.budgetAdherence}%`,
-            icon: faChartPie,
+            icon: 'PieChart',
             color: 'purple',
             tooltip: "Percentage of budgets you're staying within"
         },
         {
             title: 'Yearly Income vs Expenses',
-            value: analytics.yearlyExpensesVsIncome.ratio > 0 
-                ? `${analytics.yearlyExpensesVsIncome.ratio.toFixed(0)}%` 
+            value: analytics.yearlyExpensesVsIncome.ratio > 0
+                ? `${analytics.yearlyExpensesVsIncome.ratio.toFixed(0)} % `
                 : 'N/A',
-            icon: faChartLine,
-            color: analytics.yearlyExpensesVsIncome.ratio <= 90 ? 'green' : 
-                   analytics.yearlyExpensesVsIncome.ratio <= 100 ? 'orange' : 'red',
+            icon: 'TrendingUp',
+            color: analytics.yearlyExpensesVsIncome.ratio <= 90 ? 'green' :
+                analytics.yearlyExpensesVsIncome.ratio <= 100 ? 'orange' : 'red',
             tooltip: `Spending ${formatCurrency(analytics.yearlyExpensesVsIncome.expenses)} of ${formatCurrency(analytics.yearlyExpensesVsIncome.income)} income`
         },
         {
             title: 'Net Worth Growth',
-            value: `${analytics.netWorthGrowthRate}%`,
-            icon: faArrowTrendUp,
+            value: `${analytics.netWorthGrowthRate} % `,
+            icon: 'TrendingUp2',
             color: analytics.netWorthGrowthRate >= 0 ? 'green' : 'red',
             tooltip: 'Growth in your net worth since the start of the year'
         }
@@ -252,15 +238,10 @@ const DashboardUserShortAnalytics = () => {
 
     if (error) {
         return (
-            <div className="analytics-error">
-                <FontAwesomeIcon icon={faExclamationTriangle} className="error-icon" />
-                <p>{error}</p>
-                <Button 
-                    variant="contained" 
-                    size="small" 
-                    onClick={fetchAnalytics}
-                    sx={{ mt: 2 }}
-                >
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+                <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={fetchAnalytics} size="sm">
                     Try Again
                 </Button>
             </div>
@@ -270,36 +251,45 @@ const DashboardUserShortAnalytics = () => {
     return (
         <div className="analytics-grid">
             {loading ? (
-                <div className="loading-container">
+                <div className="flex flex-col items-center justify-center col-span-full p-8">
                     <motion.div
-                        className="loading-icon"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     >
-                        <FontAwesomeIcon icon={faSpinner} />
+                        <Loader2 className="w-8 h-8 text-primary" />
                     </motion.div>
-                    <p>Loading your financial insights...</p>
+                    <p className="text-muted-foreground mt-4">Loading your financial insights...</p>
                 </div>
             ) : (
-                analyticsItems.map((item, index) => (
-                    <Tooltip key={item.title} title={item.tooltip} arrow placement="top">
-                        <Box 
-                            className="analytics-card"
-                            component={motion.div}
+                analyticsItems.map((item, index) => {
+                    const IconComponent = iconMap[item.icon];
+                    return (
+                        <motion.div
+                            key={item.title}
+                            className="analytics-card group relative"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
+                            title={item.tooltip}
                         >
-                            <div className="card-icon" style={{ backgroundColor: `var(--${item.color}-color)` }}>
-                                <FontAwesomeIcon icon={item.icon} />
+                            <div
+                                className="card-icon"
+                                style={{ backgroundColor: `var(--${item.color} -color)` }}
+                            >
+                                <IconComponent className="w-5 h-5" />
                             </div>
                             <div className="card-content">
                                 <h3>{item.title}</h3>
                                 <p className="card-value">{item.value}</p>
                             </div>
-                        </Box>
-                    </Tooltip>
-                ))
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                                {item.tooltip}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover" />
+                            </div>
+                        </motion.div>
+                    );
+                })
             )}
         </div>
     );

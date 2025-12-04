@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faHeart, faComment } from '@fortawesome/free-solid-svg-icons';
 import EducationRenderer from './educationRenderer';
 import EducationImageGallery from './educationImageGallery';
-import './styles/educationModalStyles.css';
+
 
 const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
   const [showGallery, setShowGallery] = useState(false);
@@ -50,9 +50,9 @@ const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
           <div className="modal-meta">
             <div className="author-info">
               {education.author.profileImage && (
-                <img 
-                  src={education.author.profileImage} 
-                  alt={education.author.username} 
+                <img
+                  src={education.author.profileImage}
+                  alt={education.author.username}
                   className="author-avatar"
                 />
               )}
@@ -70,10 +70,10 @@ const EducationFullDetailModal = ({ education, isOpen, onClose, onLike }) => {
           <div className="modal-body">
             <EducationRenderer content={education.details} />
           </div>
-          
+
           <div className="modal-footer">
             <div className="interaction-stats">
-              <button 
+              <button
                 className={`like-button ${education.isLiked ? 'liked' : ''}`}
                 onClick={() => onLike(education.id)}
               >

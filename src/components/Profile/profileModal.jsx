@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import './styles/profileModal.css';
+
 
 const ProfileModal = ({ isOpen, onClose, title, children }) => {
     useEffect(() => {
@@ -29,7 +29,7 @@ const ProfileModal = ({ isOpen, onClose, title, children }) => {
             <div className="profile-modal">
                 <div className="profile-modal-header">
                     <h2>{title}</h2>
-                    <button 
+                    <button
                         className="profile-modal-close"
                         onClick={onClose}
                         aria-label="Close"

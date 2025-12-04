@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
-import './styles/educationSearchBarStyles.css';
+import { Search } from 'lucide-react';
+import { Input } from '../ui/Input';
 
 const EducationSearchBar = ({ onSearch }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const handleSearch = () => {
+    const handleSearch = (e) => {
+        e.preventDefault();
         onSearch(searchTerm);
     };
 
     return (
-        <div className="educationSearchBar">
-            <input className="educationSearchInput"
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search Posts..."
-            />
-            <button className="educationSearchButton" onClick={handleSearch}>Search</button>
-        </div>
+        <form onSubmit={handleSearch} className="relative max-w-md">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search educational posts..."
+                    className="pl-10"
+                />
+            </div>
+        </form>
     );
 };
 

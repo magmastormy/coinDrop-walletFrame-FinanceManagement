@@ -1,36 +1,29 @@
 import React from 'react';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../theme/ThemeContext';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 
 const ThemeToggle = () => {
     const { theme, isDarkMode, toggleTheme } = useTheme();
 
-    const buttonStyle = {
-        color: theme.text.primary,
-        backgroundColor: theme.button.base + '20',
-        '&:hover': {
-            backgroundColor: theme.button.hover + '30',
-        },
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-    };
-
     return (
-        <Tooltip title={`Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode`} placement="right">
-            <IconButton
-                onClick={toggleTheme}
-                sx={buttonStyle}
-            >
-                <FontAwesomeIcon 
-                    icon={isDarkMode ? faSun : faMoon} 
-                    style={{ fontSize: '1.2rem' }}
-                />
-            </IconButton>
-        </Tooltip>
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className={cn(
+                "w-10 h-10 rounded-full transition-all",
+                "hover:bg-white/10 hover:scale-110"
+            )}
+            aria-label={`Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode`}
+        >
+            {isDarkMode ? (
+                <Sun className="w-5 h-5 text-foreground" />
+            ) : (
+                <Moon className="w-5 h-5 text-foreground" />
+            )}
+        </Button>
     );
 };
 

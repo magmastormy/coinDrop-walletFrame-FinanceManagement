@@ -14,7 +14,7 @@ import {
 } from 'chart.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import './styles/chartStyles.css';
+
 
 ChartJS.register(
     CategoryScale,
@@ -38,7 +38,7 @@ const ExpensesOverTimeLineChart = ({ transactions = [], categories = [], loading
 
     const prepareChartData = () => {
         // Sort transactions by date
-        const sortedTransactions = [...transactions].sort((a, b) => 
+        const sortedTransactions = [...transactions].sort((a, b) =>
             new Date(a.date) - new Date(b.date)
         );
 
@@ -46,7 +46,7 @@ const ExpensesOverTimeLineChart = ({ transactions = [], categories = [], loading
         const monthlyExpenses = sortedTransactions.reduce((acc, transaction) => {
             const date = new Date(transaction.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            
+
             if (!acc[monthKey]) {
                 acc[monthKey] = 0;
             }
@@ -137,7 +137,7 @@ const ExpensesOverTimeLineChart = ({ transactions = [], categories = [], loading
     };
 
     return (
-        <motion.div 
+        <motion.div
             className="chart-container"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

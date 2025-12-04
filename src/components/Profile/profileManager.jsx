@@ -1,18 +1,14 @@
 import React from 'react';
 import UserProfileDetails from './userProfileDetails';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-
 
 const Profile = () => {
     return (
-        <Box sx={{ p: 2 }}>
-            <Typography variant="h4" gutterBottom>Your Profile</Typography>
-            <Paper sx={{ p: 2 }}>
+        <div className="p-6 space-y-6">
+            <h1 className="text-3xl font-bold text-foreground">Your Profile</h1>
+            <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
                 <UserProfileDetails />
-            </Paper>
-        </Box>
+            </div>
+        </div>
     );
 };
 

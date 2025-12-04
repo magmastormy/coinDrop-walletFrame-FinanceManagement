@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import './styles/editTransactionModalStyles.css';
+import Modal from '../ui/Modal';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 
 const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets = [], savingsAccounts = [], budgets = [], categories = [] }) => {
     if (!isOpen || !transaction) return null;
@@ -30,100 +32,123 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h2>Edit Transaction</h2>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Date</label>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Amount</label>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Type</label>
-                        <select value={type} onChange={e => setType(e.target.value)}>
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Category</label>
-                        <select value={category} onChange={e => setCategory(e.target.value)}>
-                            <option value="">Select a category</option>
-                            {categories.map(cat => (
-                                <option key={cat._id} value={cat._id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Description</label>
-                        <input
-                            type="text"
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Wallet</label>
-                        <select
-                            value={walletId}
-                            onChange={e => {
-                                setWalletId(e.target.value);
-                                setSavingsAccountId('');
-                            }}
-                        >
-                            <option value="">Select a wallet</option>
-                            {wallets.map(wallet => (
-                                <option key={wallet._id} value={wallet._id}>{wallet.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Savings Account</label>
-                        <select
-                            value={savingsAccountId}
-                            onChange={e => {
-                                setSavingsAccountId(e.target.value);
-                                setWalletId('');
-                            }}
-                        >
-                            <option value="">Select a savings account</option>
-                            {savingsAccounts.map(account => (
-                                <option key={account._id} value={account._id}>{account.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Budget</label>
-                        <select
-                            value={budgetId}
-                            onChange={e => setBudgetId(e.target.value)}
-                        >
-                            <option value="">Select a budget</option>
-                            {budgets.map(budget => (
-                                <option key={budget._id} value={budget._id}>{budget.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <button type="submit">Update Transaction</button>
-                    <button type="button" onClick={onClose}>Cancel</button>
-                </form>
-            </div>
-        </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Edit Transaction"
+            maxWidth="max-w-md"
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                    label="Date"
+                    type="date"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    required
+                />
+
+                <Input
+                    label="Amount"
+                    type="number"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                />
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <select
+                        value={type}
+                        onChange={e => setType(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Category</label>
+                    <select
+                        value={category}
+                        onChange={e => setCategory(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="">Select a category</option>
+                        {categories.map(cat => (
+                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <Input
+                    label="Description"
+                    type="text"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                />
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Wallet</label>
+                    <select
+                        value={walletId}
+                        onChange={e => {
+                            setWalletId(e.target.value);
+                            setSavingsAccountId('');
+                        }}
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="">Select a wallet</option>
+                        {wallets.map(wallet => (
+                            <option key={wallet._id} value={wallet._id}>{wallet.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Savings Account</label>
+                    <select
+                        value={savingsAccountId}
+                        onChange={e => {
+                            setSavingsAccountId(e.target.value);
+                            setWalletId('');
+                        }}
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="">Select a savings account</option>
+                        {savingsAccounts.map(account => (
+                            <option key={account._id} value={account._id}>{account.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Budget</label>
+                    <select
+                        value={budgetId}
+                        onChange={e => setBudgetId(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                    >
+                        <option value="">Select a budget</option>
+                        {budgets.map(budget => (
+                            <option key={budget._id} value={budget._id}>{budget.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <Button variant="ghost" onClick={onClose} type="button">
+                        Cancel
+                    </Button>
+                    <Button type="submit">
+                        Update Transaction
+                    </Button>
+                </div>
+            </form>
+        </Modal>
     );
 };
 

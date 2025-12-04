@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { Mail, User, Lock, Eye, EyeOff, Loader } from 'lucide-react';
 import authService, { AUTH_ERRORS } from '../../services/authService';
-import './styles/loginStyles.css';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { GlassCard } from '../ui/GlassCard';
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
@@ -13,6 +17,8 @@ const ForgotPassword = () => {
         confirmPassword: ''
     });
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,7 +30,7 @@ const ForgotPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (formData.newPassword !== formData.confirmPassword) {
             toast.error(AUTH_ERRORS.PASSWORD_MISMATCH);
             return;
@@ -45,7 +51,7 @@ const ForgotPassword = () => {
             toast.error(AUTH_ERRORS.VALIDATION_ERROR);
             return;
         }
-        
+
         try {
             setLoading(true);
             await authService.forgotPassword(formData);
@@ -59,84 +65,135 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div className="login-container">
-            <div className="login-card">
-                <h2 className="login-title">Reset Your Password</h2>
-                <form className="login-form" onSubmit={handleSubmit}>
-                    <div className="login-form-field">
-                        <label htmlFor="email">Email Address</label>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            required
-                            className="login-input"
-                            placeholder="Enter your email"
-                            value={formData.email}
-                            onChange={handleChange}
-                        />
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-background/80">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="w-full max-w-md"
+            >
+                <GlassCard className="p-8">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-foreground mb-2">Reset Your Password</h1>
+                        <p className="text-muted-foreground">Enter your details to reset your password</p>
                     </div>
-                    <div className="login-form-field">
-                        <label htmlFor="lastName">Last Name</label>
-                        <input
-                            id="lastName"
-                            name="lastName"
-                            type="text"
-                            required
-                            className="login-input"
-                            placeholder="Enter your last name"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className="login-form-field">
-                        <label htmlFor="newPassword">New Password</label>
-                        <input
-                            id="newPassword"
-                            name="newPassword"
-                            type="password"
-                            required
-                            className="login-input"
-                            placeholder="Enter new password"
-                            value={formData.newPassword}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <div className="login-form-field">
-                        <label htmlFor="confirmPassword">Confirm Password</label>
-                        <input
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            type="password"
-                            required
-                            className="login-input"
-                            placeholder="Confirm new password"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className={`login-submit-button ${loading ? 'button-disabled' : ''}`}
-                    >
-                        {loading ? 'Resetting Password...' : 'Reset Password'}
-                    </button>
-                </form>
-                <div className="login-footer">
-                    <p className="login-signup-link">
-                        Remember your password?{' '}
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="login-link"
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="text-sm font-medium text-foreground">
+                                Email Address
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    placeholder="Enter your email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                                Last Name
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="lastName"
+                                    name="lastName"
+                                    type="text"
+                                    required
+                                    placeholder="Enter your last name"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="newPassword" className="text-sm font-medium text-foreground">
+                                New Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="newPassword"
+                                    name="newPassword"
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    placeholder="Enter new password"
+                                    value={formData.newPassword}
+                                    onChange={handleChange}
+                                    className="pl-10 pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                                Confirm Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <Input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    required
+                                    placeholder="Confirm new password"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    className="pl-10 pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full gap-2"
                         >
-                            Back to Login
-                        </button>
-                    </p>
-                </div>
-            </div>
+                            {loading && <Loader className="w-4 h-4 animate-spin" />}
+                            {loading ? 'Resetting Password...' : 'Reset Password'}
+                        </Button>
+                    </form>
+
+                    <div className="mt-6 text-center text-sm">
+                        <p className="text-muted-foreground">
+                            Remember your password?{' '}
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="text-primary hover:underline font-medium"
+                            >
+                                Back to Login
+                            </button>
+                        </p>
+                    </div>
+                </GlassCard>
+            </motion.div>
         </div>
     );
 };
 
-export default ForgotPassword; 
+export default ForgotPassword;
