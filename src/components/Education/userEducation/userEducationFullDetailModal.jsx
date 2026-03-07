@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
 import { useTheme } from '../../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
-import SafeHtml from '../../common/SafeHtml';
+import SafeHtml from '../../Common/SafeHtml';
 
 
 // Create a portal container for the modal

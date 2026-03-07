@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import TransactionCard from '../Transaction/TransactionCard';
+import TransactionCard from '../Transaction/transactionCard';
 import { cn } from '../../lib/utils';
 
 const BudgetTransactionList = ({ transactions, budget }) => {
