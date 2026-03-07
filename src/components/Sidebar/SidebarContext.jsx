@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 // Create and export the context
 export const SidebarContext = createContext();
@@ -9,7 +9,7 @@ export const SidebarProvider = ({ children }) => {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 1024);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -24,10 +24,40 @@ export const SidebarProvider = ({ children }) => {
     }
   }, [isMobile]);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [isMobile, isSidebarOpen]);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, []);
+
+  const openSidebar = useCallback(() => {
+    setIsSidebarOpen(true);
+  }, []);
+
+  const value = useMemo(() => ({
+    isSidebarOpen,
+    isMobile,
+    toggleSidebar,
+    closeSidebar,
+    openSidebar
+  }), [closeSidebar, isMobile, isSidebarOpen, openSidebar, toggleSidebar]);
 
   return (
-    <SidebarContext.Provider value={{ isSidebarOpen, toggleSidebar, isMobile }}>
+    <SidebarContext.Provider value={value}>
       {children}
     </SidebarContext.Provider>
   );

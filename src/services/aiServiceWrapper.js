@@ -1,7 +1,7 @@
 import zhipuaiModelService from './zhipuaiModelService';
 import aiResponseCache from '../utils/aiResponseCache';
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = import.meta.env.DEV;
 
 /**
  * Circuit Breaker wrapper for AI service

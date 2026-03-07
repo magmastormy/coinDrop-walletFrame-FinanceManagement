@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
-import { GraduationCap, Edit, Heart, School } from 'lucide-react';
+import { GraduationCap, Edit, Heart } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { cn } from '../../lib/utils';
 
-const EducationNavBar = ({ onCategorySelect, activeCategory }) => {
+const EducationNavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useSelector(state => state.auth);

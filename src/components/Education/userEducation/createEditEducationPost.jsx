@@ -19,9 +19,8 @@ import { toast } from 'react-toastify';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
-    if (!editor) return null;
-
     const fileInputRef = useRef(null);
+    if (!editor) return null;
 
     const handleImageClick = (e) => {
         e.preventDefault();

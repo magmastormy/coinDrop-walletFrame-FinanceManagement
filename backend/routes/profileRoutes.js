@@ -44,16 +44,11 @@ const profileValidation = [
 router.use(authMiddleware);
 
 // Profile routes
-router.get('/:userId', ProfileController.getProfile);
-router.put('/', ProfileController.updateProfile);
-
-router.post('/:userId', ProfileController.createProfile);
-router.get('/:userId/followers', ProfileController.getFollowers);
-router.get('/:userId/following', ProfileController.getFollowing);
-
-router.delete('/:userId', ProfileController.deleteProfile);
-
-router.post('/:userId/upload-image', upload.single('image'), ProfileController.uploadProfileImage);
-router.delete('/:userId/delete-image', ProfileController.deleteProfileImage);
+router.get('/me', ProfileController.getProfile);
+router.post('/me', ProfileController.createProfile);
+router.put('/me', ProfileController.updateProfile);
+router.delete('/me', ProfileController.deleteProfile);
+router.post('/me/upload-image', upload.single('image'), ProfileController.uploadProfileImage);
+router.delete('/me/delete-image', ProfileController.deleteProfileImage);
 
 module.exports = router;

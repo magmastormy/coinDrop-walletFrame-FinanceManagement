@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import {useAuth} from '../../contexts/authContext';
+import {useAuth} from '../../contexts/AuthContext';
 import LoadingSpinner from '../../assets/loadingSpinner';
 
 const ProtectedRoute = ({children}) => {
@@ -11,8 +11,7 @@ const ProtectedRoute = ({children}) => {
 
     if (!isAuthenticated){
         console.log('ProtectedRoute - No user authenticated, redirecting to Login.');
-
-        <Navigate to="/login" replace/>
+        return <Navigate to="/login" replace/>;
     }
 
     console.log("ProtectedRoute - rendering protected content");
@@ -20,3 +19,4 @@ const ProtectedRoute = ({children}) => {
 };
 
 export default ProtectedRoute;
+

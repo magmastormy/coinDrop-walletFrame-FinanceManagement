@@ -3,15 +3,17 @@ const aiClient = require('../services/aiClient');
 const contextService = require('../services/zhipuaiContextService');
 const questionAnalyzer = require('../services/questionAnalyzer');
 const enhancedContextFormatter = require('../services/formatters/enhancedContextFormatter');
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const isDev = process.env.NODE_ENV !== 'production';
 
 const analyzeUserActivity = async (transactions, budgets) => {
     try {
-        console.log(`analyzeUserActivity: Analyzing ${transactions.length} transactions and ${budgets.length} budgets`);
+        if (isDev) console.log(`analyzeUserActivity: Analyzing ${transactions.length} transactions and ${budgets.length} budgets`);
         
         const insights = [];
         
         if (!transactions || transactions.length === 0) {
-            console.log('analyzeUserActivity: No transactions to analyze');
+            if (isDev) console.log('analyzeUserActivity: No transactions to analyze');
             insights.push("We don't have enough transaction data to provide insights yet. Try adding some transactions.");
             return insights;
         }
@@ -20,7 +22,7 @@ const analyzeUserActivity = async (transactions, budgets) => {
         const categorySpending = {};
         const expenseTransactions = transactions.filter(t => t.type === 'expense');
         
-        console.log(`analyzeUserActivity: Found ${expenseTransactions.length} expense transactions`);
+        if (isDev) console.log(`analyzeUserActivity: Found ${expenseTransactions.length} expense transactions`);
         
         // Group by category
         expenseTransactions.forEach(t => {
@@ -118,7 +120,7 @@ const analyzeUserActivity = async (transactions, budgets) => {
             }
         }
         
-        console.log(`analyzeUserActivity: Generated ${insights.length} insights`);
+        if (isDev) console.log(`analyzeUserActivity: Generated ${insights.length} insights`);
         return insights;
     } catch (error) {
         console.error('Error in analyzeUserActivity:', error);
@@ -169,27 +171,18 @@ const findUpcomingBills = async (userId, startDate, endDate) => {
 
 exports.sendMessage = async (req, res, next) => {
     try {
-        const { messages, userId: bodyUserId } = req.body;
+        const { messages } = req.body;
         if (!Array.isArray(messages)) {
             return res.status(400).json({ error: 'Messages must be an array' });
         }
 
-        // Use userId from JWT token, request body, or params in that order of preference
-        const userId = req.user?._id || bodyUserId || req.params.userId;
-        console.log(`[ZhipuaiController - sendMessage] Processing request for user: ${userId}`);
-        console.log(`[ZhipuaiController - sendMessage] User ID sources: JWT=${!!req.user?._id}, Body=${!!bodyUserId}, Params=${!!req.params.userId}`);
+        const userId = getAuthenticatedUserId(req);
+        if (isDev) console.log('[ZhipuaiController - sendMessage] Processing request');
         
         if (!userId) {
             console.error('[ZhipuaiController - sendMessage] No user ID available from any source');
             return res.status(400).json({ error: 'User ID is required' });
         }
-        
-        // Add detailed debug logging for user info
-        console.log(`[ZhipuaiController - DEBUG] User object:`, JSON.stringify({
-            id: userId,
-            auth: !!req.user,
-            headers: req.headers['authorization'] ? 'Auth header present' : 'No auth header'
-        }));
         
         // Determine the type of query to better format the context
         const userMsgs = messages.filter(m => m.role === 'user');
@@ -199,11 +192,11 @@ exports.sendMessage = async (req, res, next) => {
         
         const lastUser = userMsgs[userMsgs.length - 1];
         const userMessage = lastUser.content;
-        console.log(`[ZhipuaiController - sendMessage] User message: "${lastUser.content.substring(0, 50)}${lastUser.content.length > 50 ? '...' : ''}"`);
+        if (isDev) console.log(`[ZhipuaiController - sendMessage] Received message (${userMessage.length} chars)`);
         
         // Analyze the question using the question analyzer
         const questionAnalysis = questionAnalyzer.analyzeQuestion(userMessage);
-        console.log(`[ZhipuaiController - sendMessage] Question analysis: ${JSON.stringify({
+        if (isDev) console.log(`[ZhipuaiController - sendMessage] Question analysis: ${JSON.stringify({
             isMultiPart: questionAnalysis.isMultiPart,
             parts: questionAnalysis.parts.length,
             specificDataRequests: Object.entries(questionAnalysis.specificDataRequests)
@@ -255,25 +248,25 @@ exports.sendMessage = async (req, res, next) => {
         
         // Update financial query detection to include transaction, budget, and savings terms
         if (hasTransactionTerms) {
-            console.log(`[ZhipuaiController - sendMessage] Detected transaction terms, treating as financial query`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected transaction terms, treating as financial query`);
             isFinancialQuery = true;
         }
         
         // Ensure savings-related queries always get appropriate context
         if (hasSavingsTerms || questionAnalysis.specificDataRequests.savingsGoals || questionAnalysis.specificDataRequests.savingsAdvice) {
-            console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
             isFinancialQuery = true;
             isSavingsQuery = true;
         }
         
         if (hasBudgetTerms) {
-            console.log(`[ZhipuaiController - sendMessage] Detected budget terms, treating as financial query`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected budget terms, treating as financial query`);
             isFinancialQuery = true;
             isBudgetQuery = true;
         }
         
         if (hasSavingsTerms) {
-            console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
             isFinancialQuery = true;
             isSavingsQuery = true;
         }
@@ -288,8 +281,8 @@ exports.sendMessage = async (req, res, next) => {
                            !hasSpecificDataRequests && 
                            !hasTransactionTerms;
         
-        console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
-        console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
+        if (isDev) console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
+        if (isDev) console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
         
         let prompt = '';
         // Initialize ctx variable with an empty object
@@ -297,7 +290,7 @@ exports.sendMessage = async (req, res, next) => {
         
         // Skip context for general greetings or very short non-financial messages
         if (skipContext) {
-            console.log(`[ZhipuaiController - sendMessage] Skipping context for general message`);
+            if (isDev) console.log('[ZhipuaiController - sendMessage] Skipping context for general message');
             // Use a minimal prompt that allows broader thinking
             prompt = `You are a helpful financial assistant for the CoinDrip application. 
 For this message, no specific financial context is needed. 
@@ -308,24 +301,26 @@ If the user is asking about general topics unrelated to finance, you can provide
 If the user is asking about your capabilities, explain that you're an AI assistant specialized in financial matters but can also help with general questions.`;
         } else {
             // Fetch user context from database for financial queries
-            console.log(`[ZhipuaiController - DEBUG] About to fetch context for user ID: ${userId}`);
+            if (isDev) console.log('[ZhipuaiController - sendMessage] Fetching context');
             
-            try {
+            if (isDev) {
+                try {
                 // Check if user exists in database
                 const User = require('../models/User');
                 const userExists = await User.findById(userId);
-                console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
+                if (isDev) console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
                 
                 if (!userExists) {
                     console.error(`[ZhipuaiController - ERROR] User with ID ${userId} not found in database`);
                 }
-            } catch (dbError) {
+                } catch (dbError) {
                 console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
+                }
             }
             
             // Fixed variable shadowing issue by using the existing ctx variable
             ctx = await contextService.getContext(userId);
-            console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
+            if (isDev) console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
                 JSON.stringify({
                     budgets: ctx.budgets?.length || 0,
                     wallets: ctx.wallets?.length || 0,
@@ -335,18 +330,18 @@ If the user is asking about your capabilities, explain that you're an AI assista
                 }));
 
             // Check for missing data and log database information
-            if (!ctx.budgets || ctx.budgets.length === 0) {
-                console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
+            if (isDev && (!ctx.budgets || ctx.budgets.length === 0)) {
+                if (isDev) console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
                 try {
                     const Budget = require('../models/Budget');
                     const budgetCount = await Budget.countDocuments({ userId });
-                    console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
+                    if (isDev) console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
                     
                     // Sample a budget document to check if userId field matches expected format
                     const sampleBudget = await Budget.findOne({}).lean();
                     if (sampleBudget) {
-                        console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
-                        console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
+                        if (isDev) console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
+                        if (isDev) console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
                     }
                 } catch (dbError) {
                     console.error(`[ZhipuaiController - DEBUG] Database check error: ${dbError.message}`);
@@ -370,7 +365,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
             
             // Use enhanced context formatter for better handling of specific data requests
             if (hasSpecificDataRequests || questionAnalysis.isMultiPart) {
-                console.log(`[ZhipuaiController - sendMessage] Using enhanced context formatter for specific data requests`);
+                if (isDev) console.log(`[ZhipuaiController - sendMessage] Using enhanced context formatter for specific data requests`);
                 prompt = enhancedContextFormatter.formatEnhancedContext(ctx, formatType, questionAnalysis);
                 
                 // Add any additional context based on question analysis
@@ -378,7 +373,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
                     const additionalContext = questionAnalyzer.generateAdditionalContext(questionAnalysis, ctx);
                     if (additionalContext && additionalContext.length > 0) {
                         prompt += '\n\n' + additionalContext;
-                        console.log(`[ZhipuaiController - sendMessage] Added ${additionalContext.length} chars of additional context`);
+                        if (isDev) console.log(`[ZhipuaiController - sendMessage] Added ${additionalContext.length} chars of additional context`);
                     }
                 } catch (error) {
                     console.error(`[ZhipuaiController - sendMessage] Error generating additional context: ${error.message}`);
@@ -387,7 +382,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
                 // Use standard formatter for simple queries
                 prompt = contextService.formatContext(ctx, formatType);
             }
-            console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
         }
         
         // Add a directive to encourage broader thinking beyond the immediate context
@@ -397,7 +392,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
         // Enhance the prompt with question-specific instructions if needed
         if (!skipContext && (questionAnalysis.isMultiPart || hasSpecificDataRequests)) {
             systemPrompt = questionAnalyzer.enhancePrompt(systemPrompt, questionAnalysis);
-            console.log(`[ZhipuaiController - sendMessage] Enhanced prompt with question-specific instructions`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] Enhanced prompt with question-specific instructions`);
         }
         
         const aiInput = [
@@ -405,7 +400,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
             { role: 'user', content: lastUser.content }
         ];
 
-        console.log("[ZhipuaiController - sendMessage] Sending request to AI service");
+        if (isDev) console.log("[ZhipuaiController - sendMessage] Sending request to AI service");
         
         try {
             // Add timeout to prevent hanging requests
@@ -417,13 +412,13 @@ If the user is asking about your capabilities, explain that you're an AI assista
             });
             
             const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]);
-            console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
+            if (isDev) console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
             
             // Check if response has already been sent before attempting to send another
             if (!res.headersSent) {
                 return res.json({ response: aiResponse, context: ctx });
             } else {
-                console.warn('[ZhipuaiController - sendMessage] Headers already sent, skipping response');
+                if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, skipping response');
                 return; // Return without sending another response
             }
         } catch (aiError) {
@@ -443,7 +438,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
                     });
                 }
             } else {
-                console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot send error response');
+                if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot send error response');
                 return; // Return without sending another response
             }
         }
@@ -454,7 +449,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
         if (!res.headersSent) {
             next(err);
         } else {
-            console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot forward error to middleware');
+            if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot forward error to middleware');
         }
     }
 };
@@ -463,7 +458,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
  * Helper function to enhance context data with additional calculations and information
  */
 async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, isSavingsQuery, isBillQuery }) {
-    console.log(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
+    if (isDev) console.log(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
     
     // Calculate if this is a general financial overview
     const isFinancialOverview = isBudgetQuery && isBalanceQuery;
@@ -473,16 +468,16 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
         // Double-check if budgets exist directly from the database
         const Budget = require('../models/Budget');
         const directBudgets = await Budget.find({ userId }).lean();
-        console.log(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
+        if (isDev) console.log(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
         if (directBudgets.length > 0) {
             ctx.budgets = directBudgets;
-            console.log("[enhanceContextData] Updated context with direct budgets");
+            if (isDev) console.log("[enhanceContextData] Updated context with direct budgets");
         }
     }
     
     // ALWAYS process transactions to improve expense data quality regardless of query type
     try {
-        console.log("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
+        if (isDev) console.log("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
         
         const firstOfMonth = new Date();
         firstOfMonth.setDate(1);
@@ -494,7 +489,7 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             userId
         }).populate('category', 'name').sort({ date: -1 }).limit(50);
         
-        console.log(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
+        if (isDev) console.log(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
         
         // Store all transactions for UI display
         ctx.allTransactions = transactions;
@@ -509,11 +504,11 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             }
         });
         
-        console.log(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
+        if (isDev) console.log(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
         
         // Calculate spent amount for each budget
         if (ctx.budgets && ctx.budgets.length > 0) {
-            console.log("[enhanceContextData] Processing budget data with transactions");
+            if (isDev) console.log("[enhanceContextData] Processing budget data with transactions");
             ctx.budgets = ctx.budgets.map(budget => {
                 // Handle if budget is already a plain object from lean() query
                 const budgetObj = typeof budget.toObject === 'function' ? budget.toObject() : budget;
@@ -554,7 +549,7 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
     
     // Enhance wallet data if needed
     if (isBalanceQuery && ctx.wallets) {
-        console.log("[enhanceContextData] Processing wallet data");
+        if (isDev) console.log("[enhanceContextData] Processing wallet data");
         // Add more details to wallets if needed
         ctx.wallets = ctx.wallets.map(wallet => {
             const walletObj = typeof wallet.toObject === 'function' ? wallet.toObject() : wallet;
@@ -567,7 +562,7 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
     
     // Always process savings goals to ensure data is properly formatted
     if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
-        console.log("[enhanceContextData] Processing savings goals");
+        if (isDev) console.log("[enhanceContextData] Processing savings goals");
         ctx.savingsGoals = ctx.savingsGoals.map(goal => {
             const goalObj = typeof goal.toObject === 'function' ? goal.toObject() : goal;
             
@@ -605,11 +600,11 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             };
         });
         
-        console.log(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
+        if (isDev) console.log(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
     }
     
     // Log completion
-    console.log("[enhanceContextData] Data enhancement complete");
+    if (isDev) console.log("[enhanceContextData] Data enhancement complete");
     return ctx;
 }
 
@@ -685,8 +680,8 @@ function analyzeExpenses(transactions) {
 
 exports.getFinancialAdvice = async (req, res, next) => {
     try {
-        const userId = req.user._id || req.query.userId || req.user.userId;
-        console.log(`[getFinancialAdvice] Fetching financial data for user: ${userId}`);
+        const userId = getAuthenticatedUserId(req);
+        if (isDev) console.log('[getFinancialAdvice] Fetching financial data');
         
         const ctx = await contextService.getContext(userId);
         
@@ -699,10 +694,10 @@ exports.getFinancialAdvice = async (req, res, next) => {
         });
         
         const prompt = contextService.formatContext(ctx, 'full');
-        console.log(`[getFinancialAdvice] Prepared prompt (${prompt.length} chars), requesting AI advice`);
+        if (isDev) console.log(`[getFinancialAdvice] Prepared prompt (${prompt.length} chars), requesting AI advice`);
         
         const aiResponse = await aiClient.send([{ role: 'system', content: prompt }]);
-        console.log(`[getFinancialAdvice] Received AI response (${aiResponse.length} chars)`);
+        if (isDev) console.log(`[getFinancialAdvice] Received AI response (${aiResponse.length} chars)`);
 
         return res.json({ advice: aiResponse, context: ctx });
     } catch (err) {
@@ -714,7 +709,7 @@ exports.getFinancialAdvice = async (req, res, next) => {
 // Controller functions that use the above helpers
 exports.getProactiveInsights = async (req, res, next) => {
     try {
-        const userId = req.user._id || req.params.userId;
+        const userId = getAuthenticatedUserId(req);
         const ctx = await contextService.getContext(userId);
         const insights = await analyzeUserActivity(ctx.recentTransactions, ctx.budgets);
         return res.json({ insights });
@@ -725,12 +720,12 @@ exports.getProactiveInsights = async (req, res, next) => {
 
 exports.getUserAccountInfo = async (req, res, next) => {
     try {
-        const userId = req.user._id || req.params.userId;
-        console.log(`[getUserAccountInfo] Fetching account info for user: ${userId}`);
+        const userId = getAuthenticatedUserId(req);
+        if (isDev) console.log(`[getUserAccountInfo] Fetching account info for user: ${userId}`);
             
         // Fetch comprehensive user context
         const ctx = await contextService.getContext(userId);
-        console.log(`[getUserAccountInfo] Data retrieved: budgets=${ctx.budgets?.length || 0}, wallets=${ctx.wallets?.length || 0}`);
+        if (isDev) console.log(`[getUserAccountInfo] Data retrieved: budgets=${ctx.budgets?.length || 0}, wallets=${ctx.wallets?.length || 0}`);
             
         // Enhance all data for client-side consumption
         await enhanceContextData(ctx, userId, {
@@ -740,7 +735,7 @@ exports.getUserAccountInfo = async (req, res, next) => {
             isBillQuery: true
         });
             
-        console.log(`[getUserAccountInfo] Enhanced data complete, returning to client`);
+        if (isDev) console.log(`[getUserAccountInfo] Enhanced data complete, returning to client`);
         return res.json({ context: ctx });
     } catch (err) {
         console.error(`[getUserAccountInfo] Error:`, err);
@@ -750,15 +745,15 @@ exports.getUserAccountInfo = async (req, res, next) => {
 
 exports.getContextSuggestions = async (req, res, next) => {
     try {
-        const userId = req.user._id || req.params.userId;
-        console.log(`[getContextSuggestions] Generating suggestions for user: ${userId}`);
+        const userId = getAuthenticatedUserId(req);
+        if (isDev) console.log(`[getContextSuggestions] Generating suggestions for user: ${userId}`);
         
         // Fetch comprehensive context
         const ctx = await contextService.getContext(userId);
-        console.log(`[getContextSuggestions] Context loaded with ${ctx.budgets?.length || 0} budgets, ${ctx.wallets?.length || 0} wallets`);
+        if (isDev) console.log(`[getContextSuggestions] Context loaded with ${ctx.budgets?.length || 0} budgets, ${ctx.wallets?.length || 0} wallets`);
         
         if (!ctx.recentTransactions?.length) {
-            console.log(`[getContextSuggestions] No transaction history available`);
+            if (isDev) console.log(`[getContextSuggestions] No transaction history available`);
             return res.json({ suggestions: { generalAdvice: [
                 "We need more transaction history to provide personalized suggestions."
             ] } });
@@ -774,7 +769,7 @@ exports.getContextSuggestions = async (req, res, next) => {
         
         // Generate personalized suggestions based on enhanced data
         const suggestions = await contextService.generateContextSuggestions(ctx);
-        console.log(`[getContextSuggestions] Generated ${Object.keys(suggestions).length} suggestion categories`);
+        if (isDev) console.log(`[getContextSuggestions] Generated ${Object.keys(suggestions).length} suggestion categories`);
         
         const walletBalances = ctx.wallets.map(w => ({
             name: w.name, 
@@ -792,13 +787,13 @@ exports.getContextSuggestions = async (req, res, next) => {
 
 exports.getUserContext = async (req, res, next) => {
     try {
-        const userId = req.params.userId || req.user._id;
-        console.log(`[getUserContext] Fetching raw context for user: ${userId}`);
+        const userId = getAuthenticatedUserId(req);
+        if (isDev) console.log(`[getUserContext] Fetching raw context for user: ${userId}`);
         
         // Get raw context without enhancements for diagnostics/debugging
         const ctx = await contextService.getContext(userId);
         
-        console.log(`[getUserContext] Retrieved data overview: 
+        if (isDev) console.log(`[getUserContext] Retrieved data overview: 
             Budgets: ${ctx.budgets?.length || 0}
             Wallets: ${ctx.wallets?.length || 0}
             Transactions: ${ctx.recentTransactions?.length || 0}
@@ -807,11 +802,11 @@ exports.getUserContext = async (req, res, next) => {
         
         // If data is missing, log additional diagnostics
         if (!ctx.budgets || ctx.budgets.length === 0) {
-            console.log(`[getUserContext] WARNING: No budgets found for user ${userId}`);
+            if (isDev) console.log(`[getUserContext] WARNING: No budgets found for user ${userId}`);
             // Direct database check
             const Budget = require('../models/Budget');
             const directCount = await Budget.countDocuments({ userId });
-            console.log(`[getUserContext] Direct DB check: found ${directCount} budgets in database`);  
+            if (isDev) console.log(`[getUserContext] Direct DB check: found ${directCount} budgets in database`);  
         }
         
         return res.json(ctx);
@@ -833,3 +828,4 @@ module.exports = {
     findRecurringTransactionsAndDueDates,
     findUpcomingBills
 };
+

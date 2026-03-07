@@ -64,7 +64,15 @@ const UserRegistration = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error('❌ Registration failed:', err);
-            if (err.response?.data?.details) {
+            if (Array.isArray(err?.details)) {
+                err.details.forEach(error => {
+                    toast.error(error.msg || error.message || 'Validation error');
+                });
+            } else if (typeof err === 'string') {
+                toast.error(err);
+            } else if (err?.error) {
+                toast.error(err.error);
+            } else if (err.response?.data?.details) {
                 const errors = err.response.data.details;
                 errors.forEach(error => {
                     toast.error(error.msg);

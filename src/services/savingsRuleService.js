@@ -3,70 +3,40 @@ import axiosInstance from '../api/userAxios';
 const API_URL = '/savings-rules';
 
 const savingsRuleService = {
-    // Get all rules for a user
-    getUserRules: async (userId) => {
+    getUserRules: async () => {
         try {
-            if (!userId) {
-                throw new Error('UserId is required');
-            }
-            
-            const response = await axiosInstance.get(`${API_URL}/user/${userId}`);
-            return response.data || [];
+            const response = await axiosInstance.get(`${API_URL}/user`);
+            return Array.isArray(response) ? response : [];
         } catch (error) {
             console.error('Savings Rule Service - Error fetching rules:', error);
             return [];
         }
     },
 
-    // Create a new rule
-    createRule: async (ruleData) => {
-        try {
-            const response = await axiosInstance.post(API_URL, ruleData);
-            return response.data;
-        } catch (error) {
-            console.error('Savings Rule Service - Error creating rule:', error);
-            throw error;
-        }
+    createRule: async ruleData => {
+        const response = await axiosInstance.post(API_URL, ruleData);
+        return response;
     },
 
-    // Update a rule
     updateRule: async (ruleId, ruleData) => {
-        try {
-            const response = await axiosInstance.put(`${API_URL}/${ruleId}`, ruleData);
-            return response.data;
-        } catch (error) {
-            console.error('Savings Rule Service - Error updating rule:', error);
-            throw error;
-        }
+        const response = await axiosInstance.put(`${API_URL}/${ruleId}`, ruleData);
+        return response;
     },
 
-    // Delete a rule
-    deleteRule: async (ruleId) => {
-        try {
-            const response = await axiosInstance.delete(`${API_URL}/${ruleId}`);
-            return response.data;
-        } catch (error) {
-            console.error('Savings Rule Service - Error deleting rule:', error);
-            throw error;
-        }
+    deleteRule: async ruleId => {
+        const response = await axiosInstance.delete(`${API_URL}/${ruleId}`);
+        return response;
     },
 
-    // Execute rules for a transaction
-    executeRules: async (transactionData) => {
-        try {
-            const response = await axiosInstance.post(`${API_URL}/execute`, transactionData);
-            return response.data;
-        } catch (error) {
-            console.error('Savings Rule Service - Error executing rules:', error);
-            throw error;
-        }
+    executeRules: async transactionData => {
+        const response = await axiosInstance.post(`${API_URL}/execute`, transactionData);
+        return response;
     },
 
-    // Get rule statistics
-    getRuleStats: async (userId) => {
+    getRuleStats: async () => {
         try {
-            const response = await axiosInstance.get(`${API_URL}/stats/${userId}`);
-            return response.data;
+            const response = await axiosInstance.get(`${API_URL}/stats`);
+            return response || {};
         } catch (error) {
             console.error('Savings Rule Service - Error fetching rule stats:', error);
             return {};

@@ -3,6 +3,8 @@ const cloudinary = require('cloudinary').v2;
 const Image = require('../models/Image');
 const ImageService = require("../services/imageService");
 const fs = require('fs').promises;
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const { sanitizeHtml } = require('../utils/sanitizeHtml');
 class EducationController {
 
     static async uploadImage(req, res) {
@@ -11,7 +13,7 @@ class EducationController {
                 return res.status(400).json({ error: 'No image provided' });
             }
 
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             
             const image = await ImageService.uploadImage(
                 req.file, 
@@ -32,13 +34,13 @@ class EducationController {
 
     static async createEducation(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const { title, details, images, featuredImage } = req.body;
 
             const education = new Education({
                 title,
-                details,
+                details: sanitizeHtml(details),
                 author: userId,
                 images: images || [],
                 featuredImage: featuredImage,
@@ -75,7 +77,7 @@ class EducationController {
 
     static async getUserEducations(req, res) {
         try {
-            const userId = req.params.userId || req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const educations = await Education.find({ author: userId })
                 .populate('author', 'username firstName lastName profilePicture')
                 .populate('images')
@@ -114,8 +116,9 @@ class EducationController {
 
     static async updateEducation(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { title, details, category, images, featuredImage } = req.body;
-            const education = await Education.findById(req.params.id);
+            const education = await Education.findOne({ _id: req.params.id, author: userId });
             
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
@@ -131,8 +134,8 @@ class EducationController {
             }
 
             const updatedEducation = await Education.findByIdAndUpdate(
-                req.params.id,
-                { title, details, category, images, featuredImage },
+                education._id,
+                { title, details: sanitizeHtml(details), category, images, featuredImage },
                 { new: true }
             ).populate('author images featuredImage');
 
@@ -144,7 +147,8 @@ class EducationController {
 
     static async deleteEducation(req, res) {
         try {
-            const education = await Education.findById(req.params.id)
+            const userId = getAuthenticatedUserId(req);
+            const education = await Education.findOne({ _id: req.params.id, author: userId })
                 .populate('images')
                 .populate('featuredImage');
                 
@@ -171,8 +175,7 @@ class EducationController {
 
     static async likeEducation(req, res) {
         try {
-
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const education = await Education.findById(req.params.id);
             if (!education) {
@@ -199,7 +202,7 @@ class EducationController {
 
     static async addComment(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const education = await Education.findById(req.params.id);
             if (!education) {
@@ -221,6 +224,7 @@ class EducationController {
 
     static async deleteComment(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const education = await Education.findById(req.params.id);
             if (!education) {
                 return res.status(404).json({ error: 'Education post not found' });
@@ -228,6 +232,10 @@ class EducationController {
             const comment = education.comments.id(req.params.commentId);
             if (!comment) {
                 return res.status(404).json({ error: 'Comment not found' });
+            }
+            const isOwner = comment.user && comment.user.toString() === userId.toString();
+            if (!isOwner) {
+                return res.status(403).json({ error: 'Not authorized to delete this comment' });
             }
             comment.remove();
             await education.save();

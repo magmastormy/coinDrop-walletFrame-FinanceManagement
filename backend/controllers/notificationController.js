@@ -1,10 +1,11 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 // Get user notifications
 exports.getUserNotifications = async (req, res) => {
     try {
-        const userId = req.user._id || req.query.userId || req.user.userId;
+        const userId = getAuthenticatedUserId(req);
         const notifications = await Notification.find({ user: userId })
             .sort({ createdAt: -1 })
             .limit(50);
@@ -19,7 +20,8 @@ exports.getUserNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
     try {
         const notificationId = req.params.notificationId;
-        const notification = await Notification.findById(notificationId);
+        const userId = getAuthenticatedUserId(req);
+        const notification = await Notification.findOne({ _id: notificationId, user: userId });
         
         if (!notification) {
             return res.status(404).json({ message: 'Notification not found' });

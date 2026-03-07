@@ -24,8 +24,8 @@ const DataManager = ({ children }) => {
         dispatch(setLoading(true));
         try {
             const data = await budgetService.getUserBudgets(user.id);
-            setBudgetsState(data.budgets || []);
-            dispatch(setBudgets(data.budgets || []));
+            setBudgetsState(data || []);
+            dispatch(setBudgets(data || []));
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -50,7 +50,7 @@ const DataManager = ({ children }) => {
         dispatch(setLoading(true));
         try {
             const data = await walletService.getAllWallets(user.id);
-            setWalletsState(data.wallets || []);
+            setWalletsState(data || []);
         } catch (err) {
             dispatch(setError(err.message));
         } finally {

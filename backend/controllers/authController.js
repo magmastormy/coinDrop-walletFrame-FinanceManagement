@@ -1,14 +1,40 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const UserProfile = require('../models/UserProfile');
-const Category = require('../models/Category');
-const SavingsAccount = require('../models/SavingsAccount');
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 class AuthController {
+    static getAccessSecret() {
+        return process.env.JWT_SECRET;
+    }
+
+    static getRefreshSecret() {
+        return process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    }
+
+    static normalizeTokenStore(user) {
+        if (!Array.isArray(user.tokens)) {
+            user.tokens = [];
+        }
+    }
+
+    static addRefreshToken(user, refreshToken) {
+        this.normalizeTokenStore(user);
+        user.tokens.push({ token: refreshToken });
+    }
+
+    static revokeRefreshToken(user, refreshToken) {
+        this.normalizeTokenStore(user);
+        user.tokens = user.tokens.filter(item => item.token !== refreshToken);
+    }
+
+    static hasRefreshToken(user, refreshToken) {
+        this.normalizeTokenStore(user);
+        return user.tokens.some(item => item.token === refreshToken);
+    }
 
     // Helper to validate token format
     static isValidJWT = (token) => {
@@ -24,13 +50,13 @@ class AuthController {
     static generateTokens(userId, role) {
         const accessToken = jwt.sign(
             { userId, role },
-            process.env.JWT_SECRET,
+            this.getAccessSecret(),
             { expiresIn: '15m' }
         );
 
         const refreshToken = jwt.sign(
             { userId, role, type: 'refresh' },
-            process.env.JWT_SECRET,
+            this.getRefreshSecret(),
             { expiresIn: '7d' }
         );
 
@@ -43,11 +69,8 @@ class AuthController {
         session.startTransaction();
 
         try {
-            console.log('📝 Registration request received:', req.body);
-            
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                console.log('❌ Validation errors:', errors.array());
                 return res.status(400).json({ 
                     error: 'Validation failed',
                     details: errors.array() 
@@ -78,8 +101,6 @@ class AuthController {
                 });
             }
 
-            console.log('✅ No existing user found, creating new user...');
-
             // Create new user
             const user = new User({
                 username,
@@ -108,13 +129,13 @@ class AuthController {
                 createdAt: new Date()
             });
             await userProfile.save({ session });
-            console.log('✅ User profile created successfully');
+
+            const { accessToken, refreshToken } = AuthController.generateTokens(savedUser._id, savedUser.role);
+            AuthController.addRefreshToken(savedUser, refreshToken);
+            await savedUser.save({ session });
 
             await session.commitTransaction();
             session.endSession();
-
-            const { accessToken, refreshToken } = AuthController.generateTokens(savedUser._id, savedUser.role);
-            console.log('✅ Tokens generated successfully');
 
             res.status(201).json({
                 message: 'User registered successfully',
@@ -126,7 +147,7 @@ class AuthController {
                     lastName: savedUser.lastName,
                     role: savedUser.role
                 },
-                token: accessToken,
+                accessToken,
                 refreshToken
             });
 
@@ -174,16 +195,7 @@ class AuthController {
 
             const { email, password } = req.body;
 
-            console.log("AuthController.login - Request:", { email, password });
-
             const user = await User.findOne({ email }).select('+password');
-            
-            console.log("AuthController.login - User found:", { 
-                found: !!user,
-                userId: user?._id,
-                email: user?.email,
-                passwordHash: user?.password 
-            });
 
             if (!user) {
                 return res.status(401).json({ 
@@ -192,15 +204,7 @@ class AuthController {
                 });
             }
 
-            const isLegacyPassword = user.password.startsWith('$2a$10$hVNyxBKkgZv8EeNHz.r0ku');
             const isValidPassword = await bcrypt.compare(password, user.password);
-
-            console.log("AuthController.login - Password check:", {
-                isLegacyPassword,
-                isValidPassword,
-                passwordMatch: user.password === password,
-                bcryptMatch: await bcrypt.compare(password, user.password)
-            });
 
             if (!isValidPassword) {
                 if (user.password === password) {
@@ -215,16 +219,10 @@ class AuthController {
                 }
             }
 
-            console.log("AuthController.login - User authenticated:", { 
-                userId: user._id,
-                email: user.email,
-                role: user.role
-            });
-
             user.lastLogin = new Date();
-            await user.save();
-
             const { accessToken, refreshToken } = AuthController.generateTokens(user._id, user.role);
+            AuthController.addRefreshToken(user, refreshToken);
+            await user.save();
 
             res.json({
                 accessToken,
@@ -253,7 +251,6 @@ class AuthController {
         try {
             // Get the refresh token from the request
             const refreshToken = req.body.refreshToken || 
-                                req.cookies.refreshToken || 
                                 (req.headers.authorization && req.headers.authorization.split(' ')[1]);
             
             if (!refreshToken) {
@@ -275,7 +272,14 @@ class AuthController {
 
             try {
                 // Verify the token
-                const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+                const decoded = jwt.verify(refreshToken, AuthController.getRefreshSecret());
+                if (decoded.type !== 'refresh') {
+                    return res.status(401).json({
+                        error: 'Authentication failed',
+                        details: 'Invalid token type',
+                        code: 'INVALID_TOKEN_TYPE'
+                    });
+                }
                 
                 // Find the user
                 const user = await User.findById(decoded.userId);
@@ -289,7 +293,7 @@ class AuthController {
                 }
                 
                 // Check if refresh token is in the user's valid tokens
-                if (!user.refreshTokens.includes(refreshToken)) {
+                if (!AuthController.hasRefreshToken(user, refreshToken)) {
                     return res.status(401).json({
                         error: 'Authentication failed',
                         details: 'Invalid refresh token',
@@ -298,18 +302,25 @@ class AuthController {
                 }
                 
                 // Generate new tokens
-                const accessToken = this.generateAccessToken(user);
-                const newRefreshToken = this.generateRefreshToken(user);
+                const { accessToken, refreshToken: newRefreshToken } = AuthController.generateTokens(user._id, user.role);
                 
                 // Update user's refresh tokens (remove old, add new)
-                user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
-                user.refreshTokens.push(newRefreshToken);
+                AuthController.revokeRefreshToken(user, refreshToken);
+                AuthController.addRefreshToken(user, newRefreshToken);
                 await user.save();
                 
                 // Return new tokens
                 res.json({
                     accessToken,
-                    refreshToken: newRefreshToken
+                    refreshToken: newRefreshToken,
+                    user: {
+                        id: user._id,
+                        email: user.email,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        role: user.role,
+                        username: user.username
+                    }
                 });
             } catch (tokenError) {
                 // Handle specific JWT errors
@@ -371,6 +382,15 @@ class AuthController {
     // Logout User
     static async logout(req, res) {
         try {
+            const refreshToken = req.body.refreshToken || 
+                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+            if (refreshToken && req.user?.userId) {
+                const user = await User.findById(req.user.userId);
+                if (user) {
+                    AuthController.revokeRefreshToken(user, refreshToken);
+                    await user.save();
+                }
+            }
             res.json({ message: 'Logged out successfully' });
         } catch (error) {
             console.error('Logout error:', error);
@@ -431,7 +451,7 @@ class AuthController {
         try {
             const { currentPassword, newPassword } = req.body;
 
-            const user = await User.findById(req.user.userId);
+            const user = await User.findById(req.user.userId).select('+password');
             if (!user) {
                 return res.status(404).json({ 
                     error: 'Not found',
@@ -473,6 +493,13 @@ class AuthController {
     // Logout from all devices
     static async logoutAll(req, res) {
         try {
+            if (req.user?.userId) {
+                const user = await User.findById(req.user.userId);
+                if (user) {
+                    user.tokens = [];
+                    await user.save();
+                }
+            }
             res.json({ 
                 message: 'Logged out from all devices successfully' 
             });
@@ -507,40 +534,10 @@ class AuthController {
     }
 
     static async forgotPassword(req, res) {
-        try {
-            const { email, lastName, newPassword } = req.body;
-            
-            // Find user by email and last name
-            const user = await User.findOne({ email, lastName });
-            
-            if (!user) {
-                return res.status(404).json({
-                    error: 'User not found',
-                    details: 'No account matches the provided email and last name'
-                });
-            }
-            
-            // Hash the new password
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(newPassword, salt);
-            
-            // Update user's password
-            user.password = hashedPassword;
-            await user.save();
-            
-            // Log the password reset action
-            console.log(`Password reset completed for user: ${email}`);
-            
-            res.status(200).json({
-                message: 'Password has been reset successfully'
-            });
-        } catch (error) {
-            console.error('Password reset error:', error);
-            res.status(500).json({
-                error: 'Failed to reset password',
-                details: error.message
-            });
-        }
+        return res.status(410).json({
+            error: 'Password reset temporarily disabled',
+            details: 'This endpoint is disabled until a secure token-based reset flow is implemented.'
+        });
     }
 
 }

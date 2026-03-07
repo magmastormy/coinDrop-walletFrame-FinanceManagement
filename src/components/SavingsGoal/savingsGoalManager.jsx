@@ -45,11 +45,11 @@ const SavingsGoalManager = () => {
         try {
             setIsLoading(true);
             const [goalsData, walletsData] = await Promise.all([
-                savingsGoalService.getUserGoals(user.id),
-                walletService.getAllWallets(user.id)
+                savingsGoalService.getSavingsGoals(),
+                walletService.getAllWallets()
             ]);
-            setGoals(goalsData || []);
-            setWallets(walletsData || []);
+            setGoals(Array.isArray(goalsData) ? goalsData : []);
+            setWallets(Array.isArray(walletsData) ? walletsData : []);
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
@@ -59,10 +59,7 @@ const SavingsGoalManager = () => {
 
     const handleCreateGoal = async (goalData) => {
         try {
-            await savingsGoalService.createGoal({
-                ...goalData,
-                userId: user.id
-            });
+            await savingsGoalService.createSavingsGoal(goalData);
             fetchData();
         } catch (error) {
             console.error('Failed to create goal:', error);
@@ -71,7 +68,7 @@ const SavingsGoalManager = () => {
 
     const handleUpdateGoal = async (goalId, updates) => {
         try {
-            await savingsGoalService.updateGoal(goalId, updates);
+            await savingsGoalService.updateSavingsGoal(goalId, updates);
             fetchData();
         } catch (error) {
             console.error('Failed to update goal:', error);
@@ -81,7 +78,7 @@ const SavingsGoalManager = () => {
     const handleDeleteGoal = async (goalId) => {
         if (window.confirm('Are you sure you want to delete this goal?')) {
             try {
-                await savingsGoalService.deleteGoal(goalId);
+                await savingsGoalService.deleteSavingsGoal(goalId);
                 fetchData();
             } catch (error) {
                 console.error('Failed to delete goal:', error);
@@ -91,8 +88,13 @@ const SavingsGoalManager = () => {
 
     const handleContribute = async (goalId, amount, walletId) => {
         try {
-            const result = await savingsGoalService.contributeToGoal(goalId, amount, walletId);
-            if (result.goal.currentAmount >= result.goal.targetAmount) {
+            const result = await savingsGoalService.contributeToGoal(goalId, {
+                amount,
+                sourceType: 'wallet',
+                sourceId: walletId
+            });
+            const updatedGoal = result?.savingsGoal;
+            if (updatedGoal && updatedGoal.currentAmount >= updatedGoal.targetAmount) {
                 setShowConfetti(true);
                 setTimeout(() => setShowConfetti(false), 5000);
             }
@@ -179,3 +181,4 @@ const SavingsGoalManager = () => {
 };
 
 export default SavingsGoalManager;
+

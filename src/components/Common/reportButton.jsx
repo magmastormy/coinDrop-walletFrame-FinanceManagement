@@ -74,7 +74,7 @@ const ReportButton = ({
         // Poll for report completion
         const checkStatus = async () => {
           const statusResponse = await reportService.getReportStatus(response.reportId);
-          const status = statusResponse.data || statusResponse;
+          const status = statusResponse;
 
           console.log('Report status:', status);
 
@@ -182,8 +182,10 @@ const ReportErrorComponent = () => {
   );
 };
 
-export default () => (
+const ReportButtonWithBoundary = (props) => (
   <ErrorBoundary fallback={<ReportErrorComponent />}>
-    <ReportButton />
+    <ReportButton {...props} />
   </ErrorBoundary>
 );
+
+export default ReportButtonWithBoundary;

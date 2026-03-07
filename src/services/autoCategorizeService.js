@@ -1,15 +1,15 @@
-import axios from 'axios';
+import axiosInstance from '../api/userAxios';
 
 class AutoCategorizeService {
     constructor() {
-        this.baseURL = '/api/categories';
+        this.baseURL = '/categories';
         this.transactionPatterns = new Map();
     }
 
     async initializePatterns() {
         try {
-            const response = await axios.get(`${this.baseURL}/patterns`);
-            this.transactionPatterns = new Map(Object.entries(response.data));
+            const response = await axiosInstance.get(`${this.baseURL}/patterns`);
+            this.transactionPatterns = new Map(Object.entries(response || {}));
         } catch (error) {
             console.error('Failed to initialize categorization patterns:', error);
         }
@@ -17,12 +17,12 @@ class AutoCategorizeService {
 
     async suggestCategory(transaction) {
         try {
-            const response = await axios.post(`${this.baseURL}/suggest`, {
+            const response = await axiosInstance.post(`${this.baseURL}/suggest`, {
                 description: transaction.description,
                 amount: transaction.amount,
                 merchant: transaction.merchant
             });
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Failed to get category suggestion:', error);
             return null;
@@ -31,7 +31,7 @@ class AutoCategorizeService {
 
     async trainModel(transactions) {
         try {
-            await axios.post(`${this.baseURL}/train`, { transactions });
+            await axiosInstance.post(`${this.baseURL}/train`, { transactions });
         } catch (error) {
             console.error('Failed to train categorization model:', error);
         }
@@ -39,10 +39,10 @@ class AutoCategorizeService {
 
     async batchCategorize(transactions) {
         try {
-            const response = await axios.post(`${this.baseURL}/batch-categorize`, {
+            const response = await axiosInstance.post(`${this.baseURL}/batch-categorize`, {
                 transactions
             });
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Failed to batch categorize transactions:', error);
             return [];

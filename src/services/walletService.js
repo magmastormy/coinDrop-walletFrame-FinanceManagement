@@ -3,83 +3,54 @@ import axiosInstance from '../api/userAxios';
 const API_URL = '/wallets';
 
 const walletService = {
-    getAllWallets: async (userId) => {
+    getAllWallets: async () => {
         try {
-            if (!userId) {
-                throw new Error('UserId is required');
-            }
-            
-            const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-            //TO DO & FIX Return the wallets array from response data
-            //console.log("Wallet Service - getAllWallet response: ", response);
+            const response = await axiosInstance.get(API_URL);
             return response.wallets || [];
         } catch (error) {
             console.error('Wallet Service - Error fetching wallets:', error);
-            // Return empty array on error
             return [];
         }
     },
-    getWalletBudgets: async (walletId) => {
+
+    getWalletBudgets: async walletId => {
         try {
             const response = await axiosInstance.get(`${API_URL}/${walletId}/budgets`);
-            //console.log("[walletService: get Wallet budgets] response: ", response);
-            return response;
+            return response.budgets || [];
         } catch (error) {
             console.error('Error fetching wallet budgets:', error);
             throw error;
         }
     },
 
-    createWallet: async (walletData) => {
-        const response = await axiosInstance.post(`${API_URL}`, walletData);
-        //console.log("[walletService: create Wallet] response: ", response);
-        return response.data;
+    createWallet: async walletData => {
+        const response = await axiosInstance.post(API_URL, walletData);
+        return response.wallet;
     },
 
     updateWallet: async (id, walletData) => {
-        try {
-            const response = await axiosInstance.put(`${API_URL}/${id}`, walletData);
-            console.log("[walletService: update Wallet] response: ", response);
-            return response.wallet;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.put(`${API_URL}/${id}`, walletData);
+        return response.wallet;
     },
 
     deleteWallet: async (id, transferToWalletId = null) => {
-        try {
-            const url = `${API_URL}/${id}`;
-            const config = transferToWalletId ? {
-                data: { transferToWalletId }
-            } : {};
-            
-            const response = await axiosInstance.delete(url, config);
-            console.log("[walletService: delete Wallet] response: ", response);
-            return response;
-        } catch (error) {
-            console.error('[walletService: delete Wallet] Error:', error);
-            throw error;
-        }
+        const config = transferToWalletId ? { data: { transferToWalletId } } : {};
+        const response = await axiosInstance.delete(`${API_URL}/${id}`, config);
+        return response;
     },
 
     getWalletStats: async () => {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        //console.log("[walletService: getWalletStats] response: ", response);
-        return response;
+        return response.stats || [];
     },
 
     transferBetweenWallets: async (fromWalletId, toWalletId, amount) => {
-        try {
-            const response = await axiosInstance.post(`${API_URL}/transfer`, {
-                fromWalletId,
-                toWalletId,
-                amount
-            });
-            //console.log("[walletService: transfer between Wallets] response: ", response);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await axiosInstance.post(`${API_URL}/transfer`, {
+            fromWalletId,
+            toWalletId,
+            amount
+        });
+        return response;
     }
 };
 

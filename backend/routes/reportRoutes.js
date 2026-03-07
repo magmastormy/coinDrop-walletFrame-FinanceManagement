@@ -6,6 +6,7 @@ const Report = require('../models/Report');
 const ReportController = require('../controllers/reportController');
 const { readFileToBuffer } = require('../utils/fileUtils');
 const PDFDocument = require('pdfkit');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 const getGlobalReportData = async (userId) => {
   // Implementation to get global report data
@@ -63,7 +64,8 @@ router.post('/generate', authMiddleware, async (req, res) => {
  */
 router.get('/:reportId/status', authMiddleware, async (req, res) => {
   try {
-    const report = await Report.findById(req.params.reportId);
+    const userId = getAuthenticatedUserId(req);
+    const report = await Report.findOne({ _id: req.params.reportId, userId });
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
@@ -78,7 +80,8 @@ router.get('/:reportId/status', authMiddleware, async (req, res) => {
  */
 router.get('/:reportId/download', authMiddleware, async (req, res) => {
   try {
-    const report = await Report.findById(req.params.reportId);
+    const userId = getAuthenticatedUserId(req);
+    const report = await Report.findOne({ _id: req.params.reportId, userId });
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
@@ -113,22 +116,11 @@ router.get('/:reportId/download', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/simple-pdf', async (req, res) => {
-  try {
-    console.log('Simple PDF test route called');
-    
-    // Create a simple PDF directly in the route
-    const doc = new PDFDocument();
-    const buffers = [];
-    
-    doc.on('data', chunk => buffers.push(chunk));
-    
-    // Add content
-    doc.fontSize(25).text('Simple Test PDF', 100, 100);
-  } catch (error) {
-    console.error('Simple PDF test route error:', error);
-    res.status(500).json({ error: 'Failed to generate simple PDF' });
-  }
+router.get('/simple-pdf', authMiddleware, async (req, res) => {
+  res.status(410).json({
+    error: 'Deprecated route',
+    message: 'simple-pdf test route is disabled in secured environments'
+  });
 });
 
 module.exports = router; 

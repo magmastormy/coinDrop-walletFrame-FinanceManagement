@@ -2,90 +2,50 @@ import axiosInstance from '../api/userAxios';
 
 const API_URL = '/budgets';
 
-// Export individual functions for better tree-shaking
-export const getUserBudgets = async (userId, filters = {}) => {
-    try {
-        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
-        return response;
-    } catch (error) {
-        console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);
-        throw error;
-    }
+export const getUserBudgets = async (userIdOrFilters = {}, maybeFilters = {}) => {
+    const filters = typeof userIdOrFilters === 'object' ? userIdOrFilters : maybeFilters;
+    const response = await axiosInstance.get(API_URL, { params: filters });
+    return response.budgets || [];
 };
 
 export const getBudgetStats = async () => {
     try {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        if (response?.data?.chartData) {
-            return response.data.chartData;
-        } else {
-            console.warn('[BudgetService - getBudgetStats] No chart data found in response');
-            return { error: false, data: [] };
-        }
+        return response.chartData || [];
     } catch (error) {
         console.error('[BudgetService - getBudgetStats] Error fetching budget stats:', error);
-        return { 
-            error: true, 
-            message: error.response?.data?.error || 'Failed to fetch budget data',
-            data: [] 
-        };
+        return [];
     }
 };
 
 const budgetService = {
-    createBudget: async (budgetData) => {
-        try {
-            // Create a clean copy without empty string values
-            const cleanBudgetData = Object.fromEntries(
-                Object.entries(budgetData)
-                    .filter(([key, value]) => value !== '')
-            );
-            
-            // Map categoryId to category if needed
-            if (cleanBudgetData.categoryId && !cleanBudgetData.category) {
-                cleanBudgetData.category = cleanBudgetData.categoryId;
-            }
-            
-            const response = await axiosInstance.post(API_URL, {
-                ...cleanBudgetData,
-                amount: parseFloat(cleanBudgetData.amount),
-                currency: 'USD' // Default currency
-            });
-            return response.data;
-        } catch (error) {
-            const serverMessage = error.response?.data?.details || error.response?.data?.error;
-            throw new Error(serverMessage || 'Budget validation failed');
+    createBudget: async budgetData => {
+        const cleanBudgetData = Object.fromEntries(
+            Object.entries(budgetData).filter(([, value]) => value !== '')
+        );
+
+        if (cleanBudgetData.categoryId && !cleanBudgetData.category) {
+            cleanBudgetData.category = cleanBudgetData.categoryId;
         }
+
+        const response = await axiosInstance.post(API_URL, {
+            ...cleanBudgetData,
+            amount: parseFloat(cleanBudgetData.amount)
+        });
+
+        return response.budget;
     },
 
-    getUserBudgets: async (userId, filters = {}) => {
-        try {
-            const response = await axiosInstance.get(`${API_URL}?userId=${userId}`, { params: filters });
-            return response;
-        } catch (error) {
-            console.error('[BudgetService - getUserBudgets] Error fetching user budgets:', error);
-            throw error;
-        }
-    },
+    getUserBudgets,
 
     updateBudget: async (id, budgetData) => {
-        try {
-            const response = await axiosInstance.put(`${API_URL}/${id}`, budgetData);
-            return response.data;
-        } catch (error) {
-            console.error('[BudgetService - updateBudget] Error updating budget:', error);
-            throw error;
-        }
+        const response = await axiosInstance.put(`${API_URL}/${id}`, budgetData);
+        return response.budget;
     },
 
-    deleteBudget: async (id) => {
-        try {
-            const response = await axiosInstance.delete(`${API_URL}/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error('[BudgetService - deleteBudget] Error deleting budget:', error);
-            throw error;
-        }
+    deleteBudget: async id => {
+        const response = await axiosInstance.delete(`${API_URL}/${id}`);
+        return response;
     },
 
     getBudgetStats

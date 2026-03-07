@@ -113,7 +113,6 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                 // Check if this message contains a financial insight
                 const isInsight = message.content.includes('💡') || message.type === 'proactive';
                 const isUser = message.role === 'user';
-                const isAssistant = message.role === 'assistant';
                 const InsightIcon = isInsight ? getInsightIcon(message.content) : null;
 
                 return (

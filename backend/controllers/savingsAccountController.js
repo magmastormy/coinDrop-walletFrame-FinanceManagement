@@ -4,23 +4,31 @@ const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Types;
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const isDev = process.env.NODE_ENV !== 'production';
 
 class SavingsAccountController {
     static async createSavingsAccount(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const { name, initialBalance, automation } = req.body;
+            const normalizedName = typeof name === 'string' ? name.trim() : '';
+            const numericInitialBalance = Number(initialBalance);
 
-            if (initialBalance === undefined || isNaN(initialBalance)) {
-                return res.status(400).json({ error: 'Initial balance is required and must be a number.' });
+            if (!normalizedName) {
+                return res.status(400).json({ error: 'Savings account name is required.' });
             }
-            console.log("SavingsAccountController - createSavingsAccount - redf.body: ", req.body);
+
+            if (!Number.isFinite(numericInitialBalance) || numericInitialBalance < 0) {
+                return res.status(400).json({ error: 'Initial balance must be a number greater than or equal to zero.' });
+            }
+            if (isDev) console.log('[SavingsAccountController - createSavingsAccount] Creating new savings account');
 
             const savingsAccount = new SavingsAccount({
                 userId: userId,
-                name,
-                balance: initialBalance,
+                name: normalizedName,
+                balance: numericInitialBalance,
                 automation
             });
             await savingsAccount.save();
@@ -33,17 +41,34 @@ class SavingsAccountController {
     static async transferToSavings(req, res) {
         try {
             const { amount, walletId } = req.body;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
+            const numericAmount = Number(amount);
 
-            const wallet = await Wallet.findOne({ _id: walletId, userId: userId});
-            const savingsAccount = await SavingsAccount.findOne({ userId: userId });
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({ error: 'Amount must be a positive number' });
+            }
 
-            if (!wallet || wallet.balance < amount) {
+            if (!ObjectId.isValid(walletId)) {
+                return res.status(400).json({ error: 'Invalid wallet ID format' });
+            }
+
+            const wallet = await Wallet.findOne({ _id: walletId, userId: userId, isActive: true });
+            const savingsAccount = await SavingsAccount.findOne({ userId: userId, isActive: true });
+
+            if (!wallet) {
+                return res.status(404).json({ error: 'Wallet not found' });
+            }
+
+            if (!savingsAccount) {
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
+
+            if (wallet.balance < numericAmount) {
                 return res.status(400).json({ error: 'Insufficient funds in wallet' });
             }
 
-            wallet.balance -= amount;
-            savingsAccount.balance += amount;
+            wallet.balance -= numericAmount;
+            savingsAccount.balance += numericAmount;
 
             await wallet.save();
             await savingsAccount.save();
@@ -56,13 +81,40 @@ class SavingsAccountController {
 
     static async getUserSavingsAccounts(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             // Only return active (not deleted) accounts
             const accounts = await SavingsAccount.find({ userId: userId, isActive: true });
             res.json(accounts);
         } catch (error) {
-            console.log("[SavingsAccountController - getUserSavingsAccounts] Error:", error);
-            res.status(500).json({ error: '[SavingsAccountController - getUserSavingsAccounts] Failed to get user\'s savings accounts', details: error.message });
+            if (isDev) console.error(`[SavingsAccountController - getUserSavingsAccounts] ${error.message}`);
+            res.status(500).json({ error: 'Failed to get savings accounts' });
+        }
+    }
+
+    static async getSavingsAccountById(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { id } = req.params;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ error: 'Invalid savings account ID format' });
+            }
+
+            const account = await SavingsAccount.findOne({
+                _id: id,
+                userId,
+                isActive: true
+            });
+
+            if (!account) {
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
+
+            return res.json(account);
+        } catch (error) {
+            return res.status(500).json({
+                error: 'Failed to retrieve savings account'
+            });
         }
     }
 
@@ -72,7 +124,7 @@ class SavingsAccountController {
         let operationId = new ObjectId().toString(); // Unique ID for tracking this operation
         
         try {
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Starting deletion process`);
+            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Starting deletion process`);
             
             // Start a MongoDB session for transaction
             session = await mongoose.startSession();
@@ -80,20 +132,11 @@ class SavingsAccountController {
             
             // Get parameters from request
             const { id } = req.params;
-            const { transferToWalletId, userId: bodyUserId } = req.body || {};
-            
-            // Extract user ID from all possible sources (auth token, query params, request body)
-            const userId = req.user?.userId || req.user?._id || req.user?.id || req.query?.userId || bodyUserId;
-            
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] User ID sources:`, {
-                fromToken: req.user?.userId || req.user?._id || req.user?.id || 'none',
-                fromQuery: req.query?.userId || 'none',
-                fromBody: bodyUserId || 'none',
-                selected: userId || 'none'
-            });
+            const { transferToWalletId } = req.body || {};
+            const userId = getAuthenticatedUserId(req);
             
             if (!userId) {
-                throw new Error('User ID is required - not found in request, query, or body');
+                throw new Error('User ID is required');
             }
             
             // Convert IDs to ObjectId format if they're not already
@@ -111,16 +154,17 @@ class SavingsAccountController {
                 throw new Error('Invalid wallet ID format');
             }
             
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Deleting account ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
+            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Deleting account ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
             
             // Check if account is already deleted
             const existingAccount = await SavingsAccount.findOne({ 
                 _id: id,
+                userId: userObjectId,
                 isActive: false
             }).session(session);
             
             if (existingAccount) {
-                console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Account ${id} is already deleted`);
+                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Account ${id} is already deleted`);
                 throw new Error('Account is already deleted');
             }
             
@@ -137,10 +181,10 @@ class SavingsAccountController {
                 throw new Error('Savings account not found');
             }
             
-            const remainingBalance = parseFloat(savingsAccount.balance || 0).toFixed(2);
+            const remainingBalance = parseFloat((Number(savingsAccount.balance || 0)).toFixed(2));
             const accountName = savingsAccount.name;
             
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Found account with balance: ${remainingBalance}`);
+            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Found account with balance: ${remainingBalance}`);
             
             // If account has balance, transfer it
             if (remainingBalance > 0) {
@@ -185,7 +229,7 @@ class SavingsAccountController {
                         throw new Error('Target wallet not found or does not belong to you');
                     }
                     
-                    console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet found, current balance: ${targetWallet.balance}`);
+                    if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet found, current balance: ${targetWallet.balance}`);
                 } else {
                     // No wallet specified, find or create a system wallet
                     try {
@@ -213,15 +257,15 @@ class SavingsAccountController {
                 
                 // Update target wallet balance
                 const oldWalletBalance = targetWallet.balance;
-                targetWallet.balance = parseFloat(targetWallet.balance || 0) + parseFloat(remainingBalance);
+                targetWallet.balance = parseFloat((Number(targetWallet.balance || 0) + remainingBalance).toFixed(2));
                 await targetWallet.save({ session });
                 
-                console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet balance updated from ${oldWalletBalance} to ${targetWallet.balance}`);
+                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet balance updated from ${oldWalletBalance} to ${targetWallet.balance}`);
                 
                 // Record the transaction
                 const transaction = new Transaction({
                     userId: userObjectId,
-                    amount: parseFloat(remainingBalance),
+                    amount: remainingBalance,
                     type: 'transfer',
                     category: accountClosureCategory._id,
                     description: `Transferred from deleted savings account: ${accountName}`,
@@ -232,12 +276,12 @@ class SavingsAccountController {
                 
                 await transaction.save({ session });
                 
-                console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction recorded for ${remainingBalance}`);
+                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction recorded for ${remainingBalance}`);
             }
             
             // Mark the savings account as deleted instead of completely removing it
             const updateResult = await SavingsAccount.updateOne(
-                { _id: id },
+                { _id: id, userId: userObjectId, isActive: true },
                 { 
                     $set: { 
                         isActive: false,
@@ -253,31 +297,31 @@ class SavingsAccountController {
                 throw new Error('Failed to mark savings account as deleted');
             }
             
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account ${id} marked as deleted`);
+            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account ${id} marked as deleted`);
             
             // Commit the transaction
             await session.commitTransaction();
-            console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction committed successfully`);
+            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction committed successfully`);
             
             // Send success response
             return res.json({
                 message: 'Savings account deleted successfully',
                 accountId: id,
                 accountName: accountName,
-                transferredAmount: parseFloat(remainingBalance),
+                transferredAmount: remainingBalance,
                 transferredTo: targetWalletId,
                 operationId: operationId
             });
         } catch (error) {
-            console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error:`, error);
+            console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] ${error.message}`);
             
             // Ensure transaction is aborted and session is ended
             if (session) {
                 try {
                     await session.abortTransaction();
-                    console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction aborted`);
+                    if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction aborted`);
                 } catch (sessionError) {
-                    console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error aborting transaction:`, sessionError);
+                    console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error aborting transaction: ${sessionError.message}`);
                 }
             }
             
@@ -298,31 +342,79 @@ class SavingsAccountController {
             // Always end the session if it exists
             if (session) {
                 session.endSession();
-                console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Session ended`);
+                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Session ended`);
             }
         }
     }
 
     static async updateSavingsAccount(req, res) {
         try {
-            const account = await SavingsAccount.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            const userId = getAuthenticatedUserId(req);
+            const { id } = req.params;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({ error: 'Invalid savings account ID format' });
+            }
+
+            const updates = {};
+
+            if (typeof req.body.name === 'string') {
+                const trimmedName = req.body.name.trim();
+                if (!trimmedName) {
+                    return res.status(400).json({ error: 'Savings account name cannot be empty' });
+                }
+                updates.name = trimmedName;
+            }
+
+            if (Object.prototype.hasOwnProperty.call(req.body, 'automation')) {
+                updates.automation = req.body.automation;
+            }
+
+            if (Object.keys(updates).length === 0) {
+                return res.status(400).json({ error: 'No valid fields provided for update' });
+            }
+
+            const account = await SavingsAccount.findOneAndUpdate(
+                { _id: id, userId, isActive: true },
+                { $set: updates },
+                { new: true, runValidators: true }
+            );
+            if (!account) {
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
             res.json(account);
         } catch (error) {
-            res.status(400).json({ error: 'Failed to update savings account' });
+            res.status(400).json({ error: 'Failed to update savings account', details: error.message });
         }
     }
 
     static async updateTransaction(req, res) {
         try {
-            const account = await SavingsAccount.findById(req.params.id);
-            const transactionIndex = account.transactions.findIndex(t => t._id.toString() === req.body._id);
-            if (transactionIndex > -1) {
-                account.transactions[transactionIndex] = req.body;
-                await account.save();
-                res.json(account);
-            } else {
-                res.status(404).json({ error: 'Transaction not found' });
+            const userId = getAuthenticatedUserId(req);
+            const transactionId = req.params.id;
+            const account = await SavingsAccount.findOne({
+                userId,
+                isActive: true,
+                'transactions._id': transactionId
+            });
+            if (!account) {
+                return res.status(404).json({ error: 'Savings transaction not found' });
             }
+
+            const transaction = account.transactions.id(transactionId);
+            if (!transaction) {
+                return res.status(404).json({ error: 'Transaction not found' });
+            }
+
+            const allowedUpdates = ['amount', 'type', 'description', 'date', 'category', 'walletId'];
+            allowedUpdates.forEach((field) => {
+                if (field in req.body) {
+                    transaction[field] = req.body[field];
+                }
+            });
+
+            await account.save();
+            res.json(account);
         } catch (error) {
             res.status(400).json({ error: 'Failed to update transaction' });
         }
@@ -332,16 +424,32 @@ class SavingsAccountController {
         try {
             const { walletId, amount } = req.body;
             const accountId = req.params.accountId;
-            
-            const account = await SavingsAccount.findById(accountId);
-            const wallet = await Wallet.findById(walletId);
+            const userId = getAuthenticatedUserId(req);
+            const numericAmount = parseFloat(amount);
 
-            if (!wallet || wallet.balance < amount) {
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({ error: 'Amount must be a positive number' });
+            }
+
+            if (!ObjectId.isValid(accountId) || !ObjectId.isValid(walletId)) {
+                return res.status(400).json({ error: 'Invalid account or wallet ID format' });
+            }
+            
+            const account = await SavingsAccount.findOne({ _id: accountId, userId, isActive: true });
+            const wallet = await Wallet.findOne({ _id: walletId, userId, isActive: true });
+
+            if (!account) {
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
+            if (!wallet) {
+                return res.status(404).json({ error: 'Wallet not found' });
+            }
+            if (wallet.balance < numericAmount) {
                 return res.status(400).json({ error: 'Insufficient funds in wallet' });
             }
 
-            wallet.balance -= amount;
-            account.balance += amount;
+            wallet.balance -= numericAmount;
+            account.balance += numericAmount;
 
             await wallet.save();
             await account.save();
@@ -356,16 +464,32 @@ class SavingsAccountController {
         try {
             const { walletId, amount } = req.body;
             const accountId = req.params.accountId;
-            
-            const account = await SavingsAccount.findById(accountId);
-            const wallet = await Wallet.findById(walletId);
+            const userId = getAuthenticatedUserId(req);
+            const numericAmount = parseFloat(amount);
 
-            if (!wallet || account.balance < amount) {
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({ error: 'Amount must be a positive number' });
+            }
+
+            if (!ObjectId.isValid(accountId) || !ObjectId.isValid(walletId)) {
+                return res.status(400).json({ error: 'Invalid account or wallet ID format' });
+            }
+            
+            const account = await SavingsAccount.findOne({ _id: accountId, userId, isActive: true });
+            const wallet = await Wallet.findOne({ _id: walletId, userId, isActive: true });
+
+            if (!account) {
+                return res.status(404).json({ error: 'Savings account not found' });
+            }
+            if (!wallet) {
+                return res.status(404).json({ error: 'Wallet not found' });
+            }
+            if (account.balance < numericAmount) {
                 return res.status(400).json({ error: 'Insufficient funds in account' });
             }
 
-            wallet.balance += amount;
-            account.balance -= amount;
+            wallet.balance += numericAmount;
+            account.balance -= numericAmount;
 
             await wallet.save();
             await account.save();
@@ -379,19 +503,39 @@ class SavingsAccountController {
     static async transferBetweenAccounts(req, res) {
         try {
             const { fromAccountId, toAccountId, amount } = req.body;
+            const userId = getAuthenticatedUserId(req);
+            const numericAmount = parseFloat(amount);
             
             // Validate inputs
-            if (!fromAccountId || !toAccountId || !amount) {
+            if (!fromAccountId || !toAccountId || amount === undefined) {
                 return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({ error: 'Amount must be a positive number' });
+            }
+
+            if (!ObjectId.isValid(fromAccountId) || !ObjectId.isValid(toAccountId)) {
+                return res.status(400).json({ error: 'Invalid account ID format' });
+            }
+
+            if (String(fromAccountId) === String(toAccountId)) {
+                return res.status(400).json({ error: 'Source and destination accounts must be different' });
             }
             
             // Implement the transfer logic similar to other transfer methods
-            const fromAccount = await SavingsAccount.findById(fromAccountId);
-            const toAccount = await SavingsAccount.findById(toAccountId);
+            const fromAccount = await SavingsAccount.findOne({ _id: fromAccountId, userId, isActive: true });
+            const toAccount = await SavingsAccount.findOne({ _id: toAccountId, userId, isActive: true });
+            if (!fromAccount || !toAccount) {
+                return res.status(404).json({ error: 'One or both savings accounts not found' });
+            }
+            if (fromAccount.balance < numericAmount) {
+                return res.status(400).json({ error: 'Insufficient funds in source account' });
+            }
             
             // Perform the transfer
-            fromAccount.balance -= parseFloat(amount);
-            toAccount.balance += parseFloat(amount);
+            fromAccount.balance -= numericAmount;
+            toAccount.balance += numericAmount;
             
             await fromAccount.save();
             await toAccount.save();
@@ -411,3 +555,4 @@ class SavingsAccountController {
 }
 
 module.exports = SavingsAccountController;
+

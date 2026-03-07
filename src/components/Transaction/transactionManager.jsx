@@ -46,13 +46,7 @@ const TransactionManager = () => {
             setLocalWallets(walletsRes || []);
             setSavingsAccounts(savingsRes || []);
             setCategories(categoriesRes || []);
-
-            let txs = [];
-            if (transactionsRes?.data?.transactions) txs = transactionsRes.data.transactions;
-            else if (Array.isArray(transactionsRes?.data)) txs = transactionsRes.data;
-            else if (Array.isArray(transactionsRes?.transactions)) txs = transactionsRes.transactions;
-
-            dispatch(setTransactions(txs));
+            dispatch(setTransactions(transactionsRes?.transactions || []));
         } catch (err) {
             dispatch(setError('Unable to fetch transaction data.'));
         } finally {
@@ -63,7 +57,7 @@ const TransactionManager = () => {
     const fetchBudgets = async () => {
         try {
             const res = await budgetService.getUserBudgets(user.id);
-            setBudgets(res.budgets || []);
+            setBudgets(res || []);
         } catch (err) {
             console.error('Error fetching budgets:', err);
         }

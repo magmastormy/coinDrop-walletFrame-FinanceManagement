@@ -6,15 +6,8 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 const { body } = require('express-validator');
 const { validationMiddleware } = require('../middleware/validationMiddleware');
 
-// Test route without middleware or controller
-router.get('/test', (req, res) => {
-  res.json({ message: 'Test route works' });
-});
-
 // Get all rules for a user
-router.get('/user/:userId', authMiddleware, (req, res) => {
-  SavingsRuleController.getUserRules(req, res);
-});
+router.get('/user', authMiddleware, SavingsRuleController.getUserRules);
 
 // Create a new rule
 router.post(
@@ -69,18 +62,12 @@ router.put(
 );
 
 // Delete a rule
-router.delete('/:ruleId', authMiddleware, (req, res) => {
-  SavingsRuleController.deleteRule(req, res);
-});
+router.delete('/:ruleId', authMiddleware, SavingsRuleController.deleteRule);
 
 // Execute rules for a transaction
-router.post('/execute', authMiddleware, (req, res) => {
-  SavingsRuleController.executeRules(req, res);
-});
+router.post('/execute', authMiddleware, SavingsRuleController.executeRules);
 
 // Get rule statistics
-router.get('/stats/:userId', authMiddleware, (req, res) => {
-  SavingsRuleController.getRuleStats(req, res);
-});
+router.get('/stats', authMiddleware, SavingsRuleController.getRuleStats);
 
 module.exports = router;

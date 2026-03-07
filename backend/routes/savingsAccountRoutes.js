@@ -6,19 +6,20 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 router.use(authMiddleware);
 
 // Get all savings accounts for a user
-router.get('/:userId', SavingsAccountController.getUserSavingsAccounts);
+router.get('/', SavingsAccountController.getUserSavingsAccounts);
+router.get('/account/:id', SavingsAccountController.getSavingsAccountById);
 
 // Create a new savings account
 router.post('/', SavingsAccountController.createSavingsAccount);
+
+// Update a transaction in a savings account
+router.put('/transactions/:id', SavingsAccountController.updateTransaction);
 
 // Update a savings account
 router.put('/:id', SavingsAccountController.updateSavingsAccount);
 
 // Delete a savings account
-router.delete('/:id', authMiddleware, SavingsAccountController.deleteSavingsAccount);
-
-// Update a transaction in a savings account
-router.put('/transactions/:id', SavingsAccountController.updateTransaction);
+router.delete('/:id', SavingsAccountController.deleteSavingsAccount);
 
 // Add deposit/withdraw routes
 router.post('/:accountId/deposit', SavingsAccountController.depositToSavings);

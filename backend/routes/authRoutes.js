@@ -111,6 +111,11 @@ router.put('/profile', authMiddleware, profileUpdateValidation, AuthController.u
 router.post('/change-password', authMiddleware, passwordChangeValidation, AuthController.changePassword);
 
 // Password reset routes
-router.post('/reset-password', forgotPasswordValidation, AuthController.forgotPassword);
+router.post('/reset-password', (_req, res) => {
+    return res.status(503).json({
+        error: 'Password reset temporarily unavailable',
+        details: 'Endpoint is disabled until the secure reset flow is fully implemented.'
+    });
+});
 
 module.exports = router;

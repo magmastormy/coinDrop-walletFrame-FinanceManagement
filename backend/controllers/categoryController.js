@@ -2,6 +2,7 @@ const Category = require('../models/Category');
 const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
 const mongoose = require('mongoose');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 const escapeRegex = (str) => str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
@@ -9,9 +10,10 @@ class CategoryController {
     // Create a new category
     static async createCategory(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const categoryData = {
                 ...req.body,
-                userId: req.user._id || req.query.userId || req.user.userId
+                userId
             };
             const category = new Category(categoryData);
             await category.save();
@@ -31,7 +33,7 @@ class CategoryController {
     // Get all categories for a user
     static async getUserCategories(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             if (!userId) {
                 return res.status(400).json({
@@ -53,7 +55,7 @@ class CategoryController {
     // Get category hierarchy
     static async getCategoryHierarchy(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const hierarchy = await Category.getCategoryHierarchy(userId);
             res.json(hierarchy);
         } catch (error) {
@@ -67,7 +69,8 @@ class CategoryController {
     // Get subcategories for a category
     static async getSubcategories(req, res) {
         try {
-            const category = await Category.findById(req.params.id);
+            const userId = getAuthenticatedUserId(req);
+            const category = await Category.findOne({ _id: req.params.id, userId });
             if (!category) {
                 return res.status(404).json({ error: 'Category not found' });
             }
@@ -85,14 +88,15 @@ class CategoryController {
     // Add a subcategory
     static async addSubcategory(req, res) {
         try {
-            const parentCategory = await Category.findById(req.params.id);
+            const userId = getAuthenticatedUserId(req);
+            const parentCategory = await Category.findOne({ _id: req.params.id, userId });
             if (!parentCategory) {
                 return res.status(404).json({ error: 'Parent category not found' });
             }
 
             const subcategoryData = {
                 ...req.body,
-                userId: req.user._id,
+                userId,
                 parentId: parentCategory._id
             };
 
@@ -114,15 +118,16 @@ class CategoryController {
     // Update parent category
     static async updateParentCategory(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { newParentId } = req.body;
-            const category = await Category.findById(req.params.id);
+            const category = await Category.findOne({ _id: req.params.id, userId });
             
             if (!category) {
                 return res.status(404).json({ error: 'Category not found' });
             }
 
             if (newParentId) {
-                const newParent = await Category.findById(newParentId);
+                const newParent = await Category.findOne({ _id: newParentId, userId });
                 if (!newParent) {
                     return res.status(404).json({ error: 'New parent category not found' });
                 }
@@ -146,12 +151,13 @@ class CategoryController {
     // Get budgets for a category
     static async getCategoryBudgets(req, res) {
         try {
-            const category = await Category.findById(req.params.id);
+            const userId = getAuthenticatedUserId(req);
+            const category = await Category.findOne({ _id: req.params.id, userId });
             if (!category) {
                 return res.status(404).json({ error: 'Category not found' });
             }
 
-            const budgets = await Budget.find({ categoryId: category._id });
+            const budgets = await Budget.find({ category: category._id, userId });
             res.json(budgets);
         } catch (error) {
             res.status(500).json({
@@ -164,13 +170,14 @@ class CategoryController {
     // Get transactions for a category
     static async getCategoryTransactions(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { startDate, endDate } = req.query;
             const transactions = await Transaction.getTransactionsByCategory(
                 req.params.id,
                 {
                     startDate: startDate ? new Date(startDate) : undefined,
                     endDate: endDate ? new Date(endDate) : undefined,
-                    userId: req.user._id
+                    userId
                 }
             );
             res.json(transactions);
@@ -185,7 +192,8 @@ class CategoryController {
     // Get category statistics
     static async getCategoryStats(req, res) {
         try {
-            const category = await Category.findById(req.params.id);
+            const userId = getAuthenticatedUserId(req);
+            const category = await Category.findOne({ _id: req.params.id, userId });
             if (!category) {
                 return res.status(404).json({ error: 'Category not found' });
             }
@@ -197,7 +205,7 @@ class CategoryController {
                 {
                     $match: {
                         category: { $in: categoryIds },
-                        userId: req.user._id
+                        userId
                     }
                 },
                 {
@@ -218,7 +226,7 @@ class CategoryController {
                         '_id.month': -1
                     }
                 }
-            ]).cache({ key: `category-stats-${req.params.id}`, ttl: 3600 });
+            ]);
 
             res.json(stats);
         } catch (error) {
@@ -274,9 +282,9 @@ class CategoryController {
     // The getCategoryPatterns method remains the primary function for pattern retrieval
     static async getCategoryPatterns(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
             const patterns = await Category.aggregate([
-                { $match: { userId: mongoose.Types.ObjectId(userId) } },
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
                 {
                     $lookup: {
                         from: 'transactions',
@@ -327,11 +335,12 @@ class CategoryController {
     // The suggestCategory method handles all category suggestions
     static async suggestCategory(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { description, amount, merchant } = req.body;
             
             // First try pattern matching
             const patterns = await Category.aggregate([
-                { $match: { userId: req.user.id } },
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
                 {
                     $lookup: {
                         from: 'transactions',
@@ -368,7 +377,7 @@ class CategoryController {
             
             // If no good pattern match, use amount-based heuristics
             const similarTransactions = await Transaction.find({
-                userId: req.user.id,
+                userId,
                 amount: { 
                     $gte: amount * 0.9, 
                     $lte: amount * 1.1 
@@ -386,7 +395,10 @@ class CategoryController {
                     .sort((a, b) => b[1] - a[1])[0];
                 
                 if (mostCommonCategory) {
-                    const category = await Category.findById(mostCommonCategory[0]);
+                    const category = await Category.findOne({ _id: mostCommonCategory[0], userId });
+                    if (!category) {
+                        return res.json(null);
+                    }
                     return res.json({
                         categoryId: category._id,
                         name: category.name,
@@ -399,7 +411,7 @@ class CategoryController {
             if (merchant) {
                 const safeMerchant = escapeRegex(merchant);
                 const merchantTransactions = await Transaction.find({
-                    userId: req.user.id,
+                    userId,
                     merchant: { $regex: safeMerchant, $options: 'i' }
                 }).populate('category');
                 
@@ -427,6 +439,7 @@ class CategoryController {
     // Training is still a separate function to maintain clean separation of concerns
     static async trainCategoryModel(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { transactions } = req.body;
             
             // Update pattern confidence based on new transactions
@@ -434,7 +447,7 @@ class CategoryController {
                 await Category.updateOne(
                     { 
                         _id: transaction.category,
-                        userId: req.user.id
+                        userId
                     },
                     {
                         $addToSet: {
@@ -461,7 +474,7 @@ class CategoryController {
     static async updateCategory(req, res) {
         try {
             const { id } = req.params;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const category = await Category.findOne({ _id: id, userId });
             if (!category) {
@@ -533,7 +546,7 @@ class CategoryController {
     static async deleteCategory(req, res) {
         try {
             const { id } = req.params;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const category = await Category.findOne({ _id: id, userId });
             if (!category) {
@@ -544,7 +557,7 @@ class CategoryController {
             }
 
             // Check if category has subcategories
-            const subcategories = await Category.find({ parentId: id });
+            const subcategories = await Category.find({ parentId: id, userId });
             if (subcategories.length > 0) {
                 return res.status(400).json({
                     error: 'Cannot delete category',
@@ -553,7 +566,7 @@ class CategoryController {
             }
 
             // Check if category is used in any transactions
-            const transactions = await Transaction.find({ category: id });
+            const transactions = await Transaction.find({ category: id, userId });
             if (transactions.length > 0) {
                 return res.status(400).json({
                     error: 'Cannot delete category',
@@ -562,7 +575,7 @@ class CategoryController {
             }
 
             // Check if category is used in any budgets
-            const budgets = await Budget.find({ categoryId: id });
+            const budgets = await Budget.find({ category: id, userId });
             if (budgets.length > 0) {
                 return res.status(400).json({
                     error: 'Cannot delete category',
@@ -586,7 +599,7 @@ class CategoryController {
     static async updateCategoryPatterns(req, res) {
         try {
             const { categoryId, patterns } = req.body;
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
 
             // Validate patterns format
             if (!Array.isArray(patterns)) {
@@ -614,7 +627,7 @@ class CategoryController {
     static async batchCategorizeTransactions(req, res) {
         try {
             const { transactionIds, categoryId } = req.body;
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
 
             // Validate inputs
             if (!Array.isArray(transactionIds) || !categoryId) {

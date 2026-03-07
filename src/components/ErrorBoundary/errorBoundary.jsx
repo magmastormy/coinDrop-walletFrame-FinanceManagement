@@ -1,5 +1,6 @@
 import React from 'react';
 
+const isDev = import.meta.env.DEV;
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -37,7 +38,7 @@ class ErrorBoundary extends React.Component {
                         >
                             Refresh Page
                         </button>
-                        {process.env.NODE_ENV === 'development' && (
+                        {isDev && (
                             <details className="error-details">
                                 <summary>Error Details</summary>
                                 <pre>{this.state.error?.toString()}</pre>

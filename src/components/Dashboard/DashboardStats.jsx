@@ -26,8 +26,8 @@ const DashboardStats = () => {
                     getUserTransactions(user.id)
                 ]);
 
-                const wallets = walletsRes?.wallets || [];
-                const transactions = transactionsRes?.data?.transactions || [];
+                const wallets = walletsRes || [];
+                const transactions = transactionsRes?.transactions || [];
 
                 const totalBalance = wallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
 

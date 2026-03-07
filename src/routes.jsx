@@ -20,6 +20,7 @@ const UserEducationComponent = lazy(() => import('./components/Education/userEdu
 const SavingGoalComponent = lazy(() => import('./components/SavingsGoal/savingsGoalManager'));
 const SavingAccountComponent = lazy(() => import('./components/Savings/savingsAccountManager'));
 const ChatBotComponent = lazy(() => import('./components/Chatbot/chatbotManager'));
+const SettingsComponent = lazy(() => import('./components/Settings/settingsManager'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -142,6 +143,12 @@ const AppRoutes = () => {
                     <Route path="/chatbot" element={
                         <ProtectedRoute>
                             <ChatBotComponent />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/settings" element={
+                        <ProtectedRoute>
+                            <SettingsComponent />
                         </ProtectedRoute>
                     } />
 

@@ -1,7 +1,7 @@
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/zhipuai';
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = import.meta.env.DEV;
 
 /**
  * ZhipuAI Model Service
@@ -20,8 +20,7 @@ const zhipuaiModelService = {
             if (isDev) console.log('[ZhipuAI] Sending message for user:', userId);
 
             const response = await axiosInstance.post(`${API_URL}/send`, {
-                messages,
-                userId
+                messages
             });
 
             if (isDev) console.log('[ZhipuAI] Response received');
@@ -41,7 +40,7 @@ const zhipuaiModelService = {
         try {
             if (isDev) console.log('[ZhipuAI] Fetching context for user:', userId);
 
-            const response = await axiosInstance.get(`${API_URL}/user-context/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/user-context`);
 
             if (isDev) console.log('[ZhipuAI] Context received');
             return response;
@@ -60,7 +59,7 @@ const zhipuaiModelService = {
         try {
             if (isDev) console.log('[ZhipuAI] Fetching suggestions for user:', userId);
 
-            const response = await axiosInstance.get(`${API_URL}/context-suggestions/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/context-suggestions`);
             return response.suggestions || response;
         } catch (error) {
             console.error('[ZhipuAI] Error fetching suggestions:', error.message);
@@ -77,7 +76,7 @@ const zhipuaiModelService = {
         try {
             if (isDev) console.log('[ZhipuAI] Fetching account info for user:', userId);
 
-            const response = await axiosInstance.get(`${API_URL}/user-account-info/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/user-account-info`);
             return response.context || response;
         } catch (error) {
             console.error('[ZhipuAI] Error fetching account info:', error.message);
@@ -94,7 +93,7 @@ const zhipuaiModelService = {
         try {
             if (isDev) console.log('[ZhipuAI] Fetching insights for user:', userId);
 
-            const response = await axiosInstance.get(`${API_URL}/proactive-insights/${userId}`);
+            const response = await axiosInstance.get(`${API_URL}/proactive-insights`);
             return response.insights || response;
         } catch (error) {
             console.error('[ZhipuAI] Error fetching insights:', error.message);

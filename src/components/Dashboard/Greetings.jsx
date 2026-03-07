@@ -30,7 +30,7 @@ const Greetings = () => {
                     <h1 className="text-3xl font-display font-bold text-foreground">
                         {text}, <span className="text-primary">{firstName}</span>
                     </h1>
-                    <p className="text-muted-foreground">Here's your financial overview for today.</p>
+                    <p className="text-muted-foreground">Here&apos;s your financial overview for today.</p>
                 </div>
             </motion.div>
         </div>

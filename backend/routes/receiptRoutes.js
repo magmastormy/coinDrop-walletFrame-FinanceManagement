@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
+const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads/receipts');
@@ -56,29 +57,12 @@ const analyzeReceipt = async (filePath) => {
     };
 };
 
-// Route to handle receipt upload and analysis
-router.post('/analyze', upload.single('receipt'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-
-        const filePath = req.file.path;
-        
-        // Analyze the receipt
-        const analysisResults = await analyzeReceipt(filePath);
-
-        // Store the results in database (implement this based on your data model)
-        // TODO: Implement database storage
-
-        // Clean up the uploaded file
-        await fs.unlink(filePath);
-
-        res.json(analysisResults);
-    } catch (error) {
-        console.error('Receipt analysis error:', error);
-        res.status(500).json({ message: 'Error analyzing receipt' });
-    }
+// Route intentionally hard-disabled until secure pipeline is implemented
+router.post('/analyze', authMiddleware, upload.single('receipt'), async (_req, res) => {
+    return res.status(503).json({
+        error: 'Receipt analysis temporarily unavailable',
+        details: 'Endpoint is disabled until secure production pipeline is implemented.'
+    });
 });
 
 module.exports = router;

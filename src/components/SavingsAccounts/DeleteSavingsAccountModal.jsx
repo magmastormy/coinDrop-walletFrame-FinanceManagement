@@ -74,7 +74,7 @@ const DeleteSavingsAccountModal = ({ show, handleClose, savingsAccount }) => {
         <Modal.Title>Delete Savings Account</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>Are you sure you want to delete the savings account "{savingsAccount?.name}"?</p>
+        <p>Are you sure you want to delete the savings account &quot;{savingsAccount?.name}&quot;?</p>
         
         {savingsAccount?.currentBalance > 0 && (
           <>

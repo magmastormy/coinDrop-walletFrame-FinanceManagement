@@ -12,6 +12,7 @@ const fs = require('fs').promises;
 const { PDF_STYLES, EXCEL_STYLES, EXCEL_COLUMNS } = require('../utils/reportStyles');
 const { storeReportMetadata, generateReportAsync } = require('../utils/reportGenerator');
 const { saveBufferToFile } = require('../utils/fileUtils');
+const isDev = process.env.NODE_ENV !== 'production';
 
 class ReportController {
     /**
@@ -19,13 +20,11 @@ class ReportController {
      */
     static async generateReport(req, res) {
         try {
-            console.log('Report generation request received:', req.body);
+            if (isDev) console.log('[ReportController] Report generation request received');
             const userId = req.user._id || req.user.userId;
             const { reportType, format } = req.body;
             
-            console.log('Generating report for user:', userId);
-            console.log('Report type:', reportType);
-            console.log('Format:', format);
+            if (isDev) console.log(`[ReportController] Generating report type=${reportType} format=${format}`);
             
             // Validate input
             if (!reportType || !format) {
@@ -43,35 +42,35 @@ class ReportController {
                 });
                 
                 await report.save();
-                console.log('Report record created:', report._id);
+                if (isDev) console.log('Report record created:', report._id);
                 
                 // Fetch data
-                console.log('Fetching data for report...');
+                if (isDev) console.log('Fetching data for report...');
                 const [transactions, wallets, budgets] = await Promise.all([
                     Transaction.find({ userId }),
                     Wallet.find({ userId }),
                     Budget.find({ userId })
                 ]);
                 
-                console.log(`Data fetched: ${transactions.length} transactions, ${wallets.length} wallets, ${budgets.length} budgets`);
+                if (isDev) console.log(`Data fetched: ${transactions.length} transactions, ${wallets.length} wallets, ${budgets.length} budgets`);
                 
                 // Calculate analytics
                 const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
                 
-                console.log('Analytics calculated:', analytics);
+                if (isDev) console.log('Analytics calculated:', analytics);
                 
                 // Generate report content
                 let reportContent;
                 try {
                     if (format.toUpperCase() === 'PDF') {
-                        console.log('Generating PDF report...');
+                        if (isDev) console.log('Generating PDF report...');
                         reportContent = await this.generatePDFReport(analytics, reportType);
                     } else {
-                        console.log('Generating Excel report...');
+                        if (isDev) console.log('Generating Excel report...');
                         reportContent = await this.generateExcelReport(analytics, reportType);
                     }
                     
-                    console.log(`Report content generated, size: ${reportContent.length} bytes`);
+                    if (isDev) console.log(`Report content generated, size: ${reportContent.length} bytes`);
                     
                     // Create reports directory if it doesn't exist
                     const REPORTS_DIR = path.join(__dirname, '../reports');
@@ -81,14 +80,14 @@ class ReportController {
                     const filePath = path.join(REPORTS_DIR, `${report._id}.${format.toLowerCase()}`);
                     await fs.writeFile(filePath, reportContent);
                     
-                    console.log(`Report saved to: ${filePath}`);
+                    if (isDev) console.log('[ReportController] Report file persisted');
                     
                     // Update the report with the file path and status
                     report.filePath = filePath;
                     report.status = 'completed';
                     await report.save();
                     
-                    console.log('Report record updated, status: completed');
+                    if (isDev) console.log('Report record updated, status: completed');
                     
                     return res.json({
                         reportId: report._id,
@@ -318,3 +317,4 @@ class ReportController {
 }
 
 module.exports = ReportController;
+

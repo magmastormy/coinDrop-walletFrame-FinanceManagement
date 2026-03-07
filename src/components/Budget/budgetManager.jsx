@@ -52,7 +52,7 @@ const BudgetManager = () => {
         dispatch(setLoading(true));
         try {
             const fetchedBudgets = await budgetService.getUserBudgets(user.id);
-            dispatch(setBudgets(fetchedBudgets.budgets));
+            dispatch(setBudgets(fetchedBudgets || []));
         } catch (error) {
             dispatch(setError(`Budget fetch failed: ${error.message}`));
         } finally {
@@ -77,7 +77,7 @@ const BudgetManager = () => {
 
             // Fetch budget transactions
             const transactions = await transactionService.getBudgetTransactions(budgetId);
-            setTransactions(transactions?.data?.transactions || []);
+            setTransactions(transactions?.transactions || []);
         } catch (error) {
             console.error(error);
             setTransactions([]);

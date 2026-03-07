@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
 
 const SavingsAccountEditDialog = ({
     open,
@@ -12,7 +11,6 @@ const SavingsAccountEditDialog = ({
     loading,
     isNewAccount = false
 }) => {
-    const { user } = useAuth();
     const [formData, setFormData] = useState({
         name: '',
         initialBalance: 0,
@@ -235,3 +233,4 @@ const SavingsAccountEditDialog = ({
 };
 
 export default SavingsAccountEditDialog;
+

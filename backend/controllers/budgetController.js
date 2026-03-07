@@ -3,24 +3,32 @@ const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
 const Wallet = require('../models/Wallet');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 class BudgetController {
     // Create a new budget
     static async createBudget(req, res) {
-        console.log("Budget Controller - createBudget - req.body: ", req.body);
         try {
-            const { name, amount, categoryId, walletId } = req.body;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const { name, amount, categoryId, category: categoryInput, walletId } = req.body;
+            const userId = getAuthenticatedUserId(req);
+            const normalizedCategoryId = categoryInput || categoryId;
+            const numericAmount = Number(amount);
 
-            if (!name || !amount || !categoryId || !walletId) {
+            if (!name || !amount || !normalizedCategoryId || !walletId) {
                 return res.status(400).json({
-                    error: '[BudgetController] All fields are required: name, amount, categoryId, walletId'
+                    error: '[BudgetController] All fields are required: name, amount, category, walletId'
+                });
+            }
+
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                return res.status(400).json({
+                    error: '[BudgetController] Amount must be a positive number'
                 });
             }
 
             // Validate category exists and belongs to user
             const category = await Category.findOne({
-                _id: categoryId,
+                _id: normalizedCategoryId,
                 userId: userId
             });
 
@@ -45,7 +53,8 @@ class BudgetController {
             const budgetData = {
                 ...req.body,
                 userId: userId,
-                category: categoryId,
+                category: normalizedCategoryId,
+                amount: numericAmount,
             };
 
             delete budgetData.categoryId;
@@ -69,7 +78,7 @@ class BudgetController {
     // Get all budgets for a user with optional filters
     static async getUserBudgets(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const budgets = await Budget.find({ 
                 userId: userId 
             })
@@ -90,9 +99,11 @@ class BudgetController {
     static async updateBudget(req, res) 
     {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const { id } = req.params;
-            const { categoryId } = req.body;
+            const categoryId = req.body.categoryId || req.body.category;
+            const walletId = req.body.walletId;
+            const amount = req.body.amount;
 
             if (categoryId) {
                 // Validate new category if provided
@@ -110,6 +121,29 @@ class BudgetController {
                 // Map categoryId to category for schema consistency
                 req.body.category = categoryId;
                 delete req.body.categoryId;
+            }
+
+            if (walletId) {
+                const wallet = await Wallet.findOne({
+                    _id: walletId,
+                    userId,
+                    isActive: true
+                });
+                if (!wallet) {
+                    return res.status(400).json({
+                        error: '[BudgetController] Invalid wallet'
+                    });
+                }
+            }
+
+            if (amount !== undefined) {
+                const numericAmount = Number(amount);
+                if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                    return res.status(400).json({
+                        error: '[BudgetController] Amount must be a positive number'
+                    });
+                }
+                req.body.amount = numericAmount;
             }
 
             const budget = await Budget.findOneAndUpdate(
@@ -138,7 +172,7 @@ class BudgetController {
     static async deleteBudget(req, res) {
         try {
             const { id } = req.params;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const budget = await Budget.findOneAndDelete({
                 _id: id,
@@ -166,7 +200,7 @@ class BudgetController {
     // Get budget statistics
     static async getBudgetStats(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             
             // Ensure userId is a valid ObjectId
             const userObjectId = mongoose.Types.ObjectId.isValid(userId) 
@@ -185,7 +219,7 @@ class BudgetController {
                 {
                     $lookup: {
                         from: 'categories',
-                        localField: 'categoryId',
+                        localField: 'category',
                         foreignField: '_id',
                         as: 'category'
                     }
@@ -193,7 +227,7 @@ class BudgetController {
                 { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
                 {
                     $group: {
-                        _id: '$status',
+                        _id: '$type',
                         totalBudgets: { $sum: 1 },
                         totalAmount: { $sum: '$amount' }
                     }
@@ -204,13 +238,13 @@ class BudgetController {
                 { 
                     $match: { 
                         userId: userObjectId,
-                        status: 'active'
+                        isActive: true
                     }
                 },
                 {
                     $lookup: {
                         from: 'categories',
-                        localField: 'categoryId',
+                        localField: 'category',
                         foreignField: '_id',
                         as: 'category'
                     }
@@ -220,8 +254,8 @@ class BudgetController {
                     $project: {
                         name: 1,
                         amount: 1,
-                        totalSpent: 1,
-                        status: 1,
+                        spent: 1,
+                        isActive: 1,
                         category: { $ifNull: ['$category.name', 'Uncategorized'] }
                     }
                 }
@@ -231,16 +265,16 @@ class BudgetController {
                 name: budget.name,
                 category: budget.category,
                 amount: budget.amount,
-                spent: budget.totalSpent || 0,
-                spentPercentage: Math.round(((budget.totalSpent || 0) / budget.amount) * 100),
-                status: budget.status
+                spent: budget.spent || 0,
+                spentPercentage: budget.amount > 0 ? Math.round(((budget.spent || 0) / budget.amount) * 100) : 0,
+                status: budget.isActive ? 'active' : 'inactive'
             }));
 
             // Return data in the format the dashboard component expects
             const chartData = activeBudgets.map(budget => ({
                 category: budget.category,
                 budgetAmount: budget.amount,
-                actualSpent: budget.totalSpent || 0
+                actualSpent: budget.spent || 0
             }));
 
             res.json({ 
@@ -249,7 +283,7 @@ class BudgetController {
                 chartData
             });
         } catch (error) {
-            console.error('[BudgetController] Error in getBudgetStats:', error);
+            console.error(`[BudgetController] Error in getBudgetStats: ${error.message}`);
             res.status(500).json({
                 error: '[BudgetController] Failed to retrieve budget statistics',
                 details: error.message
@@ -259,7 +293,7 @@ class BudgetController {
 
     static async analyzeBudgetPerformance(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             
             // Ensure userId is a valid ObjectId
             const userObjectId = mongoose.Types.ObjectId.isValid(userId) 
@@ -278,7 +312,7 @@ class BudgetController {
                 {
                     $lookup: {
                         from: 'categories',
-                        localField: 'categoryId',
+                        localField: 'category',
                         foreignField: '_id',
                         as: 'category'
                     }

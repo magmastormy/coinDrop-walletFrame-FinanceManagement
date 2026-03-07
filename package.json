@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build && postcss src/**/*.css --dir dist/css",
     "lint": "eslint src",
+    "check:import-case": "node scripts/check-import-case.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

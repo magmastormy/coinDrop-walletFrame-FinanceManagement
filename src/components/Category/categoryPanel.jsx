@@ -6,19 +6,6 @@ import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 
 const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selectedCategory, onEditCategory, onDeleteCategory }) => {
-    const getTotalAmount = (category) => {
-        return category.transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
-    };
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount);
-    };
-
     const getRandomColor = (index) => {
         const hue = (index * 137.5) % 360;
         return `hsl(${hue}, 70%, 50%)`;

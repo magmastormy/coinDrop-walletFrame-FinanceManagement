@@ -1,50 +1,46 @@
-import axiosInstance from "../api/userAxios";
+import axiosInstance from '../api/userAxios';
 
 const API_URL = '/settings';
 
 const settingsService = {
-    // Settings-specific operations
-    getUserSettings: async (userId) => {
-        const response = await axiosInstance.get(`${API_URL}?userId=${userId}`);
-        console.log("Settings response.data: ",response.data);
-        console.log("Settings response:", response);
+    getUserSettings: async () => {
+        const response = await axiosInstance.get(API_URL);
         return response;
     },
 
-    updateNotificationSettings: async (notifications) => {
+    updateNotificationSettings: async notifications => {
         const response = await axiosInstance.put(`${API_URL}/notifications`, notifications);
-        return response.data;
+        return response;
     },
 
-    updatePreferences: async (preferences) => {
+    updatePreferences: async preferences => {
         const response = await axiosInstance.put(`${API_URL}/preferences`, preferences);
-        return response.data;
+        return response;
     },
 
-    updateSecuritySettings: async (security) => {
+    updateSecuritySettings: async security => {
         const response = await axiosInstance.put(`${API_URL}/security`, security);
-        return response.data;
+        return response;
     },
 
-    verifyTransactionPin: async (pin) => {
+    verifyTransactionPin: async pin => {
         const response = await axiosInstance.post(`${API_URL}/verify-pin`, { pin });
-        return response.data;
+        return response;
     },
 
-    // Profile-related operations
     getProfile: async () => {
         const response = await axiosInstance.get(`${API_URL}/profile`);
         return response;
     },
 
-    updateProfile: async (profileData) => {
+    updateProfile: async profileData => {
         const response = await axiosInstance.put(`${API_URL}/profile`, profileData);
-        return response.data;
+        return response;
     },
 
     deleteAccount: async () => {
         const response = await axiosInstance.delete(`${API_URL}/account`);
-        return response.data;
+        return response;
     }
 };
 

@@ -4,12 +4,14 @@ const mongoose = require('mongoose');
 const Wallet = require('../models/Wallet');
 const Category = require('../models/Category');
 const Transaction = require('../models/Transaction');
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const isDev = process.env.NODE_ENV !== 'production';
 
 
 class SavingsGoalController {
     static async getUserSavingsGoals(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             // Only return active (not deleted) goals
             const goals = await SavingsGoal.find({ userId: userId, isActive: true });
             res.json(goals);
@@ -21,7 +23,7 @@ class SavingsGoalController {
 
     static async createSavingsGoal(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const newGoal = new SavingsGoal({ ...req.body, userId: userId });
             await newGoal.save();
             res.status(201).json(newGoal);
@@ -33,7 +35,15 @@ class SavingsGoalController {
 
     static async updateSavingsGoal(req, res) {
         try {
-            const goal = await SavingsGoal.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            const userId = getAuthenticatedUserId(req);
+            const goal = await SavingsGoal.findOneAndUpdate(
+                { _id: req.params.id, userId, isActive: true },
+                req.body,
+                { new: true }
+            );
+            if (!goal) {
+                return res.status(404).json({ error: 'Savings goal not found' });
+            }
             res.json(goal);
         } catch (error) {
             res.status(400).json({ error: 'Failed to update savings goal' });
@@ -63,7 +73,7 @@ class SavingsGoalController {
             const goalClosureCategory = await getGoalClosureCategory(userId, session);
             // Try savings account first
             if (transferToSavingsAccountId) {
-                const savingsAccount = await SavingsAccount.findOne({ _id: transferToSavingsAccountId, userId }).session(session);
+                const savingsAccount = await SavingsAccount.findOne({ _id: transferToSavingsAccountId, userId, isActive: true }).session(session);
                 if (!savingsAccount) throw new Error('Target savings account not found');
                 savingsAccount.balance += remainingAmount;
                 await savingsAccount.save({ session });
@@ -79,7 +89,7 @@ class SavingsGoalController {
                 return { destinationId: savingsAccount._id, destinationType: 'savings_account' };
             }
             // Try any savings account
-            const savingsAccounts = await SavingsAccount.find({ userId }).session(session);
+            const savingsAccounts = await SavingsAccount.find({ userId, isActive: true }).session(session);
             if (savingsAccounts.length > 0) {
                 const target = savingsAccounts[0];
                 target.balance += remainingAmount;
@@ -129,8 +139,8 @@ class SavingsGoalController {
                 session = await mongoose.startSession();
                 session.startTransaction();
                 const { id } = req.params;
-                const { transferToSavingsAccountId, transferToWalletId, userId: bodyUserId } = req.body || {};
-                const userId = req.user?.userId || req.user?._id || req.user?.id || req.query?.userId || bodyUserId;
+                const { transferToSavingsAccountId, transferToWalletId } = req.body || {};
+                const userId = getAuthenticatedUserId(req);
                 if (!userId) throw new Error('User ID is required');
                 if (!mongoose.Types.ObjectId.isValid(id)) throw new Error('Invalid savings goal ID format');
                 if (transferToWalletId && !mongoose.Types.ObjectId.isValid(transferToWalletId)) throw new Error('Invalid wallet ID format');
@@ -151,7 +161,7 @@ class SavingsGoalController {
                     }));
                 }
                 await SavingsGoal.updateOne(
-                    { _id: id },
+                    { _id: id, userId: userObjectId, isActive: true },
                     { $set: { isActive: false, currentAmount: 0, deletedAt: new Date(), status: 'deleted' } }
                 ).session(session);
                 await session.commitTransaction();
@@ -214,25 +224,31 @@ class SavingsGoalController {
             try {
             const { goalId } = req.params;
             const { amount, sourceType, sourceId } = req.body;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
+            const numericAmount = Number(amount);
 
-            console.log("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
-            console.log("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
+            if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
+            if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
+
+            if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+                throw new Error('Amount must be a positive number');
+            }
 
             // Find the source (wallet or savings account)
             let source;
             if (sourceType == "wallet") {
-                console.log("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
+                if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
                 source = await Wallet.findOne({
                     _id: sourceId,
                     userId: userId,
                     isActive: true
                 }).session(session);
             } else {
-                console.log("[savingsGoalController - contributeSavingsGoal] source is Savings");
+                if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source is Savings");
                 source = await SavingsAccount.findOne({
                     _id: sourceId,
-                    userId: userId
+                    userId: userId,
+                    isActive: true
                 }).session(session);
             }
 
@@ -241,7 +257,7 @@ class SavingsGoalController {
             }
 
             // Check if source has sufficient balance
-            if (source.balance < amount) {
+            if (source.balance < numericAmount) {
                 throw new Error('Insufficient balance in source');
             }
 
@@ -275,22 +291,22 @@ class SavingsGoalController {
             }
 
             // Update source balance
-            source.balance -= parseFloat(amount);
+            source.balance -= numericAmount;
             await source.save({ session });
 
             // Update savings goal current amount
-            const savingsGoal = await SavingsGoal.findById(goalId).session(session);
+            const savingsGoal = await SavingsGoal.findOne({ _id: goalId, userId, isActive: true }).session(session);
             if (!savingsGoal) {
                 throw new Error('Savings goal not found');
             }
-            savingsGoal.currentAmount += parseFloat(amount);
+            savingsGoal.currentAmount += numericAmount;
             await savingsGoal.save({ session });
 
             // Create transaction record
             const transaction = new Transaction({
                 userId: userId,
                 type: 'expense',
-                amount: parseFloat(amount),
+                amount: numericAmount,
                 category: categoryId,
                 description: `Contribution to ${savingsGoal.name} savings goal`,
                 date: new Date(),
@@ -314,7 +330,7 @@ class SavingsGoalController {
                 try {
                     await session.abortTransaction();
                 } catch (abortError) {
-                    console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction:`, abortError);
+                    console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction: ${abortError.message}`);
                 }
                 throw error; // Rethrow for retry mechanism
             } finally {
@@ -327,7 +343,7 @@ class SavingsGoalController {
             for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
                 try {
                     if (attempt > 0) {
-                        console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Retry attempt ${attempt} of ${MAX_RETRY_ATTEMPTS}`);
+                        if (isDev) console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Retry attempt ${attempt} of ${MAX_RETRY_ATTEMPTS}`);
                         // Add exponential backoff delay between retries
                         const delay = Math.pow(2, attempt) * 100; // 200ms, 400ms, 800ms
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -342,7 +358,7 @@ class SavingsGoalController {
                         error.errorLabels.includes('TransientTransactionError');
                     
                     if (isTransientError && attempt < MAX_RETRY_ATTEMPTS) {
-                        console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Transaction failed with transient error, will retry:`, error.message);
+                        if (isDev) console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Transaction failed with transient error, will retry:`, error.message);
                         continue; // Try again
                     }
                     
@@ -351,7 +367,7 @@ class SavingsGoalController {
                 }
             }
         } catch (error) {
-            console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error:`, error);
+            console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] ${error.message}`);
             res.status(400).json({
                 success: false,
                 error: 'Contribution failed',
@@ -363,3 +379,4 @@ class SavingsGoalController {
 }
 
 module.exports = SavingsGoalController;
+

@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const UserProfile = require('../models/UserProfile');
 
 const authMiddleware = async (req, res, next) => {
     try {
@@ -11,7 +10,19 @@ const authMiddleware = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
+        const normalizedUserId = decoded.userId || decoded._id || decoded.id;
+        if (!normalizedUserId) {
+            const error = new Error('Invalid authentication token payload');
+            error.status = 401;
+            return next(error);
+        }
+
+        req.user = {
+            ...decoded,
+            _id: normalizedUserId,
+            userId: normalizedUserId
+        };
+        req.authUserId = normalizedUserId;
 
         next();
     } catch (error) {

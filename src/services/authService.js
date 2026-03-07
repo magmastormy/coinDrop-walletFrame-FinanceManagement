@@ -1,9 +1,7 @@
-import axiosInstance from "../api/userAxios";
+import axiosInstance from '../api/userAxios';
 import { loginSuccess, logout as logoutAction } from '../slices/authSlice';
 import store from '../slices/store';
 
-
-// Add AUTH_ERRORS export
 export const AUTH_ERRORS = {
     INVALID_LOGIN: 'Wrong email or password. Please try again.',
     SERVER_ERROR: 'Something went wrong. Please try again later.',
@@ -11,16 +9,32 @@ export const AUTH_ERRORS = {
     NETWORK_ERROR: 'Network error. Please check your connection.',
     DUPLICATE_EMAIL: 'This email is already registered.',
     DUPLICATE_USERNAME: 'This username is already taken.',
-    PASSWORD_REQUIREMENTS: 'Password must include uppercase, lowercase, number, and special character.',
+    PASSWORD_REQUIREMENTS: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.',
     MISSING_FIELDS: 'Please fill in all required fields.',
-    PASSWORD_MISMATCH: "Passwords do not match",
-    PASSWORD_REQUIREMENTS: "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character",
-    VALIDATION_ERROR: "Invalid input. Please check your data",
-    SERVER_ERROR: "Server error occurred. Please try again later"
+    PASSWORD_MISMATCH: 'Passwords do not match'
 };
 
-// Helper function to format error messages
-const formatErrorMessage = (error) => {
+const storeUserData = (accessToken, refreshToken, userData) => {
+    localStorage.setItem('token', accessToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+    }
+
+    store.dispatch(loginSuccess({
+        user: userData,
+        accessToken,
+        refreshToken
+    }));
+};
+
+const clearUserData = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+};
+
+const formatErrorMessage = error => {
     if (!error.response) {
         return AUTH_ERRORS.NETWORK_ERROR;
     }
@@ -28,182 +42,112 @@ const formatErrorMessage = (error) => {
     const { status, data } = error.response;
 
     if (status === 400) {
-        if (data.details) {
-            return {
-                error: AUTH_ERRORS.VALIDATION_ERROR,
-                details: data.details
-            };
+        if (Array.isArray(data?.details)) {
+            return { error: AUTH_ERRORS.VALIDATION_ERROR, details: data.details };
         }
-        if (data.message?.includes('email')) {
+        if ((data?.details || data?.message || '').toLowerCase().includes('email')) {
             return AUTH_ERRORS.DUPLICATE_EMAIL;
         }
-        if (data.message?.includes('username')) {
+        if ((data?.details || data?.message || '').toLowerCase().includes('username')) {
             return AUTH_ERRORS.DUPLICATE_USERNAME;
         }
-        if (data.message?.includes('password')) {
-            return AUTH_ERRORS.PASSWORD_REQUIREMENTS;
-        }
-        return data.message || AUTH_ERRORS.VALIDATION_ERROR;
+        return data?.details || data?.message || AUTH_ERRORS.VALIDATION_ERROR;
     }
 
     if (status === 401) {
         return AUTH_ERRORS.INVALID_LOGIN;
     }
 
-    return AUTH_ERRORS.SERVER_ERROR;
+    return data?.details || data?.message || AUTH_ERRORS.SERVER_ERROR;
 };
 
-// Save user data in browser storage
-const storeUserData = (token, userData) => {
-    try {
-        console.log('💾 Saving user data...', { user: userData });
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        // Update Redux store
-        store.dispatch(loginSuccess({
-            user: userData,
-            accessToken: token
-        }));
-        
-        console.log('✅ User data saved successfully');
-    } catch (error) {
-        console.error('❌ Error saving user data:', error);
-        throw error;
-    }
-};
-
-// Clear user data from browser storage
-const clearUserData = () => {
-    console.log('Clearing user data...');
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-};
-
-// Update app state with a given action
-const updateAppState = (action) => {
-    store.dispatch(action);
-};
-
-// Login function
-export const loginUser = async (credentials) => {
+export const loginUser = async credentials => {
     try {
         const response = await axiosInstance.post('/auth/login', credentials);
-        
-        // Directly access the response data structure
-        if (!response?.accessToken) {
-            throw new Error(response?.error || 'Authentication failed');
+        if (!response?.accessToken || !response?.user) {
+            throw new Error('Authentication failed');
         }
 
-        storeUserData(response.accessToken, response.user);
+        storeUserData(response.accessToken, response.refreshToken, response.user);
         return response;
-
     } catch (error) {
-        const formattedError = formatErrorMessage(error);
-        console.error('Login error:', {
-            rawError: error,
-            formattedError
-        });
-        throw formattedError;
+        throw formatErrorMessage(error);
     }
 };
 
-// Registration Function
-export const registerUser = async (userData) => {
-    console.log('📝 Registration attempt:', userData.email);
+export const registerUser = async userData => {
     try {
         const requiredFields = ['email', 'password', 'username', 'firstName', 'lastName'];
         const missingFields = requiredFields.filter(field => !userData[field]);
-        
         if (missingFields.length > 0) {
             throw new Error(AUTH_ERRORS.MISSING_FIELDS);
         }
 
         const { confirmPassword, ...registrationData } = userData;
-        
-        const response = await axiosInstance.post("/auth/register", registrationData);
-        console.log('✅ Registration successful:', response.data);
-        
-        if (response?.data?.token && response?.data?.user) {
-            storeUserData(response.data.token, response.data.user);
-            updateAppState(loginSuccess({ 
-                token: response.data.token, 
-                user: response.data.user 
-            }));
+        const response = await axiosInstance.post('/auth/register', registrationData);
+
+        if (response?.accessToken && response?.user) {
+            storeUserData(response.accessToken, response.refreshToken, response.user);
         }
-        
-        return response.data;
+
+        return response;
     } catch (error) {
-        console.error('❌ Registration error:', error.response || error);
-        const formattedError = formatErrorMessage(error);
-        throw formattedError;
+        throw formatErrorMessage(error);
     }
 };
 
-// Logout function
 export const logoutUser = () => {
-    console.log('👋 Logging out...');
     clearUserData();
-    updateAppState(logoutAction());
-    console.log('✅ Logout successful');
+    store.dispatch(logoutAction());
 };
 
-// Check if user is logged in
 export const isAuthenticated = () => {
-    const token = localStorage.getItem("token");
-    const isLoggedIn = !!token;
-    console.log('🔑 Auth check:', isLoggedIn ? 'Logged in' : 'Not logged in');
-    return isLoggedIn;
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    return Boolean(token && user);
 };
 
-// Get current user data
 export const getStoredUser = () => {
     try {
-        const userStr = localStorage.getItem("user");
-        if (!userStr) return null;
-        return JSON.parse(userStr);
-    } catch (error) {
-        console.error('❌ Error getting user data:', error);
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (_error) {
         return null;
     }
 };
 
-// Change password function
-export const changePassword = async(oldPassword, newPassword) => {
+export const changePassword = async (currentPassword, newPassword) => {
     try {
-        const response = await axiosInstance.put('/auth/change-password', {
-            oldPassword,
+        const response = await axiosInstance.post('/auth/change-password', {
+            currentPassword,
             newPassword
         });
 
-        return response.data;
+        return response;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Failed to change password.');
+        throw new Error(error.response?.data?.details || 'Failed to change password.');
     }
 };
 
 export const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    store.dispatch(logoutAction());
+    logoutUser();
     window.location.href = '/login';
 };
 
-// Keep existing forgotPassword function
-export const forgotPassword = async (userData) => {
-    try {
-        const response = await axiosInstance.post('/auth/reset-password', userData);
-        return response.data;
-    } catch (error) {
-        console.error('Error in forgotPassword:', error);
-        throw error;
-    }
+export const forgotPassword = async userData => {
+    const response = await axiosInstance.post('/auth/reset-password', userData);
+    return response;
 };
 
-
 const authService = {
-    // Include other methods...
-    forgotPassword
+    loginUser,
+    registerUser,
+    logoutUser,
+    forgotPassword,
+    changePassword,
+    isAuthenticated,
+    getStoredUser,
+    logout
 };
 
 export default authService;

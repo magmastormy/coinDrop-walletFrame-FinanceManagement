@@ -3,15 +3,12 @@ const jwt = require('jsonwebtoken');
 
 const setupTestDB = async () => {
     try {
-        // Use an in-memory MongoDB instance for testing
         const uri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/coinDrop_test';
         await mongoose.connect(uri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
+            serverSelectionTimeoutMS: 1500
         });
     } catch (error) {
-        console.error('Test database connection error:', error);
-        throw error;
+        throw new Error(`Test database connection error: ${error.message}`);
     }
 };
 

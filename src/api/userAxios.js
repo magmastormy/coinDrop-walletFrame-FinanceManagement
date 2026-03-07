@@ -10,27 +10,18 @@ const axiosInstance = axios.create({
     }
 });
 
-// Function to check if the token is expired
-const isTokenExpired = (token) => {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(atob(base64));
-        if (!payload.exp) return true;
-        return payload.exp * 1000 < Date.now();
-    } catch (error) {
-        console.error('Token validation error:', error);
-        return true;
-    }
-};
-
 // Function to refresh the token
 const refreshToken = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) throw new Error('No refresh token available');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+    if (!storedRefreshToken) throw new Error('No refresh token available');
 
-    const response = await axios.post('http://localhost:5001/api/auth/refresh-token', { refreshToken });
-    return response.data.accessToken || response.data.token;
+    const response = await axios.post('http://localhost:5001/api/auth/refresh-token', {
+        refreshToken: storedRefreshToken
+    });
+    return {
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken
+    };
 };
 
 let isRefreshing = false;
@@ -101,14 +92,17 @@ axiosInstance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const newToken = await refreshToken();
-                localStorage.setItem('token', newToken);
+                const tokenResponse = await refreshToken();
+                localStorage.setItem('token', tokenResponse.accessToken);
+                if (tokenResponse.refreshToken) {
+                    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
+                }
                 
                 // Update headers
-                axiosInstance.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                axiosInstance.defaults.headers.common.Authorization = `Bearer ${tokenResponse.accessToken}`;
+                originalRequest.headers.Authorization = `Bearer ${tokenResponse.accessToken}`;
 
-                processQueue(null, newToken);
+                processQueue(null, tokenResponse.accessToken);
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);

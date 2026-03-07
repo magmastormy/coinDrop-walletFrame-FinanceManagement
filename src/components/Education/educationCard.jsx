@@ -6,7 +6,7 @@ import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
 import { cn } from '../../lib/utils';
 
-const EducationCard = ({ education, onLike, onComment, onBookmark, currentUser }) => {
+const EducationCard = ({ education, onLike, onComment, currentUser }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLiked, setIsLiked] = useState(
         education.likes?.includes(currentUser?._id) ||

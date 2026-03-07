@@ -49,12 +49,8 @@ const WalletManager = () => {
                 transactionService.getUserTransactions(user.id, { walletId: walletId })
             ]);
 
-            setWalletBudgets(budgetData.budgets || []);
-
-            let txs = [];
-            if (transactionData?.data?.transactions) txs = transactionData.data.transactions;
-            else if (Array.isArray(transactionData?.data)) txs = transactionData.data;
-            else if (Array.isArray(transactionData?.transactions)) txs = transactionData.transactions;
+            setWalletBudgets(budgetData || []);
+            const txs = Array.isArray(transactionData?.transactions) ? transactionData.transactions : [];
 
             setWalletTransactions(txs);
         } catch (err) {

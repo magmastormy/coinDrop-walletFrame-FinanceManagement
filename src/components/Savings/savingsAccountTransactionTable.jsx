@@ -40,7 +40,7 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
     const handleUpdateTransaction = async (updatedTransaction) => {
         try {
             dispatch(setLoading(true));
-            await savingsAccountService.updateTransaction(accountId, updatedTransaction);
+            await savingsAccountService.updateTransaction(updatedTransaction._id, updatedTransaction);
             setTransactions(prev => prev.map(t =>
                 t._id === updatedTransaction._id ? updatedTransaction : t
             ));

@@ -30,12 +30,13 @@ const DashboardPieChart = () => {
                         getUserCategories(user.id)
                     ]);
 
-                    const transactionsData = transactionsResponse.data || [];
+                    const transactionsData = transactionsResponse.transactions || [];
                     const expensesByCategory = {};
 
                     if (Array.isArray(transactionsData)) {
                         transactionsData.forEach(transaction => {
-                            const category = categoriesData.find(c => c._id === transaction.categoryId);
+                            const txCategoryId = transaction.category?._id || transaction.category;
+                            const category = categoriesData.find(c => c._id === txCategoryId);
                             if (category && transaction.type === 'expense') {
                                 expensesByCategory[category.name] = (expensesByCategory[category.name] || 0) + transaction.amount;
                             }

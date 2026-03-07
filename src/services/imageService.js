@@ -18,9 +18,9 @@ const imageService = {
             
             const formData = new FormData();
             formData.append('image', file);
+            formData.append('imageType', imageType);
             
-            // Add image type as query parameter
-            const response = await axiosInstance.post(`${API_URL}/upload?type=${imageType}`, formData, {
+            const response = await axiosInstance.post(`${API_URL}/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -46,7 +46,7 @@ const imageService = {
     deleteImage: async (imageId) => {
         try {
             const response = await axiosInstance.delete(`${API_URL}/${imageId}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error deleting image:', error);
             throw error;

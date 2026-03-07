@@ -202,7 +202,7 @@ const SavingsAccountManager = () => {
             >
                 <div className="space-y-4">
                     <p className="text-muted-foreground">
-                        Are you sure you want to delete the savings account "{accountToDelete.name}"?
+                        Are you sure you want to delete the savings account &quot;{accountToDelete.name}&quot;?
                     </p>
 
                     {accountToDelete.balance > 0 && (
@@ -411,3 +411,4 @@ const SavingsAccountManager = () => {
 };
 
 export default SavingsAccountManager;
+

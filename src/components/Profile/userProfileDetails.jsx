@@ -142,11 +142,11 @@ const UserProfileDetails = () => {
             console.log('[userProfileDetails] Submitting form data:', profileData);
             if (!profile) {
                 dispatch(createProfileStart());
-                const result = await profileService.createUserProfile(user.id, profileData);
+                const result = await profileService.createUserProfile(profileData);
                 dispatch(createProfileSuccess(result.profile));
             } else {
                 dispatch(updateProfileStart());
-                const result = await profileService.updateUserProfile(user.id, profileData);
+                const result = await profileService.updateUserProfile(profileData);
                 dispatch(updateProfileSuccess(result.profile));
             }
             setIsEditing(false);
@@ -160,7 +160,7 @@ const UserProfileDetails = () => {
     const handleProfileImageUpload = async (file) => {
         try {
             console.log('[UserProfileDetails] Starting image upload:', file);
-            const result = await profileService.uploadProfileImage(user.id, file);
+            const result = await profileService.uploadProfileImage(file);
             console.log('[UserProfileDetails] Upload Image result:', result);
 
             // Check if we have a result with a URL
@@ -263,7 +263,7 @@ const UserProfileDetails = () => {
 
                 {/* Right Column - Profile Information */}
                 <div className="md:col-span-2">
-                    <h2 className="text-2xl font-semibold text-foreground mb-6">{user?.username}'s Profile</h2>
+                    <h2 className="text-2xl font-semibold text-foreground mb-6">{user?.username}&apos;s Profile</h2>
                     {isEditing ? (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <Input

@@ -26,7 +26,7 @@ const TransactionStream = () => {
                         getUserTransactions(user.id),
                         getUserCategories(user.id)
                     ]);
-                    setTransactions(transactionsResponse?.data || []);
+                    setTransactions(transactionsResponse?.transactions || []);
                     setCategories(categoriesResponse || []);
                 } catch (error) {
                     console.error('Error fetching data:', error);
@@ -46,7 +46,7 @@ const TransactionStream = () => {
     const filteredTransactions = transactions
         .filter(t => {
             const matchesSearch = (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                getCategoryName(t.categoryId).toLowerCase().includes(searchTerm.toLowerCase());
+                getCategoryName(t.category?._id || t.category).toLowerCase().includes(searchTerm.toLowerCase());
             const matchesFilter = filterType === 'all' || t.type === filterType;
             return matchesSearch && matchesFilter;
         })
@@ -111,7 +111,7 @@ const TransactionStream = () => {
                                     <div>
                                         <p className="font-medium text-foreground">{transaction.description}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {new Date(transaction.date).toLocaleDateString()} • {getCategoryName(transaction.categoryId)}
+                                            {new Date(transaction.date).toLocaleDateString()} • {getCategoryName(transaction.category?._id || transaction.category)}
                                         </p>
                                     </div>
                                 </div>

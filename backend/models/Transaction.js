@@ -92,7 +92,7 @@ transactionSchema.pre('save', async function(next) {
         }
 
         // Ensure transaction category matches budget category
-        if (budget.categoryId && !this.category.equals(budget.categoryId)) {
+        if (budget.category && this.category && !this.category.equals(budget.category)) {
             next(new Error('Transaction category must match budget category'));
             return;
         }

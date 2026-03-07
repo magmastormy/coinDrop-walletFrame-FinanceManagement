@@ -95,6 +95,7 @@ budgetSchema.statics.updateBudgetSpent = async function(budgetId) {
     if (!budget) return;
 
     const Transaction = mongoose.model('Transaction');
+    const categoryQuery = [budget.category];
     
     if (budget.includeSubcategories) {
         const Category = mongoose.model('Category');

@@ -64,7 +64,7 @@ const EducationManager = () => {
 
     useEffect(() => {
         fetchEducationPosts();
-    }, [dispatch, user]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [dispatch, user]);
 
     // Filter and sort education posts
     const filteredEducations = educations?.filter(post => {
@@ -271,3 +271,4 @@ const EducationManager = () => {
 };
 
 export default EducationManager;
+

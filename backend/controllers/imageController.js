@@ -1,6 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 const Image = require('../models/Image');
 const { getUploadOptions } = require('../config/cloudinary');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 class ImageController {
     static async uploadImage(req, res) {
@@ -15,7 +16,7 @@ class ImageController {
                 return res.status(400).json({ error: 'Invalid file format' });
             }
 
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const imageType = req.body.imageType || 'education';
             const options = getUploadOptions(imageType);
 
@@ -42,7 +43,8 @@ class ImageController {
 
     static async deleteImage(req, res) {
         try {
-            const image = await Image.findById(req.params.id);
+            const userId = getAuthenticatedUserId(req);
+            const image = await Image.findOne({ _id: req.params.id, uploadedBy: userId });
             if (!image) {
                 return res.status(404).json({ error: 'Image not found' });
             }

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
 import { useTheme } from '../../../theme/ThemeContext';
 import { Button } from '../../ui/Button';
+import SafeHtml from '../../common/SafeHtml';
 
 
 // Create a portal container for the modal
@@ -142,13 +143,9 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
               </div>
 
               {/* Content */}
-              <div
+              <SafeHtml
+                html={post.details}
                 className="prose dark:prose-invert max-w-none mb-6"
-                style={{
-                  '--tw-prose-body': theme.text.primary,
-                  '--tw-prose-headings': theme.text.heading
-                }}
-                dangerouslySetInnerHTML={{ __html: post.details }}
               />
 
               <hr className="border-border my-6" />

@@ -101,7 +101,7 @@ const DashboardUserGreetings = () => {
                             <Sun className="w-4 h-4 text-primary" />
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground">Today's Goal</p>
+                            <p className="text-xs text-muted-foreground">Today&apos;s Goal</p>
                             <p className="text-foreground font-semibold">$50.00</p>
                         </div>
                     </div>

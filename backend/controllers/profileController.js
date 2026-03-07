@@ -3,6 +3,8 @@ const UserProfile = require('../models/UserProfile');
 const ImageService = require("../services/imageService");
 const User = require("../models/User");
 const { validationResult } = require('express-validator');
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const isDev = process.env.NODE_ENV !== 'production';
 
 const allowedInterests = [
     'investing',
@@ -21,16 +23,16 @@ class ProfileController {
     // Get user profile
     static async getProfile(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
-            console.log('[Profile Controller] Fetching profile for user:', userId);
+            if (isDev) console.log('[Profile Controller] Fetching profile for user:', userId);
             
             const profile = await UserProfile.findOne({ user: userId })
                 .populate('user', 'username email profilePicture firstName lastName');
             
             if (!profile) {
                 // If no profile exists, create a new one
-                console.log('[Profile Controller] No profile found, creating new profile...');
+                if (isDev) console.log('[Profile Controller] No profile found, creating new profile...');
                 const newProfile = await UserProfile.create({
                     user: userId,
                     username: req.user.username || `user_${userId}`,
@@ -51,7 +53,7 @@ class ProfileController {
     
     static async updateProfile(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const allowedUpdates = [
                 'bio', 'interests', 'preferences', 'profilePicture', 'coverPhoto'
             ];
@@ -82,15 +84,15 @@ class ProfileController {
 
     // Create user profile
     static async createProfile(req, res) {
-        console.log(`[ProfileController: createProfile] Route utilized: /create-profile`);
+        if (isDev) console.log(`[ProfileController: createProfile] Route utilized: /create-profile`);
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
-            console.log('[Profile Controller: createProfile] Creating profile for user:', userId);
+            const userId = getAuthenticatedUserId(req);
+            if (isDev) console.log('[Profile Controller: createProfile] Creating profile for user:', userId);
     
             // Check if profile already exists
             const existingProfile = await UserProfile.findOne({ user: userId });
             if (existingProfile) {
-                console.log('[Profile Controller: createProfile] Profile already exists');
+                if (isDev) console.log('[Profile Controller: createProfile] Profile already exists');
                 return res.json({
                     message: '[Profile Controller: createProfile] Profile already exists',
                     profile: existingProfile
@@ -114,11 +116,11 @@ class ProfileController {
                 preferences: req.body.preferences || {}
             };
     
-            console.log('[Profile Controller: createProfile] Creating new profile with data:', profileData);
+            if (isDev) console.log('[Profile Controller: createProfile] Creating new profile');
             const profile = await UserProfile.create(profileData);
             await profile.populate('user', 'username email profilePicture firstName lastName');
             
-            console.log('[Profile Controller: createProfile] Profile created successfully:', profile);
+            if (isDev) console.log('[Profile Controller: createProfile] Profile created successfully');
             return res.status(201).json({
                 message: '[Profile Controller: createProfile] Profile created successfully',
                 profile
@@ -135,8 +137,8 @@ class ProfileController {
     //delete profile
     static async deleteProfile(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
-            console.log('[Profile Controller] Deleting profile for user:', userId);
+            const userId = getAuthenticatedUserId(req);
+            if (isDev) console.log('[Profile Controller] Deleting profile for user:', userId);
             
             const profile = await UserProfile.findOneAndDelete({ user: userId });
             
@@ -174,17 +176,17 @@ class ProfileController {
     }
 
     static async uploadProfileImage(req, res) {
-        console.log('[ProfileController: uploadProfileImage] Method invoked');
+        if (isDev) console.log('[ProfileController: uploadProfileImage] Method invoked');
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const imageType = req.query.type === 'cover' ? 'cover' : 'profile';
 
-            console.log(`[ProfileController: uploadProfileImage] Route utilized: /upload-image?type=${imageType}`);
+            if (isDev) console.log(`[ProfileController: uploadProfileImage] Route utilized: /upload-image?type=${imageType}`);
 
             let profile = await UserProfile.findOne({ user: userId });
 
             if (!profile) {
-                console.log('[ProfileController: uploadImage] Creating new profile for user:', userId);
+                if (isDev) console.log('[ProfileController: uploadImage] Creating new profile for user:', userId);
                 profile = await UserProfile.create({
                     user: userId,
                     username: req.user.username || `user_${userId}`,
@@ -193,7 +195,7 @@ class ProfileController {
                 });
             }
 
-            console.log('[ProfileController: uploadImage] Uploading image to Image Service...', req.file.path);
+            if (isDev) console.log('[ProfileController: uploadImage] Uploading image to Image Service');
             const result = await ImageService.uploadImage(req.file.path, {
                 folder: `coinDrop_${imageType}`,
                 transformation: [
@@ -201,7 +203,7 @@ class ProfileController {
                     { fetch_format: 'auto' }
                 ]
             });
-            console.log('[ProfileController: uploadImage] Image uploaded to Image Service:', result);
+            if (isDev) console.log('[ProfileController: uploadImage] Image uploaded to Image Service');
 
             profile[imageType === 'cover' ? 'coverPhoto' : 'profilePicture'] = result.secure_url;
             await profile.save();
@@ -227,7 +229,7 @@ class ProfileController {
 
     static async deleteProfileImage(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const imageType = req.query.type === 'cover' ? 'cover' : 'profile';
             
             const profile = await UserProfile.findOne({ user: userId });
@@ -256,7 +258,7 @@ class ProfileController {
 
     static async getFollowing(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const profile = await UserProfile.findOne({ user: userId })
                 .populate('following', 'username profilePicture');
             
@@ -272,7 +274,7 @@ class ProfileController {
 
     static async getFollowers(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const profile = await UserProfile.findOne({ user: userId })
                 .populate('followers', 'username profilePicture');
             
@@ -288,3 +290,4 @@ class ProfileController {
 }
 
 module.exports = ProfileController;
+

@@ -8,6 +8,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      treeshake: 'recommended',
       output: {
         manualChunks: {
           react: ['react', 'react-dom'],
@@ -15,8 +16,7 @@ export default defineConfig({
           charts: ['chart.js'],
           vendors: ['axios', 'react-redux'],
           fonts: ["@fortawesome/fontawesome-svg-core", "@fortawesome/free-regular-svg-icons", "@fortawesome/free-solid-svg-icons", "@fortawesome/react-fontawesome"]
-        },
-        treeshake: 'recommended'
+        }
       },
     },
     chunkSizeWarningLimit: 500,

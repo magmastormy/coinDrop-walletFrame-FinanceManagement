@@ -45,12 +45,12 @@ router.use(authMiddleware);
 
 router.post('/', educationValidation, validationMiddleware, EducationController.createEducation);
 router.get('/', EducationController.getEducations);
-router.get('/user/:userId', EducationController.getUserEducations);
+router.get('/user', EducationController.getUserEducations);
 router.get('/:id', EducationController.getEducationById);
 router.put('/:id', educationValidation, validationMiddleware, EducationController.updateEducation);
 router.delete('/:id', EducationController.deleteEducation);
 router.post('/:id/like', EducationController.likeEducation);
 router.post('/:id/comments', body('text').isLength({ min: 1, max: 500 }).withMessage('Comment must be between 1 and 500 characters'), validationMiddleware, EducationController.addComment);
 router.delete('/:id/comments/:commentId', EducationController.deleteComment);
-router.post('/upload-image', authMiddleware, upload.single('image'), EducationController.uploadImage);
+router.post('/upload-image', upload.single('image'), EducationController.uploadImage);
 module.exports = router;

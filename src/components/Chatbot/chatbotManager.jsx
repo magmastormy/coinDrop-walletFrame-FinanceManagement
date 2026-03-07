@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ChatContainer from './chatContainer';
 import aiServiceWrapper from '../../services/aiServiceWrapper';
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = import.meta.env.DEV;
 
 /**
  * ChatbotManager - AI chatbot interface with optimized performance
@@ -186,3 +186,4 @@ const ChatbotManager = () => {
 };
 
 export default ChatbotManager;
+

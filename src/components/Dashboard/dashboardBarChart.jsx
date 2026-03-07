@@ -31,13 +31,7 @@ const DashboardBarChart = () => {
                         actual: []
                     };
 
-                    if (budgetStatsResponse.error) {
-                        throw new Error(budgetStatsResponse.message || 'Failed to load budget data');
-                    }
-
-                    const budgetStatsData = Array.isArray(budgetStatsResponse)
-                        ? budgetStatsResponse
-                        : (budgetStatsResponse.data || []);
+                    const budgetStatsData = Array.isArray(budgetStatsResponse) ? budgetStatsResponse : [];
 
                     if (budgetStatsData.length > 0) {
                         budgetStatsData.forEach(stat => {

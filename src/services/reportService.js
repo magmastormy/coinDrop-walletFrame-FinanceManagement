@@ -32,7 +32,7 @@ class ReportService {
                 return response;
             } else {
                 // If not a blob, try to create one
-                console.warn('[ReportService - downloadReport] Response is not a Blob, attempting to create one:', response.data);
+                console.warn('[ReportService - downloadReport] Response is not a Blob, attempting to create one');
                 return new Blob([response], { 
                     type: 'application/octet-stream' 
                 });

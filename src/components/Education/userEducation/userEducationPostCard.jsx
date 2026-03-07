@@ -8,6 +8,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import EducationImageGallery from '../educationImageGallery';
 import { GlassCard } from '../../ui/GlassCard';
 import { Button } from '../../ui/Button';
+import SafeHtml from '../../common/SafeHtml';
 
 const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, onDelete, viewMode }) => {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -200,9 +201,9 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                     </h3>
 
                     {/* Content Preview */}
-                    <div
+                    <SafeHtml
+                        html={post.details}
                         className="text-muted-foreground text-sm mb-3 line-clamp-5 overflow-hidden education-content-preview"
-                        dangerouslySetInnerHTML={{ __html: post.details }}
                         onClick={() => setIsModalOpen(true)}
                     />
 

@@ -1,11 +1,12 @@
 const UserSettings = require('../models/UserSettings');
 const bcrypt = require('bcryptjs');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 class SettingsController {
     // Get user settings
     static async getUserSettings(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             let settings = await UserSettings.findOne({ userId: userId });
             
             if (!settings) {
@@ -28,7 +29,7 @@ class SettingsController {
     // Update notification settings
     static async updateNotificationSettings(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const settings = await UserSettings.findOneAndUpdate(
                 { userId: userId },
                 { 'notifications': req.body },
@@ -56,7 +57,7 @@ class SettingsController {
     // Update preferences
     static async updatePreferences(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const settings = await UserSettings.findOneAndUpdate(
                 { userId: userId },
                 { 'preferences': req.body },
@@ -84,7 +85,7 @@ class SettingsController {
     // Update security settings
     static async updateSecuritySettings(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const { twoFactorAuth, biometricLogin } = req.body;
             const settings = await UserSettings.findOne({ userId: userId });
 
@@ -118,7 +119,7 @@ class SettingsController {
     // Verify transaction PIN
     static async verifyTransactionPin(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const { pin } = req.body;
             const settings = await UserSettings.findOne({ userId: userId})
                 .select('+security.transactionPin');

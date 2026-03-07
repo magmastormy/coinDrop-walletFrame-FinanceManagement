@@ -5,9 +5,9 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 
 router.post('/send', authMiddleware, controller.sendMessage);
 
-router.get('/user-context/:userId', authMiddleware, controller.getUserContext);
-router.get('/context-suggestions/:userId', authMiddleware, controller.getContextSuggestions);
-router.get('/user-account-info/:userId', authMiddleware, controller.getUserAccountInfo);
-router.get('/proactive-insights/:userId', authMiddleware, controller.getProactiveInsights);
+router.get('/user-context', authMiddleware, controller.getUserContext);
+router.get('/context-suggestions', authMiddleware, controller.getContextSuggestions);
+router.get('/user-account-info', authMiddleware, controller.getUserAccountInfo);
+router.get('/proactive-insights', authMiddleware, controller.getProactiveInsights);
 
 module.exports = router;

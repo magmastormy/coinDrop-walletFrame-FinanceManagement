@@ -4,7 +4,6 @@ import { Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
 import savingsRuleService from '../../services/savingsRuleService';
-import { cn } from '../../lib/utils';
 
 const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
     const { user } = useSelector(state => state.auth);
@@ -23,16 +22,16 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        if (goalId && user?.id) {
+        if (goalId && user) {
             fetchRules();
         }
-    }, [goalId, user?.id]);
+    }, [goalId, user]);
 
     const fetchRules = async () => {
         try {
             setLoading(true);
-            const existingRules = await savingsRuleService.getUserRules(user.id);
-            const goalRules = existingRules.find(rule => rule.goalId === goalId) || rules;
+            const existingRules = await savingsRuleService.getUserRules();
+            const goalRules = existingRules.find(rule => String(rule.goalId) === String(goalId)) || rules;
             setRules(goalRules);
         } catch (err) {
             setError('Failed to load savings rules');
@@ -49,7 +48,6 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
 
             const ruleData = {
                 ...rules,
-                userId: user.id,
                 goalId,
                 triggerType: rules.roundUpTransactions ? 'roundUp' :
                     rules.saveBudgetUnderflow ? 'budgetUnderflow' :

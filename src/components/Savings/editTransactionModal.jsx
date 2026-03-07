@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
 const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets = [], savingsAccounts = [], budgets = [], categories = [] }) => {
-    if (!isOpen || !transaction) return null;
+    const [amount, setAmount] = useState(transaction?.amount ?? '');
+    const [type, setType] = useState(transaction?.type ?? 'expense');
+    const [description, setDescription] = useState(transaction?.description ?? '');
+    const [date, setDate] = useState(transaction?.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+    const [walletId, setWalletId] = useState(transaction?.walletId || '');
+    const [savingsAccountId, setSavingsAccountId] = useState(transaction?.savingsAccountId || '');
+    const [budgetId, setBudgetId] = useState(transaction?.budgetId || '');
+    const [category, setCategory] = useState(transaction?.category || '');
 
-    const [amount, setAmount] = useState(transaction.amount);
-    const [type, setType] = useState(transaction.type);
-    const [description, setDescription] = useState(transaction.description);
-    const [date, setDate] = useState(transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
-    const [walletId, setWalletId] = useState(transaction.walletId || '');
-    const [savingsAccountId, setSavingsAccountId] = useState(transaction.savingsAccountId || '');
-    const [budgetId, setBudgetId] = useState(transaction.budgetId || '');
-    const [category, setCategory] = useState(transaction.category || '');
+    useEffect(() => {
+        if (!transaction) return;
+
+        setAmount(transaction.amount ?? '');
+        setType(transaction.type ?? 'expense');
+        setDescription(transaction.description ?? '');
+        setDate(transaction.date ? transaction.date.split('T')[0] : new Date().toISOString().split('T')[0]);
+        setWalletId(transaction.walletId || '');
+        setSavingsAccountId(transaction.savingsAccountId || '');
+        setBudgetId(transaction.budgetId || '');
+        setCategory(transaction.category || '');
+    }, [transaction]);
+
+    if (!isOpen || !transaction) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();

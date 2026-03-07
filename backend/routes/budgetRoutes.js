@@ -10,17 +10,22 @@ const budgetCreationValidation = [
         .trim()
         .isLength({ min: 2, max: 50 }).withMessage('Budget name must be between 2 and 50 characters'),
     body('type')
-        .isIn(['monthly', 'yearly', 'custom'])
+        .isIn(['expense', 'income', 'savings'])
         .withMessage('Invalid budget type'),
+    body('period')
+        .isIn(['daily', 'weekly', 'monthly', 'yearly'])
+        .withMessage('Invalid budget period'),
     body('category')
-        .trim()
-        .notEmpty().withMessage('Budget category is required'),
+        .isMongoId().withMessage('Budget category is required'),
+    body('walletId')
+        .isMongoId().withMessage('Wallet is required'),
     body('amount')
         .isFloat({ min: 0 }).withMessage('Budget amount must be a positive number'),
     body('startDate')
-        .optional()
+        .notEmpty()
         .isISO8601().withMessage('Invalid start date format'),
     body('endDate')
+        .optional()
         .isISO8601().withMessage('Invalid end date format'),
     body('currency')
         .optional()
@@ -36,13 +41,9 @@ const budgetCreationValidation = [
 
 // Budget Query Validation
 const budgetQueryValidation = [
-    query('status')
-        .optional()
-        .isIn(['active', 'completed', 'exceeded', 'archived'])
-        .withMessage('Invalid budget status'),
     query('category')
         .optional()
-        .trim()
+        .isMongoId().withMessage('Invalid category id')
 ];
 
 // Protect all budget routes

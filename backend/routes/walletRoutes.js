@@ -29,6 +29,7 @@ router.post('/',
     WalletController.createWallet
 );
 router.get('/', WalletController.getUserWallets);
+router.get('/:id/budgets', WalletController.getWalletBudgets);
 router.put('/:id', 
     walletCreationValidation, 
     WalletController.updateWallet

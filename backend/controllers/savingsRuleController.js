@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
 const SavingsRule = require('../models/SavingsRule');
 const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 class SavingsRuleController {
     // Get all rules for a user
     static async getUserRules(req, res) {
         try {
-            const { userId } = req.params;
+            const userId = getAuthenticatedUserId(req);
             const rules = await SavingsRule.find({ userId });
             res.json(rules);
         } catch (error) {
@@ -18,11 +19,7 @@ class SavingsRuleController {
     // Create a new rule
     static async createRule(req, res) {
         try {
-            // Log the request body and user for debugging
-            console.log('Create rule request body:', req.body);
-            console.log('User from request:', req.user);
-            
-            const userId = req.user?._id || req.body.userId || req.query.userId;
+            const userId = getAuthenticatedUserId(req);
             
             if (!userId) {
                 return res.status(400).json({ error: 'User ID is required' });
@@ -45,7 +42,7 @@ class SavingsRuleController {
     static async updateRule(req, res) {
         try {
             const { ruleId } = req.params;
-            const userId = req.user?._id || req.body.userId || req.query.userId;
+            const userId = getAuthenticatedUserId(req);
             
             if (!userId) {
                 return res.status(400).json({ error: 'User ID is required' });
@@ -72,7 +69,7 @@ class SavingsRuleController {
     static async deleteRule(req, res) {
         try {
             const { ruleId } = req.params;
-            const userId = req.user?._id || req.body.userId || req.query.userId;
+            const userId = getAuthenticatedUserId(req);
             
             if (!userId) {
                 return res.status(400).json({ error: 'User ID is required' });
@@ -94,7 +91,7 @@ class SavingsRuleController {
     // Execute rules for a transaction
     static async executeRules(req, res) {
         try {
-            const userId = req.user?._id || req.body.userId || req.query.userId;
+            const userId = getAuthenticatedUserId(req);
             const { transactionData } = req.body;
             if (!userId || !transactionData) {
                 return res.status(400).json({ error: 'User ID and transactionData are required' });
@@ -110,7 +107,7 @@ class SavingsRuleController {
     // Get rule statistics
     static async getRuleStats(req, res) {
         try {
-            const { userId } = req.params;
+            const userId = getAuthenticatedUserId(req);
             
             // Get all rules for the user
             const rules = await SavingsRule.find({ userId });

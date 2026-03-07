@@ -6,13 +6,14 @@ const SavingsAccount = require('../models/SavingsAccount');
 const mongoose = require('mongoose');
 const CategoryService = require('../services/categoryService');
 const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
+const { getAuthenticatedUserId } = require('../utils/authUser');
+const isDev = process.env.NODE_ENV !== 'production';
 
 class TransactionController {
     // Create a new transaction
     static async createTransaction(req, res) {
         try {
-            console.log('[TransactionController - createTransaction] req.body:', req.body); // <-- Add this line for debugging
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
             const { amount, type, category, description, walletId, date } = req.body;
 
             // Validate required fields
@@ -26,11 +27,11 @@ class TransactionController {
             // If category is provided, validate it as an ID
             let finalCategory;
             if (category) {
-                finalCategory = await Category.findById(category);
+                finalCategory = await Category.findOne({ _id: category, userId });
                 if (!finalCategory) {
                     return res.status(400).json({ 
                         error: 'Transaction creation failed',
-                        details: 'Invalid category ID' 
+                        details: 'Invalid category ID for current user' 
                     });
                 }
             } 
@@ -38,10 +39,10 @@ class TransactionController {
             else if (description && description.trim()) {
                 try {
                     const suggestedCategory = await CategoryService.suggestCategory(description);
-                    console.log('🤖 AI-suggested category:', suggestedCategory);
+                    if (isDev) console.log('[TransactionController - createTransaction] AI category suggestion generated');
                     finalCategory = await CategoryService.handleCategory(suggestedCategory, userId);
                 } catch (aiErr) {
-                    console.error('Category AI suggestion failed:', aiErr);
+                    console.error(`Category AI suggestion failed: ${aiErr.message}`);
                     return res.status(400).json({ 
                         error: 'Transaction creation failed',
                         details: 'Failed to suggest a category from the description' 
@@ -71,15 +72,20 @@ class TransactionController {
             // Update wallet balance if provided
             let wallet = null;
             if (walletId) {
-                wallet = await Wallet.findById(walletId);
-                if (wallet) {
-                    if (type === 'expense') {
-                        wallet.balance -= parseFloat(amount);
-                    } else if (type === 'income') {
-                        wallet.balance += parseFloat(amount);
-                    }
-                    await wallet.save();
+                wallet = await Wallet.findOne({ _id: walletId, userId, isActive: true });
+                if (!wallet) {
+                    return res.status(404).json({
+                        error: 'Transaction creation failed',
+                        details: 'Wallet not found for current user'
+                    });
                 }
+
+                if (type === 'expense') {
+                    wallet.balance -= parseFloat(amount);
+                } else if (type === 'income') {
+                    wallet.balance += parseFloat(amount);
+                }
+                await wallet.save();
             }
 
             // Update budget (if category and walletId are provided)
@@ -99,14 +105,14 @@ class TransactionController {
             try {
                 autoSavings = await executeRulesForTransaction(userId, transaction.toObject());
             } catch (err) {
-                console.error('Auto savings error:', err);
+                console.error(`Auto savings error: ${err.message}`);
                 autoSavings = { executed: 0, details: [], error: err.message };
             }
 
             res.status(201).json({ 
                 message: 'Transaction created successfully',
                 transaction,
-                wallet: walletId ? await Wallet.findById(walletId) : null,
+                wallet,
                 autoSavings
             });
         } catch (error) {
@@ -123,7 +129,7 @@ class TransactionController {
     
         try {
 
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const { budgetId } = req.params;
             const { amount, type, category, description } = req.body;
@@ -142,7 +148,7 @@ class TransactionController {
             }
     
             // Get wallet from budget
-            const wallet = await Wallet.findById(budget.walletId).session(session);
+            const wallet = await Wallet.findOne({ _id: budget.walletId, userId, isActive: true }).session(session);
             
             if (!wallet) {
                 throw new Error('Associated wallet not found');
@@ -192,6 +198,7 @@ class TransactionController {
     // Get all transactions for a user
     static async getUserTransactions(req, res) {
         try {
+            const userId = getAuthenticatedUserId(req);
             const { 
                 page = 1, 
                 limit = 10, 
@@ -204,32 +211,65 @@ class TransactionController {
                 maxAmount
             } = req.query;
 
-            const filter = { userId: req.user._id || req.query.userId || req.user.userId};
+            const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+            const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+            const filter = { userId };
 
             // Optional filters
             if (type) filter.type = type;
-            if (category) filter.category = mongoose.Types.ObjectId(category);
-            if (walletId) filter.walletId = walletId;
+            if (category) {
+                if (!mongoose.Types.ObjectId.isValid(category)) {
+                    return res.status(400).json({ error: 'Invalid category filter' });
+                }
+                filter.category = new mongoose.Types.ObjectId(category);
+            }
+            if (walletId) {
+                if (!mongoose.Types.ObjectId.isValid(walletId)) {
+                    return res.status(400).json({ error: 'Invalid wallet filter' });
+                }
+                filter.walletId = walletId;
+            }
             
             if (startDate && endDate) {
+                const parsedStart = new Date(startDate);
+                const parsedEnd = new Date(endDate);
+                if (Number.isNaN(parsedStart.getTime()) || Number.isNaN(parsedEnd.getTime())) {
+                    return res.status(400).json({ error: 'Invalid date range filter' });
+                }
+
                 filter.date = {
-                    $gte: new Date(startDate),
-                    $lte: new Date(endDate)
+                    $gte: parsedStart,
+                    $lte: parsedEnd
                 };
+            }
+
+            const minAmountNum = minAmount !== undefined ? Number(minAmount) : null;
+            const maxAmountNum = maxAmount !== undefined ? Number(maxAmount) : null;
+            if (
+                (minAmount !== undefined && !Number.isFinite(minAmountNum)) ||
+                (maxAmount !== undefined && !Number.isFinite(maxAmountNum))
+            ) {
+                return res.status(400).json({ error: 'Invalid amount filter' });
+            }
+
+            if (minAmountNum !== null || maxAmountNum !== null) {
+                filter.amount = {};
+                if (minAmountNum !== null) filter.amount.$gte = minAmountNum;
+                if (maxAmountNum !== null) filter.amount.$lte = maxAmountNum;
             }
 
             const transactions = await Transaction.find(filter)
                 .sort({ date: -1 })
-                .skip((page - 1) * limit)
-                .limit(Number(limit))
+                .skip((pageNum - 1) * limitNum)
+                .limit(limitNum)
                 .populate('walletId', 'name balance');
 
             const total = await Transaction.countDocuments(filter);
 
             res.json({
                 transactions,
-                totalPages: Math.ceil(total / limit),
-                currentPage: page
+                totalPages: Math.ceil(total / limitNum),
+                currentPage: pageNum
             });
         } catch (error) {
             res.status(500).json({
@@ -242,15 +282,14 @@ class TransactionController {
     // Update a transaction
     static async updateTransaction(req, res) {
         try {
-            // log the request body for debugging
-            console.log('[TransactionController - updateTransaction] req.body:', req.body); // <-- Add this line for debugging
             const { id } = req.params;
+            const userId = getAuthenticatedUserId(req);
 
             // Ensure transaction belongs to the user
             const transaction = await Transaction.findOneAndUpdate(
                 { 
                     _id: id, 
-                    userId: req.user._id || req.query.userId || req.user.userId,
+                    userId,
                 },
                 req.body,
                 { new: true, runValidators: true }
@@ -278,10 +317,11 @@ class TransactionController {
     static async deleteTransaction(req, res) {
         try {
             const { id } = req.params;
+            const userId = getAuthenticatedUserId(req);
 
             const transaction = await Transaction.findOneAndDelete({
                 _id: id,
-                userId: req.user._id || req.query.userId || req.user.userId,
+                userId,
             });
 
             if (!transaction) {
@@ -305,7 +345,7 @@ class TransactionController {
     // Get transaction statistics
     static async getTransactionStats(req, res) {
         try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             const stats = await Transaction.aggregate([
                 { $match: { userId: mongoose.Types.ObjectId(userId) } },
@@ -330,7 +370,7 @@ class TransactionController {
     static async getTransactionsByBudget(req, res) {
         try {
             const { budgetId } = req.params;
-            const userId = req.user._id || req.query.userId || req.user.userId;
+            const userId = getAuthenticatedUserId(req);
 
             // Validate budgetId exists and belongs to user
             const budget = await Budget.findOne({ 
@@ -353,7 +393,7 @@ class TransactionController {
 
             res.json({ transactions });
         } catch (error) {
-            console.error('[TransactionController] Error fetching budget transactions:', error);
+            console.error(`[TransactionController] Error fetching budget transactions: ${error.message}`);
             res.status(500).json({ 
                 error: 'Failed to fetch budget transactions',
                 details: error.message
@@ -361,71 +401,6 @@ class TransactionController {
         }
     }
 
-    static async createTransactionForBudget(req, res) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
-        try {
-            const userId = req.user._id || req.query.userId || req.user.userId;
-            const { budgetId } = req.params;
-            const { amount, type, category, description } = req.body;
-
-            const budget = await Budget.findOne({
-                _id: budgetId,
-                userId: userId,
-            }).session(session);
-
-            if (!budget) {
-                throw new Error('Budget not found');
-            }
-
-            // Get wallet from budget
-            const wallet = await Wallet.findById(budget.walletId).session(session);
-            
-            if (!wallet) {
-                throw new Error('Associated wallet not found');
-            }
-
-            // 1. Validate category
-            const finalCategory = await CategoryService.handleCategory(category, userId);
-
-            // Create transaction
-            const transaction = new Transaction({
-                userId: userId,
-                budgetId,
-                walletId: wallet._id,
-                amount,
-                type,
-                category: finalCategory._id,
-                description,
-                date: new Date()
-            });
-
-            await transaction.save({ session });
-
-            // Update wallet balance
-            if (type === 'expense') {
-                wallet.balance -= amount;
-            } else if (type === 'income') {
-                wallet.balance += amount;
-            }
-            
-            await wallet.save({ session });
-
-            // Update budget spent amount
-            await budget.updateTotalSpent(amount, type);
-
-            await session.commitTransaction();
-
-            res.json({ transaction, wallet, budget });
-
-        } catch (error) {
-            await session.abortTransaction();
-            res.status(500).json({ error: error.message });
-        } finally {
-            session.endSession();
-        }
-    }
 };
 
 

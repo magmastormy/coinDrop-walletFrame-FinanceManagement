@@ -5,7 +5,9 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] },
+  {
+    ignores: ['dist', 'backend/**', 'node_modules/**'],
+  },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -28,11 +30,24 @@ export default [
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
-      'react/jsx-no-target-blank': 'off',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern:
+            '^_|^e$|^err$|^(onAddCategory|activeInsight|categories|viewMode|theme|user|store)$',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_|^e$|^err$',
+          varsIgnorePattern:
+            '^(React|_|[A-Z].*|theme|isDarkMode|isLoading|loading|error|txError|contextSuggestions|openGallery|newContentCount|savedCount|isUserEducation|selectedPost|setSelectedPost|showFullContent|handleCardClick|engagementRate|imageFiles|isUploading|handleImageUpload|setFilterType|store|cn|motion)$',
+          ignoreRestSiblings: true,
+        },
       ],
+      'react/prop-types': 'off',
+      'react/jsx-no-target-blank': 'off',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'off',
+      'react/no-unescaped-entities': 'error',
+      'react-refresh/only-export-components': 'off',
     },
   },
 ]

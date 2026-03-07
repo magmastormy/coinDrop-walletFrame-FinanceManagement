@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Wallet,
     CreditCard,
     User,
-    PieChart,
     BookOpen,
     ArrowLeftRight,
     PiggyBank,
@@ -17,110 +16,177 @@ import {
 import { useSidebar } from './SidebarContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { logout } from '../../services/authService';
-import { useTheme } from '../../theme/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import { cn } from '../../lib/utils';
 
+const MENU_SECTIONS = [
+    {
+        title: 'Core',
+        items: [
+            { name: 'Dashboard', link: '/dashboard', icon: LayoutDashboard },
+            { name: 'Wallets', link: '/wallet', icon: Wallet },
+            { name: 'Budgets', link: '/budget', icon: CreditCard },
+            { name: 'Transactions', link: '/transaction', icon: ArrowLeftRight }
+        ]
+    },
+    {
+        title: 'Growth',
+        items: [
+            { name: 'Savings Goals', link: '/saving-goal', icon: PiggyBank },
+            { name: 'Savings Accounts', link: '/saving-account', icon: Building2 },
+            { name: 'Education', link: '/education', icon: BookOpen },
+            { name: 'My Posts', link: '/user-education', icon: BookOpen },
+            { name: 'Chatbot', link: '/chatbot', icon: Bot }
+        ]
+    },
+    {
+        title: 'Account',
+        items: [
+            { name: 'Profile', link: '/profile', icon: User },
+            { name: 'Settings', link: '/settings', icon: Settings }
+        ]
+    }
+];
+
 const Sidebar = () => {
-    const { isOpen, isMobile, toggleSidebar } = useSidebar();
+    const { isSidebarOpen, isMobile, closeSidebar } = useSidebar();
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [isVisible, setIsVisible] = useState(false);
-    const { theme } = useTheme();
 
     useEffect(() => {
         setIsVisible(!!user);
     }, [user]);
 
+    useEffect(() => {
+        if (isMobile) {
+            closeSidebar();
+        }
+    }, [closeSidebar, isMobile, location.pathname]);
+
     const handleLogout = async () => {
         try {
             await logout();
-            navigate('/login');
         } catch (error) {
             console.error('Logout failed:', error);
+        } finally {
+            closeSidebar();
             navigate('/login');
         }
     };
 
     const isActiveRoute = (path) => {
-        return location.pathname === path;
+        return location.pathname === path || (path !== '/dashboard' && location.pathname.startsWith(`${path}/`));
+    };
+
+    const handleNavClick = () => {
+        if (isMobile) {
+            closeSidebar();
+        }
     };
 
     if (!isVisible) {
         return null;
     }
 
-    const menuItems = [
-        { name: 'Dashboard', link: '/dashboard', icon: LayoutDashboard },
-        { name: 'Wallet', link: '/wallet', icon: Wallet },
-        { name: 'Budget', link: '/budget', icon: CreditCard },
-        { name: 'Transaction', link: '/transaction', icon: ArrowLeftRight },
-        { name: 'Savings Goals', link: '/saving-goal', icon: PiggyBank },
-        { name: 'Savings Accounts', link: '/saving-account', icon: Building2 },
-
-        { name: 'My Education Posts', link: '/user-education', icon: BookOpen },
-        { name: 'Education', link: '/education', icon: BookOpen },
-        { name: 'Chatbot', link: '/chatbot', icon: Bot },
-        { name: 'Settings', link: '/settings', icon: Settings },
-        { name: 'Profile', link: '/profile', icon: User },
-    ];
+    const userName = user?.name || user?.username || 'CoinDrop User';
+    const userEmail = user?.email || 'Signed in';
 
     return (
-        <aside
-            className={cn(
-                "fixed left-0 top-0 h-screen transition-all duration-300 z-40",
-                "bg-background/80 backdrop-blur-xl border-r border-white/10",
-                "flex flex-col",
-                isOpen ? "w-64" : "w-0 -translate-x-full",
-                isMobile && "shadow-2xl"
-            )}
-            role="navigation"
-            aria-label="Main Navigation"
-        >
-            <div className="p-6 border-b border-white/10">
-                <h1 className="text-2xl font-bold text-foreground">WalletFrame</h1>
-            </div>
-
-            <nav className="flex-1 overflow-y-auto py-4">
-                {menuItems.map(item => {
-                    const Icon = item.icon;
-                    const active = isActiveRoute(item.link);
-
-                    return (
-                        <Link
-                            key={item.link}
-                            to={item.link}
-                            className={cn(
-                                "flex items-center gap-3 px-6 py-3 transition-all",
-                                "text-muted-foreground hover:text-foreground hover:bg-white/5",
-                                active && "bg-primary/20 text-primary border-r-2 border-primary"
-                            )}
-                        >
-                            <Icon className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium">{item.name}</span>
-                        </Link>
-                    );
-                })}
-
+        <>
+            {isMobile && isSidebarOpen && (
                 <button
-                    onClick={handleLogout}
-                    className={cn(
-                        "flex items-center gap-3 px-6 py-3 w-full transition-all",
-                        "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                    )}
                     type="button"
-                >
-                    <LogOut className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium">Logout</span>
-                </button>
-            </nav>
+                    aria-label="Close sidebar overlay"
+                    onClick={closeSidebar}
+                    className="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-[1px]"
+                />
+            )}
+            <aside
+                className={cn(
+                    "fixed inset-y-0 left-0 z-40 w-72 transform border-r border-white/15 bg-background/90 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out",
+                    isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                )}
+                role="navigation"
+                aria-label="Main Navigation"
+            >
+                <div className="flex h-full flex-col">
+                    <div className="border-b border-white/10 px-5 pb-4 pt-6">
+                        <Link to="/dashboard" className="group inline-flex items-center gap-3" onClick={handleNavClick}>
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 font-display text-sm font-bold text-white shadow-lg shadow-cyan-500/30 transition-transform duration-300 group-hover:scale-105">
+                                CD
+                            </span>
+                            <div>
+                                <h1 className="font-display text-xl font-bold tracking-tight text-foreground">CoinDrop</h1>
+                                <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Money OS</p>
+                            </div>
+                        </Link>
+                        <p className="mt-4 text-xs text-muted-foreground">Track spending, automate savings, and move faster.</p>
+                    </div>
 
-            <div className="p-4 border-t border-white/10 flex justify-center">
-                <ThemeToggle />
-            </div>
-        </aside>
+                    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+                        {MENU_SECTIONS.map(section => (
+                            <section key={section.title} className="space-y-1.5">
+                                <p className="px-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground/80">
+                                    {section.title}
+                                </p>
+                                {section.items.map(item => {
+                                    const Icon = item.icon;
+                                    const active = isActiveRoute(item.link);
+
+                                    return (
+                                        <Link
+                                            key={item.link}
+                                            to={item.link}
+                                            onClick={handleNavClick}
+                                            aria-current={active ? 'page' : undefined}
+                                            className={cn(
+                                                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200",
+                                                "text-muted-foreground hover:bg-white/10 hover:text-foreground",
+                                                active && "bg-gradient-to-r from-primary/20 via-primary/15 to-transparent text-foreground shadow-inner"
+                                            )}
+                                        >
+                                            <span className={cn(
+                                                "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 transition-colors",
+                                                active && "border-primary/40 bg-primary/15 text-primary"
+                                            )}>
+                                                <Icon className="h-4 w-4 flex-shrink-0" />
+                                            </span>
+                                            <span className="font-medium">{item.name}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </section>
+                        ))}
+                    </nav>
+
+                    <div className="border-t border-white/10 p-4">
+                        <button
+                            onClick={handleLogout}
+                            className={cn(
+                                "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all",
+                                "text-muted-foreground hover:bg-red-500/10 hover:text-red-400"
+                            )}
+                            type="button"
+                        >
+                            <LogOut className="h-4 w-4 flex-shrink-0" />
+                            <span className="font-medium">Log out</span>
+                        </button>
+
+                        <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+                                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                            </div>
+                            <ThemeToggle />
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </>
     );
 };
 
 export default Sidebar;
+
