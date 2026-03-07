@@ -1,6 +1,6 @@
 // src/components/Education/educationRenderer.jsx 
 import React from 'react';
-import SafeHtml from '../common/SafeHtml';
+import SafeHtml from '../Common/SafeHtml';
 
 const EducationRenderer = ({ content, maxLength }) => {
     const sourceContent = content || '';
