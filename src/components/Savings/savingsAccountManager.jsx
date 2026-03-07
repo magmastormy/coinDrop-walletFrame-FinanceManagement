@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/authContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsAccountCard from './savingsAccountCard';
 import SavingsOperations from './SavingsOperations';
@@ -295,11 +295,12 @@ const SavingsAccountManager = () => {
 
             <SavingsAnalytics accounts={accounts} />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
                 <AnimatePresence>
                     {accounts.map(account => (
                         <motion.div
                             key={account._id}
+                            className="h-full"
                             layout
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}

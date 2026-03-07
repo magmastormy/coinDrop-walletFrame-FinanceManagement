@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ArrowDownLeft, Search, Filter, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Search, RefreshCw } from 'lucide-react';
 import { getUserTransactions } from '../../services/transactionService';
 import { getUserCategories } from '../../services/categoryService';
 import { GlassCard } from '../ui/GlassCard';
@@ -17,26 +17,27 @@ const TransactionStream = () => {
     const [filterType, setFilterType] = useState('all');
     const { user } = useSelector(state => state.auth);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (user && user.id) {
-                try {
-                    setLoading(true);
-                    const [transactionsResponse, categoriesResponse] = await Promise.all([
-                        getUserTransactions(user.id),
-                        getUserCategories(user.id)
-                    ]);
-                    setTransactions(transactionsResponse?.transactions || []);
-                    setCategories(categoriesResponse || []);
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                } finally {
-                    setLoading(false);
-                }
+    const fetchData = useCallback(async () => {
+        if (user && user.id) {
+            try {
+                setLoading(true);
+                const [transactionsResponse, categoriesResponse] = await Promise.all([
+                    getUserTransactions(user.id),
+                    getUserCategories(user.id)
+                ]);
+                setTransactions(transactionsResponse?.transactions || []);
+                setCategories(categoriesResponse || []);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                setLoading(false);
             }
-        };
-        fetchData();
+        }
     }, [user]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const getCategoryName = (categoryId) => {
         const category = categories.find(c => c._id === categoryId);
@@ -72,13 +73,36 @@ const TransactionStream = () => {
                             placeholder="Search..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 bg-white/50 dark:bg-black/20"
+                            className="h-10 rounded-xl border-white/15 bg-white/50 pl-9 dark:bg-black/20"
                         />
                     </div>
-                    <Button variant="secondary" size="icon" onClick={() => window.location.reload()}>
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={fetchData}
+                        className="h-10 w-10 rounded-xl border border-white/15"
+                    >
                         <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                     </Button>
                 </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+                {['all', 'income', 'expense'].map(type => (
+                    <button
+                        key={type}
+                        type="button"
+                        onClick={() => setFilterType(type)}
+                        className={cn(
+                            "rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
+                            filterType === type
+                                ? "border-primary/35 bg-primary/15 text-primary"
+                                : "border-white/15 bg-white/5 text-muted-foreground hover:bg-white/10"
+                        )}
+                    >
+                        {type}
+                    </button>
+                ))}
             </div>
 
             <div className="space-y-3">
@@ -94,13 +118,13 @@ const TransactionStream = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
                         >
-                            <GlassCard className="p-4 flex items-center justify-between group hover:bg-white/60 dark:hover:bg-white/5 transition-colors">
+                            <GlassCard className="group flex items-center justify-between border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-4 transition-colors hover:bg-white/60 dark:from-white/10 dark:via-white/5 dark:hover:bg-white/5">
                                 <div className="flex items-center gap-4">
                                     <div className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center",
+                                        "flex h-10 w-10 items-center justify-center rounded-xl border",
                                         transaction.type === 'income'
-                                            ? "bg-green-500/10 text-green-500"
-                                            : "bg-red-500/10 text-red-500"
+                                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                                            : "border-red-500/20 bg-red-500/10 text-red-500"
                                     )}>
                                         {transaction.type === 'income' ? (
                                             <ArrowDownLeft className="w-5 h-5" />
@@ -109,15 +133,17 @@ const TransactionStream = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <p className="font-medium text-foreground">{transaction.description}</p>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="font-medium text-foreground">{transaction.description || 'Transaction'}</p>
+                                        <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                                             {new Date(transaction.date).toLocaleDateString()} • {getCategoryName(transaction.category?._id || transaction.category)}
                                         </p>
                                     </div>
                                 </div>
                                 <span className={cn(
-                                    "font-display font-bold",
-                                    transaction.type === 'income' ? "text-green-500" : "text-foreground"
+                                    "rounded-full border px-3 py-1 text-sm font-semibold",
+                                    transaction.type === 'income'
+                                        ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                                        : "border-white/15 bg-background/50 text-foreground"
                                 )}>
                                     {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                                 </span>

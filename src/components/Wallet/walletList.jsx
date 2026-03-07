@@ -54,7 +54,7 @@ const WalletList = ({ wallets = [], onWalletUpdate, onWalletDelete, onTransfer }
 
             <AnimatePresence mode="popLayout">
                 <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -62,6 +62,7 @@ const WalletList = ({ wallets = [], onWalletUpdate, onWalletDelete, onTransfer }
                     {wallets.map((wallet, index) => (
                         <motion.div
                             key={wallet._id}
+                            className="h-full"
                             layout
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}

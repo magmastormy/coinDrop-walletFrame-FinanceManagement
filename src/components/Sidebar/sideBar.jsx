@@ -14,7 +14,7 @@ import {
     Settings
 } from 'lucide-react';
 import { useSidebar } from './SidebarContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/authContext';
 import { logout } from '../../services/authService';
 import ThemeToggle from './ThemeToggle';
 import { cn } from '../../lib/utils';

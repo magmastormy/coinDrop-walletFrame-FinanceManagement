@@ -100,7 +100,6 @@ const CategoryManager = () => {
         setTxLoading(true);
         try {
             const res = await transactionService.getUserTransactions(user.id);
-            console.log("[CategoryManager - loadTransactions] transaction: ", res);
             setTransactions(res.transactions || []);
         } catch (err) {
             setTxError(err.message);
@@ -111,7 +110,7 @@ const CategoryManager = () => {
 
     return (
         <motion.div
-            className="container mx-auto px-4 py-6 space-y-6"
+            className="container mx-auto space-y-6 px-4 py-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -143,7 +142,7 @@ const CategoryManager = () => {
             )}
 
             {/* Create/Edit Form */}
-            <GlassCard className="p-6">
+            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
                 <form
                     onSubmit={editingCategory ? handleEditCategory : handleCreateCategory}
                     className="flex flex-col sm:flex-row gap-3"
@@ -153,13 +152,13 @@ const CategoryManager = () => {
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value)}
                         placeholder="Category Name"
-                        className="flex-1"
+                        className="h-10 flex-1 rounded-xl border-white/15 bg-white/50 dark:bg-black/20"
                         required
                     />
                     <div className="flex gap-2">
                         {editingCategory ? (
                             <>
-                                <Button type="submit" className="gap-2">
+                                <Button type="submit" className="h-10 gap-2 rounded-xl">
                                     <Check className="w-4 h-4" />
                                     Update
                                 </Button>
@@ -167,14 +166,14 @@ const CategoryManager = () => {
                                     type="button"
                                     variant="secondary"
                                     onClick={handleCancelEdit}
-                                    className="gap-2"
+                                    className="h-10 gap-2 rounded-xl"
                                 >
                                     <X className="w-4 h-4" />
                                     Cancel
                                 </Button>
                             </>
                         ) : (
-                            <Button type="submit" className="gap-2">
+                            <Button type="submit" className="h-10 gap-2 rounded-xl">
                                 <Plus className="w-4 h-4" />
                                 Create Category
                             </Button>

@@ -25,17 +25,17 @@ const CategoryGrid = ({ categories = [], onAddCategory, onSelectCategory, select
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">Categories</h2>
         {onAddCategory && (
-          <Button onClick={onAddCategory} size="sm">
+          <Button onClick={onAddCategory} size="sm" className="h-9 rounded-xl">
             + Add Category
           </Button>
         )}
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
         {categories.map((cat, idx) => {
           const total = getTotalAmount(cat);
           const isActive = selectedCategory?._id === cat._id;
@@ -44,23 +44,33 @@ const CategoryGrid = ({ categories = [], onAddCategory, onSelectCategory, select
             <GlassCard
               key={cat._id}
               className={cn(
-                "p-4 cursor-pointer transition-all hover:scale-105",
-                isActive && "ring-2 ring-primary"
+                "h-full min-h-[180px] cursor-pointer border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-4 transition-all hover:translate-y-[-3px] dark:from-white/10 dark:via-white/5",
+                isActive && "ring-2 ring-primary/60"
               )}
               onClick={() => onSelectCategory?.(cat)}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex h-full flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="flex-shrink-0 rounded-xl border p-3"
+                    style={{ borderColor: getColor(idx), color: getColor(idx) }}
+                  >
+                    <Tag className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="truncate font-semibold text-foreground">{cat.name}</h3>
+                    <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                      {(cat.transactions?.length || 0)} transactions
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                </div>
                 <div
-                  className="p-3 rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: getColor(idx) }}
+                  className="mt-auto rounded-xl border border-white/10 bg-background/40 px-3 py-2"
                 >
-                  <Tag className="w-5 h-5 text-white" />
+                  <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">Total</p>
+                  <p className="text-xl font-display font-bold text-foreground">{formatCurrency(total)}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{cat.name}</h3>
-                  <p className="text-sm text-muted-foreground">{formatCurrency(total)}</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               </div>
             </GlassCard>
           );

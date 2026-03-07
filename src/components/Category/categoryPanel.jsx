@@ -12,7 +12,7 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
     };
 
     return (
-        <GlassCard className="p-6">
+        <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
             <div className="flex items-center gap-3 mb-6">
                 <Folder className="w-6 h-6 text-primary" />
                 <h2 className="text-xl font-bold text-foreground">Categories</h2>
@@ -46,35 +46,35 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
                                 transition={{ duration: 0.2 }}
                             >
                                 <div className={cn(
-                                    "group flex items-center gap-3 p-3 rounded-lg transition-all",
+                                    "group flex items-center gap-3 rounded-xl border border-white/10 bg-background/45 p-3 transition-all",
                                     selectedCategory?._id === category._id
-                                        ? "bg-primary/20 ring-1 ring-primary"
-                                        : "hover:bg-white/5"
+                                        ? "bg-primary/15 ring-1 ring-primary/60"
+                                        : "hover:bg-white/10"
                                 )}>
                                     <button
                                         className="flex-1 flex items-center gap-3 text-left"
                                         onClick={() => onSelectCategory?.(category)}
                                     >
                                         <div
-                                            className="p-2 rounded-lg flex-shrink-0"
-                                            style={{ backgroundColor: getRandomColor(index) }}
+                                            className="rounded-xl border p-2.5 flex-shrink-0"
+                                            style={{ borderColor: getRandomColor(index), color: getRandomColor(index) }}
                                         >
-                                            <Tag className="w-4 h-4 text-white" />
+                                            <Tag className="w-4 h-4" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-foreground truncate">{category.name}</p>
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
                                                 {category.transactions?.length || 0} transactions
                                             </p>
                                         </div>
                                     </button>
 
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => onEditCategory?.(category)}
-                                            className="h-8 w-8"
+                                            className="h-8 w-8 rounded-lg"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </Button>
@@ -83,7 +83,7 @@ const CategoryPanel = ({ categories = [], onAddCategory, onSelectCategory, selec
                                             size="icon"
                                             onClick={() => onDeleteCategory?.(category._id)}
                                             disabled={category.name === "None"}
-                                            className="h-8 w-8 hover:text-red-500"
+                                            className="h-8 w-8 rounded-lg hover:text-red-500"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>

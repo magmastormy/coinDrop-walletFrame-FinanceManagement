@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '../../contexts/AuthContext';
-import { Grid, LayoutGrid, Filter, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../contexts/authContext';
+import { Grid, LayoutGrid, Filter, RefreshCw, ArrowDownAZ } from 'lucide-react';
 import educationService from '../../services/educationService';
 import {
     setEducations,
@@ -27,7 +27,7 @@ const EducationManager = () => {
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'popular'
+    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'popular', 'title'
     const [showFilters, setShowFilters] = useState(false);
 
     const fetchEducationPosts = async () => {
@@ -90,9 +90,23 @@ const EducationManager = () => {
             const aPopularity = (a.likes?.length || 0) + (a.comments?.length || 0);
             const bPopularity = (b.likes?.length || 0) + (b.comments?.length || 0);
             return bPopularity - aPopularity;
+        } else if (sortBy === 'title') {
+            return (a.title || '').localeCompare(b.title || '');
         }
         return 0;
     });
+
+    const bentoSpanPattern = [
+        'md:col-span-3 md:row-span-2',
+        'md:col-span-3 md:row-span-1',
+        'md:col-span-2 md:row-span-1',
+        'md:col-span-4 md:row-span-1',
+        'md:col-span-2 md:row-span-2',
+        'md:col-span-3 md:row-span-1',
+        'md:col-span-3 md:row-span-1'
+    ];
+
+    const bentoStylePattern = ['feature', 'standard', 'compact', 'wide', 'tall', 'standard', 'wide'];
 
     const handleLike = async (postId) => {
         try {
@@ -133,14 +147,29 @@ const EducationManager = () => {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden px-4 md:px-6 py-4">
                 {/* Header with Search and Filters */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     <h1 className="text-3xl font-bold text-foreground">
                         Education Center
                     </h1>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex w-full items-center gap-2 sm:w-auto">
                         <div className="flex-1 sm:flex-initial">
                             <EducationSearchBar onSearch={handleSearch} />
+                        </div>
+
+                        <div className="relative">
+                            <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <select
+                                value={sortBy}
+                                onChange={(e) => handleSortChange(e.target.value)}
+                                className="h-10 rounded-xl border border-white/10 bg-background/70 pl-9 pr-8 text-sm text-foreground outline-none transition-all focus:border-primary/40"
+                                aria-label="Sort education posts"
+                            >
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="title">Title A-Z</option>
+                            </select>
                         </div>
 
                         <Button
@@ -175,6 +204,10 @@ const EducationManager = () => {
                     </div>
                 </div>
 
+                <div className="mb-3 text-sm text-muted-foreground">
+                    Showing <span className="font-medium text-foreground">{sortedEducations?.length || 0}</span> posts
+                </div>
+
                 {/* Filter Options */}
                 <AnimatePresence>
                     {showFilters && (
@@ -189,7 +222,7 @@ const EducationManager = () => {
                                     <span className="text-sm font-medium text-muted-foreground mr-2">
                                         Sort by:
                                     </span>
-                                    {['newest', 'oldest', 'popular'].map(option => (
+                                    {['newest', 'oldest', 'popular', 'title'].map(option => (
                                         <button
                                             key={option}
                                             onClick={() => handleSortChange(option)}
@@ -200,7 +233,9 @@ const EducationManager = () => {
                                                     : "bg-white/5 text-muted-foreground hover:bg-white/10"
                                             )}
                                         >
-                                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                                            {option === 'title'
+                                                ? 'Title A-Z'
+                                                : option.charAt(0).toUpperCase() + option.slice(1)}
                                         </button>
                                     ))}
                                 </div>
@@ -237,16 +272,20 @@ const EducationManager = () => {
                         </div>
                     ) : (
                         <div className={cn(
-                            "grid gap-6 pb-4",
+                            "grid gap-5 pb-4 md:gap-6",
                             viewMode === 'list'
                                 ? "grid-cols-1"
-                                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "grid-cols-1 auto-rows-[minmax(220px,auto)] md:grid-cols-6"
                         )}>
                             <AnimatePresence>
-                                {sortedEducations.map(post => (
+                                {sortedEducations.map((post, index) => (
                                     <motion.div
                                         key={post._id}
                                         layout
+                                        className={cn(
+                                            "h-full",
+                                            viewMode === 'grid' && bentoSpanPattern[index % bentoSpanPattern.length]
+                                        )}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -20 }}
@@ -258,6 +297,7 @@ const EducationManager = () => {
                                             onComment={handleComment}
                                             currentUser={user}
                                             viewMode={viewMode}
+                                            bentoVariant={bentoStylePattern[index % bentoStylePattern.length]}
                                         />
                                     </motion.div>
                                 ))}

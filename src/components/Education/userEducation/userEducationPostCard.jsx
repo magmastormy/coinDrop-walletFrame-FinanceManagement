@@ -3,24 +3,31 @@ import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Image as ImageIcon, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import UserEducationFullDetailModal from './userEducationFullDetailModal';
-import { useTheme } from '../../../theme/ThemeContext';
+import { cn } from '../../../lib/utils';
 
 import EducationImageGallery from '../educationImageGallery';
 import { GlassCard } from '../../ui/GlassCard';
 import { Button } from '../../ui/Button';
-import SafeHtml from '../../common/SafeHtml';
+import SafeHtml from '../../Common/SafeHtml';
 
-const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, onDelete, viewMode }) => {
+const UserEducationPostCard = ({
+    post,
+    onLike,
+    onComment,
+    currentUser,
+    onEdit,
+    onDelete,
+    viewMode = 'grid',
+    bentoVariant = 'standard'
+}) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [showComments, setShowComments] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [showImageGallery, setShowImageGallery] = useState(false);
-    const [showFullContent, setShowFullContent] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [readProgress, setReadProgress] = useState(
         post.readProgress?.[currentUser?.id] || 0
     );
-    const { theme } = useTheme();
 
     if (!post) {
         return null;
@@ -55,17 +62,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
         }
     };
 
-    const handleCardClick = () => {
-        setShowFullContent(true);
-        setReadProgress(100);
-    };
-
     // Calculate analytics data
-    const totalViews = post.views || 0;
-    const totalLikes = Array.isArray(post.likes) ? post.likes.length : 0;
-    const totalComments = Array.isArray(post.comments) ? post.comments.length : 0;
-    const engagementRate = totalViews > 0 ? Math.round(((totalLikes + totalComments) / totalViews) * 100) : 0;
-
     const isLiked = Array.isArray(post.likes) && (post.likes.includes(currentUser?._id) || post.likes.includes(currentUser?.id));
 
     // Calculate how long ago the post was created
@@ -92,17 +89,43 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
         return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
     };
 
+    const isListMode = viewMode === 'list';
+    const isFeatureCard = !isListMode && (bentoVariant === 'feature' || bentoVariant === 'tall');
+    const isCompactCard = !isListMode && bentoVariant === 'compact';
+    const isWideCard = !isListMode && bentoVariant === 'wide';
+
+    const imageClassName = cn(
+        "relative overflow-hidden bg-muted",
+        isListMode ? "h-52 md:h-auto md:w-72 md:flex-shrink-0" : "h-48",
+        isFeatureCard && "h-56",
+        isCompactCard && "h-40",
+        isWideCard && "h-44"
+    );
+
+    const previewClampClass = cn(
+        "education-content-preview text-sm text-muted-foreground overflow-hidden",
+        isListMode ? "line-clamp-4" : "line-clamp-6",
+        isFeatureCard && "line-clamp-8",
+        isCompactCard && "line-clamp-4"
+    );
+
     return (
         <motion.div
-            whileHover={{ scale: 1.02 }}
+            whileHover={isListMode ? { y: -2 } : { scale: 1.01 }}
             className="h-full"
         >
             <GlassCard
-                className="flex flex-col h-full cursor-pointer overflow-hidden p-0"
-                onClick={() => setIsModalOpen(true)}
+                className={cn(
+                    "h-full cursor-pointer overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-0 dark:from-white/10 dark:via-white/5",
+                    isListMode ? "flex flex-col md:flex-row" : "flex flex-col"
+                )}
+                onClick={() => {
+                    setReadProgress(100);
+                    setIsModalOpen(true);
+                }}
             >
                 {/* Image Section */}
-                <div className="relative h-48 md:h-52 bg-muted">
+                <div className={imageClassName}>
                     {post.images && post.images.length > 0 ? (
                         <>
                             <img
@@ -128,7 +151,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                     )}
                 </div>
 
-                <div className="p-6 flex-grow">
+                <div className="flex flex-grow flex-col p-5">
                     {/* Author & Date */}
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-3">
@@ -163,18 +186,18 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                                         e.stopPropagation();
                                         handleMenuClick(e);
                                     }}
-                                    className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted"
                                 >
                                     <MoreVertical className="w-4 h-4" />
                                 </button>
                                 {anchorEl && (
-                                    <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px] z-10">
+                                    <div className="absolute right-0 top-full z-10 mt-1 min-w-[120px] rounded-lg border border-border bg-card py-1 shadow-lg">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleEditClick();
                                             }}
-                                            className="w-full px-4 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
                                         >
                                             <Edit className="w-4 h-4" />
                                             Edit
@@ -184,7 +207,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                                                 e.stopPropagation();
                                                 handleDeleteClick();
                                             }}
-                                            className="w-full px-4 py-2 text-sm text-left hover:bg-muted flex items-center gap-2 text-destructive"
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                             Delete
@@ -196,20 +219,23 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg font-semibold mb-3 text-foreground">
+                    <h3 className={cn(
+                        "mb-3 line-clamp-2 font-semibold text-foreground",
+                        isFeatureCard ? "text-xl" : "text-lg"
+                    )}>
                         {post.title}
                     </h3>
 
                     {/* Content Preview */}
                     <SafeHtml
                         html={post.details}
-                        className="text-muted-foreground text-sm mb-3 line-clamp-5 overflow-hidden education-content-preview"
+                        className={cn(previewClampClass, "mb-3")}
                         onClick={() => setIsModalOpen(true)}
                     />
 
                     {/* Read Progress */}
                     {readProgress > 0 && (
-                        <div className="w-full mt-3">
+                        <div className="mt-3 w-full">
                             <div className="h-1 bg-primary/20 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary transition-all duration-300"
@@ -221,14 +247,14 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-border">
+                <div className="flex items-center justify-between border-t border-white/10 px-5 py-4">
                     <div className="flex gap-3">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onLike(post._id);
                             }}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${isLiked
+                            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition-colors ${isLiked
                                 ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
                                 : 'text-muted-foreground hover:bg-muted'
                                 }`}
@@ -245,7 +271,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                                 e.stopPropagation();
                                 setShowComments(!showComments);
                             }}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-muted-foreground hover:bg-muted"
+                            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted"
                             title="Comments"
                         >
                             <MessageCircle className="w-4 h-4" />
@@ -258,7 +284,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
 
                 {/* Comments Section */}
                 {showComments && (
-                    <div className="px-6 py-4 border-t border-border bg-muted/30">
+                    <div className="border-t border-white/10 bg-muted/30 px-5 py-4">
                         {post.comments?.map((comment, index) => (
                             <div key={`${post._id}-comment-${index}`} className="mb-3">
                                 <p className="font-semibold text-sm text-foreground">{comment.author?.username}</p>
@@ -271,7 +297,7 @@ const UserEducationPostCard = ({ post, onLike, onComment, currentUser, onEdit, o
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 placeholder="Add a comment..."
-                                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary mb-2"
+                                className="mb-2 w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                 onClick={(e) => e.stopPropagation()}
                             />
                             <Button
@@ -331,7 +357,9 @@ UserEducationPostCard.propTypes = {
     onComment: PropTypes.func.isRequired,
     onEdit: PropTypes.func.isRequired,
     onDelete: PropTypes.func.isRequired,
-    currentUser: PropTypes.object
+    currentUser: PropTypes.object,
+    viewMode: PropTypes.oneOf(['grid', 'list']),
+    bentoVariant: PropTypes.oneOf(['feature', 'standard', 'compact', 'wide', 'tall'])
 };
 
 export default UserEducationPostCard;

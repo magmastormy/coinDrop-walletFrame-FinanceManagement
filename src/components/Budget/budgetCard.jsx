@@ -132,24 +132,32 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
     <>
       <GlassCard
         className={cn(
-          "relative overflow-hidden transition-all duration-300 hover:scale-[1.02]",
-          isSelected && "ring-2 ring-primary"
+          "relative h-full min-h-[292px] overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5",
+          isSelected && "ring-2 ring-primary/60"
         )}
         onClick={() => onSelect?.(budget)}
       >
-        <div className="p-5 space-y-4">
+        <div className="flex h-full flex-col gap-4">
           {/* Header */}
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-bold text-foreground">{budget.name}</h3>
-              <span className="text-sm text-muted-foreground capitalize">{budget.type}</span>
+              <h3 className="text-lg font-semibold text-foreground">{budget.name}</h3>
+              <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{budget.type}</span>
             </div>
             {walletName && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              <div className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                 <Wallet className="w-3 h-3" />
                 {walletName}
               </div>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-background/40 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Planned Limit</p>
+            <p className="mt-2 text-3xl font-display font-bold text-foreground">{formatCurrency(budget.amount)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Remaining: <span className="font-semibold text-emerald-500">{formatCurrency(savingsAmount)}</span>
+            </p>
           </div>
 
           {/* Progress Bar */}
@@ -158,7 +166,7 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
               <span className="text-muted-foreground">Progress</span>
               <span className="font-medium">{calculateProgress().toFixed(1)}%</span>
             </div>
-            <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+            <div className="h-2.5 overflow-hidden rounded-full bg-secondary/80">
               <motion.div
                 className={cn("h-full rounded-full", getStatusColor())}
                 initial={{ width: 0 }}
@@ -173,7 +181,7 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
 
           {/* Details */}
-          <div className="space-y-2 pt-2 border-t border-border/50">
+          <div className="space-y-2 border-t border-white/10 pt-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingUp className="w-4 h-4" />
               <span>Category: {budget.category?.name || 'Uncategorized'}</span>
@@ -187,11 +195,11 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-2">
+          <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-4">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+              className="h-9 px-2 text-muted-foreground hover:text-foreground"
               onClick={(e) => { e.stopPropagation(); onEdit(budget); }}
             >
               <Edit2 className="w-4 h-4 mr-1.5" /> Edit
@@ -199,7 +207,7 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+              className="h-9 px-2 text-red-400 hover:bg-red-500/10 hover:text-red-500"
               onClick={(e) => { e.stopPropagation(); onDelete(budget._id); }}
             >
               <Trash2 className="w-4 h-4 mr-1.5" /> Delete
@@ -207,7 +215,7 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
             <Button
               variant="outline"
               size="sm"
-              className="ml-auto h-8 text-xs"
+              className="ml-auto h-9 text-xs"
               onClick={(e) => { e.stopPropagation(); setShowSaveDialog(true); }}
               disabled={savingsAmount <= 0}
             >

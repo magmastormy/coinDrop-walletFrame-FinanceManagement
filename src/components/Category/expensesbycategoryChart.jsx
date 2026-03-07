@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartPie, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { PieChart, Loader2 } from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
 
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -65,7 +65,7 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
                     pointStyle: 'circle',
                     font: {
                         size: 12,
-                        family: "'Inter', sans-serif"
+                        family: "'Manrope', sans-serif"
                     }
                 }
             },
@@ -89,40 +89,34 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
 
     return (
         <motion.div
-            className="chart-container"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <div className="chart-header">
-                <h3>
-                    <FontAwesomeIcon icon={faChartPie} />
-                    Expenses by Category
-                </h3>
-            </div>
+            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+                <div className="mb-4 flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold text-foreground">Expenses by Category</h3>
+                </div>
 
-            <div className="chart-content">
-                {loading ? (
-                    <div className="chart-loading">
-                        <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                            <FontAwesomeIcon icon={faSpinner} />
-                        </motion.div>
-                        <p>Loading chart data...</p>
-                    </div>
-                ) : !chartData ? (
-                    <div className="chart-empty">
-                        <FontAwesomeIcon icon={faChartPie} />
-                        <p>No expense data available</p>
-                    </div>
-                ) : (
-                    <div className="pie-chart-wrapper">
-                        <Pie data={chartData} options={chartOptions} />
-                    </div>
-                )}
-            </div>
+                <div className="min-h-[320px]">
+                    {loading ? (
+                        <div className="flex h-[300px] flex-col items-center justify-center gap-3 text-muted-foreground">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            <p className="text-sm">Loading chart data...</p>
+                        </div>
+                    ) : !chartData ? (
+                        <div className="flex h-[300px] flex-col items-center justify-center gap-3 text-muted-foreground">
+                            <PieChart className="h-8 w-8 opacity-60" />
+                            <p className="text-sm">No expense data available</p>
+                        </div>
+                    ) : (
+                        <div className="h-[320px] rounded-xl border border-white/10 bg-background/40 p-3">
+                            <Pie data={chartData} options={chartOptions} />
+                        </div>
+                    )}
+                </div>
+            </GlassCard>
         </motion.div>
     );
 };

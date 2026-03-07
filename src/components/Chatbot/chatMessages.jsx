@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 
-const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
+const ChatMessages = ({ messages = [], onInsightAction }) => {
     const messagesEndRef = useRef(null);
 
     // Auto-scroll to bottom when messages update
@@ -90,19 +90,19 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                 );
             } catch (e) {
                 // Fall back to markdown rendering if JSON parsing fails
-                return <ReactMarkdown className="prose prose-invert prose-sm max-w-none">{content}</ReactMarkdown>;
+                return <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">{content}</ReactMarkdown>;
             }
         }
 
-        return <ReactMarkdown className="prose prose-invert prose-sm max-w-none">{content}</ReactMarkdown>;
+        return <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">{content}</ReactMarkdown>;
     };
 
     return (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
             {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-50">
-                    <Bot className="w-12 h-12 mb-2" />
-                    <p>Ask me anything about your finances!</p>
+                <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 text-center text-muted-foreground/80">
+                    <Bot className="mb-2 h-12 w-12" />
+                    <p>Ask me anything about your finances.</p>
                 </div>
             )}
 
@@ -119,13 +119,13 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                     <div
                         key={`${message.role}-${index}-${message.timestamp}`}
                         className={cn(
-                            "flex gap-3 max-w-[85%]",
+                            "flex max-w-[88%] gap-3",
                             isUser ? "ml-auto flex-row-reverse" : "mr-auto"
                         )}
                     >
                         {/* Avatar */}
                         <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
                             isUser ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                         )}>
                             {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
@@ -136,8 +136,8 @@ const ChatMessages = ({ messages = [], onInsightAction, activeInsight }) => {
                             isUser ? "items-end" : "items-start"
                         )}>
                             <div className={cn(
-                                "p-3 rounded-2xl text-sm",
-                                isUser ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white/10 text-foreground rounded-tl-none",
+                                "rounded-2xl border p-3 text-sm shadow-sm",
+                                isUser ? "rounded-tr-none border-primary/40 bg-primary text-primary-foreground" : "rounded-tl-none border-white/15 bg-white/40 text-foreground dark:bg-white/10",
                                 isInsight && "border border-amber-500/50 bg-amber-500/10"
                             )}>
                                 {isInsight && (

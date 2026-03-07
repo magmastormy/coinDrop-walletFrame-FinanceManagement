@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/authContext';
 import { useTheme } from '../../theme/ThemeContext';
 import SavingsGoalCard from './savingsGoalCard';
 import NewGoalCard from './NewGoalCard';
@@ -153,7 +153,7 @@ const SavingsGoalManager = () => {
             </GlassCard>
 
             {/* Goals Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
                 <NewGoalCard onCreate={handleCreateGoal} />
                 {goals.map(goal => (
                     <SavingsGoalCard

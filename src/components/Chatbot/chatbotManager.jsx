@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useAuth } from '../../contexts/authContext';
 import ChatContainer from './chatContainer';
 import aiServiceWrapper from '../../services/aiServiceWrapper';
 
@@ -173,8 +173,45 @@ const ChatbotManager = () => {
         };
     }, []);
 
+    const quickPrompts = useMemo(() => {
+        if (!contextSuggestions) return [];
+
+        const options = [
+            ...(contextSuggestions.generalAdvice || []),
+            ...(contextSuggestions.spendingInsights || []),
+            ...(contextSuggestions.savingsRecommendations || [])
+        ];
+
+        return options
+            .filter(Boolean)
+            .slice(0, 4)
+            .map(text => text.length > 80 ? `${text.slice(0, 80)}...` : text);
+    }, [contextSuggestions]);
+
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 pb-8">
+            <div className="rounded-3xl border border-white/15 bg-gradient-to-r from-cyan-500/10 via-emerald-500/10 to-transparent p-4 md:p-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-display font-bold text-foreground">AI Finance Assistant</h1>
+                        <p className="text-sm text-muted-foreground">Ask about spending, budgets, savings, and trends in your account data.</p>
+                    </div>
+                    {quickPrompts.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {quickPrompts.map((prompt, idx) => (
+                                <button
+                                    key={`${prompt}-${idx}`}
+                                    type="button"
+                                    onClick={() => handleSendMessage(prompt)}
+                                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-white/20"
+                                >
+                                    {prompt}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
             <ChatContainer
                 messages={messages}
                 onSendMessage={handleSendMessage}

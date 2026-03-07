@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import BudgetCard from './budgetCard';
 
 const BudgetGrid = ({ budgets = [], onEdit, onDelete, onSelect, selectedBudget, wallets }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
     {budgets.map(b => (
       <BudgetCard
         key={b._id}

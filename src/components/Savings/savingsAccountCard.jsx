@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { PiggyBank, Plus, Minus, MoreVertical, Edit, ArrowRightLeft, Trash } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { Button } from '../ui/Button';
-import { useTheme } from '../../theme/ThemeContext';
 import { cn } from '../../lib/utils';
 
 const SavingsAccountCard = ({
@@ -16,7 +14,6 @@ const SavingsAccountCard = ({
     onSelect,
     isSelected
 }) => {
-    const { isDarkMode } = useTheme();
     const [showMenu, setShowMenu] = useState(false);
 
     const formatCurrency = (balance) => {
@@ -51,20 +48,23 @@ const SavingsAccountCard = ({
     return (
         <GlassCard
             className={cn(
-                "relative h-[280px] flex flex-col p-6 transition-all duration-300 cursor-pointer group",
-                isSelected ? "ring-2 ring-primary bg-primary/5" : "hover:bg-white/5"
+                "group relative h-full min-h-[292px] cursor-pointer border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5",
+                isSelected ? "ring-2 ring-primary/60 bg-primary/5" : "hover:bg-white/5"
             )}
             onClick={() => onSelect(account._id)}
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-primary/20 text-primary">
-                        <PiggyBank className="w-6 h-6" />
+                    <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/20 to-cyan-400/15 p-3.5 text-emerald-500">
+                        <PiggyBank className="h-5 w-5" />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground truncate max-w-[150px]">
-                        {account.name}
-                    </h3>
+                    <div>
+                        <h3 className="max-w-[170px] truncate text-lg font-semibold text-foreground">
+                            {account.name}
+                        </h3>
+                        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Savings Account</p>
+                    </div>
                 </div>
 
                 <div className="relative">
@@ -78,24 +78,24 @@ const SavingsAccountCard = ({
                     </Button>
 
                     {showMenu && (
-                        <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-xl">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-white/20 bg-card shadow-xl backdrop-blur-xl">
                             <button
                                 onClick={handleAction('edit', onEdit)}
-                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                                className="w-full px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-white/10"
                             >
-                                <Edit className="w-4 h-4" /> Edit
+                                <span className="flex items-center gap-2"><Edit className="w-4 h-4" /> Edit</span>
                             </button>
                             <button
                                 onClick={handleAction('transfer', onTransfer)}
-                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                                className="w-full px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-white/10"
                             >
-                                <ArrowRightLeft className="w-4 h-4" /> Transfer
+                                <span className="flex items-center gap-2"><ArrowRightLeft className="w-4 h-4" /> Transfer</span>
                             </button>
                             <button
                                 onClick={handleAction('delete', onDelete)}
-                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                className="w-full px-4 py-3 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10"
                             >
-                                <Trash className="w-4 h-4" /> Delete
+                                <span className="flex items-center gap-2"><Trash className="w-4 h-4" /> Delete</span>
                             </button>
                         </div>
                     )}
@@ -103,23 +103,23 @@ const SavingsAccountCard = ({
             </div>
 
             {/* Balance */}
-            <div className="flex-1 flex flex-col justify-center items-center text-center mb-6">
-                <span className="text-sm text-muted-foreground mb-1">Current Balance</span>
-                <h2 className="text-4xl font-bold text-foreground tracking-tight">
+            <div className="mb-5 rounded-2xl border border-white/10 bg-background/40 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
+                <h2 className="mt-2 text-3xl font-display font-bold text-foreground tracking-tight">
                     {formatCurrency(account.balance)}
                 </h2>
                 {account.goal > 0 && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         Goal: {formatCurrency(account.goal)}
                     </p>
                 )}
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 mt-auto">
+            <div className="mt-auto flex gap-3 border-t border-white/10 pt-4">
                 <Button
                     variant="outline"
-                    className="flex-1 gap-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30"
+                    className="h-9 flex-1 gap-2 border-emerald-500/20 bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/30 hover:bg-emerald-500/20"
                     onClick={(e) => {
                         e.stopPropagation();
                         onDeposit(account._id);
@@ -129,7 +129,7 @@ const SavingsAccountCard = ({
                 </Button>
                 <Button
                     variant="outline"
-                    className="flex-1 gap-2 bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30"
+                    className="h-9 flex-1 gap-2 border-red-500/20 bg-red-500/10 text-red-500 hover:border-red-500/30 hover:bg-red-500/20"
                     onClick={(e) => {
                         e.stopPropagation();
                         onWithdraw(account._id);

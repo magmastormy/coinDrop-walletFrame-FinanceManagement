@@ -14,6 +14,8 @@ import { getUserTransactions } from '../../services/transactionService';
 import walletService from '../../services/walletService';
 import { getUserBudgets } from '../../services/budgetService';
 import { Button } from '../ui/Button';
+import { GlassCard } from '../ui/GlassCard';
+import { cn } from '../../lib/utils';
 
 
 const DashboardUserShortAnalytics = () => {
@@ -187,6 +189,17 @@ const DashboardUserShortAnalytics = () => {
         'TrendingUp2': TrendingUp
     };
 
+    const colorClasses = {
+        blue: { icon: 'text-blue-500', iconBg: 'bg-blue-500/10 border-blue-500/20' },
+        red: { icon: 'text-red-500', iconBg: 'bg-red-500/10 border-red-500/20' },
+        green: { icon: 'text-emerald-500', iconBg: 'bg-emerald-500/10 border-emerald-500/20' },
+        purple: { icon: 'text-violet-500', iconBg: 'bg-violet-500/10 border-violet-500/20' },
+        orange: { icon: 'text-amber-500', iconBg: 'bg-amber-500/10 border-amber-500/20' },
+        teal: { icon: 'text-teal-500', iconBg: 'bg-teal-500/10 border-teal-500/20' },
+        pink: { icon: 'text-pink-500', iconBg: 'bg-pink-500/10 border-pink-500/20' },
+        brown: { icon: 'text-orange-700', iconBg: 'bg-orange-700/10 border-orange-700/20' }
+    };
+
     // More focused, important analytics items
     const analyticsItems = [
         {
@@ -249,9 +262,9 @@ const DashboardUserShortAnalytics = () => {
     }
 
     return (
-        <div className="analytics-grid">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-3 items-stretch">
             {loading ? (
-                <div className="flex flex-col items-center justify-center col-span-full p-8">
+                <div className="col-span-full flex flex-col items-center justify-center p-8">
                     <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -263,29 +276,32 @@ const DashboardUserShortAnalytics = () => {
             ) : (
                 analyticsItems.map((item, index) => {
                     const IconComponent = iconMap[item.icon];
+                    const palette = colorClasses[item.color] || colorClasses.blue;
                     return (
                         <motion.div
                             key={item.title}
-                            className="analytics-card group relative"
+                            className="group relative h-full"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                             title={item.tooltip}
                         >
-                            <div
-                                className="card-icon"
-                                style={{ backgroundColor: `var(--${item.color} -color)` }}
-                            >
-                                <IconComponent className="w-5 h-5" />
-                            </div>
-                            <div className="card-content">
-                                <h3>{item.title}</h3>
-                                <p className="card-value">{item.value}</p>
-                            </div>
-                            {/* Tooltip on hover */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                            <GlassCard className="h-full min-h-[200px] border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+                                <div className="flex h-full flex-col">
+                                    <div className="mb-4 flex items-start justify-between">
+                                        <div className={cn("rounded-2xl border p-3", palette.iconBg, palette.icon)}>
+                                            <IconComponent className="h-5 w-5" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-auto rounded-2xl border border-white/10 bg-background/40 p-4">
+                                        <h3 className="text-xs uppercase tracking-[0.15em] text-muted-foreground">{item.title}</h3>
+                                        <p className="mt-2 text-3xl font-display font-bold text-foreground">{item.value}</p>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                            <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-popover px-3 py-2 text-xs text-popover-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                                 {item.tooltip}
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover" />
+                                <div className="absolute left-1/2 top-full -mt-1 -translate-x-1/2 border-4 border-transparent border-t-popover" />
                             </div>
                         </motion.div>
                     );

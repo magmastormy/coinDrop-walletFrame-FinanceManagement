@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Plus, Loader2, AlertCircle, LayoutGrid, List,
-    ArrowUpDown, RefreshCw, X
+    ArrowUpDown, RefreshCw, X, ArrowDownAZ
 } from 'lucide-react';
 import educationService from '../../../services/educationService';
 import {
@@ -26,17 +26,12 @@ import { Button } from '../../ui/Button';
 // Toast notifications
 import { toast } from 'react-toastify';
 
-// Theme
-import { useTheme } from '../../../theme/ThemeContext';
-
 const UserEducationManager = () => {
     const dispatch = useDispatch();
     const { educations, loading, error } = useSelector(state => state.education);
     const { user } = useSelector(state => state.auth);
     const navigate = useNavigate();
     const location = useLocation();
-    const { theme } = useTheme();
-
     // UI State
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingPost, setEditingPost] = useState(null);
@@ -44,7 +39,7 @@ const UserEducationManager = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'popular'
+    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'popular', 'title'
     const [showFilters, setShowFilters] = useState(false);
     const [filterType, setFilterType] = useState('all'); // 'all', 'published', 'draft'
 
@@ -119,9 +114,23 @@ const UserEducationManager = () => {
             const aPopularity = (a.likes?.length || 0) + (a.comments?.length || 0);
             const bPopularity = (b.likes?.length || 0) + (b.comments?.length || 0);
             return bPopularity - aPopularity;
+        } else if (sortBy === 'title') {
+            return (a.title || '').localeCompare(b.title || '');
         }
         return 0;
     });
+
+    const bentoSpanPattern = [
+        'md:col-span-3 md:row-span-2',
+        'md:col-span-3 md:row-span-1',
+        'md:col-span-2 md:row-span-1',
+        'md:col-span-4 md:row-span-1',
+        'md:col-span-2 md:row-span-2',
+        'md:col-span-3 md:row-span-1',
+        'md:col-span-3 md:row-span-1'
+    ];
+
+    const bentoStylePattern = ['feature', 'standard', 'compact', 'wide', 'tall', 'standard', 'wide'];
 
     const handlePostSubmit = async (postId, postData) => {
         dispatch(setLoading(true));
@@ -293,7 +302,7 @@ const UserEducationManager = () => {
             {/* Main Content Area */}
             <div className="flex-grow h-full w-full flex flex-col overflow-y-hidden p-6">
                 {/* Header with Search and Controls */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     <h1 className="text-3xl font-semibold text-foreground flex-shrink-0">
                         {getPageTitle()}
                     </h1>
@@ -301,6 +310,21 @@ const UserEducationManager = () => {
                     <div className="flex gap-2 items-center w-full sm:w-auto">
                         <div className="flex-grow max-w-xs">
                             <EducationSearchBar onSearch={handleSearch} />
+                        </div>
+
+                        <div className="relative">
+                            <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <select
+                                value={sortBy}
+                                onChange={(e) => handleSortChange(e.target.value)}
+                                className="h-10 rounded-xl border border-white/10 bg-background/70 pl-9 pr-8 text-sm text-foreground outline-none transition-all focus:border-primary/40"
+                                aria-label="Sort my education posts"
+                            >
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="title">Title A-Z</option>
+                            </select>
                         </div>
 
                         <button
@@ -330,6 +354,10 @@ const UserEducationManager = () => {
                     </div>
                 </div>
 
+                <div className="mb-3 text-sm text-muted-foreground">
+                    Showing <span className="font-medium text-foreground">{sortedEducations?.length || 0}</span> posts
+                </div>
+
                 {/* Sort Options */}
                 <AnimatePresence>
                     {showFilters && (
@@ -342,7 +370,7 @@ const UserEducationManager = () => {
                             <div className="p-4 mb-6 bg-muted/30 rounded-xl">
                                 <div className="flex flex-wrap items-center justify-center gap-3">
                                     <span className="text-sm font-medium text-foreground">Sort by:</span>
-                                    {['newest', 'oldest', 'popular'].map(option => (
+                                    {['newest', 'oldest', 'popular', 'title'].map(option => (
                                         <button
                                             key={option}
                                             onClick={() => handleSortChange(option)}
@@ -351,7 +379,9 @@ const UserEducationManager = () => {
                                                     : 'bg-background text-foreground border border-border hover:bg-muted'
                                                 }`}
                                         >
-                                            {option.charAt(0).toUpperCase() + option.slice(1)}
+                                            {option === 'title'
+                                                ? 'Title A-Z'
+                                                : option.charAt(0).toUpperCase() + option.slice(1)}
                                         </button>
                                     ))}
                                 </div>
@@ -403,15 +433,16 @@ const UserEducationManager = () => {
                             )}
                         </div>
                     ) : (
-                        <div className={`grid gap-6 ${viewMode === 'list'
+                        <div className={`grid gap-5 md:gap-6 ${viewMode === 'list'
                                 ? 'grid-cols-1'
-                                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                                : 'grid-cols-1 auto-rows-[minmax(220px,auto)] md:grid-cols-6'
                             }`}>
                             <AnimatePresence>
-                                {sortedEducations.map(post => (
+                                {sortedEducations.map((post, index) => (
                                     <motion.div
                                         key={post._id}
                                         layout
+                                        className={viewMode === 'grid' ? bentoSpanPattern[index % bentoSpanPattern.length] : ''}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -20 }}
@@ -425,6 +456,7 @@ const UserEducationManager = () => {
                                             onDelete={handleDeletePost}
                                             currentUser={user}
                                             viewMode={viewMode}
+                                            bentoVariant={bentoStylePattern[index % bentoStylePattern.length]}
                                         />
                                     </motion.div>
                                 ))}

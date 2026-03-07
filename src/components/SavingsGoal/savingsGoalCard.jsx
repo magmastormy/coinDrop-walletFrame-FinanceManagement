@@ -65,19 +65,21 @@ const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) =>
 
     return (
         <>
-            <GlassCard className="relative h-full flex flex-col p-6 group hover:border-primary/50 transition-all duration-300">
+            <GlassCard className="group relative flex h-full min-h-[292px] flex-col border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className={cn(
-                            "p-3 rounded-xl",
-                            isCompleted ? "bg-emerald-500/20 text-emerald-500" : "bg-primary/20 text-primary"
+                            "rounded-2xl border p-3.5",
+                            isCompleted
+                                ? "border-emerald-500/20 bg-emerald-500/20 text-emerald-500"
+                                : "border-primary/20 bg-primary/20 text-primary"
                         )}>
-                            {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Target className="w-6 h-6" />}
+                            {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <Target className="h-5 w-5" />}
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-foreground">{goal.name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <h3 className="text-lg font-semibold text-foreground line-clamp-1">{goal.name}</h3>
+                            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
                                 <span>{formatDate(goal.deadline)}</span>
                             </div>
@@ -100,24 +102,24 @@ const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) =>
                                     className="fixed inset-0 z-40"
                                     onClick={() => setShowMenu(false)}
                                 />
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden backdrop-blur-xl">
+                                <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-white/20 bg-card shadow-xl backdrop-blur-xl">
                                     <button
                                         onClick={() => {
                                             setIsEditOpen(true);
                                             setShowMenu(false);
                                         }}
-                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-colors"
+                                        className="w-full px-4 py-3 text-left text-sm text-foreground transition-colors hover:bg-white/10"
                                     >
-                                        <Edit className="w-4 h-4" /> Edit Goal
+                                        <span className="flex items-center gap-2"><Edit className="w-4 h-4" /> Edit Goal</span>
                                     </button>
                                     <button
                                         onClick={() => {
                                             onDelete(goal._id);
                                             setShowMenu(false);
                                         }}
-                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                        className="w-full px-4 py-3 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10"
                                     >
-                                        <Trash className="w-4 h-4" /> Delete Goal
+                                        <span className="flex items-center gap-2"><Trash className="w-4 h-4" /> Delete Goal</span>
                                     </button>
                                 </div>
                             </>
@@ -126,10 +128,10 @@ const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) =>
                 </div>
 
                 {/* Progress */}
-                <div className="mb-6">
+                <div className="mb-5 rounded-2xl border border-white/10 bg-background/40 p-4">
                     <div className="flex justify-between items-end mb-2">
                         <div>
-                            <span className="text-2xl font-bold text-foreground">
+                            <span className="text-3xl font-display font-bold text-foreground">
                                 {formatCurrency(goal.currentAmount)}
                             </span>
                             <span className="text-sm text-muted-foreground ml-2">
@@ -143,7 +145,7 @@ const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) =>
                             {progress.toFixed(1)}%
                         </span>
                     </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-2 rounded-full overflow-hidden bg-white/10">
                         <div
                             className={cn(
                                 "h-full rounded-full transition-all duration-500",
@@ -155,9 +157,9 @@ const SavingsGoalCard = ({ goal, onUpdate, onDelete, onContribute, wallets }) =>
                 </div>
 
                 {/* Actions */}
-                <div className="mt-auto">
+                <div className="mt-auto border-t border-white/10 pt-4">
                     <Button
-                        className="w-full gap-2"
+                        className="h-9 w-full gap-2"
                         onClick={() => setIsContributeOpen(true)}
                         disabled={isCompleted}
                     >

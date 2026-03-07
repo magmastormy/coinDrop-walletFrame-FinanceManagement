@@ -31,6 +31,16 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
 
     const Icon = getIcon(wallet.type);
     const otherWallets = wallets.filter(w => w._id !== wallet._id);
+    const normalizedType = wallet.type?.toLowerCase();
+
+    const typeStyles = {
+        'credit card': "from-rose-500/20 to-orange-400/15 text-rose-500 border-rose-500/20",
+        savings: "from-emerald-500/20 to-cyan-400/15 text-emerald-500 border-emerald-500/20",
+        bank: "from-blue-500/20 to-cyan-500/15 text-blue-500 border-blue-500/20",
+        cash: "from-violet-500/20 to-fuchsia-400/15 text-violet-500 border-violet-500/20"
+    };
+
+    const walletTheme = typeStyles[normalizedType] || "from-primary/20 to-cyan-500/15 text-primary border-primary/20";
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
@@ -42,81 +52,97 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
     return (
         <>
             <GlassCard
-                className="relative group overflow-visible transition-all duration-300 hover:translate-y-[-4px]"
+                className="group relative h-full min-h-[292px] overflow-visible border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5"
                 hoverEffect={true}
             >
-                <div className="flex justify-between items-start mb-6">
-                    <div className={cn(
-                        "p-3 rounded-xl bg-gradient-to-br",
-                        wallet.type === 'credit card' ? "from-purple-500/20 to-pink-500/20 text-purple-500" :
-                            wallet.type === 'savings' ? "from-green-500/20 to-emerald-500/20 text-green-500" :
-                                "from-blue-500/20 to-cyan-500/20 text-blue-500"
-                    )}>
-                        <Icon className="w-6 h-6" />
-                    </div>
-                    <div className="relative">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setShowMenu(!showMenu)}
-                        >
-                            <MoreVertical className="w-4 h-4" />
-                        </Button>
+                <div className="flex h-full flex-col gap-4">
+                    <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "rounded-2xl border bg-gradient-to-br p-3.5",
+                                walletTheme
+                            )}>
+                                <Icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">{wallet.name}</p>
+                                <p className="mt-0.5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                                    {wallet.type}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setShowMenu(!showMenu)}
+                            >
+                                <MoreVertical className="w-4 h-4" />
+                            </Button>
 
-                        {showMenu && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setShowMenu(false)}
-                                />
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    className="absolute right-0 top-full mt-2 w-48 z-20 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-xl shadow-xl overflow-hidden p-1"
-                                >
-                                    <button
-                                        onClick={() => { setShowEditModal(true); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            {showMenu && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-10"
+                                        onClick={() => setShowMenu(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-white/20 bg-white/90 p-1 shadow-xl backdrop-blur-xl dark:bg-gray-900/90"
                                     >
-                                        <Edit2 className="w-4 h-4" /> Edit
-                                    </button>
-                                    <button
-                                        onClick={() => { setShowTransferModal(true); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-                                    >
-                                        <ArrowRightLeft className="w-4 h-4" /> Transfer
-                                    </button>
-                                    <button
-                                        onClick={() => { setShowReportModal(true); setShowMenu(false); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-                                    >
-                                        <FileText className="w-4 h-4" /> Report
-                                    </button>
-                                    <div className="h-px bg-border my-1" />
-                                    <button
-                                        onClick={() => { setShowDeleteDialog(true); setShowMenu(false); }}
-                                        disabled={wallet.isSystemWallet && wallet.balance > 0}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        {wallet.isSystemWallet ? <Shield className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                                        {wallet.isSystemWallet ? 'Protected' : 'Delete'}
-                                    </button>
-                                </motion.div>
-                            </>
-                        )}
+                                        <button
+                                            onClick={() => { setShowEditModal(true); setShowMenu(false); }}
+                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                        >
+                                            <span className="flex items-center gap-2"><Edit2 className="w-4 h-4" /> Edit</span>
+                                        </button>
+                                        <button
+                                            onClick={() => { setShowTransferModal(true); setShowMenu(false); }}
+                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                        >
+                                            <span className="flex items-center gap-2"><ArrowRightLeft className="w-4 h-4" /> Transfer</span>
+                                        </button>
+                                        <button
+                                            onClick={() => { setShowReportModal(true); setShowMenu(false); }}
+                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                        >
+                                            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Report</span>
+                                        </button>
+                                        <div className="my-1 h-px bg-border" />
+                                        <button
+                                            onClick={() => { setShowDeleteDialog(true); setShowMenu(false); }}
+                                            disabled={wallet.isSystemWallet && wallet.balance > 0}
+                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                {wallet.isSystemWallet ? <Shield className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                                                {wallet.isSystemWallet ? 'Protected' : 'Delete'}
+                                            </span>
+                                        </button>
+                                    </motion.div>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <p className="text-sm text-muted-foreground font-medium mb-1">{wallet.name}</p>
-                    <h3 className={cn(
-                        "text-2xl font-display font-bold",
-                        wallet.balance < 0 ? "text-red-500" : "text-foreground"
-                    )}>
-                        {formatCurrency(wallet.balance)}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-2 capitalize">{wallet.type}</p>
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-background/40 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
+                        <h3 className={cn(
+                            "mt-2 text-3xl font-display font-bold",
+                            wallet.balance < 0 ? "text-red-500" : "text-foreground"
+                        )}>
+                            {formatCurrency(wallet.balance)}
+                        </h3>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4 text-xs text-muted-foreground">
+                        <span>Account Type</span>
+                        <span className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em]">
+                            {wallet.type}
+                        </span>
+                    </div>
                 </div>
             </GlassCard>
 

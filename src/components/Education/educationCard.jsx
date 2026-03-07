@@ -6,7 +6,14 @@ import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
 import { cn } from '../../lib/utils';
 
-const EducationCard = ({ education, onLike, onComment, currentUser }) => {
+const EducationCard = ({
+    education,
+    onLike,
+    onComment,
+    currentUser,
+    viewMode = 'grid',
+    bentoVariant = 'standard'
+}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLiked, setIsLiked] = useState(
         education.likes?.includes(currentUser?._id) ||
@@ -60,18 +67,42 @@ const EducationCard = ({ education, onLike, onComment, currentUser }) => {
         return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`;
     };
 
+    const isListMode = viewMode === 'list';
+    const isFeatureCard = !isListMode && (bentoVariant === 'feature' || bentoVariant === 'tall');
+    const isCompactCard = !isListMode && bentoVariant === 'compact';
+    const isWideCard = !isListMode && bentoVariant === 'wide';
+
+    const imageClassName = cn(
+        "relative overflow-hidden",
+        isListMode ? "h-52 md:h-auto md:w-72 md:flex-shrink-0" : "h-48",
+        isFeatureCard && "h-56",
+        isCompactCard && "h-40",
+        isWideCard && "h-44"
+    );
+
+    const previewClampClass = cn(
+        "text-sm text-muted-foreground flex-1 overflow-hidden",
+        isListMode ? "line-clamp-4" : "line-clamp-6",
+        isFeatureCard && "line-clamp-8",
+        isCompactCard && "line-clamp-4"
+    );
+
     return (
         <>
             <motion.div
-                whileHover={{ scale: 1.02 }}
+                whileHover={isListMode ? { y: -2 } : { scale: 1.01 }}
                 transition={{ duration: 0.2 }}
+                className="h-full"
             >
                 <GlassCard
-                    className="h-full flex flex-col overflow-hidden group cursor-pointer"
+                    className={cn(
+                        "group h-full cursor-pointer overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-0 dark:from-white/10 dark:via-white/5",
+                        isListMode ? "flex flex-col md:flex-row" : "flex flex-col"
+                    )}
                     onClick={handleReadMore}
                 >
                     {/* Image */}
-                    <div className="relative h-48 overflow-hidden">
+                    <div className={imageClassName}>
                         {education.images && education.images.length > 0 ? (
                             <>
                                 <img
@@ -95,7 +126,7 @@ const EducationCard = ({ education, onLike, onComment, currentUser }) => {
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 p-4 flex flex-col">
+                    <div className="flex flex-1 flex-col p-4 md:p-5">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-2 text-xs">
                             <div className="flex items-center gap-1 text-muted-foreground font-medium">
@@ -110,12 +141,15 @@ const EducationCard = ({ education, onLike, onComment, currentUser }) => {
                         </div>
 
                         {/* Title */}
-                        <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2">
+                        <h3 className={cn(
+                            "mb-2 font-semibold text-foreground line-clamp-2",
+                            isFeatureCard ? "text-xl" : "text-lg"
+                        )}>
                             {education.title}
                         </h3>
 
                         {/* Content Preview */}
-                        <div className="text-sm text-muted-foreground mb-3 line-clamp-10 flex-1 overflow-hidden">
+                        <div className={cn(previewClampClass, "mb-3")}>
                             <EducationRenderer content={education.details} />
                         </div>
 

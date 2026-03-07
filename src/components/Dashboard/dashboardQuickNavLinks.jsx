@@ -55,14 +55,15 @@ const DashboardQuickNavLinks = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            <GlassCard className="p-6">
-                <h3 className="text-xl font-bold text-foreground mb-4">Quick Navigation</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+                <h3 className="mb-4 text-xl font-bold text-foreground">Quick Navigation</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
                     {navLinks.map((link, index) => {
                         const Icon = link.icon;
                         return (
                             <motion.div
                                 key={link.to}
+                                className="h-full"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{
@@ -73,17 +74,17 @@ const DashboardQuickNavLinks = () => {
                             >
                                 <Link
                                     to={link.to}
-                                    className="block p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all group"
+                                    className="group block h-full rounded-2xl border border-white/10 bg-background/45 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/10"
                                 >
                                     <motion.div
-                                        className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${link.gradient} mb-3`}
+                                        className={`mb-3 inline-flex rounded-xl bg-gradient-to-br p-3 ${link.gradient}`}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
                                     >
                                         <Icon className="w-5 h-5 text-white" />
                                     </motion.div>
-                                    <h4 className="font-semibold text-foreground mb-1">{link.title}</h4>
-                                    <p className="text-xs text-muted-foreground">{link.description}</p>
+                                    <h4 className="mb-1 text-base font-semibold text-foreground">{link.title}</h4>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">{link.description}</p>
                                 </Link>
                             </motion.div>
                         );

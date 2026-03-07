@@ -27,7 +27,7 @@ const NewGoalCard = ({ onCreate }) => {
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className="w-full h-full min-h-[280px] group relative flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border-2 border-dashed border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+        className="group relative flex h-full min-h-[292px] w-full flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-white/20 bg-gradient-to-b from-white/20 to-transparent p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5"
       >
         <div className="p-4 rounded-full bg-white/5 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
           <Plus className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -45,10 +45,10 @@ const NewGoalCard = ({ onCreate }) => {
   }
 
   return (
-    <GlassCard className="h-full min-h-[280px] p-6 flex flex-col">
+    <GlassCard className="flex h-full min-h-[292px] flex-col border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/20 text-primary">
+          <div className="rounded-xl border border-primary/20 bg-primary/20 p-2.5 text-primary">
             <Target className="w-5 h-5" />
           </div>
           <h3 className="text-lg font-semibold text-foreground">New Goal</h3>
