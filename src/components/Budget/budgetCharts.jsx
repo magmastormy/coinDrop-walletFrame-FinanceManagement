@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Pie, Line } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
+import Card from '../ui/Card';
 
 // Register Chart.js components
 ChartJS.register(
@@ -92,15 +93,14 @@ const BudgetCharts = ({ budgets = [] }) => {
     }, [budgets]);
 
     if (!Array.isArray(budgets)) {
-        console.warn('BudgetCharts: budgets prop is not an array');
         return null;
     }
 
     if (budgets.length === 0 || !chartData) {
         return (
-            <div className="flex items-center justify-center h-64 text-muted-foreground bg-white/5 rounded-xl border border-white/5">
-                <p>No budget data available for visualization</p>
-            </div>
+            <Card variant="default" elevation={1} className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">No budget data available for visualization</p>
+            </Card>
         );
     }
 
@@ -219,8 +219,8 @@ const BudgetCharts = ({ budgets = [] }) => {
             transition={{ duration: 0.3 }}
         >
             <div className="grid grid-cols-1 gap-6">
-                <div className="p-4">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Budget Allocation</h3>
+                <Card variant="default" elevation={1} className="p-6">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4">Budget Allocation</h3>
                     <div className="h-[250px]">
                         <Pie
                             data={chartData.pieData}
@@ -228,9 +228,9 @@ const BudgetCharts = ({ budgets = [] }) => {
                             aria-label="Budget allocation pie chart"
                         />
                     </div>
-                </div>
-                <div className="p-4 border-t border-white/5">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Spending Trends</h3>
+                </Card>
+                <Card variant="default" elevation={1} className="p-6">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-4">Spending Trends</h3>
                     <div className="h-[250px]">
                         <Line
                             data={chartData.spendingData}
@@ -238,7 +238,7 @@ const BudgetCharts = ({ budgets = [] }) => {
                             aria-label="Spending trends line chart"
                         />
                     </div>
-                </div>
+                </Card>
             </div>
         </motion.div>
     );

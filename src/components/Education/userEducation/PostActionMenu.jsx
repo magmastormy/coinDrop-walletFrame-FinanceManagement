@@ -1,10 +1,8 @@
 import React from 'react';
 import { MoreVertical, Edit, Trash2 } from 'lucide-react';
-import { useTheme } from '../../../theme/ThemeContext';
 
 const PostActionMenu = ({ post, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const { theme } = useTheme();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);

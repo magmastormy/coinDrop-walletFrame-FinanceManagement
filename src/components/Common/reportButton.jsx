@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Download, ChevronDown, Loader2 } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Download, Loader2 } from 'lucide-react';
+import Button from '../ui/Button';
 import { toast } from 'react-toastify';
 import reportService from '../../services/reportService';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -22,12 +22,10 @@ const ReportButton = ({
     try {
       // Check if blob is valid
       if (!(blob instanceof Blob)) {
-        console.error('Invalid blob object:', blob);
+        // Invalid blob object
         toast.error('Error: Downloaded file is not in the correct format');
         return;
       }
-
-      console.log('Creating URL for blob:', blob.size, blob.type);
 
       // Create URL and download
       const url = window.URL.createObjectURL(blob);
@@ -45,7 +43,7 @@ const ReportButton = ({
 
       toast.success('Report downloaded successfully');
     } catch (error) {
-      console.error('Download error:', error);
+      // Download error
       toast.error(`Error downloading file: ${error.message}`);
     }
   };
@@ -54,13 +52,6 @@ const ReportButton = ({
     try {
       setLoading(true);
 
-      console.log('Generating report with:', {
-        accountId,
-        isGlobal,
-        format: selectedFormat,
-        reportType: selectedType
-      });
-
       const response = await reportService.generateReport({
         accountId,
         isGlobal,
@@ -68,15 +59,11 @@ const ReportButton = ({
         reportType: selectedType
       });
 
-      console.log('Report generation response:', response);
-
       if (response && response.reportId) {
         // Poll for report completion
         const checkStatus = async () => {
           const statusResponse = await reportService.getReportStatus(response.reportId);
           const status = statusResponse;
-
-          console.log('Report status:', status);
 
           if (status.status === 'completed') {
             const reportBlob = await reportService.downloadReport(response.reportId);
@@ -96,7 +83,7 @@ const ReportButton = ({
         throw new Error('Invalid response from server');
       }
     } catch (error) {
-      console.error('Error generating report:', error);
+      // Error already handled by service
       setLoading(false);
       toast.error(`Error generating report: ${error.response?.data?.error || error.message}`);
     }
@@ -142,7 +129,6 @@ const ReportButton = ({
           <Download className="w-4 h-4" />
         )}
         {label}
-        <ChevronDown className="w-4 h-4" />
       </Button>
 
       {anchorEl && (

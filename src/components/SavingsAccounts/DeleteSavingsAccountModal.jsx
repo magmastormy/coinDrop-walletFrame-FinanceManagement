@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import savingsAccountService from '../../services/savingsAccountService';
 import { removeSavingsAccount } from '../../slices/savingsAccountSlice';
 import { updateWallet } from '../../slices/walletSlice';
 import { addTransaction } from '../../slices/transactionSlice';
+import Modal from '../ui/Modal';
+import { Button } from '../ui/Button';
 
 const DeleteSavingsAccountModal = ({ show, handleClose, savingsAccount }) => {
   const dispatch = useDispatch();
@@ -14,13 +15,15 @@ const DeleteSavingsAccountModal = ({ show, handleClose, savingsAccount }) => {
   
   // Get user wallets from Redux store
   const wallets = useSelector(state => state.wallet.wallets);
+
+  const safeWallets = useMemo(() => (Array.isArray(wallets) ? wallets : []), [wallets]);
   
   // Set default wallet if only one exists
   useEffect(() => {
-    if (wallets.length === 1) {
-      setSelectedWalletId(wallets[0]._id);
+    if (safeWallets.length === 1) {
+      setSelectedWalletId(safeWallets[0]._id);
     }
-  }, [wallets]);
+  }, [safeWallets]);
   
   const handleDelete = async () => {
     if (!selectedWalletId) {
@@ -68,54 +71,97 @@ const DeleteSavingsAccountModal = ({ show, handleClose, savingsAccount }) => {
     }
   };
   
+  const hasBalance = Number(savingsAccount?.currentBalance || 0) > 0;
+  const balanceAmount = Number(savingsAccount?.currentBalance || 0);
+
   return (
-    <Modal show={show} onHide={handleClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>Delete Savings Account</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <p>Are you sure you want to delete the savings account &quot;{savingsAccount?.name}&quot;?</p>
-        
-        {savingsAccount?.currentBalance > 0 && (
-          <>
-            <Alert variant="warning">
-              This account has a balance of ${savingsAccount.currentBalance.toFixed(2)}. 
-              Please select a wallet to transfer this amount to:
-            </Alert>
-            
-            <Form.Group>
-              <Form.Label>Transfer Balance to Wallet</Form.Label>
-              <Form.Control 
-                as="select" 
-                value={selectedWalletId} 
+    <Modal
+      isOpen={!!show}
+      onClose={handleClose}
+      title="Delete Savings Account"
+      className="max-w-lg"
+      backdropVariant="dark"
+    >
+      <div className="space-y-4">
+        <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>
+          Are you sure you want to delete the savings account &quot;{savingsAccount?.name}&quot;?
+        </p>
+
+        {hasBalance && (
+          <div className="space-y-3">
+            <div
+              style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--color-surface-2)',
+                padding: '12px',
+                color: 'var(--color-text-secondary)',
+                fontSize: '14px',
+                fontFamily: 'var(--font-body)',
+              }}
+            >
+              This account has a balance of ${balanceAmount.toFixed(2)}. Please select a wallet to transfer this amount to:
+            </div>
+
+            <div className="space-y-1">
+              <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}>
+                Transfer Balance to Wallet
+              </div>
+              <select
+                value={selectedWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
-                required
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface-1)',
+                  padding: '0 12px',
+                  fontSize: '14px',
+                  color: 'var(--color-text-primary)',
+                  outline: 'none',
+                  fontFamily: 'var(--font-body)',
+                }}
               >
                 <option value="">Select a wallet</option>
-                {wallets.map(wallet => (
+                {safeWallets.map(wallet => (
                   <option key={wallet._id} value={wallet._id}>
-                    {wallet.name} (${wallet.balance.toFixed(2)})
+                    {wallet.name} (${Number(wallet.balance || 0).toFixed(2)})
                   </option>
                 ))}
-              </Form.Control>
-            </Form.Group>
-          </>
+              </select>
+            </div>
+          </div>
         )}
-        
-        {error && <Alert variant="danger">{error}</Alert>}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-          Cancel
-        </Button>
-        <Button 
-          variant="danger" 
-          onClick={handleDelete} 
-          disabled={isDeleting || (savingsAccount?.currentBalance > 0 && !selectedWalletId)}
-        >
-          {isDeleting ? 'Deleting...' : 'Delete Account'}
-        </Button>
-      </Modal.Footer>
+
+        {error && (
+          <div
+            style={{
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: 'var(--radius-lg)',
+              background: 'rgba(239, 68, 68, 0.10)',
+              padding: '12px',
+              color: 'rgba(239, 68, 68, 0.9)',
+              fontSize: '14px',
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <Button variant="outline" onClick={handleClose} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={isDeleting || (hasBalance && !selectedWalletId)}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
+          </Button>
+        </div>
+      </div>
     </Modal>
   );
 };

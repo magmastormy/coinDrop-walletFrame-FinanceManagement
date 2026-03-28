@@ -12,7 +12,17 @@ const educationSlice = createSlice({
     initialState,
     reducers: {
         setEducations: (state, action) => {
-            state.educations = action.payload?.data || action.payload || [];
+            // Ensure we only store serializable data (array of education objects)
+            const payload = action.payload;
+            if (Array.isArray(payload)) {
+                state.educations = payload;
+            } else if (payload && Array.isArray(payload.data)) {
+                state.educations = payload.data;
+            } else if (payload && Array.isArray(payload.educations)) {
+                state.educations = payload.educations;
+            } else {
+                state.educations = [];
+            }
             state.loading = false;
             state.error = null;
         },

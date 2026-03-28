@@ -1,32 +1,109 @@
 require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+console.log('🔄 app.js: Loading...');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
+console.log('✅ app.js: Core dependencies loaded (express, cors, rate-limit)');
+const logger = require('./utils/logger');
+console.log('✅ app.js: Logger loaded');
+
+const { sanitizationMiddleware } = require('./middleware/validationMiddleware');
+console.log('✅ app.js: Validation middleware loaded');
+
+const auditMiddleware = require('./middleware/auditMiddleware');
+console.log('✅ app.js: Audit middleware loaded');
+
+console.log('🔄 app.js: Loading routes...');
 const receiptRoutes = require('./routes/receiptRoutes');
+console.log('✅ app.js: Receipt routes loaded');
 const authRoutes = require('./routes/authRoutes');
+console.log('✅ app.js: Auth routes loaded');
 const transactionRoutes = require('./routes/transactionRoutes');
+console.log('✅ app.js: Transaction routes loaded');
 const walletRoutes = require('./routes/walletRoutes');
+console.log('✅ app.js: Wallet routes loaded');
 const budgetRoutes = require('./routes/budgetRoutes');
+console.log('✅ app.js: Budget routes loaded');
 const settingsRoutes = require('./routes/settingsRoutes');
+console.log('✅ app.js: Settings routes loaded');
 const profileRoutes = require('./routes/profileRoutes');
+console.log('✅ app.js: Profile routes loaded');
 const categoryRoutes = require('./routes/categoryRoutes');
+console.log('✅ app.js: Category routes loaded');
 const educationRoutes = require('./routes/educationRoutes');
+console.log('✅ app.js: Education routes loaded');
 const savingsAccountRoutes = require('./routes/savingsAccountRoutes');
+console.log('✅ app.js: Savings account routes loaded');
 const savingsGoalRoutes = require('./routes/savingsGoalRoutes');
+console.log('✅ app.js: Savings goal routes loaded');
 const savingsRuleRoutes = require('./routes/savingsRuleRoutes');
+console.log('✅ app.js: Savings rule routes loaded');
 const zhipuaiRoutes = require('./routes/zhipuaiRoutes');
+console.log('✅ app.js: ZhipuAI routes loaded');
 const imageRoutes = require('./routes/imageRoutes');
+console.log('✅ app.js: Image routes loaded');
 const reportRoutes = require('./routes/reportRoutes');
+console.log('✅ app.js: Report routes loaded');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+console.log('✅ app.js: Analytics routes loaded');
+const cryptoRoutes = require('./routes/cryptoRoutes');
+console.log('✅ app.js: Crypto routes loaded');
+const adminRoutes = require('./routes/adminRoutes');
+console.log('✅ app.js: Admin routes loaded');
+
+console.log('🔄 app.js: Loading utilities...');
+const connectionPoolMonitor = require('./utils/connectionPoolMonitor');
+console.log('✅ app.js: Connection pool monitor loaded');
+const metricsCollector = require('./utils/metricsCollector');
+console.log('✅ app.js: Metrics collector loaded');
+
+const BatchUtil = require('./utils/batchUtils');
+console.log('✅ app.js: Batch utility loaded');
+
+const { ErrorHandler } = require('./utils/errorHandler');
+console.log('✅ app.js: Error handler loaded');
+
+// Initialize connection pool monitoring
+if (process.env.NODE_ENV !== 'test') {
+    connectionPoolMonitor.start(5000); // Monitor every 5 seconds
+}
+
+// Record system metrics periodically
+if (process.env.NODE_ENV !== 'test') {
+    setInterval(() => {
+        metricsCollector.recordSystemMetrics();
+    }, 10000); // Every 10 seconds
+}
 
 const parseAllowedOrigins = () => {
-    const raw = process.env.CORS_ORIGIN || 'http://localhost:5173';
+    const raw = process.env.CORS_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:63704,http://localhost:3000,http://127.0.0.1:3000';
     return raw
         .split(',')
         .map(origin => origin.trim())
         .filter(Boolean);
+};
+
+const DEV_PORT_RANGE_REGEX = /^http:\/\/(localhost|127\.0\.0\.1):(300[0-9]|517[0-9])$/;
+
+const isOriginAllowed = (origin, allowedOrigins) => {
+    if (!origin) return true;
+    
+    for (const allowed of allowedOrigins) {
+        if (allowed === origin) {
+            return true;
+        }
+    }
+    
+    if (process.env.NODE_ENV !== 'production' && DEV_PORT_RANGE_REGEX.test(origin)) {
+        return true;
+    }
+    
+    return false;
 };
 
 const redactSensitiveFields = (payload = {}) => {
@@ -52,16 +129,61 @@ function createApp() {
 
     app.use(cors({
         origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin)) {
+            if (isOriginAllowed(origin, allowedOrigins)) {
                 callback(null, true);
                 return;
             }
+            const errorMsg = `CORS origin not allowed: ${origin}`;
+            logger.warn(errorMsg, { origin, allowedOrigins });
             callback(new Error('CORS origin not allowed'));
         },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'X-CSRF-Token'],
         credentials: true
     }));
+
+    // HTTPS enforcement in production
+    app.use((req, res, next) => {
+        if (process.env.NODE_ENV === 'production' && req.protocol === 'http') {
+            return res.redirect(`https://${req.get('host')}${req.url}`);
+        }
+        next();
+    });
+
+    // Security headers
+    app.use((req, res, next) => {
+        // HTTP Strict Transport Security
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+        
+        // Content Security Policy
+        res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self';");
+        
+        // X-Content-Type-Options
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        
+        // X-Frame-Options
+        res.setHeader('X-Frame-Options', 'DENY');
+        
+        // X-XSS-Protection
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+        
+        // Referrer Policy
+        res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        
+        // Permissions Policy
+        res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), accelerometer=(), gyroscope=()');
+        
+        // Cross-Origin-Embedder-Policy
+        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        
+        // Cross-Origin-Opener-Policy
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        
+        // Cross-Origin-Resource-Policy
+        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+        
+        next();
+    });
 
     const apiLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
@@ -89,11 +211,67 @@ function createApp() {
         skip: () => process.env.NODE_ENV === 'test'
     });
 
+    // PER-USER RATE LIMITING - Prevents single user from monopolizing AI
+    // Only applies to authenticated users; unauthenticated requests fall back to IP-based limiting
+    const perUserLimiter = rateLimit({
+        windowMs: 60 * 1000, // 1 minute sliding window
+        max: 5, // 5 requests per user per minute
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => {
+            const userId = req.user?.userId || req.authUserId;
+            if (!userId) {
+                logger.warn('Per-user rate limiter called without authenticated user', {
+                    path: req.path,
+                    ip: req.ip
+                });
+            }
+            return `user:${userId}`;
+        },
+        message: {
+            status: 429,
+            error: 'Too many requests',
+            message: 'You have exceeded the rate limit of 5 requests per minute. Please slow down.'
+        },
+        skip: (req) => {
+            if (process.env.NODE_ENV === 'test') return true;
+            const userId = req.user?.userId || req.authUserId;
+            if (!userId) {
+                return true;
+            }
+            return false;
+        }
+    });
+
+    // Stricter rate limits for financial operations
+    const financialLimiter = rateLimit({
+        windowMs: 60 * 1000, // 1 minute
+        max: 10, // 10 transactions per minute
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: {
+            status: 429,
+            error: 'Too many financial operations',
+            message: 'Too many financial operations, please slow down'
+        },
+        skip: () => process.env.NODE_ENV === 'test'
+    });
+
     app.use(apiLimiter);
     app.use('/api/zhipuai', aiLimiter);
+    // Apply per-user limits to prevent abuse
+    app.use('/api/zhipuai/send', perUserLimiter);
+    // Apply stricter limits to financial endpoints
+    app.use('/api/wallets/transfer', financialLimiter);
+    app.use('/api/transactions', financialLimiter);
+    app.use('/api/saving-accounts/deposit', financialLimiter);
+    app.use('/api/saving-accounts/withdraw', financialLimiter);
+    app.use('/api/saving-goals/contribute', financialLimiter);
 
     app.use(express.json({ limit: '2mb' }));
     app.use(express.urlencoded({ limit: '2mb', extended: true }));
+    app.use(sanitizationMiddleware);
+    app.use(auditMiddleware);
 
     app.use((req, res, next) => {
         const startedAt = Date.now();
@@ -113,7 +291,15 @@ function createApp() {
                 entry.level = 'warn';
                 entry.securityEvent = 'authz_denied';
             }
-            console.log(JSON.stringify(entry));
+            
+            // Use structured logger instead of console.log
+            if (entry.level === 'error') {
+                logger.error('Request failed', entry);
+            } else if (entry.level === 'warn') {
+                logger.warn('Security event', entry);
+            } else {
+                logger.info('Request completed', entry);
+            }
         });
 
         next();
@@ -147,43 +333,136 @@ function createApp() {
     app.use('/api/images', imageRoutes);
     app.use('/api/reports', reportRoutes);
     app.use('/api/analytics', analyticsRoutes);
+    app.use('/api/crypto', cryptoRoutes);
+app.use('/api/admin', adminRoutes);
 
-    app.get('/api/health', (req, res) => {
-        res.json({
-            status: 'OK',
+    // Metrics endpoint for monitoring
+    app.get('/api/metrics', (req, res) => {
+        const metrics = metricsCollector.getMetrics();
+        res.type('application/json').json(metrics);
+    });
+
+    // Prometheus format metrics endpoint
+    app.get('/api/metrics/prometheus', (req, res) => {
+        res.type('text/plain').send(metricsCollector.exportPrometheus());
+    });
+
+    // Connection pool health endpoint
+    app.get('/api/health/connection-pool', (req, res) => {
+        const poolMetrics = connectionPoolMonitor.getMetrics();
+        res.json(poolMetrics);
+    });
+
+    // Queue monitoring endpoint
+    app.get('/api/health/queue', async (req, res) => {
+        try {
+            const { getQueueStats } = require('./services/transactionQueueService');
+            const queueStats = await getQueueStats();
+            res.json(queueStats);
+        } catch (error) {
+            res.status(500).json({ error: 'Error getting queue stats', message: error.message });
+        }
+    });
+
+    // COMPREHENSIVE HEALTH CHECK ENDPOINT
+    app.get('/api/health', async (req, res) => {
+        const mongoose = require('mongoose');
+        const os = require('os');
+        
+        const healthStatus = {
+            status: 'healthy',
             timestamp: new Date().toISOString(),
-            env: process.env.NODE_ENV || 'development'
-        });
+            env: process.env.NODE_ENV || 'development',
+            uptime: process.uptime(),
+            checks: {}
+        };
+        
+        let hasCriticalFailure = false;
+        
+        // Check MongoDB connection
+        try {
+            const dbState = mongoose.connection.readyState;
+            healthStatus.checks.mongodb = {
+                status: dbState === 1 ? 'connected' : 'disconnected',
+                host: mongoose.connection.host,
+                name: mongoose.connection.name,
+                readyState: dbState
+            };
+            if (dbState !== 1) hasCriticalFailure = true;
+        } catch (error) {
+            healthStatus.checks.mongodb = {
+                status: 'error',
+                error: error.message
+            };
+            hasCriticalFailure = true;
+        }
+        
+        // Check Redis connection (if configured)
+        if (process.env.REDIS_HOST) {
+            try {
+                const redis = require('redis');
+                const client = redis.createClient({
+                    socket: { host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') }
+                });
+                await client.connect();
+                await client.ping();
+                await client.disconnect();
+                
+                healthStatus.checks.redis = {
+                    status: 'connected',
+                    host: process.env.REDIS_HOST
+                };
+            } catch (error) {
+                healthStatus.checks.redis = {
+                    status: 'error',
+                    error: error.message
+                };
+                // Redis is not critical for basic operation
+            }
+        }
+        
+        // System metrics
+        healthStatus.system = {
+            memory: {
+                used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+                total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+                rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+            },
+            cpu: {
+                load: os.loadavg()[0].toFixed(2),
+                cores: os.cpus().length
+            },
+            disk: {
+                free: Math.round(os.freemem() / 1024 / 1024),
+                total: Math.round(os.totalmem() / 1024 / 1024)
+            }
+        };
+        
+        // Determine overall status
+        if (hasCriticalFailure) {
+            healthStatus.status = 'unhealthy';
+            res.status(503);
+        } else if (Object.values(healthStatus.checks).some(c => c.status === 'error')) {
+            healthStatus.status = 'degraded';
+            res.status(200);
+        } else {
+            res.status(200);
+        }
+        
+        res.json(healthStatus);
     });
 
-    app.use((req, res) => {
-        res.status(404).json({
-            error: 'Not Found',
-            message: `Cannot ${req.method} ${req.path}`
-        });
+    // Swagger API documentation
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    console.log('✅ app.js: Swagger API documentation endpoint added');
+
+    app.use((req, res, next) => {
+        const error = ErrorHandler.notFound(`Cannot ${req.method} ${req.path}`);
+        next(error);
     });
 
-    app.use((err, req, res, _next) => {
-        const statusCode = err.status || 500;
-        const message = statusCode >= 500
-            ? 'Something went wrong'
-            : err.message || 'Request failed';
-
-        console.error(JSON.stringify({
-            level: 'error',
-            requestId: req.requestId,
-            path: req.path,
-            method: req.method,
-            statusCode,
-            error: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-        }));
-
-        res.status(statusCode).json({
-            error: statusCode >= 500 ? 'Internal Server Error' : 'Request Error',
-            message,
-            requestId: req.requestId
-        });
+    app.use((err, req, res, next) => {
+        ErrorHandler.handleError(err, req, res, next);
     });
 
     return app;
@@ -191,5 +470,45 @@ function createApp() {
 
 const app = createApp();
 
+// Initialize batch utility
+new BatchUtil(app);
+console.log('✅ app.js: Batch utility initialized');
+
+// Initialize resource management service
+const resourceManagementService = require('./services/resourceManagementService');
+resourceManagementService.initialize();
+console.log('✅ app.js: Resource management service initialized');
+
+// Add resource management middleware
+app.use((req, res, next) => {
+    // Check if we can accept new connections
+    if (!resourceManagementService.canAcceptNewConnection()) {
+        return res.status(503).json({
+            error: 'Service Unavailable',
+            message: 'Server is currently at capacity. Please try again later.'
+        });
+    }
+    
+    // Increment connection count
+    resourceManagementService.incrementConnectionCount();
+    
+    // Decrement connection count when response is finished
+    res.on('finish', () => {
+        resourceManagementService.decrementConnectionCount();
+    });
+    
+    next();
+});
+
+// Resource status endpoint
+    app.get('/api/health/resources', (req, res) => {
+        const resourceStatus = resourceManagementService.getResourceStatus();
+        res.json(resourceStatus);
+    });
+
+    console.log('✅ app.js: App created successfully');
+
 module.exports = app;
 module.exports.createApp = createApp;
+
+console.log('✅ app.js: Module exports configured');

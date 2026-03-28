@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 
 const SavingsAccountEditDialog = ({
     open,
@@ -121,13 +121,24 @@ const SavingsAccountEditDialog = ({
                     />
                 )}
 
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                <div
+                    className="flex items-center gap-3 p-4 rounded-xl"
+                    style={{
+                        background: 'var(--color-surface-2)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-lg)',
+                    }}
+                >
                     <input
                         type="checkbox"
                         id="automation-enabled"
                         checked={formData.automation.enabled}
                         onChange={handleSwitchChange}
-                        className="w-5 h-5 rounded border-white/20 bg-black/20 text-primary focus:ring-primary"
+                        className="w-5 h-5 rounded text-primary focus:ring-primary"
+                        style={{
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-1)'
+                        }}
                     />
                     <label htmlFor="automation-enabled" className="text-sm font-medium cursor-pointer select-none">
                         Enable Automatic Contributions
@@ -135,7 +146,14 @@ const SavingsAccountEditDialog = ({
                 </div>
 
                 {formData.automation.enabled && (
-                    <div className="space-y-4 p-4 rounded-xl bg-white/5 border border-white/10 animate-in fade-in slide-in-from-top-2">
+                    <div
+                        className="space-y-4 p-4 rounded-xl animate-in fade-in slide-in-from-top-2"
+                        style={{
+                            background: 'var(--color-surface-2)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-lg)',
+                        }}
+                    >
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-muted-foreground">Contribution Type</label>
                             <div className="flex gap-4">
@@ -196,7 +214,18 @@ const SavingsAccountEditDialog = ({
                                     name="automation.frequency"
                                     value={formData.automation.frequency}
                                     onChange={handleChange}
-                                    className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                                    style={{
+                                        width: '100%',
+                                        height: '40px',
+                                        padding: '0 12px',
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface-1)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none',
+                                        fontSize: '14px',
+                                        fontFamily: 'var(--font-body)',
+                                    }}
                                 >
                                     <option value="weekly">Weekly</option>
                                     <option value="monthly">Monthly</option>
@@ -215,7 +244,7 @@ const SavingsAccountEditDialog = ({
                     </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                     <Button variant="ghost" onClick={onClose} type="button">
                         Cancel
                     </Button>

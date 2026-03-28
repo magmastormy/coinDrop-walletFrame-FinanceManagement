@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Loader2, RefreshCw } from 'lucide-react';
-import axios from 'axios';
+import userAxios from '../../api/userAxios';
 import { cn } from '../../lib/utils';
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
@@ -18,28 +18,24 @@ const DashboardRenderStocksPrices = () => {
             setLoading(true);
             setError(null);
 
-            const response = await axios.get(`${COINGECKO_API_URL}/simple/price`, {
-                params: {
-                    ids: CRYPTO_IDS.join(','),
-                    vs_currencies: 'usd',
-                    include_24hr_change: true,
-                    include_last_updated_at: true
-                }
-            });
+            // Use backend proxy with caching and fallback
+            const response = await userAxios.get('/crypto/prices');
+            const data = response.data.data;
 
             const formattedData = CRYPTO_IDS.map(id => ({
                 id,
                 name: id.charAt(0).toUpperCase() + id.slice(1),
-                price: response.data[id].usd,
-                priceChange: response.data[id].usd_24h_change,
-                lastUpdated: new Date(response.data[id].last_updated_at * 1000)
+                price: data[id]?.usd || 0,
+                priceChange: data[id]?.usd_24h_change || 0,
+                lastUpdated: data[id]?.last_updated_at 
+                    ? new Date(data[id].last_updated_at * 1000)
+                    : new Date()
             }));
 
             setCryptoData(formattedData);
             setLastUpdated(new Date());
         } catch (err) {
-            setError('Failed to fetch cryptocurrency data');
-            console.error('Error fetching crypto data:', err);
+            setError('Failed to fetch cryptocurrency data. Using fallback values.');
         } finally {
             setLoading(false);
         }
@@ -72,10 +68,13 @@ const DashboardRenderStocksPrices = () => {
                     disabled={loading}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="p-2 hover:bg-white/5 rounded-full transition-colors disabled:opacity-50"
+                    className="p-2 rounded-full transition-colors disabled:opacity-50"
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                 >
                     <RefreshCw
-                        className={cn("w-4 h-4 text-muted-foreground", loading && "animate-spin")}
+                        className={cn("w-[18px] h-[18px] text-muted-foreground", loading && "animate-spin")}
+                        strokeWidth={1.5}
                     />
                 </motion.button>
             </div>
@@ -93,7 +92,14 @@ const DashboardRenderStocksPrices = () => {
                     {cryptoData.map((crypto, index) => (
                         <motion.div
                             key={crypto.id}
-                            className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5"
+                            className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                            style={{
+                                background: 'var(--color-surface-1)',
+                                border: '1px solid var(--color-border)',
+                                borderRadius: 'var(--radius-lg)',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-surface-1)'; }}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{
@@ -133,9 +139,9 @@ const DashboardRenderStocksPrices = () => {
                                 transition={{ duration: 0.2 }}
                             >
                                 {crypto.priceChange >= 0 ? (
-                                    <TrendingUp className="w-3 h-3" />
+                                    <TrendingUp className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                 ) : (
-                                    <TrendingDown className="w-3 h-3" />
+                                    <TrendingDown className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                 )}
                                 {Math.abs(crypto.priceChange).toFixed(2)}%
                             </motion.div>

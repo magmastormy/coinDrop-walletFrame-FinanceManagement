@@ -14,17 +14,21 @@ export const AUTH_ERRORS = {
     PASSWORD_MISMATCH: 'Passwords do not match'
 };
 
-const storeUserData = (accessToken, refreshToken, userData) => {
+const storeUserData = (accessToken, refreshToken, userData, csrfToken) => {
     localStorage.setItem('token', accessToken);
     localStorage.setItem('user', JSON.stringify(userData));
     if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken);
     }
+    if (csrfToken) {
+        localStorage.setItem('csrfToken', csrfToken);
+    }
 
     store.dispatch(loginSuccess({
         user: userData,
         accessToken,
-        refreshToken
+        refreshToken,
+        csrfToken
     }));
 };
 
@@ -32,7 +36,12 @@ const clearUserData = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('csrfToken');
 };
+
+// Rate limiting to prevent rapid login attempts
+let lastLoginAttempt = 0;
+const LOGIN_COOLDOWN = 3000; // 3 seconds between attempts
 
 const formatErrorMessage = error => {
     if (!error.response) {
@@ -40,6 +49,11 @@ const formatErrorMessage = error => {
     }
 
     const { status, data } = error.response;
+
+    if (status === 429) {
+        // Rate limit exceeded - provide helpful message
+        return data?.message || 'Too many attempts. Please wait a moment and try again.';
+    }
 
     if (status === 400) {
         if (Array.isArray(data?.details)) {
@@ -63,13 +77,24 @@ const formatErrorMessage = error => {
 
 export const loginUser = async credentials => {
     try {
+        // Check rate limiting
+        const now = Date.now();
+        const timeSinceLastAttempt = now - lastLoginAttempt;
+        
+        if (timeSinceLastAttempt < LOGIN_COOLDOWN) {
+            const remainingTime = Math.ceil((LOGIN_COOLDOWN - timeSinceLastAttempt) / 1000);
+            throw new Error(`Please wait ${remainingTime} second${remainingTime > 1 ? 's' : ''} before trying again.`);
+        }
+        
+        lastLoginAttempt = now;
+        
         const response = await axiosInstance.post('/auth/login', credentials);
-        if (!response?.accessToken || !response?.user) {
+        if (!response?.data?.accessToken || !response?.data?.user) {
             throw new Error('Authentication failed');
         }
 
-        storeUserData(response.accessToken, response.refreshToken, response.user);
-        return response;
+        storeUserData(response.data.accessToken, response.data.refreshToken, response.data.user, response.data.csrfToken);
+        return response.data;
     } catch (error) {
         throw formatErrorMessage(error);
     }
@@ -86,11 +111,11 @@ export const registerUser = async userData => {
         const { confirmPassword, ...registrationData } = userData;
         const response = await axiosInstance.post('/auth/register', registrationData);
 
-        if (response?.accessToken && response?.user) {
-            storeUserData(response.accessToken, response.refreshToken, response.user);
+        if (response?.data?.accessToken && response?.data?.user) {
+            storeUserData(response.data.accessToken, response.data.refreshToken, response.data.user, response.data.csrfToken);
         }
 
-        return response;
+        return response.data;
     } catch (error) {
         throw formatErrorMessage(error);
     }

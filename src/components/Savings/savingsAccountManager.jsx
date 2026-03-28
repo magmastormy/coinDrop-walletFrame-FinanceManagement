@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Repeat, Target, TrendingUp, Brain, Calendar, PiggyBank } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
-import { useTheme } from '../../theme/ThemeContext';
 import SavingsAccountCard from './savingsAccountCard';
 import SavingsOperations from './SavingsOperations';
 import SavingsAccountEditDialog from './savingsAccountEditDialog';
 import { SavingsAccountTransferDialog } from './savingsAccountTransferDialog';
 import SavingsAccountTransactionTable from './savingsAccountTransactionTable';
 import SavingsAnalytics from './SavingsAnalytics';
+import AutomatedSavingsRules from './AutomatedSavingsRules';
 import savingsAccountService from '../../services/savingsAccountService';
+import savingsGoalService from '../../services/savingsGoalService';
+import savingsRuleService from '../../services/savingsRuleService';
 import walletService from '../../services/walletService';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReportSection from '../Common/ReportSection';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import Modal from '../ui/Modal';
+import { toast } from 'react-toastify';
+import PageHeader from '../Common/PageHeader';
 
 const SavingsAccountManager = () => {
     const { user } = useAuth();
-    const { theme, isDarkMode } = useTheme();
     const [accounts, setAccounts] = useState([]);
     const [wallets, setWallets] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState(null);
@@ -31,18 +34,33 @@ const SavingsAccountManager = () => {
     const [transferWalletId, setTransferWalletId] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
+    const [goals, setGoals] = useState([]);
+    const [activeTab, setActiveTab] = useState('accounts');
+    const [autoTransferEnabled, setAutoTransferEnabled] = useState(false);
+    const [savingsRulesEnabled, setSavingsRulesEnabled] = useState(false);
+    const [goalBasedSavingsEnabled, setGoalBasedSavingsEnabled] = useState(false);
 
     const [modalState, setModalState] = useState({
         deposit: { open: false },
         withdraw: { open: false },
         edit: { open: false },
-        transfer: { open: false }
+        transfer: { open: false },
+        autoTransfer: { open: false }
+    });
+
+    const [autoTransferForm, setAutoTransferForm] = useState({
+        sourceWalletId: '',
+        targetAccountId: '',
+        amount: '',
+        frequency: 'monthly',
+        startDate: new Date().toISOString().split('T')[0]
     });
 
     useEffect(() => {
         if (user?.id) {
             fetchAccounts();
             fetchWallets();
+            fetchGoals();
         }
     }, [user]);
 
@@ -68,6 +86,15 @@ const SavingsAccountManager = () => {
             setError('Failed to load wallets. Please try again later.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchGoals = async () => {
+        try {
+            const response = await savingsGoalService.getSavingsGoals();
+            setGoals(response || []);
+        } catch (error) {
+            console.error('Failed to fetch savings goals:', error);
         }
     };
 
@@ -190,6 +217,67 @@ const SavingsAccountManager = () => {
         setSelectedAccount(prev => prev === accountId ? null : accountId);
     };
 
+    const handleSetupAutoTransfer = async () => {
+        try {
+            setIsLoading(true);
+            await savingsAccountService.setupAutomaticSavings(user.id, autoTransferForm);
+            toast.success('Auto-transfer setup successfully');
+            setModalState(prev => ({ ...prev, autoTransfer: { open: false } }));
+            setAutoTransferForm({
+                sourceWalletId: '',
+                targetAccountId: '',
+                amount: '',
+                frequency: 'monthly',
+                startDate: new Date().toISOString().split('T')[0]
+            });
+            fetchAccounts();
+        } catch (error) {
+            console.error('Failed to setup auto-transfer:', error);
+            toast.error('Failed to setup auto-transfer. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleExecuteSavingsRules = async () => {
+        try {
+            setIsLoading(true);
+            const result = await savingsRuleService.executeRules({ userId: user.id });
+            toast.success(`Savings rules executed: ${result.executedRules || 0} rules applied`);
+            fetchAccounts();
+            fetchGoals();
+        } catch (error) {
+            console.error('Failed to execute savings rules:', error);
+            toast.error('Failed to execute savings rules. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUpdateGoalProgress = async () => {
+        try {
+            setIsLoading(true);
+            // Update all goals progress
+            for (const goal of goals) {
+                if (goal.savingsAccountId) {
+                    const account = accounts.find(a => a._id === goal.savingsAccountId);
+                    if (account) {
+                        await savingsGoalService.updateSavingsGoal(goal._id, {
+                            currentAmount: account.balance
+                        });
+                    }
+                }
+            }
+            toast.success('Savings goal progress updated successfully');
+            fetchGoals();
+        } catch (error) {
+            console.error('Failed to update goal progress:', error);
+            toast.error('Failed to update goal progress. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const renderDeleteModal = () => {
         if (!accountToDelete) return null;
 
@@ -218,7 +306,18 @@ const SavingsAccountManager = () => {
                                     value={transferWalletId}
                                     onChange={(e) => setTransferWalletId(e.target.value)}
                                     required
-                                    className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                                    style={{
+                                        width: '100%',
+                                        height: '40px',
+                                        padding: '0 12px',
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface-2)',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none',
+                                        fontSize: '14px',
+                                        fontFamily: 'var(--font-body)',
+                                    }}
                                 >
                                     <option value="">Select a wallet</option>
                                     {wallets.map(wallet => (
@@ -237,7 +336,7 @@ const SavingsAccountManager = () => {
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                         <Button
                             variant="ghost"
                             onClick={() => setDeleteModalOpen(false)}
@@ -274,70 +373,353 @@ const SavingsAccountManager = () => {
     }
 
     return (
-        <div className="space-y-8 pb-8">
-            <ReportSection
-                title="Savings Accounts Report"
-                accountId={selectedAccount || user?.id}
-                reportType="savings-report"
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="space-y-8 pb-8">
+            <PageHeader
+                title="Savings"
+                actions={(
+                    <div className="flex items-center gap-2">
+                        <ReportSection
+                            title="Savings Accounts Report"
+                            accountId={selectedAccount || user?.id}
+                            reportType="savings-report"
+                        />
+                        {activeTab === 'accounts' && (
+                            <Button
+                                onClick={handleCreateAccount}
+                                className="gap-2"
+                            >
+                                <Plus className="w-4 h-4" strokeWidth={1.5} /> Create Account
+                            </Button>
+                        )}
+                    </div>
+                )}
             />
 
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-foreground">
-                    Your Savings Accounts
-                </h2>
-                <Button
-                    onClick={handleCreateAccount}
-                    className="gap-2"
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-border">
+                <button
+                    onClick={() => setActiveTab('accounts')}
+                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'accounts'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
                 >
-                    <Plus className="w-4 h-4" /> Create Account
-                </Button>
+                    Accounts
+                </button>
+                <button
+                    onClick={() => setActiveTab('goals')}
+                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'goals'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    Goals
+                </button>
+                <button
+                    onClick={() => setActiveTab('automation')}
+                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'automation'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    Automation
+                </button>
             </div>
 
-            <SavingsAnalytics accounts={accounts} />
+            {/* Content based on active tab */}
+            <div style={{ flex: 1, overflow: 'auto' }}>
+                {activeTab === 'accounts' && (
+                    <>
+                        <SavingsAnalytics accounts={accounts} />
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
-                <AnimatePresence>
-                    {accounts.map(account => (
-                        <motion.div
-                            key={account._id}
-                            className="h-full"
-                            layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                        >
-                            <SavingsAccountCard
-                                account={account}
-                                onDeposit={handleDeposit}
-                                onWithdraw={handleWithdraw}
-                                onEdit={handleEdit}
-                                onTransfer={handleTransfer}
-                                onDelete={handleDelete}
-                                onSelect={handleCardSelect}
-                                isSelected={selectedAccount === account._id}
-                            />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </div>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
+                        <AnimatePresence>
+                            {accounts.map(account => (
+                                <motion.div
+                                    key={account._id}
+                                    className="h-full"
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                >
+                                    <SavingsAccountCard
+                                        account={account}
+                                        onDeposit={handleDeposit}
+                                        onWithdraw={handleWithdraw}
+                                        onEdit={handleEdit}
+                                        onTransfer={handleTransfer}
+                                        onDelete={handleDelete}
+                                        onSelect={handleCardSelect}
+                                        isSelected={selectedAccount === account._id}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
 
-            <AnimatePresence>
-                {selectedAccount && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
+                    <AnimatePresence>
+                        {selectedAccount && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                            >
+                                <SavingsAccountTransactionTable
+                                    accountId={selectedAccount}
+                                    wallets={wallets}
+                                    savingsAccounts={accounts}
+                                    budgets={[]}
+                                    categories={[]}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </>
+            )}
+
+            {activeTab === 'goals' && (
+                <div className="space-y-6">
+                    <div
+                        style={{
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'var(--color-surface-1)',
+                            padding: '24px',
+                        }}
                     >
-                        <SavingsAccountTransactionTable
-                            accountId={selectedAccount}
-                            wallets={wallets}
-                            savingsAccounts={accounts}
-                            budgets={[]}
-                            categories={[]}
-                        />
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <h3 className="text-xl font-bold mb-4">Savings Goals</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {goals.map(goal => (
+                                <div key={goal._id} className="p-4 rounded-lg bg-background border border-border">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="font-medium">{goal.name}</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                Target: ${goal.targetAmount.toFixed(2)}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Current: ${(goal.currentAmount || 0).toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium">
+                                                {Math.round(((goal.currentAmount || 0) / goal.targetAmount) * 100)}% Complete
+                                            </div>
+                                            <div className="w-24 h-2 bg-muted rounded-full mt-1">
+                                                <div 
+                                                    className="h-full bg-primary rounded-full" 
+                                                    style={{ width: `${Math.min(100, ((goal.currentAmount || 0) / goal.targetAmount) * 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <Button
+                            className="mt-6 gap-2"
+                            onClick={handleUpdateGoalProgress}
+                            disabled={isLoading}
+                        >
+                            <Target className="w-4 h-4" />
+                            Update Goal Progress
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'automation' && (
+                <div className="space-y-6">
+                    <div
+                        style={{
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'var(--color-surface-1)',
+                            padding: '24px',
+                        }}
+                    >
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <Brain className="w-5 h-5 text-primary" />
+                            Savings Automation
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Auto-Transfers */}
+                            <div className="flex items-center justify-between p-4 rounded-lg bg-background border border-border">
+                                <div className="flex items-center gap-3">
+                                    <Calendar className="w-5 h-5" strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)' }} />
+                                    <div>
+                                        <h4 className="font-medium">Auto-Transfers</h4>
+                                        <p className="text-sm text-muted-foreground">Automatically transfer funds to savings</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setModalState(prev => ({ ...prev, autoTransfer: { open: true } }))}
+                                        disabled={isLoading}
+                                        className="gap-1"
+                                    >
+                                        <Calendar className="w-3 h-3" />
+                                        Setup
+                                    </Button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAutoTransferEnabled(v => !v)}
+                                        aria-pressed={autoTransferEnabled}
+                                        aria-label={autoTransferEnabled ? 'Disable auto-transfers' : 'Enable auto-transfers'}
+                                        style={{
+                                            width: '44px',
+                                            height: '24px',
+                                            borderRadius: '9999px',
+                                            border: '1px solid var(--color-border)',
+                                            background: autoTransferEnabled ? 'rgba(255, 209, 102, 0.35)' : 'var(--color-surface-2)',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 150ms ease',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '2px',
+                                                left: autoTransferEnabled ? '22px' : '2px',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '9999px',
+                                                background: autoTransferEnabled ? 'var(--color-gold)' : 'var(--color-surface-3)',
+                                                border: '1px solid var(--color-border)',
+                                                transition: 'left 150ms ease',
+                                            }}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Savings Rules */}
+                            <div className="flex items-center justify-between p-4 rounded-lg bg-background border border-border">
+                                <div className="flex items-center gap-3">
+                                    <PiggyBank className="w-5 h-5" strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)' }} />
+                                    <div>
+                                        <h4 className="font-medium">Savings Rules</h4>
+                                        <p className="text-sm text-muted-foreground">Round-up and percentage rules</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleExecuteSavingsRules}
+                                        disabled={isLoading}
+                                        className="gap-1"
+                                    >
+                                        <PiggyBank className="w-3 h-3" />
+                                        Execute
+                                    </Button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSavingsRulesEnabled(v => !v)}
+                                        aria-pressed={savingsRulesEnabled}
+                                        aria-label={savingsRulesEnabled ? 'Disable savings rules' : 'Enable savings rules'}
+                                        style={{
+                                            width: '44px',
+                                            height: '24px',
+                                            borderRadius: '9999px',
+                                            border: '1px solid var(--color-border)',
+                                            background: savingsRulesEnabled ? 'rgba(255, 209, 102, 0.35)' : 'var(--color-surface-2)',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 150ms ease',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '2px',
+                                                left: savingsRulesEnabled ? '22px' : '2px',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '9999px',
+                                                background: savingsRulesEnabled ? 'var(--color-gold)' : 'var(--color-surface-3)',
+                                                border: '1px solid var(--color-border)',
+                                                transition: 'left 150ms ease',
+                                            }}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Goal-Based Savings */}
+                            <div className="flex items-center justify-between p-4 rounded-lg bg-background border border-border">
+                                <div className="flex items-center gap-3">
+                                    <Target className="w-5 h-5" strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)' }} />
+                                    <div>
+                                        <h4 className="font-medium">Goal-Based Savings</h4>
+                                        <p className="text-sm text-muted-foreground">Automatically save for goals</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleUpdateGoalProgress}
+                                        disabled={isLoading}
+                                        className="gap-1"
+                                    >
+                                        <Target className="w-3 h-3" />
+                                        Update
+                                    </Button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setGoalBasedSavingsEnabled(v => !v)}
+                                        aria-pressed={goalBasedSavingsEnabled}
+                                        aria-label={goalBasedSavingsEnabled ? 'Disable goal-based savings' : 'Enable goal-based savings'}
+                                        style={{
+                                            width: '44px',
+                                            height: '24px',
+                                            borderRadius: '9999px',
+                                            border: '1px solid var(--color-border)',
+                                            background: goalBasedSavingsEnabled ? 'rgba(255, 209, 102, 0.35)' : 'var(--color-surface-2)',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 150ms ease',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '2px',
+                                                left: goalBasedSavingsEnabled ? '22px' : '2px',
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '9999px',
+                                                background: goalBasedSavingsEnabled ? 'var(--color-gold)' : 'var(--color-surface-3)',
+                                                border: '1px solid var(--color-border)',
+                                                transition: 'left 150ms ease',
+                                            }}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8">
+                            <h4 className="font-medium mb-4">Automated Savings Rules</h4>
+                            <AutomatedSavingsRules 
+                                goalId={goals.length > 0 ? goals[0]._id : null}
+                                onRuleChange={fetchAccounts}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Close the content div */}
+            </div>
 
             <SavingsOperations
                 modalState={modalState}
@@ -407,6 +789,153 @@ const SavingsAccountManager = () => {
             />
 
             {renderDeleteModal()}
+
+            {/* Auto-Transfer Setup Modal */}
+            <Modal
+                isOpen={modalState.autoTransfer.open}
+                onClose={() => setModalState(prev => ({ ...prev, autoTransfer: { open: false } }))}
+                title="Setup Auto-Transfer"
+                maxWidth="max-w-md"
+            >
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Source Wallet</label>
+                        <select
+                            value={autoTransferForm.sourceWalletId}
+                            onChange={(e) => setAutoTransferForm(prev => ({ ...prev, sourceWalletId: e.target.value }))}
+                            style={{
+                                width: '100%',
+                                height: '40px',
+                                padding: '0 12px',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'var(--font-body)',
+                            }}
+                        >
+                            <option value="">Select a wallet</option>
+                            {wallets.map(wallet => (
+                                <option key={wallet._id} value={wallet._id}>
+                                    {wallet.name} (${wallet.balance.toFixed(2)})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Target Savings Account</label>
+                        <select
+                            value={autoTransferForm.targetAccountId}
+                            onChange={(e) => setAutoTransferForm(prev => ({ ...prev, targetAccountId: e.target.value }))}
+                            style={{
+                                width: '100%',
+                                height: '40px',
+                                padding: '0 12px',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'var(--font-body)',
+                            }}
+                        >
+                            <option value="">Select a savings account</option>
+                            {accounts.map(account => (
+                                <option key={account._id} value={account._id}>
+                                    {account.name} (${account.balance.toFixed(2)})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Amount</label>
+                        <input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={autoTransferForm.amount}
+                            onChange={(e) => setAutoTransferForm(prev => ({ ...prev, amount: e.target.value }))}
+                            style={{
+                                width: '100%',
+                                height: '40px',
+                                padding: '0 12px',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'var(--font-body)',
+                            }}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                        <select
+                            value={autoTransferForm.frequency}
+                            onChange={(e) => setAutoTransferForm(prev => ({ ...prev, frequency: e.target.value }))}
+                            style={{
+                                width: '100%',
+                                height: '40px',
+                                padding: '0 12px',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'var(--font-body)',
+                            }}
+                        >
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                        <input
+                            type="date"
+                            value={autoTransferForm.startDate}
+                            onChange={(e) => setAutoTransferForm(prev => ({ ...prev, startDate: e.target.value }))}
+                            style={{
+                                width: '100%',
+                                height: '40px',
+                                padding: '0 12px',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                color: 'var(--color-text-primary)',
+                                outline: 'none',
+                                fontSize: '14px',
+                                fontFamily: 'var(--font-body)',
+                            }}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setModalState(prev => ({ ...prev, autoTransfer: { open: false } }))}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSetupAutoTransfer}
+                            disabled={isLoading || !autoTransferForm.sourceWalletId || !autoTransferForm.targetAccountId || !autoTransferForm.amount}
+                        >
+                            {isLoading ? 'Setting up...' : 'Setup Auto-Transfer'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

@@ -6,6 +6,7 @@ const SavingsAccount = require('../models/SavingsAccount');
 const Category = require('../models/Category');
 const { performance } = require('perf_hooks');
 const contextFormatter = require('./formatters/contextFormatter');
+const cacheUtil = require('../utils/cacheUtil');
 const isDev = process.env.NODE_ENV !== 'production';
 
 /**
@@ -45,6 +46,7 @@ async function getContext(userId) {
   const now = new Date();
   const thirtyDaysLater = new Date(now);
   thirtyDaysLater.setDate(now.getDate() + 30);
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   try {
     // Check if userId is valid
@@ -65,169 +67,111 @@ async function getContext(userId) {
       };
     }
 
-    // Check if user exists
-    try {
-      const User = require('../models/User');
-      const userExists = await User.findById(userId);
-      if (!userExists) {
-        console.error(`[contextService:getContext] ERROR: User with ID ${userId} not found in database`);
-      } else if (isDev) {
-        console.log('[contextService:getContext] User record found');
-      }
-    } catch (userError) {
-      console.error(`[contextService:getContext] ERROR checking user: ${userError.message}`);
+    // Generate cache key
+    const cacheKey = cacheUtil.generateKey('user_context', userId);
+    
+    // Try to get from cache first
+    const cachedContext = await cacheUtil.get(cacheKey);
+    if (cachedContext) {
+      if (isDev) console.log(`[contextService:getContext] Cache hit for user ${userId}`);
+      return cachedContext;
     }
 
-    // Explicitly fetch budgets first to ensure they are loaded
-    if (isDev) console.log(`[contextService:getContext] Explicitly fetching budgets for user ${userId}`);
-    const budgetsQuery = Budget.find({ userId });
-    const rawBudgetCount = await budgetsQuery.clone().countDocuments();
-    if (isDev) console.log(`[contextService:getContext] Raw budget count in DB: ${rawBudgetCount}`);
-    
-    // Verify MongoDB connection
-    try {
-      const mongoose = require('mongoose');
-      const connectionState = mongoose.connection.readyState;
-      const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-      if (isDev) console.log(`[contextService:getContext] MongoDB connection state: ${states[connectionState] || connectionState}`);
-    } catch (mongoError) {
-      console.error(`[contextService:getContext] Error checking MongoDB connection: ${mongoError.message}`);
-    }
-    
-    // Try different approaches to ensure we get budget data
-    let budgets = [];
-    
-    if (rawBudgetCount > 0) {
-      // Try with populate
-      budgets = await budgetsQuery.clone().populate('category', 'name');
-      if (isDev) console.log(`[contextService:getContext] Fetched ${budgets.length} budgets with populated categories`);
-      
-      // If no budgets or failed population, try without populate
-      if (!budgets || budgets.length === 0) {
-        budgets = await Budget.find({ userId }).lean();
-        if (isDev) console.log(`[contextService:getContext] Fallback: fetched ${budgets.length} budgets with lean()`);
-      }
-      
-      if (isDev && budgets.length > 0) {
-        console.log('[contextService:getContext] Budget data available');
-      }
-    } else {
-      // Try direct debug query
-      if (isDev) console.log(`[contextService:getContext] No budgets found with userId match. Trying alternative query...`);
-      try {
-        // Check if ID format might be the issue (ObjectId vs String)
-        const allBudgets = await Budget.find({}).limit(5).lean();
-        if (isDev) console.log(`[contextService:getContext] Sampled ${allBudgets.length} budgets for diagnostics`);
-            
-        if (allBudgets.length > 0) {
-          // Check if userId formats match
-          if (isDev) console.log(`[contextService:getContext] Sample budget userId type: ${typeof allBudgets[0].userId}`);
-          if (isDev) console.log(`[contextService:getContext] Request userId type: ${typeof userId}`);
-          
-          // Try to match by string comparison if ObjectId doesn't match
-          const matchingBudget = allBudgets.find(b => b.userId.toString() === userId.toString());
-          if (matchingBudget) {
-            if (isDev) console.log(`[contextService:getContext] Found budget with string comparison, userId format issue confirmed`);
-          }
-        }
-      } catch (alternativeError) {
-        console.error(`[contextService:getContext] Alternative query error: ${alternativeError.message}`);
-      }
-    }
+    if (isDev) console.log(`[contextService:getContext] Cache miss for user ${userId}, fetching from database`);
 
-    // Fetch the rest of the data
-    if (isDev) console.log(`[contextService:getContext] Fetching additional financial data`);
-    let wallets = [], recentTransactions = [], savingsGoals = [], 
-        categories = [], netWorth = { total: 0, liquid: 0 }, 
-        recurringTransactions = [], upcomingBills = [], savingsAccounts = [];
-        
-    try {
-      wallets = await Wallet.find({ userId });
-      if (isDev) console.log(`[contextService:getContext] Fetched ${wallets.length} wallets`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error fetching wallets: ${error.message}`);
-    }
-    
-    try {
-      recentTransactions = await Transaction.find({ userId })
+    // Fetch all data in parallel to improve performance
+    const [wallets, recentTransactions, budgets, savingsGoals, categories, savingsAccounts, monthlyTx, netWorth] = await Promise.all([
+      // Fetch wallets with lean() for better performance
+      Wallet.find({ userId }).lean().catch(error => {
+        console.error(`[contextService:getContext] Error fetching wallets: ${error.message}`);
+        return [];
+      }),
+      // Fetch recent transactions with populate for category names
+      Transaction.find({ userId })
         .sort({ date: -1 })
         .limit(10)
-        .populate('category', 'name');
-      if (isDev) console.log(`[contextService:getContext] Fetched ${recentTransactions.length} transactions`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error fetching transactions: ${error.message}`);
-    }
-    
-    try {
-      savingsGoals = await SavingsGoal.find({ userId });
-      if (isDev) console.log(`[contextService:getContext] Fetched ${savingsGoals.length} savings goals`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error fetching savings goals: ${error.message}`);
-    }
-    
-    try {
-      categories = await Category.find({ userId });
-      if (isDev) console.log(`[contextService:getContext] Fetched ${categories.length} categories`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error fetching categories: ${error.message}`);
-    }
-    
-    try {
-      netWorth = await calculateNetWorth(userId);
-      if (isDev) console.log(`[contextService:getContext] Calculated net worth: ${JSON.stringify(netWorth)}`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error calculating net worth: ${error.message}`);
-    }
-    
-    try {
-      recurringTransactions = await findRecurringTransactionsAndDueDates(userId, now, thirtyDaysLater);
-      if (isDev) console.log(`[contextService:getContext] Found ${recurringTransactions.length} recurring transactions`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error finding recurring transactions: ${error.message}`);
-    }
-    
-    try {
-      upcomingBills = await findUpcomingBills(userId, now, thirtyDaysLater);
-      if (isDev) console.log(`[contextService:getContext] Found ${upcomingBills.length} upcoming bills`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error finding upcoming bills: ${error.message}`);
-    }
-    
-    try {
-      savingsAccounts = await SavingsAccount.find({ userId }).lean();
-      if (isDev) console.log(`[contextService:getContext] Fetched ${savingsAccounts.length} savings accounts`);
-    } catch (error) {
-      console.error(`[contextService:getContext] Error fetching savings accounts: ${error.message}`);
-    }
+        .populate('category', 'name')
+        .lean()
+        .catch(error => {
+          console.error(`[contextService:getContext] Error fetching transactions: ${error.message}`);
+          return [];
+        }),
+      // Fetch budgets with populated categories
+      Budget.find({ userId })
+        .populate('category', 'name')
+        .lean()
+        .catch(error => {
+          console.error(`[contextService:getContext] Error fetching budgets: ${error.message}`);
+          return [];
+        }),
+      // Fetch savings goals
+      SavingsGoal.find({ userId }).lean().catch(error => {
+        console.error(`[contextService:getContext] Error fetching savings goals: ${error.message}`);
+        return [];
+      }),
+      // Fetch categories
+      Category.find({ userId }).lean().catch(error => {
+        console.error(`[contextService:getContext] Error fetching categories: ${error.message}`);
+        return [];
+      }),
+      // Fetch savings accounts
+      SavingsAccount.find({ userId }).lean().catch(error => {
+        console.error(`[contextService:getContext] Error fetching savings accounts: ${error.message}`);
+        return [];
+      }),
+      // Fetch monthly transactions for summary
+      Transaction.find({ userId, date: { $gte: firstOfMonth } })
+        .lean()
+        .catch(error => {
+          console.error(`[contextService:getContext] Error fetching monthly transactions: ${error.message}`);
+          return [];
+        }),
+      // Calculate net worth
+      calculateNetWorth(userId).catch(error => {
+        console.error(`[contextService:getContext] Error calculating net worth: ${error.message}`);
+        return { total: 0, liquid: 0 };
+      })
+    ]);
 
-    if (isDev) console.log(`[contextService:getContext] Fetched wallets: ${wallets.length}, transactions: ${recentTransactions.length}, categories: ${categories.length}`);
-    
-    const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+    // Fetch placeholder data for recurring transactions and upcoming bills
+    const [recurringTransactions, upcomingBills] = await Promise.all([
+      findRecurringTransactionsAndDueDates(userId, now, thirtyDaysLater).catch(error => {
+        console.error(`[contextService:getContext] Error finding recurring transactions: ${error.message}`);
+        return [];
+      }),
+      findUpcomingBills(userId, now, thirtyDaysLater).catch(error => {
+        console.error(`[contextService:getContext] Error finding upcoming bills: ${error.message}`);
+        return [];
+      })
+    ]);
 
-    // Monthly summary
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (isDev) {
+      console.log(`[contextService:getContext] Fetched data - wallets: ${wallets.length}, transactions: ${recentTransactions.length}, ` +
+        `budgets: ${budgets.length}, savings goals: ${savingsGoals.length}, categories: ${categories.length}, ` +
+        `savings accounts: ${savingsAccounts.length}, monthly transactions: ${monthlyTx.length}`);
+    }
+    
+    // Calculate total balance
+    const totalBalance = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+
+    // Calculate monthly summary
     let monthlyExpenses = 0, monthlyIncome = 0, savingsRate = 0;
     
-    try {
-    const monthlyTx = await Transaction.find({ userId, date: { $gte: firstOfMonth } });
-      if (isDev) console.log(`[contextService:getContext] Found ${monthlyTx.length} transactions for current month`);
-      
-      monthlyExpenses = monthlyTx
+    monthlyExpenses = monthlyTx
       .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      monthlyIncome = monthlyTx
+      .reduce((sum, t) => sum + Math.abs(t.amountDecrypted || 0), 0);
+    monthlyIncome = monthlyTx
       .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-      savingsRate = monthlyIncome > 0
+      .reduce((sum, t) => sum + (t.amountDecrypted || 0), 0);
+    savingsRate = monthlyIncome > 0
       ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
       : 0;
-    } catch (error) {
-      console.error(`[contextService:getContext] Error calculating monthly summary: ${error.message}`);
+    
+    if (isDev) {
+      console.log(`[contextService:getContext] Monthly stats - expenses: $${monthlyExpenses}, income: $${monthlyIncome}, savings rate: ${savingsRate.toFixed(1)}%`);
     }
     
-    if (isDev) console.log(`[contextService:getContext] Monthly stats - expenses: $${monthlyExpenses}, income: $${monthlyIncome}, savings rate: ${savingsRate.toFixed(1)}%`);
-    
-    return {
+    const context = {
       wallets,
       totalBalance,
       recentTransactions,
@@ -240,6 +184,12 @@ async function getContext(userId) {
       savingsAccounts,
       financialSummary: { monthlyExpenses, monthlyIncome, savingsRate, netWorth }
     };
+
+    // Cache the context for 5 minutes
+    await cacheUtil.set(cacheKey, context, 300);
+    if (isDev) console.log(`[contextService:getContext] Cached context for user ${userId}`);
+    
+    return context;
   } catch (error) {
     console.error(`[contextService:getContext] Error fetching context: ${error.message}`);
     console.error(error.stack);

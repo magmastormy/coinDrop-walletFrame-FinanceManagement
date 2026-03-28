@@ -47,5 +47,9 @@ const SavingsAccountSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Indexes for performance
+SavingsAccountSchema.index({ userId: 1 });
+SavingsAccountSchema.index({ userId: 1, isActive: 1 });
+
 const SavingsAccount = mongoose.model('SavingsAccount', SavingsAccountSchema);
 module.exports = SavingsAccount;

@@ -1,11 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PiggyBank, PieChart } from 'lucide-react';
-import { useTheme } from '../../theme/ThemeContext';
+import { PiggyBank, PieChart, Plus } from 'lucide-react';
+import { Button } from '../ui/Button';
 import BudgetCard from './budgetCard';
 
-const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
-    const { theme } = useTheme();
+const BudgetList = ({ budgets = [], onEdit, onDelete, onCreateBudget }) => {
 
     const budgetStats = Array.isArray(budgets) ? budgets.reduce((stats, budget) => {
         const spent = budget.spent || 0;
@@ -27,16 +26,23 @@ const BudgetList = ({ budgets = [], onEdit, onDelete }) => {
     };
 
     if (!Array.isArray(budgets)) {
-        console.warn('BudgetList: budgets prop is not an array');
         return null;
     }
 
     if (budgets.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center" role="status">
-                <PiggyBank className="w-16 h-16 text-muted-foreground/40 mb-4" aria-hidden="true" />
+                <div className="w-20 h-20 mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                    <PiggyBank className="w-10 h-10 text-primary" aria-hidden="true" />
+                </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">No Budgets Yet</h3>
-                <p className="text-muted-foreground">Create your first budget to start tracking your expenses</p>
+                <p className="text-muted-foreground mb-6 max-w-sm">
+                    Create your first budget to start tracking your expenses and take control of your finances
+                </p>
+                <Button onClick={onCreateBudget}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Your First Budget
+                </Button>
             </div>
         );
     }

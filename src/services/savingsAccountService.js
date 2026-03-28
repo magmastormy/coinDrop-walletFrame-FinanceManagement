@@ -115,6 +115,26 @@ export const savingsAccountService = {
     updateAutomaticSavings: async (_userId, config) => {
         const response = await axiosInstance.put(`${API_URL}/automatic-settings`, config);
         return response;
+    },
+
+    getAutoTransferSettings: async () => {
+        const response = await axiosInstance.get(`${API_URL}/automatic-settings`);
+        return response;
+    },
+
+    deleteAutoTransfer: async (transferId) => {
+        const response = await axiosInstance.delete(`${API_URL}/automatic-settings/${transferId}`);
+        return response;
+    },
+
+    updateGoalBasedSavings: async (goalId, config) => {
+        const response = await axiosInstance.put(`${API_URL}/goal-based/${goalId}`, config);
+        return response;
+    },
+
+    getGoalBasedSavings: async (goalId) => {
+        const response = await axiosInstance.get(`${API_URL}/goal-based/${goalId}`);
+        return response;
     }
 };
 

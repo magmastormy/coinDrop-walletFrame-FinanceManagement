@@ -6,8 +6,17 @@ const { getAuthenticatedUserId } = require('../utils/authUser');
 
 const escapeRegex = (str) => str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 
+/**
+ * Category Controller
+ * Handles category-related operations including creation, retrieval, updating, and deletion
+ */
 class CategoryController {
-    // Create a new category
+    /**
+     * Create a new category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async createCategory(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -30,7 +39,12 @@ class CategoryController {
         }
     }
 
-    // Get all categories for a user
+    /**
+     * Get all categories for a user
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getUserCategories(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -52,7 +66,12 @@ class CategoryController {
         }
     }
 
-    // Get category hierarchy
+    /**
+     * Get category hierarchy
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getCategoryHierarchy(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -66,7 +85,12 @@ class CategoryController {
         }
     }
 
-    // Get subcategories for a category
+    /**
+     * Get subcategories for a category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getSubcategories(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -85,7 +109,12 @@ class CategoryController {
         }
     }
 
-    // Add a subcategory
+    /**
+     * Add a subcategory
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async addSubcategory(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -115,7 +144,12 @@ class CategoryController {
         }
     }
 
-    // Update parent category
+    /**
+     * Update parent category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async updateParentCategory(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -148,7 +182,12 @@ class CategoryController {
         }
     }
 
-    // Get budgets for a category
+    /**
+     * Get budgets for a category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getCategoryBudgets(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -167,7 +206,12 @@ class CategoryController {
         }
     }
 
-    // Get transactions for a category
+    /**
+     * Get transactions for a category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getCategoryTransactions(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -189,7 +233,12 @@ class CategoryController {
         }
     }
 
-    // Get category statistics
+    /**
+     * Get category statistics
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getCategoryStats(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -237,7 +286,12 @@ class CategoryController {
         }
     }
 
-    // Calculating string similarity is now centralized in one function
+    /**
+     * Calculate string similarity using Levenshtein distance
+     * @param {string} str1 - First string to compare
+     * @param {string} str2 - Second string to compare
+     * @returns {number} Similarity score between 0 and 1
+     */
     static calculateSimilarity(str1, str2) {
         // Normalize descriptions
         str1 = str1.toLowerCase().trim().replace(/[^\w\s]/g, '');
@@ -279,7 +333,12 @@ class CategoryController {
         return 1 - (distance / maxLength);
     }
 
-    // The getCategoryPatterns method remains the primary function for pattern retrieval
+    /**
+     * Get category patterns
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getCategoryPatterns(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -332,97 +391,33 @@ class CategoryController {
         }
     }
 
-    // The suggestCategory method handles all category suggestions
+    /**
+     * Suggest category for a transaction
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async suggestCategory(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
             const { description, amount, merchant } = req.body;
             
-            // First try pattern matching
-            const patterns = await Category.aggregate([
-                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-                {
-                    $lookup: {
-                        from: 'transactions',
-                        localField: '_id',
-                        foreignField: 'category',
-                        as: 'transactions'
-                    }
-                }
-            ]);
+            // Get user categories
+            const categories = await Category.find({ userId });
             
-            let bestMatch = null;
-            let highestConfidence = 0;
+            // Load categories into AI model
+            const categoryAIModel = require('../ai/categoryAIModel');
+            await categoryAIModel.loadCategories(categories);
             
-            patterns.forEach(category => {
-                category.transactions.forEach(transaction => {
-                    const similarity = this.calculateSimilarity(
-                        description.toLowerCase(),
-                        transaction.description.toLowerCase()
-                    );
-                    if (similarity > highestConfidence) {
-                        highestConfidence = similarity;
-                        bestMatch = {
-                            categoryId: category._id,
-                            name: category.name,
-                            confidence: similarity
-                        };
-                    }
+            // Use enhanced AI model for prediction
+            const prediction = await categoryAIModel.predictCategory(description, amount, merchant);
+            
+            if (prediction.name !== 'Uncategorized') {
+                return res.json({
+                    categoryId: prediction._id,
+                    name: prediction.name,
+                    confidence: prediction.confidence
                 });
-            });
-            
-            if (bestMatch && bestMatch.confidence > 0.8) {
-                return res.json(bestMatch);
-            }
-            
-            // If no good pattern match, use amount-based heuristics
-            const similarTransactions = await Transaction.find({
-                userId,
-                amount: { 
-                    $gte: amount * 0.9, 
-                    $lte: amount * 1.1 
-                }
-            }).populate('category');
-            
-            if (similarTransactions.length > 0) {
-                const categoryCounts = {};
-                similarTransactions.forEach(transaction => {
-                    const categoryId = transaction.category._id.toString();
-                    categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + 1;
-                });
-                
-                const mostCommonCategory = Object.entries(categoryCounts)
-                    .sort((a, b) => b[1] - a[1])[0];
-                
-                if (mostCommonCategory) {
-                    const category = await Category.findOne({ _id: mostCommonCategory[0], userId });
-                    if (!category) {
-                        return res.json(null);
-                    }
-                    return res.json({
-                        categoryId: category._id,
-                        name: category.name,
-                        confidence: 0.7
-                    });
-                }
-            }
-            
-            // If still no match, suggest based on merchant if available
-            if (merchant) {
-                const safeMerchant = escapeRegex(merchant);
-                const merchantTransactions = await Transaction.find({
-                    userId,
-                    merchant: { $regex: safeMerchant, $options: 'i' }
-                }).populate('category');
-                
-                if (merchantTransactions.length > 0) {
-                    const category = merchantTransactions[0].category;
-                    return res.json({
-                        categoryId: category._id,
-                        name: category.name,
-                        confidence: 0.6
-                    });
-                }
             }
             
             // If no suggestions found
@@ -436,7 +431,74 @@ class CategoryController {
         }
     }
 
-    // Training is still a separate function to maintain clean separation of concerns
+    /**
+     * Batch suggest categories for multiple transactions
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
+    static async batchSuggestCategories(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { transactions } = req.body;
+            
+            // Get user categories
+            const categories = await Category.find({ userId });
+            
+            // Load categories into AI model
+            const categoryAIModel = require('../ai/categoryAIModel');
+            await categoryAIModel.loadCategories(categories);
+            
+            // Use batch prediction
+            const results = await categoryAIModel.batchPredictCategories(transactions);
+            
+            res.json(results);
+        } catch (error) {
+            console.error('Error in batch category suggestion:', error);
+            res.status(500).json({ 
+                error: 'Failed to suggest categories in batch',
+                details: error.message 
+            });
+        }
+    }
+
+    /**
+     * Batch learn from user corrections
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
+    static async batchLearnFromCorrections(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { corrections } = req.body;
+            
+            // Get user categories
+            const categories = await Category.find({ userId });
+            
+            // Load categories into AI model
+            const categoryAIModel = require('../ai/categoryAIModel');
+            await categoryAIModel.loadCategories(categories);
+            
+            // Use batch learning
+            await categoryAIModel.batchLearnCorrections(corrections);
+            
+            res.json({ message: 'Batch learning completed successfully' });
+        } catch (error) {
+            console.error('Error in batch learning:', error);
+            res.status(500).json({ 
+                error: 'Failed to learn from corrections in batch',
+                details: error.message 
+            });
+        }
+    }
+
+    /**
+     * Train category model
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async trainCategoryModel(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -470,7 +532,12 @@ class CategoryController {
         }
     }
 
-    // Update a category
+    /**
+     * Update a category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async updateCategory(req, res) {
         try {
             const { id } = req.params;
@@ -542,7 +609,12 @@ class CategoryController {
         }
     }
 
-    // Delete a category
+    /**
+     * Delete a category
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async deleteCategory(req, res) {
         try {
             const { id } = req.params;
@@ -596,6 +668,12 @@ class CategoryController {
         }
     }
 
+    /**
+     * Update category patterns
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async updateCategoryPatterns(req, res) {
         try {
             const { categoryId, patterns } = req.body;
@@ -624,6 +702,12 @@ class CategoryController {
         }
     }
 
+    /**
+     * Batch categorize transactions
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async batchCategorizeTransactions(req, res) {
         try {
             const { transactionIds, categoryId } = req.body;

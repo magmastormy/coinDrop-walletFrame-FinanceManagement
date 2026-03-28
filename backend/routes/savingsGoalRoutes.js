@@ -20,4 +20,7 @@ router.delete('/:id', SavingsGoalController.deleteSavingsGoal);
 // Contribute to a savings goal
 router.post('/:goalId/contribute', SavingsGoalController.contributeSavingsGoal);
 
+// Generate savings recommendations
+router.post('/recommendations', SavingsGoalController.generateRecommendations);
+
 module.exports = router;

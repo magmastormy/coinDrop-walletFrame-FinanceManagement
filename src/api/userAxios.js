@@ -2,9 +2,12 @@ import axios from 'axios';
 import { store } from '../slices/store';
 import { logout } from '../slices/authSlice';
 
-// Create axios instance
+const API_BASE_URL = process.env.VITE_API_BASE_URL || '/api';
+
+// Create axios instance with timeout configuration
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:5001/api',
+    baseURL: API_BASE_URL,
+    timeout: 30000, // 30 second timeout
     headers: {
         'Content-Type': 'application/json'
     }
@@ -15,7 +18,7 @@ const refreshToken = async () => {
     const storedRefreshToken = localStorage.getItem('refreshToken');
     if (!storedRefreshToken) throw new Error('No refresh token available');
 
-    const response = await axios.post('http://localhost:5001/api/auth/refresh-token', {
+    const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
         refreshToken: storedRefreshToken
     });
     return {
@@ -51,6 +54,12 @@ axiosInstance.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
+        // Add CSRF token for non-auth requests
+        const csrfToken = localStorage.getItem('csrfToken');
+        if (csrfToken) {
+            config.headers['X-CSRF-Token'] = csrfToken;
+        }
+
         return config;
     },
     (error) => {
@@ -61,8 +70,8 @@ axiosInstance.interceptors.request.use(
 // Add single consolidated response interceptor
 axiosInstance.interceptors.response.use(
     (response) => {
-        // Return the data directly for successful responses
-        return response.data;
+        // Return the full response object to maintain consistency
+        return response;
     },
     async (error) => {
         const originalRequest = error.config;
@@ -97,6 +106,9 @@ axiosInstance.interceptors.response.use(
                 if (tokenResponse.refreshToken) {
                     localStorage.setItem('refreshToken', tokenResponse.refreshToken);
                 }
+                if (tokenResponse.csrfToken) {
+                    localStorage.setItem('csrfToken', tokenResponse.csrfToken);
+                }
                 
                 // Update headers
                 axiosInstance.defaults.headers.common.Authorization = `Bearer ${tokenResponse.accessToken}`;
@@ -110,6 +122,8 @@ axiosInstance.interceptors.response.use(
                 // Clear tokens and redirect to login
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                localStorage.removeItem('csrfToken');
                 store.dispatch(logout());
                 window.location.href = '/login';
                 

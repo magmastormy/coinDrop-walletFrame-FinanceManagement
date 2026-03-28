@@ -19,7 +19,8 @@ const ImageUploadPreview = ({ images, onRemove }) => {
                         <img
                             src={image.url || URL.createObjectURL(image)}
                             alt={`Preview ${index + 1}`}
-                            className="w-24 h-24 object-cover rounded-lg border border-white/10"
+                            className="w-24 h-24 object-cover rounded-lg"
+                            style={{ border: '1px solid var(--color-border)' }}
                         />
                         <button
                             className={cn(
@@ -30,7 +31,7 @@ const ImageUploadPreview = ({ images, onRemove }) => {
                             onClick={() => onRemove(image._id || index)}
                             aria-label="Remove image"
                         >
-                            <X className="w-3 h-3 text-white" />
+                            <X className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                         </button>
                     </motion.div>
                 ))}

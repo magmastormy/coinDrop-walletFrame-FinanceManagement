@@ -67,6 +67,15 @@ router.delete('/:ruleId', authMiddleware, SavingsRuleController.deleteRule);
 // Execute rules for a transaction
 router.post('/execute', authMiddleware, SavingsRuleController.executeRules);
 
+// Execute all rules
+router.post('/execute-all', authMiddleware, SavingsRuleController.executeAllRules);
+
+// Setup auto-transfer
+router.post('/auto-transfer', authMiddleware, SavingsRuleController.setupAutoTransfer);
+
+// Update goal-based savings
+router.put('/goal-based/:goalId', authMiddleware, SavingsRuleController.updateGoalBasedSavings);
+
 // Get rule statistics
 router.get('/stats', authMiddleware, SavingsRuleController.getRuleStats);
 

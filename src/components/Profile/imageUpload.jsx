@@ -51,8 +51,11 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
     return (
         <div className="relative space-y-3">
             {uploading && (
-                <div className="absolute inset-0 bg-bgck/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-                    <Loader className="w-6 h-6 animate-spin text-primary" />
+                <div
+                    className="absolute inset-0 flex items-center justify-center z-10 rounded-lg"
+                    style={{ background: 'rgba(0,0,0,0.55)' }}
+                >
+                    <Loader className="w-6 h-6 animate-spin text-primary" strokeWidth={1.5} />
                 </div>
             )}
 
@@ -67,7 +70,8 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
                     <img
                         src={currentImage}
                         alt="Current"
-                        className="w-32 h-32 rounded-lg object-cover border border-white/10"
+                        className="w-32 h-32 rounded-lg object-cover"
+                        style={{ border: '1px solid var(--color-border)' }}
                     />
                     {onImageRemove && (
                         <button
@@ -78,7 +82,7 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
                             )}
                             aria-label="Remove image"
                         >
-                            <X className="w-4 h-4 text-white" />
+                            <X className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                         </button>
                     )}
                 </div>
@@ -87,13 +91,25 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
             <div
                 {...getRootProps()}
                 className={cn(
-                    "p-8 border-2 border-dashed border-white/20 rounded-lg",
-                    "hover:border-primary/50 hover:bg-white/5 transition-all cursor-pointer",
+                    "p-8 border-2 border-dashed rounded-lg",
+                    "transition-all cursor-pointer",
                     "flex flex-col items-center gap-3"
                 )}
+                style={{
+                    borderColor: 'var(--color-border)',
+                    background: 'var(--color-surface-1)',
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--color-surface-2)';
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--color-surface-1)';
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                }}
             >
                 <input {...getInputProps()} />
-                <Image className="w-12 h-12 text-muted-foreground" />
+                <Image className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
                 <p className="text-muted-foreground text-center">
                     {imageType === 'profile' ? 'Upload profile picture' : 'Drop images or click to select'}
                 </p>

@@ -8,19 +8,20 @@ import {
     DollarSign,
     AlertTriangle,
     PiggyBank,
-    Loader2
+    Loader2,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { getUserTransactions } from '../../services/transactionService';
 import walletService from '../../services/walletService';
 import { getUserBudgets } from '../../services/budgetService';
 import { Button } from '../ui/Button';
-import { GlassCard } from '../ui/GlassCard';
-import { cn } from '../../lib/utils';
 
 
 const DashboardUserShortAnalytics = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showBalances, setShowBalances] = useState(true);
     const [analytics, setAnalytics] = useState({
         totalBalance: 0,
         totalWallets: 0,
@@ -189,29 +190,19 @@ const DashboardUserShortAnalytics = () => {
         'TrendingUp2': TrendingUp
     };
 
-    const colorClasses = {
-        blue: { icon: 'text-blue-500', iconBg: 'bg-blue-500/10 border-blue-500/20' },
-        red: { icon: 'text-red-500', iconBg: 'bg-red-500/10 border-red-500/20' },
-        green: { icon: 'text-emerald-500', iconBg: 'bg-emerald-500/10 border-emerald-500/20' },
-        purple: { icon: 'text-violet-500', iconBg: 'bg-violet-500/10 border-violet-500/20' },
-        orange: { icon: 'text-amber-500', iconBg: 'bg-amber-500/10 border-amber-500/20' },
-        teal: { icon: 'text-teal-500', iconBg: 'bg-teal-500/10 border-teal-500/20' },
-        pink: { icon: 'text-pink-500', iconBg: 'bg-pink-500/10 border-pink-500/20' },
-        brown: { icon: 'text-orange-700', iconBg: 'bg-orange-700/10 border-orange-700/20' }
-    };
-
+    
     // More focused, important analytics items
     const analyticsItems = [
         {
             title: 'Total Balance',
-            value: formatCurrency(analytics.totalBalance),
+            value: showBalances ? formatCurrency(analytics.totalBalance) : '••••••',
             icon: 'Wallet',
             color: 'blue',
             tooltip: `Across ${analytics.totalWallets} wallets`
         },
         {
             title: 'Monthly Expenses',
-            value: formatCurrency(analytics.monthlyExpenses),
+            value: showBalances ? formatCurrency(analytics.monthlyExpenses) : '••••••',
             icon: 'DollarSign',
             color: 'red',
             tooltip: 'Total spending this month'
@@ -263,6 +254,32 @@ const DashboardUserShortAnalytics = () => {
 
     return (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-3 items-stretch">
+            {/* Privacy Toggle */}
+            <div className="col-span-full flex justify-end">
+                <button
+                    onClick={() => setShowBalances(!showBalances)}
+                    className="flex items-center gap-2 px-3 py-1.5 transition-all text-sm"
+                    style={{
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-surface-1)',
+                        color: 'var(--color-text-secondary)',
+                        transition: 'background 150ms ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-surface-1)'; }}
+                    aria-label={showBalances ? 'Hide balances' : 'Show balances'}
+                    type="button"
+                >
+                    {showBalances ? (
+                        <EyeOff className="w-4 h-4" aria-hidden="true" />
+                    ) : (
+                        <Eye className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    <span>{showBalances ? 'Hide Balances' : 'Show Balances'}</span>
+                </button>
+            </div>
+
             {loading ? (
                 <div className="col-span-full flex flex-col items-center justify-center p-8">
                     <motion.div
@@ -276,7 +293,6 @@ const DashboardUserShortAnalytics = () => {
             ) : (
                 analyticsItems.map((item, index) => {
                     const IconComponent = iconMap[item.icon];
-                    const palette = colorClasses[item.color] || colorClasses.blue;
                     return (
                         <motion.div
                             key={item.title}
@@ -286,19 +302,30 @@ const DashboardUserShortAnalytics = () => {
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                             title={item.tooltip}
                         >
-                            <GlassCard className="h-full min-h-[200px] border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+                            <div
+                                className="h-full min-h-[200px]"
+                                style={{
+                                    border: '1px solid var(--color-border)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    background: 'var(--color-surface-1)',
+                                    padding: '24px',
+                                }}
+                            >
                                 <div className="flex h-full flex-col">
                                     <div className="mb-4 flex items-start justify-between">
-                                        <div className={cn("rounded-2xl border p-3", palette.iconBg, palette.icon)}>
-                                            <IconComponent className="h-5 w-5" />
-                                        </div>
-                                    </div>
-                                    <div className="mt-auto rounded-2xl border border-white/10 bg-background/40 p-4">
                                         <h3 className="text-xs uppercase tracking-[0.15em] text-muted-foreground">{item.title}</h3>
-                                        <p className="mt-2 text-3xl font-display font-bold text-foreground">{item.value}</p>
+                                        <IconComponent
+                                            className="h-[18px] w-[18px]"
+                                            strokeWidth={1.5}
+                                            aria-hidden="true"
+                                            style={{ color: 'var(--color-text-secondary)' }}
+                                        />
+                                    </div>
+                                    <div className="mt-auto">
+                                        <p className="text-3xl font-display font-bold text-foreground">{item.value}</p>
                                     </div>
                                 </div>
-                            </GlassCard>
+                            </div>
                             <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-popover px-3 py-2 text-xs text-popover-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                                 {item.tooltip}
                                 <div className="absolute left-1/2 top-full -mt-1 -translate-x-1/2 border-4 border-transparent border-t-popover" />

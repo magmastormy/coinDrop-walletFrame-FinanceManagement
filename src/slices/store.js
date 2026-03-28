@@ -10,6 +10,7 @@ import educationReducer from './educationSlice';
 import savingsAccountReducer from './savingsAccountSlice';
 import savingsGoalReducer from './savingsGoalSlice';
 import zhipuaiModelReducer from './zhipuaiModelSlice';
+import dataReducer from './userDataSlice';
 
 export const store = configureStore({
     reducer: {
@@ -23,7 +24,8 @@ export const store = configureStore({
         education: educationReducer,
         savingsAccount: savingsAccountReducer,
         savingsGoal: savingsGoalReducer,
-        zhipuaiModel: zhipuaiModelReducer
+        zhipuaiModel: zhipuaiModelReducer,
+        userData: dataReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {

@@ -3,24 +3,42 @@
 const mongoose = require('mongoose');
 //const isOnline = require('is-online');
 
-// Mongoose connection function with optimized connection pooling
+// Mongoose connection function with optimized connection pooling and replica set support
 const connectDB = async () => {
     try {
-        // Connection options with optimized pooling for high load
+        console.log('🔄 Attempting MongoDB connection...');
+        
+        // Connection options with optimized pooling for high load and replica set support
         const connectionOptions = {
             // Connection pool settings
             maxPoolSize: 50,           // Increase from default 5 to handle more concurrent operations
             minPoolSize: 5,            // Maintain at least 5 connections in the pool
             socketTimeoutMS: 45000,    // Socket timeout
             connectTimeoutMS: 30000,   // Connection timeout
-            serverSelectionTimeoutMS: 30000, // Server selection timeout
+            serverSelectionTimeoutMS: 10000, // Reduced server selection timeout to fail faster
             heartbeatFrequencyMS: 10000,     // How often to check server status
-            family: 4                  // Force IPv4
+            family: 4,                 // Force IPv4
+            // Replica set options
+            replicaSet: process.env.MONGO_REPLICA_SET || 'rs0',
+            readPreference: 'secondaryPreferred', // Distribute read operations across replica set
+            retryWrites: true,         // Retry write operations on transient errors
+            w: 'majority',             // Wait for majority of replica set members to acknowledge writes
+            wtimeoutMS: 5000           // Write timeout
         };
 
-        // Use your remote database
-        const mongoURI = process.env.MONGO_URI;
-        await mongoose.connect(mongoURI, connectionOptions);
+        // Use your remote database with replica set
+        const mongoURI = process.env.MONGO_URI || process.env.MONGO_REPLICA_SET_URI;
+        if (mongoURI) {
+            console.log(`📍 Connecting to: ${mongoURI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`);
+        } else {
+            console.log('📍 No remote MongoDB URI found, will use local fallback');
+        }
+        
+        if (mongoURI) {
+            await mongoose.connect(mongoURI, connectionOptions);
+        } else {
+            throw new Error('No MongoDB URI provided');
+        }
          
         // Log successful connection details
         console.log('🟢 MongoDB Connection Established 🌐');
@@ -28,6 +46,7 @@ const connectDB = async () => {
         console.log(`🔗 Host: ${mongoose.connection.host}`);
         console.log(`📊 Connection State: ${mongoose.ConnectionStates[mongoose.connection.readyState]}`);
         console.log(`🔄 Pool Size: Max ${connectionOptions.maxPoolSize}, Min ${connectionOptions.minPoolSize}`);
+        console.log(`🔄 Read Preference: ${connectionOptions.readPreference}`);
 
         // Set up event listeners for connection monitoring
         mongoose.connection.on('open', () => {
@@ -44,6 +63,11 @@ const connectDB = async () => {
 
         mongoose.connection.on('error', (err) => {
             console.error('MongoDB Connection Error:', err);
+        });
+
+        // Monitor replica set status
+        mongoose.connection.on('topologyDescriptionChanged', (event) => {
+            console.log('🔄 MongoDB Topology Changed:', event.newDescription.type);
         });
 
         return mongoose.connection;

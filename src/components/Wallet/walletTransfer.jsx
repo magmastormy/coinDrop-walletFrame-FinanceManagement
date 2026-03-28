@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeftRight, ArrowRight, Wallet as WalletIcon, DollarSign } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 
-const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
+const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) => {
     const [formData, setFormData] = useState({
-        fromWalletId: sourceWallet._id,
+        fromWalletId: sourceWallet?._id || '',
         toWalletId: '',
         amount: ''
     });
@@ -16,6 +16,8 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
     const [showConfirmation, setShowConfirmation] = useState(false);
 
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
                 handleClose();
@@ -29,7 +31,9 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
             document.removeEventListener('keydown', handleEscape);
             document.body.style.overflow = 'unset';
         };
-    }, []);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
 
     const formatBalance = (balance) => {
         return new Intl.NumberFormat('en-US', {
@@ -49,14 +53,15 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
 
     const validateForm = () => {
         const { toWalletId, amount } = formData;
+        
         if (!toWalletId) {
             throw new Error('Please select a destination wallet');
         }
-        if (!amount || amount <= 0) {
+        if (!amount || isNaN(amount) || amount <= 0) {
             throw new Error('Please enter a valid amount');
         }
         if (parseFloat(amount) > sourceWallet.balance) {
-            throw new Error('Insufficient funds in source wallet');
+            throw new Error(`Insufficient funds (max ${formatBalance(sourceWallet.balance)})`);
         }
     };
 
@@ -72,11 +77,14 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
             }
 
             setIsLoading(true);
-            const { fromWalletId, toWalletId, amount } = formData;
-            await onTransfer(fromWalletId, toWalletId, parseFloat(amount));
+            await onTransfer(
+                formData.fromWalletId, 
+                formData.toWalletId, 
+                parseFloat(formData.amount)
+            );
             handleClose();
         } catch (error) {
-            setError(error.message || 'Failed to transfer money');
+            setError(error.message || 'Failed to complete transfer');
             setShowConfirmation(false);
         } finally {
             setIsLoading(false);
@@ -93,157 +101,145 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
     };
 
     return (
-        <motion.div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            role="dialog"
-            aria-labelledby="transfer-title"
-            aria-modal="true"
-            onClick={(e) => e.target.className.includes('fixed') && handleClose()}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div 
+                className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
             >
-                <GlassCard className="w-full max-w-md">
-                    <div className="flex items-center justify-between mb-6">
-                        <motion.h2
-                            id="transfer-title"
-                            className="text-2xl font-bold text-foreground flex items-center gap-3"
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            <ArrowLeftRight className="w-6 h-6 text-primary" />
-                            Transfer Money
-                        </motion.h2>
-                        <Button variant="ghost" size="icon" onClick={handleClose}>
-                            <X className="w-5 h-5" />
-                        </Button>
+                {/* Header */}
+                <div className="border-b border-gray-200 p-4 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <ArrowLeftRight className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Transfer Funds
+                        </h2>
                     </div>
+                    <button 
+                        onClick={handleClose}
+                        className="text-gray-400 hover:text-gray-500"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                    <AnimatePresence mode="wait">
+                {/* Form */}
+                <div className="p-6">
+                    <AnimatePresence>
                         {error && (
                             <motion.div
-                                className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm"
-                                role="alert"
-                                aria-live="polite"
+                                className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm"
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
+                                exit={{ opacity: 0 }}
                             >
                                 {error}
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Source Wallet */}
                         <div>
-                            <label htmlFor="fromWalletId" className="block text-sm font-medium text-foreground mb-2">
-                                From Wallet:
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                From Wallet
                             </label>
                             <div className="relative">
-                                <WalletIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                <select
-                                    id="fromWalletId"
+                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Select
                                     name="fromWalletId"
                                     value={formData.fromWalletId}
                                     onChange={handleChange}
                                     disabled
-                                    className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground disabled:opacity-50"
+                                    className="pl-10"
                                 >
                                     <option value={sourceWallet._id}>
                                         {sourceWallet.name} ({formatBalance(sourceWallet.balance)})
                                     </option>
-                                </select>
+                                </Select>
                             </div>
                         </div>
 
-                        <motion.div
-                            className="flex justify-center text-muted-foreground"
-                            animate={{ y: [0, 5, 0] }}
-                            transition={{ repeat: Infinity, duration: 1.5 }}
-                        >
-                            <ArrowRight className="w-6 h-6" />
-                        </motion.div>
+                        {/* Arrow Animation */}
+                        <div className="flex justify-center py-2">
+                            <ArrowRight className="w-5 h-5 text-gray-400" />
+                        </div>
 
+                        {/* Destination Wallet */}
                         <div>
-                            <label htmlFor="toWalletId" className="block text-sm font-medium text-foreground mb-2">
-                                To Wallet:
-                            </label>
+<label htmlFor="toWalletId" className="block text-sm font-medium text-gray-700 mb-1">
+    To Wallet
+</label>
                             <div className="relative">
-                                <WalletIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                <select
-                                    id="toWalletId"
+                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Select
                                     name="toWalletId"
                                     value={formData.toWalletId}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    className="pl-10"
                                 >
-                                    <option value="">Select Wallet</option>
-                                    {wallets && wallets.filter(wallet => wallet._id !== sourceWallet._id)
+                                    <option value="">Select Destination Wallet</option>
+                                    {wallets
+                                        .filter(w => w._id !== sourceWallet._id)
                                         .map(wallet => (
                                             <option key={wallet._id} value={wallet._id}>
                                                 {wallet.name} ({formatBalance(wallet.balance)})
                                             </option>
                                         ))
                                     }
-                                </select>
+                                </Select>
                             </div>
                         </div>
 
+                        {/* Amount */}
                         <div>
-                            <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-2">
-                                Amount:
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Amount
                             </label>
                             <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input
-                                    id="amount"
                                     type="number"
                                     name="amount"
                                     value={formData.amount}
                                     onChange={handleChange}
-                                    required
                                     min="0.01"
                                     step="0.01"
                                     placeholder="0.00"
+                                    required
                                     className="pl-10"
                                 />
                             </div>
-                            <div className="mt-2 text-sm text-muted-foreground">
+                            <p className="mt-1 text-xs text-gray-500">
                                 Available: {formatBalance(sourceWallet.balance)}
-                            </div>
+                            </p>
                         </div>
 
-                        <AnimatePresence mode="wait">
+                        {/* Confirmation */}
+                        <AnimatePresence>
                             {showConfirmation && (
                                 <motion.div
-                                    className="p-4 rounded-lg bg-primary/10 border border-primary/20"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    role="alert"
+                                    className="bg-blue-50 border border-blue-100 rounded-md p-3"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
                                 >
-                                    <h3 className="font-semibold text-foreground mb-2">Confirm Transfer</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Transfer {formatBalance(parseFloat(formData.amount))} from{' '}
-                                        <strong className="text-foreground">{sourceWallet.name}</strong> to{' '}
-                                        <strong className="text-foreground">{getDestinationWallet()?.name}</strong>?
+                                    <h3 className="font-medium text-gray-900 mb-1">Confirm Transfer</h3>
+                                    <p className="text-sm text-gray-600">
+                                        Transfer {formatBalance(formData.amount)} from {sourceWallet.name} to {getDestinationWallet()?.name}
                                     </p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        <div className="flex gap-3 pt-4">
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-2">
                             <Button
                                 type="button"
-                                variant="secondary"
+                                variant="outline"
                                 onClick={handleClose}
                                 className="flex-1"
                             >
@@ -254,13 +250,14 @@ const WalletTransfer = ({ sourceWallet, wallets, onClose, onTransfer }) => {
                                 disabled={isLoading}
                                 className="flex-1"
                             >
-                                {isLoading ? 'Transferring...' : (showConfirmation ? 'Confirm Transfer' : 'Transfer')}
+                                {isLoading ? 'Processing...' : 
+                                 showConfirmation ? 'Confirm Transfer' : 'Review Transfer'}
                             </Button>
                         </div>
                     </form>
-                </GlassCard>
+                </div>
             </motion.div>
-        </motion.div>
+        </div>
     );
 };
 

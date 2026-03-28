@@ -7,6 +7,14 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
       colors: {
         background: 'rgb(var(--background) / <alpha-value>)',
         foreground: 'rgb(var(--foreground) / <alpha-value>)',
@@ -41,6 +49,66 @@ export default {
         border: 'rgb(var(--border) / <alpha-value>)',
         input: 'rgb(var(--input) / <alpha-value>)',
         ring: 'rgb(var(--ring) / <alpha-value>)',
+        // Design System Colors - Curator Pro Theme
+        'surface': {
+          DEFAULT: '#0b1326',
+          'dim': '#0b1326',
+          'bright': '#31394d',
+          'container': {
+            'lowest': '#060e20',
+            'low': '#131b2e',
+            DEFAULT: '#171f33',
+            'high': '#222a3d',
+            'highest': '#2d3449',
+          },
+          'variant': '#2d3449',
+          'tint': '#b6c4ff',
+        },
+        'on-surface': {
+          DEFAULT: '#dae2fd',
+          'variant': '#c6c6cd',
+        },
+        'primary-container': '#001247',
+        'on-primary-container': '#4d76ff',
+        'secondary-container': '#00a572',
+        'on-secondary-container': '#00311f',
+        'tertiary': {
+          DEFAULT: '#b9c8de',
+          'container': '#081828',
+        },
+        'on-tertiary': {
+          DEFAULT: '#233143',
+          'container': '#738296',
+        },
+        'primary-fixed': '#dce1ff',
+        'primary-fixed-dim': '#b6c4ff',
+        'secondary-fixed': '#6ffbbe',
+        'secondary-fixed-dim': '#4edea3',
+        'tertiary-fixed': '#d4e4fa',
+        'tertiary-fixed-dim': '#b9c8de',
+        'on-primary-fixed': '#001550',
+        'on-secondary-fixed': '#002113',
+        'on-tertiary-fixed': '#0d1c2d',
+        'on-primary-fixed-variant': '#003ab3',
+        'on-secondary-fixed-variant': '#005236',
+        'on-tertiary-fixed-variant': '#39485a',
+        'inverse': {
+          'surface': '#dae2fd',
+          'on-surface': '#283044',
+          'primary': '#004ee8',
+        },
+        'outline': {
+          DEFAULT: '#909097',
+          'variant': '#45464d',
+        },
+        'error': {
+          DEFAULT: '#ffb4ab',
+          'container': '#93000a',
+        },
+        'on-error': {
+          DEFAULT: '#690005',
+          'container': '#ffdad6',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -50,6 +118,9 @@ export default {
       fontFamily: {
         sans: ['Manrope', 'sans-serif'],
         display: ['Sora', 'sans-serif'],
+        headline: ['Manrope', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        label: ['Inter', 'sans-serif'],
       },
       boxShadow: {
         'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',

@@ -1,33 +1,85 @@
 export const lightTheme = {
   background: {
-    primary: '#E8F9FD',
-    secondary: '#E0F7FA',
+    primary: '#FFFFFF',
+    secondary: '#F8FAFC',
+    tertiary: '#F1F5F9',
+  },
+  surface: {
+    card: '#FFFFFF',
+    panel: '#F8FAFC',
+    modal: '#FFFFFF',
   },
   button: {
-    base: '#A4D7E1',
-    hover: '#B2E0E6',
+    primary: '#2563EB',
+    secondary: '#E2E8F0',
+    danger: '#DC2626',
+    success: '#16A34A',
   },
   text: {
-    primary: '#2C3E50', // Dark gray for better contrast
-    heading: '#C4F1F4',
+    primary: '#0F172A',
+    secondary: '#475569',
+    tertiary: '#64748B',
+    inverse: '#FFFFFF',
   },
+  semantic: {
+    positive: '#16A34A',
+    negative: '#DC2626',
+    warning: '#D97706',
+    info: '#2563EB',
+  },
+  border: {
+    light: '#E2E8F0',
+    default: '#CBD5E1',
+    strong: '#94A3B8',
+  }
 };
 
 export const darkTheme = {
   background: {
-    primary: '#0F0F0F',
-    secondary: '#232D3F',
+    primary: '#0F172A',
+    secondary: '#1E293B',
+    tertiary: '#334155',
+  },
+  surface: {
+    card: '#1E293B',
+    panel: '#334155',
+    modal: '#1E293B',
   },
   button: {
-    base: '#005B41',
-    hover: '#008170',
+    primary: '#3B82F6',
+    secondary: '#334155',
+    danger: '#EF4444',
+    success: '#22C55E',
   },
   text: {
-    primary: '#E5E5E5', // Light gray for better contrast
-    heading: '#00A389', // Lighter tint of the button hover color
+    primary: '#F8FAFC',
+    secondary: '#E2E8F0',
+    tertiary: '#CBD5E1',
+    inverse: '#0F172A',
   },
+  semantic: {
+    positive: '#22C55E',
+    negative: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+  },
+  border: {
+    light: '#475569',
+    default: '#64748B',
+    strong: '#94A3B8',
+  }
 };
 
 export const commonStyles = {
-  transition: 'all 0.3s ease-in-out',
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  shadow: {
+    card: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    raised: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    floating: '0 10px 15px rgba(0, 0, 0, 0.1)'
+  },
+  radius: {
+    sm: '4px',
+    md: '8px',
+    lg: '12px'
+  }
 };

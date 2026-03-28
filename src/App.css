@@ -1,25 +1,110 @@
 /* Import react-toastify styles */
 @import 'react-toastify/dist/ReactToastify.css';
 
+/* Import CoinDrop Design System */
+@import './styles/design-tokens.css';
+@import './styles/layout-system.css';
+
 /* App.css & App.jsx Layout */
 .app {
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   position: relative;
-  background-color: var(--background-primary);
-  color: var(--text-primary);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* App Container */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* PageHeader Responsive Styles */
+.page-header {
+  transition: all 0.2s ease;
+}
+
+.page-header-title {
+  transition: font-size 0.2s ease;
+}
+
+.page-header-actions {
+  transition: gap 0.2s ease;
+}
+
+/* Mobile - Stack header content */
+@media (max-width: 640px) {
+  .page-header {
+    min-height: 56px !important;
+    padding: 0 16px !important;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .page-header-title {
+    font-size: clamp(18px, 5vw, 22px) !important;
+    white-space: normal;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  
+  .page-header-actions {
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  
+  .page-header-actions > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* Tablet - Compact spacing */
+@media (max-width: 768px) and (min-width: 641px) {
+  .page-header {
+    min-height: 64px !important;
+    padding: 0 24px !important;
+  }
+  
+  .page-header-title {
+    font-size: clamp(20px, 3vw, 24px) !important;
+  }
+  
+  .page-header-actions {
+    gap: 6px;
+  }
+}
+
+/* Large screens - Optimize for wide content */
+@media (min-width: 1200px) {
+  .page-header {
+    min-height: 80px !important;
+    padding: 0 48px !important;
+  }
+  
+  .page-header-actions {
+    gap: 12px;
+  }
 }
 
 /* Content Layout */
 .content-wrapper {
   flex: 1;
   transition: margin-left var(--transition-normal), max-width var(--transition-normal);
+  height: 100%;
 }
 
 .content-wrapper.with-sidebar {
-  margin-left: var(--sidebar-width, 250px);
-  max-width: calc(100% - var(--sidebar-width, 250px));
+  margin-left: var(--sidebar-width-compact, 200px);
+  max-width: calc(100% - var(--sidebar-width-compact, 200px));
+  height: 100%;
 }
 
 .content-wrapper.full-width {
@@ -29,19 +114,22 @@
 
 .main-content {
   flex: 1;
-  padding: var(--spacing-xl);
-  min-height: 100vh;
+  padding: var(--spacing-lg, 16px);
+  height: 100%;
   transition: margin-left var(--transition-normal);
 }
 
 .main-content.with-sidebar {
-  margin-left: var(--sidebar-width, 250px);
-  width: calc(100% - var(--sidebar-width, 250px));
+  margin-left: var(--sidebar-width-compact, 200px);
+  width: calc(100% - var(--sidebar-width-compact, 200px));
+  height: 100%;
   transition: margin-left var(--transition-normal), width var(--transition-normal);
 }
 
 .main-content.full-width {
   margin-left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* Theme-aware Toast Container */
@@ -84,31 +172,29 @@
 /* Responsive Layout Adjustments */
 @media (max-width: 1200px) {
   .main-content.with-sidebar {
-    margin-left: var(--sidebar-width-laptop);
-    padding: var(--spacing-lg);
+    margin-left: var(--sidebar-width-tablet-compact, 180px);
+    padding: var(--spacing-md, 12px);
+  }
+  
+  .chat-container {
+    border-radius: var(--radius-md);
   }
 }
 
 @media (max-width: 992px) {
   .main-content.with-sidebar {
-    margin-left: var(--sidebar-width-tablet);
-    padding: var(--spacing-md);
+    margin-left: var(--sidebar-width-tablet-compact, 180px);
+    padding: var(--spacing-md, 12px);
+  }
+  
+  .chat-container {
+    border-radius: var(--radius-md);
   }
 }
 
 @media (max-width: 768px) {
-  .main-content.with-sidebar {
-    margin-left: 0;
-    width: 100%;
-  }
-  
-  .content-wrapper.with-sidebar {
-    margin-left: 0;
-    max-width: 100%;
-  }
-  
   .main-content {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-sm, 8px);
   }
   
   .sidebar {
@@ -118,6 +204,87 @@
   .sidebar.open {
     transform: translateX(0);
   }
+}
+
+/* Color Variables */
+:root {
+  --tertiary-container: #081828;
+  --outline: #909097;
+  --secondary-container: #00a572;
+  --inverse-on-surface: #283044;
+  --on-error-container: #ffdad6;
+  --on-secondary-fixed-variant: #005236;
+  --on-tertiary-fixed: #0d1c2d;
+  --on-tertiary-fixed-variant: #39485a;
+  --on-primary-fixed-variant: #003ab3;
+  --surface-tint: #b6c4ff;
+  --background: #0b1326;
+  --surface-container-highest: #2d3449;
+  --surface-container-lowest: #060e20;
+  --tertiary-fixed: #d4e4fa;
+  --on-tertiary: #233143;
+  --on-background: #dae2fd;
+  --tertiary-fixed-dim: #b9c8de;
+  --surface-variant: #2d3449;
+  --surface-dim: #0b1326;
+  --surface-container: #171f33;
+  --outline-variant: #45464d;
+  --primary-fixed: #dce1ff;
+  --on-secondary-container: #00311f;
+  --error-container: #93000a;
+  --on-tertiary-container: #738296;
+  --secondary: #4edea3;
+  --on-surface-variant: #c6c6cd;
+  --surface-container-low: #131b2e;
+  --surface-bright: #31394d;
+  --primary-fixed-dim: #b6c4ff;
+  --on-primary: #002780;
+  --inverse-primary: #004ee8;
+  --surface-container-high: #222a3d;
+  --inverse-surface: #dae2fd;
+  --tertiary: #b9c8de;
+  --on-primary-fixed: #001550;
+  --on-secondary: #003824;
+  --secondary-fixed: #6ffbbe;
+  --on-error: #690005;
+  --secondary-fixed-dim: #4edea3;
+  --primary: #b6c4ff;
+  --on-secondary-fixed: #002113;
+  --error: #ffb4ab;
+  --surface: #0b1326;
+  --on-surface: #dae2fd;
+  --on-primary-container: #4d76ff;
+  --primary-container: #001247;
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(45, 52, 73, 0.6);
+  backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(182, 196, 255, 0.1);
+}
+
+/* Gradient Classes */
+.primary-gradient {
+  background: linear-gradient(135deg, #b6c4ff 0%, #4d76ff 100%);
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Font Families */
+.font-headline {
+  font-family: 'Manrope', sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-label {
+  font-family: 'Inter', sans-serif;
 }
 
 /* Utility Classes */
@@ -163,8 +330,8 @@ body.sidebar-open {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
-  width: var(--sidebar-width, 250px);
+  height: 100%;
+  width: var(--sidebar-width-compact, 200px);
   z-index: 100;
   transform: translateX(0);
   transition: transform var(--transition-normal);

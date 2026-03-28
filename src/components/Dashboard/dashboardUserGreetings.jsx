@@ -2,7 +2,6 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { Sun, Moon, Clock, CloudSun } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
 
 const DashboardUserGreetings = () => {
     const { user } = useSelector(state => state.auth);
@@ -59,19 +58,37 @@ const DashboardUserGreetings = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            <GlassCard className="p-6">
+            <div
+                style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-1)',
+                    padding: '24px',
+                }}
+            >
                 <div className="flex items-center gap-4 mb-4">
                     <motion.div
-                        className={`p-4 rounded-full bg-gradient-to-br ${greeting.gradient}`}
-                        initial={{ scale: 0.8, rotate: -10 }}
+                        initial={{ scale: 0.9, rotate: -6 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{
-                            duration: 0.6,
+                            duration: 0.4,
                             ease: "easeOut",
-                            delay: 0.2
+                            delay: 0.1
+                        }}
+                        style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '9999px',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--color-text-secondary)',
+                            flexShrink: 0,
                         }}
                     >
-                        <GreetingIcon className="w-6 h-6 text-white" />
+                        <GreetingIcon className="w-6 h-6" strokeWidth={1.5} />
                     </motion.div>
                     <motion.h2
                         className="text-2xl font-bold text-foreground"
@@ -96,18 +113,56 @@ const DashboardUserGreetings = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
                 >
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                        <div className="p-2 rounded-lg bg-primary/20">
-                            <Sun className="w-4 h-4 text-primary" />
+                    <div
+                        className="flex items-center gap-3 p-3"
+                        style={{
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-1)'
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--color-text-secondary)'
+                            }}
+                        >
+                            <Sun className="w-4 h-4" strokeWidth={1.5} />
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Today&apos;s Goal</p>
                             <p className="text-foreground font-semibold">$50.00</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                        <div className="p-2 rounded-lg bg-primary/20">
-                            <Clock className="w-4 h-4 text-primary" />
+                    <div
+                        className="flex items-center gap-3 p-3"
+                        style={{
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-1)'
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--color-text-secondary)'
+                            }}
+                        >
+                            <Clock className="w-4 h-4" strokeWidth={1.5} />
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Streak</p>
@@ -115,7 +170,7 @@ const DashboardUserGreetings = () => {
                         </div>
                     </div>
                 </motion.div>
-            </GlassCard>
+            </div>
         </motion.div>
     );
 };

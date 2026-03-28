@@ -57,8 +57,10 @@ const EducationSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
+// Indexes for performance
 EducationSchema.index({ author: 1, createdAt: -1 });
-EducationSchema.index({ category: 1 });
-EducationSchema.index({ 'likes': 1 });
+EducationSchema.index({ title: 'text' });
+EducationSchema.index({ details: 'text' });
+EducationSchema.index({ date: -1 });
 
 module.exports = mongoose.model('Education', EducationSchema);

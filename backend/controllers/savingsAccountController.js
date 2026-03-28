@@ -126,9 +126,14 @@ class SavingsAccountController {
         try {
             if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Starting deletion process`);
             
+            // Check if we can use transactions (requires replica set)
+            const useTransaction = process.env.MONGODB_REPLICA_SET || false;
+            
             // Start a MongoDB session for transaction
-            session = await mongoose.startSession();
-            session.startTransaction();
+            if (useTransaction) {
+                session = await mongoose.startSession();
+                session.startTransaction();
+            }
             
             // Get parameters from request
             const { id } = req.params;
@@ -300,7 +305,9 @@ class SavingsAccountController {
             if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account ${id} marked as deleted`);
             
             // Commit the transaction
-            await session.commitTransaction();
+            if (session) {
+                await session.commitTransaction();
+            }
             if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction committed successfully`);
             
             // Send success response
@@ -435,26 +442,51 @@ class SavingsAccountController {
                 return res.status(400).json({ error: 'Invalid account or wallet ID format' });
             }
             
-            const account = await SavingsAccount.findOne({ _id: accountId, userId, isActive: true });
-            const wallet = await Wallet.findOne({ _id: walletId, userId, isActive: true });
+            // Use atomic operations to prevent race conditions
+            const walletUpdate = await Wallet.findOneAndUpdate(
+                { 
+                    _id: walletId, 
+                    userId, 
+                    isActive: true,
+                    balance: { $gte: numericAmount }  // Atomic balance check
+                },
+                { 
+                    $inc: { balance: -numericAmount }  // Atomic decrement
+                },
+                { 
+                    runValidators: true 
+                }
+            );
 
-            if (!account) {
+            if (!walletUpdate) {
+                return res.status(400).json({ error: 'Insufficient funds in wallet or wallet not found' });
+            }
+
+            const accountUpdate = await SavingsAccount.findOneAndUpdate(
+                { 
+                    _id: accountId, 
+                    userId, 
+                    isActive: true 
+                },
+                { 
+                    $inc: { balance: numericAmount }  // Atomic increment
+                },
+                { 
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            if (!accountUpdate) {
+                // Rollback wallet
+                await Wallet.findOneAndUpdate(
+                    { _id: walletId, userId },
+                    { $inc: { balance: numericAmount } }
+                );
                 return res.status(404).json({ error: 'Savings account not found' });
             }
-            if (!wallet) {
-                return res.status(404).json({ error: 'Wallet not found' });
-            }
-            if (wallet.balance < numericAmount) {
-                return res.status(400).json({ error: 'Insufficient funds in wallet' });
-            }
 
-            wallet.balance -= numericAmount;
-            account.balance += numericAmount;
-
-            await wallet.save();
-            await account.save();
-
-            res.json({ message: 'Deposit successful', account });
+            res.json({ message: 'Deposit successful', account: accountUpdate });
         } catch (error) {
             res.status(500).json({ error: 'Deposit failed', details: error.message });
         }
@@ -475,26 +507,51 @@ class SavingsAccountController {
                 return res.status(400).json({ error: 'Invalid account or wallet ID format' });
             }
             
-            const account = await SavingsAccount.findOne({ _id: accountId, userId, isActive: true });
-            const wallet = await Wallet.findOne({ _id: walletId, userId, isActive: true });
+            // Use atomic operations to prevent race conditions
+            const accountUpdate = await SavingsAccount.findOneAndUpdate(
+                { 
+                    _id: accountId, 
+                    userId, 
+                    isActive: true,
+                    balance: { $gte: numericAmount }  // Atomic balance check
+                },
+                { 
+                    $inc: { balance: -numericAmount }  // Atomic decrement
+                },
+                { 
+                    runValidators: true 
+                }
+            );
 
-            if (!account) {
-                return res.status(404).json({ error: 'Savings account not found' });
+            if (!accountUpdate) {
+                return res.status(400).json({ error: 'Insufficient funds in account or account not found' });
             }
-            if (!wallet) {
+
+            const walletUpdate = await Wallet.findOneAndUpdate(
+                { 
+                    _id: walletId, 
+                    userId, 
+                    isActive: true 
+                },
+                { 
+                    $inc: { balance: numericAmount }  // Atomic increment
+                },
+                { 
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            if (!walletUpdate) {
+                // Rollback account
+                await SavingsAccount.findOneAndUpdate(
+                    { _id: accountId, userId },
+                    { $inc: { balance: numericAmount } }
+                );
                 return res.status(404).json({ error: 'Wallet not found' });
             }
-            if (account.balance < numericAmount) {
-                return res.status(400).json({ error: 'Insufficient funds in account' });
-            }
 
-            wallet.balance += numericAmount;
-            account.balance -= numericAmount;
-
-            await wallet.save();
-            await account.save();
-
-            res.json({ message: 'Withdrawal successful', account });
+            res.json({ message: 'Withdrawal successful', account: accountUpdate });
         } catch (error) {
             res.status(500).json({ error: 'Withdrawal failed', details: error.message });
         }
@@ -523,22 +580,53 @@ class SavingsAccountController {
                 return res.status(400).json({ error: 'Source and destination accounts must be different' });
             }
             
-            // Implement the transfer logic similar to other transfer methods
-            const fromAccount = await SavingsAccount.findOne({ _id: fromAccountId, userId, isActive: true });
-            const toAccount = await SavingsAccount.findOne({ _id: toAccountId, userId, isActive: true });
-            if (!fromAccount || !toAccount) {
-                return res.status(404).json({ error: 'One or both savings accounts not found' });
+            // Use atomic operations to prevent race conditions
+            const fromAccountUpdate = await SavingsAccount.findOneAndUpdate(
+                { 
+                    _id: fromAccountId, 
+                    userId, 
+                    isActive: true,
+                    balance: { $gte: numericAmount }  // Atomic balance check
+                },
+                { 
+                    $inc: { balance: -numericAmount }  // Atomic decrement
+                },
+                { 
+                    runValidators: true 
+                }
+            );
+
+            if (!fromAccountUpdate) {
+                return res.status(400).json({ error: 'Insufficient funds in source account or account not found' });
             }
-            if (fromAccount.balance < numericAmount) {
-                return res.status(400).json({ error: 'Insufficient funds in source account' });
+
+            const toAccountUpdate = await SavingsAccount.findOneAndUpdate(
+                { 
+                    _id: toAccountId, 
+                    userId, 
+                    isActive: true 
+                },
+                { 
+                    $inc: { balance: numericAmount }  // Atomic increment
+                },
+                { 
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            if (!toAccountUpdate) {
+                // Rollback source account
+                await SavingsAccount.findOneAndUpdate(
+                    { _id: fromAccountId, userId },
+                    { $inc: { balance: numericAmount } }
+                );
+                return res.status(404).json({ error: 'Destination account not found' });
             }
             
-            // Perform the transfer
-            fromAccount.balance -= numericAmount;
-            toAccount.balance += numericAmount;
-            
-            await fromAccount.save();
-            await toAccount.save();
+            // Refresh documents for response
+            const fromAccount = await SavingsAccount.findById(fromAccountId);
+            const toAccount = toAccountUpdate;
             
             res.json({ 
                 message: 'Transfer successful', 

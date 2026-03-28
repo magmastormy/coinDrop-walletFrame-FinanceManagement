@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import budgetService from '../../services/budgetService';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-import { Loader2, Calendar, Wallet, Tag, DollarSign, PieChart } from 'lucide-react';
+import Button from '../ui/Button';
+import { Select } from '../ui/Select';
+import { Loader2, Calendar, Wallet, Tag, DollarSign, PieChart, Brain, Repeat, Bell } from 'lucide-react';
 import dayjs from 'dayjs';
 
 const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallets = [], userId, budgetData }) => {
@@ -23,6 +24,23 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         metadata: {
             icon: 'budget',
             color: '#007bff'
+        },
+        automation: {
+            autoCategorize: {
+                enabled: true,
+                threshold: 0.7
+            },
+            recurring: {
+                enabled: true,
+                autoRenew: true
+            },
+            alerts: {
+                enabled: true,
+                thresholds: {
+                    high: 90,
+                    medium: 75
+                }
+            }
         }
     });
     const [error, setError] = useState(null);
@@ -42,6 +60,23 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 metadata: {
                     icon: (budgetData.metadata && budgetData.metadata.icon) ? budgetData.metadata.icon : 'budget',
                     color: (budgetData.metadata && budgetData.metadata.color) ? budgetData.metadata.color : '#007bff'
+                },
+                automation: {
+                    autoCategorize: {
+                        enabled: budgetData.automation?.autoCategorize?.enabled ?? true,
+                        threshold: budgetData.automation?.autoCategorize?.threshold ?? 0.7
+                    },
+                    recurring: {
+                        enabled: budgetData.automation?.recurring?.enabled ?? true,
+                        autoRenew: budgetData.automation?.recurring?.autoRenew ?? true
+                    },
+                    alerts: {
+                        enabled: budgetData.automation?.alerts?.enabled ?? true,
+                        thresholds: {
+                            high: budgetData.automation?.alerts?.thresholds?.high ?? 90,
+                            medium: budgetData.automation?.alerts?.thresholds?.medium ?? 75
+                        }
+                    }
                 }
             });
         } else {
@@ -80,9 +115,8 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 startDate: budgetFormData.startDate,
                 endDate: budgetFormData.endDate || null,
                 period: budgetFormData.period || 'monthly',
+                automation: budgetFormData.automation
             };
-
-            console.log('[DEBUG] Budget data being sent:', budgetPayload);
 
             if (budgetData) {
                 await budgetService.updateBudget(budgetData._id, budgetPayload);
@@ -94,7 +128,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             resetForm();
             onClose();
         } catch (err) {
-            console.error('[DEBUG] Budget creation error:', err);
+            // Error already handled by form validation
             setError(err.message || 'Failed to save budget. Please try again.');
         } finally {
             setLoading(false);
@@ -114,6 +148,23 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             metadata: {
                 icon: 'budget',
                 color: '#007bff'
+            },
+            automation: {
+                autoCategorize: {
+                    enabled: true,
+                    threshold: 0.7
+                },
+                recurring: {
+                    enabled: true,
+                    autoRenew: true
+                },
+                alerts: {
+                    enabled: true,
+                    thresholds: {
+                        high: 90,
+                        medium: 75
+                    }
+                }
             }
         });
         setError(null);
@@ -124,7 +175,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             isOpen={isOpen}
             onClose={onClose}
             title={budgetData ? 'Edit Budget' : 'Create New Budget'}
-            className="max-w-md"
+            className="max-w-md w-[calc(100vw-2rem)] sm:w-full"
         >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
@@ -147,93 +198,266 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                     fullWidth
                 />
 
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Type</label>
-                    <div className="relative">
-                        <PieChart className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <select
-                            value={budgetFormData.type}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
-                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                        >
-                            <option value="expense">Expense</option>
-                            <option value="income">Income</option>
-                            <option value="savings">Savings</option>
-                        </select>
-                    </div>
+                <Select
+                    label="Type"
+                    value={budgetFormData.type}
+                    onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
+                    className="pl-10"
+                >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                    <option value="savings">Savings</option>
+                </Select>
+
+                <Select
+                    label="Category"
+                    value={budgetFormData.categoryId}
+                    onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
+                    className="pl-10"
+                    required
+                >
+                    <option value="" disabled>Select Category</option>
+                    {categories.map(cat => (
+                        <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    ))}
+                </Select>
+
+                <Select
+                    label="Wallet"
+                    value={budgetFormData.walletId}
+                    onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
+                    className="pl-10"
+                    required
+                >
+                    <option value="" disabled>Select Wallet</option>
+                    {walletOptions.map(w => (
+                        <option key={w._id} value={w._id}>{w.name}</option>
+                    ))}
+                </Select>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                        label="Start Date"
+                        type="date"
+                        value={budgetFormData.startDate}
+                        onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
+                        className="pl-10"
+                        required
+                    />
+                    <Input
+                        label="End Date"
+                        type="date"
+                        value={budgetFormData.endDate}
+                        onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
+                        className="pl-10"
+                    />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Category</label>
-                    <div className="relative">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <select
-                            value={budgetFormData.categoryId}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
-                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                            required
-                        >
-                            <option value="" disabled>Select Category</option>
-                            {categories.map(cat => (
-                                <option key={cat._id} value={cat._id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
+            {/* Automation Settings */}
+            <div className="pt-4 border-t border-border">
+                <h3 className="text-lg font-semibold mb-4">Automation Settings</h3>
+                
+                {/* Auto-Categorization */}
+                <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Brain className="w-4 h-4 text-primary" />
+                            Auto-Categorization
+                        </label>
+                <div className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="autoCategorize" 
+                        className="sr-only peer" 
+                        checked={budgetFormData.automation.autoCategorize.enabled}
+                        onChange={(e) => setBudgetFormData({ 
+                            ...budgetFormData, 
+                            automation: {
+                                ...budgetFormData.automation,
+                                autoCategorize: {
+                                    ...budgetFormData.automation.autoCategorize,
+                                    enabled: e.target.checked
+                                }
+                            }
+                        })}
+                    />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Wallet</label>
-                    <div className="relative">
-                        <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <select
-                            value={budgetFormData.walletId}
-                            onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
-                            className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                            required
-                        >
-                            <option value="" disabled>Select Wallet</option>
-                            {walletOptions.map(w => (
-                                <option key={w._id} value={w._id}>{w.name}</option>
-                            ))}
-                        </select>
                     </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Start Date</label>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    {budgetFormData.automation.autoCategorize.enabled && (
+                        <div className="pl-6 space-y-2">
+                            <label className="text-sm text-foreground">Confidence Threshold</label>
                             <input
-                                type="date"
-                                value={budgetFormData.startDate}
-                                onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
-                                className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                                required
+                                type="range"
+                                min="0.1"
+                                max="1"
+                                step="0.1"
+                                value={budgetFormData.automation.autoCategorize.threshold}
+                                onChange={(e) => setBudgetFormData({ 
+                                    ...budgetFormData, 
+                                    automation: {
+                                        ...budgetFormData.automation,
+                                        autoCategorize: {
+                                            ...budgetFormData.automation.autoCategorize,
+                                            threshold: parseFloat(e.target.value)
+                                        }
+                                    }
+                                })}
+                                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                             />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Low (0.1)</span>
+                                <span>{budgetFormData.automation.autoCategorize.threshold.toFixed(1)}</span>
+                                <span>High (1.0)</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">End Date</label>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <input
-                                type="date"
-                                value={budgetFormData.endDate}
-                                onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
-                                className="w-full h-10 pl-10 pr-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                            />
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {error && (
-                    <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        {error}
+                {/* Recurring Budget */}
+                <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Repeat className="w-4 h-4 text-primary" />
+                            Recurring Budget
+                        </label>
+                <div className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="recurring" 
+                        className="sr-only peer" 
+                        checked={budgetFormData.automation.recurring.enabled}
+                        onChange={(e) => setBudgetFormData({ 
+                            ...budgetFormData, 
+                            automation: {
+                                ...budgetFormData.automation,
+                                recurring: {
+                                    ...budgetFormData.automation.recurring,
+                                    enabled: e.target.checked
+                                }
+                            }
+                        })}
+                    />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </div>
                     </div>
-                )}
+                    {budgetFormData.automation.recurring.enabled && (
+                        <div className="pl-6 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm text-foreground">Auto-Renew</label>
+                <div className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="autoRenew" 
+                        className="sr-only peer" 
+                        checked={budgetFormData.automation.recurring.autoRenew}
+                        onChange={(e) => setBudgetFormData({ 
+                            ...budgetFormData, 
+                            automation: {
+                                ...budgetFormData.automation,
+                                recurring: {
+                                    ...budgetFormData.automation.recurring,
+                                    autoRenew: e.target.checked
+                                }
+                            }
+                        })}
+                    />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                {/* Budget Alerts */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Bell className="w-4 h-4 text-primary" />
+                            Budget Alerts
+                        </label>
+                <div className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="budgetAlerts" 
+                        className="sr-only peer" 
+                        checked={budgetFormData.automation.alerts.enabled}
+                        onChange={(e) => setBudgetFormData({ 
+                            ...budgetFormData, 
+                            automation: {
+                                ...budgetFormData.automation,
+                                alerts: {
+                                    ...budgetFormData.automation.alerts,
+                                    enabled: e.target.checked
+                                }
+                            }
+                        })}
+                    />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </div>
+                    </div>
+                    {budgetFormData.automation.alerts.enabled && (
+                        <div className="pl-6 space-y-3">
+                            <div className="space-y-2">
+                                <label className="text-sm text-foreground">High Threshold ({budgetFormData.automation.alerts.thresholds.high}%)</label>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="100"
+                                    step="5"
+                                    value={budgetFormData.automation.alerts.thresholds.high}
+                                    onChange={(e) => setBudgetFormData({ 
+                                        ...budgetFormData, 
+                                        automation: {
+                                            ...budgetFormData.automation,
+                                            alerts: {
+                                                ...budgetFormData.automation.alerts,
+                                                thresholds: {
+                                                    ...budgetFormData.automation.alerts.thresholds,
+                                                    high: parseInt(e.target.value)
+                                                }
+                                            }
+                                        }
+                                    })}
+                                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm text-foreground">Medium Threshold ({budgetFormData.automation.alerts.thresholds.medium}%)</label>
+                                <input
+                                    type="range"
+                                    min="25"
+                                    max="90"
+                                    step="5"
+                                    value={budgetFormData.automation.alerts.thresholds.medium}
+                                    onChange={(e) => setBudgetFormData({ 
+                                        ...budgetFormData, 
+                                        automation: {
+                                            ...budgetFormData.automation,
+                                            alerts: {
+                                                ...budgetFormData.automation.alerts,
+                                                thresholds: {
+                                                    ...budgetFormData.automation.alerts.thresholds,
+                                                    medium: parseInt(e.target.value)
+                                                }
+                                            }
+                                        }
+                                    })}
+                                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {error && (
+                <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-lg">
+                    {error}
+                </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
                     <Button type="button" variant="ghost" onClick={onClose}>
                         Cancel
                     </Button>

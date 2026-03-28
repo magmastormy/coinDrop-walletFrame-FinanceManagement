@@ -1,210 +1,378 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-    Wallet, CreditCard, Building2, PiggyBank, MoreVertical,
-    Trash2, Edit2, ArrowRightLeft, FileText, Shield
-} from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
-import { Button } from '../ui/Button';
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Edit2, ArrowRightLeft, FileText, Trash2, Shield, MoreVertical } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
 import DeleteWalletDialog from './deleteWalletDialog';
 import ReportButton from '../Common/reportButton';
 
-const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer }) => {
+// Material Symbols Icon component
+const MaterialIcon = ({ name, className = '', filled = false }) => (
+    <span 
+        className={`material-symbols-outlined ${className}`}
+        style={{ fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0" }}
+    >
+        {name}
+    </span>
+);
+
+// Wallet type to icon mapping using Material Symbols
+const getWalletIcon = (type) => {
+    const typeMap = {
+        'cash': { icon: 'payments', color: 'text-primary', bgColor: 'bg-primary/10' },
+        'credit card': { icon: 'credit_card', color: 'text-primary', bgColor: 'bg-primary/10' },
+        'bank': { icon: 'account_balance', color: 'text-primary', bgColor: 'bg-primary/10' },
+        'savings': { icon: 'savings', color: 'text-secondary', bgColor: 'bg-secondary/10' },
+        'investment': { icon: 'trending_up', color: 'text-secondary', bgColor: 'bg-secondary/10' },
+        'loan': { icon: 'credit_score', color: 'text-tertiary', bgColor: 'bg-tertiary/10' },
+        'other': { icon: 'wallet', color: 'text-tertiary', bgColor: 'bg-tertiary/10' }
+    };
+    return typeMap[type?.toLowerCase()] || { icon: 'account_balance_wallet', color: 'text-primary', bgColor: 'bg-primary/10' };
+};
+
+const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer, viewMode = 'grid' }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    const getIcon = (type) => {
-        switch (type?.toLowerCase()) {
-            case 'cash': return Wallet;
-            case 'credit card': return CreditCard;
-            case 'bank': return Building2;
-            case 'savings': return PiggyBank;
-            default: return Wallet;
-        }
-    };
+    const walletIcon = useMemo(() => getWalletIcon(wallet.type), [wallet.type]);
+    const otherWallets = useMemo(() => wallets.filter(w => w._id !== wallet._id), [wallets, wallet._id]);
 
-    const Icon = getIcon(wallet.type);
-    const otherWallets = wallets.filter(w => w._id !== wallet._id);
-    const normalizedType = wallet.type?.toLowerCase();
-
-    const typeStyles = {
-        'credit card': "from-rose-500/20 to-orange-400/15 text-rose-500 border-rose-500/20",
-        savings: "from-emerald-500/20 to-cyan-400/15 text-emerald-500 border-emerald-500/20",
-        bank: "from-blue-500/20 to-cyan-500/15 text-blue-500 border-blue-500/20",
-        cash: "from-violet-500/20 to-fuchsia-400/15 text-violet-500 border-violet-500/20"
-    };
-
-    const walletTheme = typeStyles[normalizedType] || "from-primary/20 to-cyan-500/15 text-primary border-primary/20";
-
-    const formatCurrency = (amount) => {
+    const formatCurrency = useCallback((amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(amount);
+    }, []);
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Updated Today';
+        if (diffDays === 1) return 'Updated Yesterday';
+        if (diffDays < 7) return `Updated ${diffDays} days ago`;
+        return `Updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     };
 
-    return (
-        <>
-            <GlassCard
-                className="group relative h-full min-h-[292px] overflow-visible border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5"
-                hoverEffect={true}
-            >
-                <div className="flex h-full flex-col gap-4">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className={cn(
-                                "rounded-2xl border bg-gradient-to-br p-3.5",
-                                walletTheme
-                            )}>
-                                <Icon className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-foreground">{wallet.name}</p>
-                                <p className="mt-0.5 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                                    {wallet.type}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="relative">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setShowMenu(!showMenu)}
-                            >
-                                <MoreVertical className="w-4 h-4" />
-                            </Button>
+    const handleCardClick = (e) => {
+        // Prevent card click when clicking menu or buttons
+        if (e.target.closest('.wallet-menu') || e.target.closest('.wallet-action')) {
+            return;
+        }
+    };
 
+    if (viewMode === 'list') {
+        return (
+            <>
+                <div 
+                    className="group relative overflow-hidden bg-surface-container-low p-4 rounded-2xl border border-outline-variant/5 transition-all duration-300 hover:bg-surface-container flex items-center gap-4"
+                    onClick={handleCardClick}
+                >
+                    {/* Icon */}
+                    <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                        walletIcon.bgColor,
+                        walletIcon.color
+                    )}>
+                        <MaterialIcon name={walletIcon.icon} className="text-2xl" filled />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-lg font-bold text-on-surface truncate">{wallet.name}</h4>
+                        <p className="text-on-tertiary-container text-xs capitalize">{wallet.type}</p>
+                    </div>
+
+                    {/* Balance */}
+                    <div className="text-right shrink-0">
+                        <p className={cn(
+                            "text-xl font-bold font-headline",
+                            wallet.balance < 0 ? "text-error" : "text-on-surface"
+                        )}>
+                            {formatCurrency(wallet.balance)}
+                        </p>
+                        <p className="text-[10px] text-on-tertiary-container font-medium uppercase tracking-tighter">
+                            {formatDate(wallet.updatedAt)}
+                        </p>
+                    </div>
+
+                    {/* Action Menu */}
+                    <div className="relative wallet-menu shrink-0">
+                        <button
+                            className="p-2 text-on-tertiary-container hover:text-on-surface transition-colors rounded-full hover:bg-surface-container-high"
+                            onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+
+                        <AnimatePresence>
                             {showMenu && (
                                 <>
-                                    <div
-                                        className="fixed inset-0 z-10"
+                                    <motion.div 
+                                        className="fixed inset-0 z-10" 
                                         onClick={() => setShowMenu(false)}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
                                     />
                                     <motion.div
-                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                        className="absolute right-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-white/20 bg-white/90 p-1 shadow-xl backdrop-blur-xl dark:bg-gray-900/90"
+                                        initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 mt-1 w-48 z-20 bg-surface-container-high rounded-xl border border-outline-variant/10 py-1 shadow-xl"
                                     >
                                         <button
-                                            onClick={() => { setShowEditModal(true); setShowMenu(false); }}
-                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                            onClick={(e) => { e.stopPropagation(); setShowEditModal(true); setShowMenu(false); }}
+                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
                                         >
-                                            <span className="flex items-center gap-2"><Edit2 className="w-4 h-4" /> Edit</span>
+                                            <Edit2 className="w-4 h-4" /> Edit Wallet
                                         </button>
                                         <button
-                                            onClick={() => { setShowTransferModal(true); setShowMenu(false); }}
-                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                            onClick={(e) => { e.stopPropagation(); setShowTransferModal(true); setShowMenu(false); }}
+                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
                                         >
-                                            <span className="flex items-center gap-2"><ArrowRightLeft className="w-4 h-4" /> Transfer</span>
+                                            <ArrowRightLeft className="w-4 h-4" /> Transfer Funds
                                         </button>
                                         <button
-                                            onClick={() => { setShowReportModal(true); setShowMenu(false); }}
-                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                            onClick={(e) => { e.stopPropagation(); setShowReportModal(true); setShowMenu(false); }}
+                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
                                         >
-                                            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Report</span>
+                                            <FileText className="w-4 h-4" /> Generate Report
                                         </button>
-                                        <div className="my-1 h-px bg-border" />
+                                        <div className="border-t border-outline-variant/10 my-1" />
                                         <button
-                                            onClick={() => { setShowDeleteDialog(true); setShowMenu(false); }}
+                                            onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); setShowMenu(false); }}
                                             disabled={wallet.isSystemWallet && wallet.balance > 0}
-                                            className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+                                            className={cn(
+                                                "w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors",
+                                                wallet.isSystemWallet 
+                                                    ? "text-on-tertiary-container cursor-not-allowed" 
+                                                    : "text-error hover:bg-error/10"
+                                            )}
                                         >
-                                            <span className="flex items-center gap-2">
-                                                {wallet.isSystemWallet ? <Shield className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                                                {wallet.isSystemWallet ? 'Protected' : 'Delete'}
-                                            </span>
+                                            {wallet.isSystemWallet 
+                                                ? <Shield className="w-4 h-4" /> 
+                                                : <Trash2 className="w-4 h-4" />}
+                                            {wallet.isSystemWallet ? 'Protected' : 'Delete Wallet'}
                                         </button>
                                     </motion.div>
                                 </>
                             )}
-                        </div>
-                    </div>
-
-                    <div className="mt-3 rounded-2xl border border-white/10 bg-background/40 p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
-                        <h3 className={cn(
-                            "mt-2 text-3xl font-display font-bold",
-                            wallet.balance < 0 ? "text-red-500" : "text-foreground"
-                        )}>
-                            {formatCurrency(wallet.balance)}
-                        </h3>
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-4 text-xs text-muted-foreground">
-                        <span>Account Type</span>
-                        <span className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em]">
-                            {wallet.type}
-                        </span>
+                        </AnimatePresence>
                     </div>
                 </div>
-            </GlassCard>
 
-            {/* Legacy Modals - To be refactored later if needed, or kept as wrappers */}
-            {showEditModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
-                        <EditWalletModal
-                            wallet={wallet}
-                            onClose={() => setShowEditModal(false)}
-                            onUpdate={onUpdate}
-                        />
-                    </div>
-                </div>
-            )}
+                {/* Modals */}
+                <EditWalletModal
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    wallet={wallet}
+                    onUpdate={onUpdate}
+                />
 
-            {showTransferModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
-                        <WalletTransfer
-                            sourceWallet={wallet}
-                            wallets={wallets}
-                            onClose={() => setShowTransferModal(false)}
-                            onTransfer={onTransfer}
-                        />
-                    </div>
-                </div>
-            )}
+                <WalletTransfer
+                    isOpen={showTransferModal}
+                    onClose={() => setShowTransferModal(false)}
+                    sourceWallet={wallet}
+                    wallets={otherWallets}
+                    onTransfer={onTransfer}
+                />
 
-            {showDeleteDialog && (
                 <DeleteWalletDialog
                     isOpen={showDeleteDialog}
                     onClose={() => setShowDeleteDialog(false)}
-                    onConfirm={onDelete}
                     wallet={wallet}
                     otherWallets={otherWallets}
-                    isSystemWallet={wallet.isSystemWallet && wallet.balance > 0}
+                    onConfirm={onDelete}
+                    isSystemWallet={wallet.isSystemWallet}
                 />
-            )}
+
+                {showReportModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-surface-container-high rounded-2xl max-w-md w-full p-6 shadow-xl border border-outline-variant/10"
+                        >
+                            <h3 className="text-lg font-semibold mb-4 text-on-surface">Wallet Report</h3>
+                            <ReportButton
+                                accountId={wallet._id}
+                                reportType="wallet-summary"
+                                className="w-full"
+                            />
+                            <button
+                                className="w-full mt-4 px-4 py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"
+                                onClick={() => setShowReportModal(false)}
+                            >
+                                Close
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </>
+        );
+    }
+
+    // Grid View (default)
+    return (
+        <>
+            <div 
+                className="group relative overflow-hidden bg-surface-container-low p-6 rounded-2xl border border-outline-variant/5 transition-all duration-300 hover:bg-surface-container h-full flex flex-col"
+                onClick={handleCardClick}
+            >
+                {/* More Options - appears on hover */}
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity wallet-menu">
+                    <button
+                        className="p-1 text-on-tertiary-container hover:text-on-surface transition-colors rounded-full hover:bg-surface-container-high"
+                        onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                    >
+                        <MaterialIcon name="more_vert" className="text-xl" />
+                    </button>
+
+                    <AnimatePresence>
+                        {showMenu && (
+                            <>
+                                <motion.div 
+                                    className="fixed inset-0 z-10" 
+                                    onClick={() => setShowMenu(false)}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute right-0 mt-1 w-48 z-20 bg-surface-container-high rounded-xl border border-outline-variant/10 py-1 shadow-xl"
+                                >
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowEditModal(true); setShowMenu(false); }}
+                                        className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
+                                    >
+                                        <Edit2 className="w-4 h-4" /> Edit Wallet
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowTransferModal(true); setShowMenu(false); }}
+                                        className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
+                                    >
+                                        <ArrowRightLeft className="w-4 h-4" /> Transfer Funds
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowReportModal(true); setShowMenu(false); }}
+                                        className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
+                                    >
+                                        <FileText className="w-4 h-4" /> Generate Report
+                                    </button>
+                                    <div className="border-t border-outline-variant/10 my-1" />
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); setShowMenu(false); }}
+                                        disabled={wallet.isSystemWallet && wallet.balance > 0}
+                                        className={cn(
+                                            "w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors",
+                                            wallet.isSystemWallet 
+                                                ? "text-on-tertiary-container cursor-not-allowed" 
+                                                : "text-error hover:bg-error/10"
+                                        )}
+                                    >
+                                        {wallet.isSystemWallet 
+                                            ? <Shield className="w-4 h-4" /> 
+                                            : <Trash2 className="w-4 h-4" />}
+                                        {wallet.isSystemWallet ? 'Protected' : 'Delete Wallet'}
+                                    </button>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Icon */}
+                <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center mb-6",
+                    walletIcon.bgColor,
+                    walletIcon.color
+                )}>
+                    <MaterialIcon name={walletIcon.icon} className="text-2xl" filled />
+                </div>
+
+                {/* Wallet Info */}
+                <h4 className="text-lg font-bold mb-1 text-on-surface">{wallet.name}</h4>
+                <p className="text-on-tertiary-container text-xs mb-6 capitalize">{wallet.type}</p>
+
+                {/* Balance */}
+                <div className="space-y-1 mt-auto">
+                    <p className={cn(
+                        "text-2xl font-bold font-headline",
+                        wallet.balance < 0 ? "text-error" : "text-on-surface"
+                    )}>
+                        {formatCurrency(wallet.balance)}
+                    </p>
+                    <p className="text-[10px] text-on-tertiary-container font-medium uppercase tracking-tighter">
+                        {formatDate(wallet.updatedAt)}
+                    </p>
+                </div>
+            </div>
+
+            {/* Modals */}
+            <EditWalletModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                wallet={wallet}
+                onUpdate={onUpdate}
+            />
+
+            <WalletTransfer
+                isOpen={showTransferModal}
+                onClose={() => setShowTransferModal(false)}
+                sourceWallet={wallet}
+                wallets={otherWallets}
+                onTransfer={onTransfer}
+            />
+
+            <DeleteWalletDialog
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                wallet={wallet}
+                otherWallets={otherWallets}
+                onConfirm={onDelete}
+                isSystemWallet={wallet.isSystemWallet}
+            />
 
             {showReportModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-background rounded-xl p-6 max-w-md w-full m-4">
-                        <h3 className="text-lg font-bold mb-4">Generate Wallet Report</h3>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-surface-container-high rounded-2xl max-w-md w-full p-6 shadow-xl border border-outline-variant/10"
+                    >
+                        <h3 className="text-lg font-semibold mb-4 text-on-surface">Wallet Report</h3>
                         <ReportButton
                             accountId={wallet._id}
-                            label="Generate Report"
-                            defaultReportType="wallet-report"
-                            isGlobal={false}
+                            reportType="wallet-summary"
+                            className="w-full"
                         />
-                        <Button
-                            variant="outline"
-                            className="w-full mt-4"
+                        <button
+                            className="w-full mt-4 px-4 py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"
                             onClick={() => setShowReportModal(false)}
                         >
                             Close
-                        </Button>
-                    </div>
+                        </button>
+                    </motion.div>
                 </div>
             )}
         </>
     );
 };
 
-export default WalletCard;
+export default React.memo(WalletCard);

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import walletService from '../services/walletService';
 
-const isDev = import.meta.env.DEV;
+const isDev = process.env.NODE_ENV === 'development';
 
 // Add this thunk action
 export const fetchWallets = createAsyncThunk(
@@ -50,7 +50,7 @@ const walletSlice = createSlice({
             state.wallets.push(action.payload);
         },
         updateWallet: (state, action) => {
-            const index = state.wallets.findIndex(w => w._id === action.payload);
+            const index = state.wallets.findIndex(w => w._id === action.payload._id);
             if (index !== -1) {
                 state.wallets[index] = action.payload;
             }

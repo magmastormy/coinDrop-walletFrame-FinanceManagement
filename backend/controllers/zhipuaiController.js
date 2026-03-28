@@ -1,208 +1,85 @@
-const Wallet = require('../models/Wallet');
+const mongoose = require('mongoose');
 const aiClient = require('../services/aiClient');
 const contextService = require('../services/zhipuaiContextService');
 const questionAnalyzer = require('../services/questionAnalyzer');
 const enhancedContextFormatter = require('../services/formatters/enhancedContextFormatter');
+const AIResponseValidator = require('../utils/aiResponseValidator');
+const { validateMessages } = require('../utils/inputSanitizer');
 const { getAuthenticatedUserId } = require('../utils/authUser');
+const financialAnalyzerService = require('../services/financialAnalyzerService');
+const contextEnhancementService = require('../services/contextEnhancementService');
 const isDev = process.env.NODE_ENV !== 'production';
 
-const analyzeUserActivity = async (transactions, budgets) => {
-    try {
-        if (isDev) console.log(`analyzeUserActivity: Analyzing ${transactions.length} transactions and ${budgets.length} budgets`);
-        
-        const insights = [];
-        
-        if (!transactions || transactions.length === 0) {
-            if (isDev) console.log('analyzeUserActivity: No transactions to analyze');
-            insights.push("We don't have enough transaction data to provide insights yet. Try adding some transactions.");
-            return insights;
-        }
-        
-        // 1. Analyze spending patterns
-        const categorySpending = {};
-        const expenseTransactions = transactions.filter(t => t.type === 'expense');
-        
-        if (isDev) console.log(`analyzeUserActivity: Found ${expenseTransactions.length} expense transactions`);
-        
-        // Group by category
-        expenseTransactions.forEach(t => {
-            const categoryName = t.category?.name || (t.category?.id ? `Category ${t.category.id}` : 'Uncategorized');
-            const amount = Math.abs(t.amount);
-            
-            if (!categorySpending[categoryName]) {
-                categorySpending[categoryName] = {
-                    total: 0,
-                    count: 0,
-                    transactions: []
-                };
-            }
-            
-            categorySpending[categoryName].total += amount;
-            categorySpending[categoryName].count++;
-            categorySpending[categoryName].transactions.push({
-                amount,
-                date: t.date,
-                description: t.description
-            });
-        });
-        
-        // Analyze each category against budget
-        for (const [category, data] of Object.entries(categorySpending)) {
-            // Find matching budget if any
-            const budget = budgets.find(b => {
-                const budgetCategory = b.category?.name || '';
-                return budgetCategory.toLowerCase() === category.toLowerCase();
-            });
-            
-            if (budget) {
-                const spendingRatio = data.total / budget.amount;
-                if (spendingRatio > 0.9) {
-                    insights.push(`⚠️ You've spent ${Math.round(spendingRatio * 100)}% of your ${category} budget. Consider adjusting your spending.`);
-                } else if (spendingRatio > 0.75) {
-                    insights.push(`You've spent ${Math.round(spendingRatio * 100)}% of your ${category} budget. You're on track but keep an eye on this category.`);
-                }
-            } else if (data.total > 200) {
-                // High spending in category without budget
-                insights.push(`You've spent $${data.total.toFixed(2)} on ${category} this month. Consider creating a budget for this category.`);
-            }
-            
-            // Frequent small transactions insight
-            if (data.count > 5 && data.total / data.count < 20) {
-                insights.push(`You have ${data.count} small transactions in ${category}. These small purchases can add up quickly.`);
-            }
-        }
-
-        // 2. Analyze transaction frequency by time period
-        const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const recentTransactions = transactions.filter(t => {
-            try {
-                const txDate = new Date(t.date);
-                return txDate >= last24Hours;
-            } catch (e) {
-                console.error(`Error parsing date ${t.date}:`, e);
-                return false;
-            }
-        });
-        
-        if (recentTransactions.length > 5) {
-            insights.push("📊 You've made several transactions in the last 24 hours. Would you like to review your recent spending?");
-        }
-
-        // 3. Identify potential savings opportunities
-        const recurringExpenses = findRecurringExpenses(transactions);
-        if (recurringExpenses.length > 0) {
-            insights.push(`💰 I noticed recurring expenses in: ${recurringExpenses.join(', ')}. These might be subscription services you could optimize.`);
-        }
-        
-        // 4. Analyze transaction timing patterns
-        const weekendTransactions = transactions.filter(t => {
-            try {
-                const txDate = new Date(t.date);
-                const day = txDate.getDay();
-                return day === 0 || day === 6; // Sunday or Saturday
-            } catch (e) {
-                return false;
-            }
-        });
-        
-        if (weekendTransactions.length > 5) {
-            const weekendTotal = weekendTransactions.reduce((sum, t) => 
-                t.type === 'expense' ? sum + Math.abs(t.amount) : sum, 0);
-            insights.push(`Your weekend spending ($${weekendTotal.toFixed(2)}) seems high. Consider planning weekend activities in advance.`);
-        }
-        
-        // Add fallback insights if none were generated
-        if (insights.length === 0) {
-            if (transactions.length < 10) {
-                insights.push("Add more transactions to get personalized financial insights.");
-            } else {
-                insights.push("Your spending looks balanced across categories. Keep up the good work!");
-            }
-        }
-        
-        if (isDev) console.log(`analyzeUserActivity: Generated ${insights.length} insights`);
-        return insights;
-    } catch (error) {
-        console.error('Error in analyzeUserActivity:', error);
-        return ["We encountered an error analyzing your financial data. Please try again later."];
-    }
-};
-
-const findRecurringExpenses = (transactions) => {
-    const monthlyPatterns = {};
-    
-    transactions.forEach(t => {
-        if (t.type === 'expense') {
-            const key = `${t.category?.name}-${Math.abs(t.amount)}`;
-            monthlyPatterns[key] = (monthlyPatterns[key] || 0) + 1;
-        }
-    });
-
-    return Object.entries(monthlyPatterns)
-        .filter(([_, count]) => count >= 2)
-        .map(([key]) => key.split('-')[0]);
-};
-
-const calculateNetWorth = async (userId) => {
-    // Fetch all wallets for the user
-    const wallets = await Wallet.find({ userId });
-    
-    // Calculate total assets
-    const total = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
-    
-    // Calculate liquid assets (assume checking/savings accounts are liquid)
-    const liquid = wallets
-        .filter(w => ['checking', 'savings'].includes(w.type))
-        .reduce((sum, wallet) => sum + wallet.balance, 0);
-    
-    return { total, liquid };
-};
-
-// Stub missing helper functions for use in context service
-const findRecurringTransactionsAndDueDates = async (userId, startDate, endDate) => {
-  // Placeholder: return empty list
-  return [];
-};
-
-const findUpcomingBills = async (userId, startDate, endDate) => {
-  // Placeholder: return empty list
-  return [];
-};
 
 exports.sendMessage = async (req, res, next) => {
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[ZhipuaiController - sendMessage][${requestId}] Received request`);
+    
     try {
         const { messages } = req.body;
-        if (!Array.isArray(messages)) {
-            return res.status(400).json({ error: 'Messages must be an array' });
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Received ${messages?.length || 0} messages`);
+        
+        // VALIDATE AND SANITIZE INPUT (Critical Security Fix)
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Validating messages`);
+        const validation = validateMessages(messages);
+        if (!validation.valid) {
+            console.error(`[ZhipuaiController - sendMessage][${requestId}] Validation failed: ${validation.error}`);
+            return res.status(400).json({ 
+                error: validation.error,
+                code: 'INVALID_INPUT'
+            });
         }
-
-        const userId = getAuthenticatedUserId(req);
-        if (isDev) console.log('[ZhipuaiController - sendMessage] Processing request');
+        
+        // Use sanitized messages
+        const sanitizedMessages = validation.sanitizedMessages;
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Processing request for user: ${userId}`);
+        } catch (authError) {
+            console.error(`[ZhipuaiController - sendMessage][${requestId}] Authentication error: ${authError.message}`);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
         
         if (!userId) {
-            console.error('[ZhipuaiController - sendMessage] No user ID available from any source');
+            console.error(`[ZhipuaiController - sendMessage][${requestId}] No user ID available from any source`);
             return res.status(400).json({ error: 'User ID is required' });
         }
         
         // Determine the type of query to better format the context
-        const userMsgs = messages.filter(m => m.role === 'user');
+        const userMsgs = sanitizedMessages.filter(m => m.role === 'user');
         if (!userMsgs.length) {
+            console.error(`[ZhipuaiController - sendMessage][${requestId}] No user message provided`);
             return res.status(400).json({ error: 'No user message provided' });
         }
         
         const lastUser = userMsgs[userMsgs.length - 1];
-        const userMessage = lastUser.content;
-        if (isDev) console.log(`[ZhipuaiController - sendMessage] Received message (${userMessage.length} chars)`);
+        const userMessage = lastUser.content; // Already sanitized
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] User message: ${userMessage.substring(0, 100)}${userMessage.length > 100 ? '...' : ''}`);
+        
+        // Check for prompt injection attempts in user input
+        const injectionCheck = AIResponseValidator.detectPromptInjection(userMessage);
+        if (injectionCheck.isInjection) {
+            console.warn(`[ZhipuaiController - sendMessage][${requestId}] Prompt injection attempt detected:`, injectionCheck.patterns);
+            return res.status(400).json({
+                error_code: 'PROMPT_INJECTION_DETECTED',
+                message: 'Invalid input detected. Please rephrase your question.',
+                details: 'Your message contains patterns that may attempt to manipulate the AI system'
+            });
+        }
         
         // Analyze the question using the question analyzer
         const questionAnalysis = questionAnalyzer.analyzeQuestion(userMessage);
-        if (isDev) console.log(`[ZhipuaiController - sendMessage] Question analysis: ${JSON.stringify({
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Question analysis:`, {
             isMultiPart: questionAnalysis.isMultiPart,
             parts: questionAnalysis.parts.length,
             specificDataRequests: Object.entries(questionAnalysis.specificDataRequests)
                 .filter(([_, value]) => value)
                 .map(([key, _]) => key)
-        })}`);
+        });
         
         // Detect query type for better context formatting
         const userMessageLower = userMessage.toLowerCase();
@@ -248,25 +125,25 @@ exports.sendMessage = async (req, res, next) => {
         
         // Update financial query detection to include transaction, budget, and savings terms
         if (hasTransactionTerms) {
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected transaction terms, treating as financial query`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Detected transaction terms, treating as financial query`);
             isFinancialQuery = true;
         }
         
         // Ensure savings-related queries always get appropriate context
         if (hasSavingsTerms || questionAnalysis.specificDataRequests.savingsGoals || questionAnalysis.specificDataRequests.savingsAdvice) {
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Detected savings terms, treating as financial query`);
             isFinancialQuery = true;
             isSavingsQuery = true;
         }
         
         if (hasBudgetTerms) {
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected budget terms, treating as financial query`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Detected budget terms, treating as financial query`);
             isFinancialQuery = true;
             isBudgetQuery = true;
         }
         
         if (hasSavingsTerms) {
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Detected savings terms, treating as financial query`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Detected savings terms, treating as financial query`);
             isFinancialQuery = true;
             isSavingsQuery = true;
         }
@@ -281,8 +158,8 @@ exports.sendMessage = async (req, res, next) => {
                            !hasSpecificDataRequests && 
                            !hasTransactionTerms;
         
-        if (isDev) console.log(`[ZhipuaiController - sendMessage] Query type: ${isBalanceQuery ? 'balance' : ''}${isBudgetQuery ? 'budget' : ''}${isSavingsQuery ? 'savings' : ''}${isBillQuery ? 'bills' : ''}${!isFinancialQuery ? 'general' : ''}`);
-        if (isDev) console.log(`[ZhipuaiController - sendMessage] Skip context: ${skipContext}`);
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Query type: ${isBalanceQuery ? 'balance ' : ''}${isBudgetQuery ? 'budget ' : ''}${isSavingsQuery ? 'savings ' : ''}${isBillQuery ? 'bills ' : ''}${!isFinancialQuery ? 'general' : ''}`);
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Skip context: ${skipContext}`);
         
         let prompt = '';
         // Initialize ctx variable with an empty object
@@ -290,7 +167,7 @@ exports.sendMessage = async (req, res, next) => {
         
         // Skip context for general greetings or very short non-financial messages
         if (skipContext) {
-            if (isDev) console.log('[ZhipuaiController - sendMessage] Skipping context for general message');
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Skipping context for general message`);
             // Use a minimal prompt that allows broader thinking
             prompt = `You are a helpful financial assistant for the CoinDrip application. 
 For this message, no specific financial context is needed. 
@@ -301,55 +178,53 @@ If the user is asking about general topics unrelated to finance, you can provide
 If the user is asking about your capabilities, explain that you're an AI assistant specialized in financial matters but can also help with general questions.`;
         } else {
             // Fetch user context from database for financial queries
-            if (isDev) console.log('[ZhipuaiController - sendMessage] Fetching context');
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Fetching context`);
             
-            if (isDev) {
-                try {
+            try {
                 // Check if user exists in database
                 const User = require('../models/User');
                 const userExists = await User.findById(userId);
-                if (isDev) console.log(`[ZhipuaiController - DEBUG] User exists check: ${!!userExists}`);
+                console.log(`[ZhipuaiController - sendMessage][${requestId}] User exists check: ${!!userExists}`);
                 
                 if (!userExists) {
-                    console.error(`[ZhipuaiController - ERROR] User with ID ${userId} not found in database`);
+                    console.error(`[ZhipuaiController - sendMessage][${requestId}] User with ID ${userId} not found in database`);
                 }
-                } catch (dbError) {
-                console.error(`[ZhipuaiController - DEBUG] Error checking user: ${dbError.message}`);
-                }
+            } catch (dbError) {
+                console.error(`[ZhipuaiController - sendMessage][${requestId}] Error checking user: ${dbError.message}`);
             }
             
             // Fixed variable shadowing issue by using the existing ctx variable
             ctx = await contextService.getContext(userId);
-            if (isDev) console.log("[ZhipuaiController - sendMessage] Context loaded with:", 
-                JSON.stringify({
-                    budgets: ctx.budgets?.length || 0,
-                    wallets: ctx.wallets?.length || 0,
-                    transactions: ctx.recentTransactions?.length || 0,
-                    savingsGoals: ctx.savingsGoals?.length || 0,
-                    categories: ctx.categories?.length || 0
-                }));
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Context loaded with:`, {
+                budgets: ctx.budgets?.length || 0,
+                wallets: ctx.wallets?.length || 0,
+                transactions: ctx.recentTransactions?.length || 0,
+                savingsGoals: ctx.savingsGoals?.length || 0,
+                categories: ctx.categories?.length || 0
+            });
 
             // Check for missing data and log database information
-            if (isDev && (!ctx.budgets || ctx.budgets.length === 0)) {
-                if (isDev) console.log(`[ZhipuaiController - DEBUG] No budgets found, checking database directly`);
+            if (!ctx.budgets || ctx.budgets.length === 0) {
+                console.log(`[ZhipuaiController - sendMessage][${requestId}] No budgets found, checking database directly`);
                 try {
                     const Budget = require('../models/Budget');
                     const budgetCount = await Budget.countDocuments({ userId });
-                    if (isDev) console.log(`[ZhipuaiController - DEBUG] Direct budget count from DB: ${budgetCount}`);
+                    console.log(`[ZhipuaiController - sendMessage][${requestId}] Direct budget count from DB: ${budgetCount}`);
                     
                     // Sample a budget document to check if userId field matches expected format
                     const sampleBudget = await Budget.findOne({}).lean();
                     if (sampleBudget) {
-                        if (isDev) console.log(`[ZhipuaiController - DEBUG] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
-                        if (isDev) console.log(`[ZhipuaiController - DEBUG] Requested userId: ${userId}, type: ${typeof userId}`);
+                        console.log(`[ZhipuaiController - sendMessage][${requestId}] Sample budget userId: ${sampleBudget.userId}, type: ${typeof sampleBudget.userId}`);
+                        console.log(`[ZhipuaiController - sendMessage][${requestId}] Requested userId: ${userId}, type: ${typeof userId}`);
                     }
                 } catch (dbError) {
-                    console.error(`[ZhipuaiController - DEBUG] Database check error: ${dbError.message}`);
+                    console.error(`[ZhipuaiController - sendMessage][${requestId}] Database check error: ${dbError.message}`);
                 }
             }
 
             // Process all financial data based on query type
-            await enhanceContextData(ctx, userId, { 
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Enhancing context data`);
+            await contextEnhancementService.enhanceContextData(ctx, userId, { 
                 isBudgetQuery, 
                 isBalanceQuery, 
                 isSavingsQuery: true, // Always process savings goals
@@ -365,7 +240,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
             
             // Use enhanced context formatter for better handling of specific data requests
             if (hasSpecificDataRequests || questionAnalysis.isMultiPart) {
-                if (isDev) console.log(`[ZhipuaiController - sendMessage] Using enhanced context formatter for specific data requests`);
+                console.log(`[ZhipuaiController - sendMessage][${requestId}] Using enhanced context formatter for specific data requests`);
                 prompt = enhancedContextFormatter.formatEnhancedContext(ctx, formatType, questionAnalysis);
                 
                 // Add any additional context based on question analysis
@@ -373,26 +248,34 @@ If the user is asking about your capabilities, explain that you're an AI assista
                     const additionalContext = questionAnalyzer.generateAdditionalContext(questionAnalysis, ctx);
                     if (additionalContext && additionalContext.length > 0) {
                         prompt += '\n\n' + additionalContext;
-                        if (isDev) console.log(`[ZhipuaiController - sendMessage] Added ${additionalContext.length} chars of additional context`);
+                        console.log(`[ZhipuaiController - sendMessage][${requestId}] Added ${additionalContext.length} chars of additional context`);
                     }
                 } catch (error) {
-                    console.error(`[ZhipuaiController - sendMessage] Error generating additional context: ${error.message}`);
+                    console.error(`[ZhipuaiController - sendMessage][${requestId}] Error generating additional context: ${error.message}`);
                 }
             } else {
                 // Use standard formatter for simple queries
                 prompt = contextService.formatContext(ctx, formatType);
             }
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Formatted ${formatType} prompt (${prompt.length} chars)`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Formatted ${formatType} prompt (${prompt.length} chars)`);
         }
         
         // Add a directive to encourage broader thinking beyond the immediate context
         let systemPrompt = skipContext ? prompt : 
-            `${prompt}\n\nAdditional instructions:\n1. Feel free to draw on your general knowledge beyond the provided context when appropriate.\n2. Keep your response concise and avoid unnecessary line breaks.\n3. If the user's question isn't directly related to their financial data, you can provide general advice.\n4. Format your response with proper spacing - use single line breaks between paragraphs instead of multiple empty lines.\n5. When appropriate, consider broader financial concepts and principles that might be helpful to the user.\n6. You can reference external financial resources or concepts if they would be helpful to the user.`;
+            `${prompt}
+
+Additional instructions:
+1. Feel free to draw on your general knowledge beyond the provided context when appropriate.
+2. Keep your response concise and avoid unnecessary line breaks.
+3. If the user's question isn't directly related to their financial data, you can provide general advice.
+4. Format your response with proper spacing - use single line breaks between paragraphs instead of multiple empty lines.
+5. When appropriate, consider broader financial concepts and principles that might be helpful to the user.
+6. You can reference external financial resources or concepts if they would be helpful to the user.`;
         
         // Enhance the prompt with question-specific instructions if needed
         if (!skipContext && (questionAnalysis.isMultiPart || hasSpecificDataRequests)) {
             systemPrompt = questionAnalyzer.enhancePrompt(systemPrompt, questionAnalysis);
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] Enhanced prompt with question-specific instructions`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] Enhanced prompt with question-specific instructions`);
         }
         
         const aiInput = [
@@ -400,7 +283,7 @@ If the user is asking about your capabilities, explain that you're an AI assista
             { role: 'user', content: lastUser.content }
         ];
 
-        if (isDev) console.log("[ZhipuaiController - sendMessage] Sending request to AI service");
+        console.log(`[ZhipuaiController - sendMessage][${requestId}] Sending request to AI service`);
         
         try {
             // Add timeout to prevent hanging requests
@@ -412,17 +295,44 @@ If the user is asking about your capabilities, explain that you're an AI assista
             });
             
             const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]);
-            if (isDev) console.log(`[ZhipuaiController - sendMessage] AI response received (${aiResponse.length} chars)`);
+            console.log(`[ZhipuaiController - sendMessage][${requestId}] AI response received (${aiResponse.length} chars): ${aiResponse.substring(0, 200)}${aiResponse.length > 200 ? '...' : ''}`);
+            
+            // Validate AI response
+            const validation = await AIResponseValidator.validateAIResponse({
+                input: lastUser.content,
+                response: aiResponse
+            }, {
+                checkInjection: true,
+                checkSafety: false, // Skip safety checks for performance
+                validateSchema: false // Schema is optional for chat responses
+            });
+            
+            if (!validation.valid) {
+                console.error(`[ZhipuaiController - sendMessage][${requestId}] AI response validation failed:`, validation.errors);
+                
+                // Return safe fallback response
+                return res.status(500).json({
+                    error_code: 'AI_RESPONSE_VALIDATION_FAILED',
+                    message: 'Unable to process AI response due to validation errors',
+                    details: validation.errors.map(e => e.message || e.description)
+                });
+            }
+            
+            // Add warnings if any
+            if (validation.warnings && validation.warnings.length > 0) {
+                console.warn(`[ZhipuaiController - sendMessage][${requestId}] AI response has warnings:`, validation.warnings);
+            }
             
             // Check if response has already been sent before attempting to send another
             if (!res.headersSent) {
+                console.log(`[ZhipuaiController - sendMessage][${requestId}] Sending response to client`);
                 return res.json({ response: aiResponse, context: ctx });
             } else {
-                if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, skipping response');
+                console.warn(`[ZhipuaiController - sendMessage][${requestId}] Headers already sent, skipping response`);
                 return; // Return without sending another response
             }
         } catch (aiError) {
-            console.error(`[ZhipuaiController - sendMessage] AI service error: ${aiError.message}`);
+            console.error(`[ZhipuaiController - sendMessage][${requestId}] AI service error: ${aiError.message}`);
             
             // Check if response has already been sent
             if (!res.headersSent) {
@@ -431,6 +341,11 @@ If the user is asking about your capabilities, explain that you're an AI assista
                         error: 'AI Service Timeout',
                         message: 'The AI service is currently experiencing high load. Please try again later.'
                     });
+                } else if (aiError.message.includes('401') || aiError.message.includes('Authentication') || aiError.message.includes('身份验证')) {
+                    return res.status(503).json({
+                        error: 'AI Service Authentication Error',
+                        message: 'The AI service is currently unavailable. Please try again later.'
+                    });
                 } else {
                     return res.status(500).json({
                         error: 'AI Service Error',
@@ -438,255 +353,42 @@ If the user is asking about your capabilities, explain that you're an AI assista
                     });
                 }
             } else {
-                if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot send error response');
+                console.warn(`[ZhipuaiController - sendMessage][${requestId}] Headers already sent, cannot send error response`);
                 return; // Return without sending another response
             }
         }
     } catch (err) {
-        console.error('[ZhipuaiController - sendMessage] Error:', err);
+        console.error(`[ZhipuaiController - sendMessage][${requestId}] Error:`, err);
         
         // Check if response has already been sent
         if (!res.headersSent) {
             next(err);
         } else {
-            if (isDev) console.warn('[ZhipuaiController - sendMessage] Headers already sent, cannot forward error to middleware');
+            console.warn(`[ZhipuaiController - sendMessage][${requestId}] Headers already sent, cannot forward error to middleware`);
         }
     }
 };
 
-/**
- * Helper function to enhance context data with additional calculations and information
- */
-async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, isSavingsQuery, isBillQuery }) {
-    if (isDev) console.log(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
-    
-    // Calculate if this is a general financial overview
-    const isFinancialOverview = isBudgetQuery && isBalanceQuery;
-    
-    // Process budget data if needed
-    if ((isBudgetQuery || isFinancialOverview) && (!ctx.budgets || ctx.budgets.length === 0)) {
-        // Double-check if budgets exist directly from the database
-        const Budget = require('../models/Budget');
-        const directBudgets = await Budget.find({ userId }).lean();
-        if (isDev) console.log(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
-        if (directBudgets.length > 0) {
-            ctx.budgets = directBudgets;
-            if (isDev) console.log("[enhanceContextData] Updated context with direct budgets");
-        }
-    }
-    
-    // ALWAYS process transactions to improve expense data quality regardless of query type
-    try {
-        if (isDev) console.log("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
-        
-        const firstOfMonth = new Date();
-        firstOfMonth.setDate(1);
-        firstOfMonth.setHours(0, 0, 0, 0);
-        
-        // Get all transactions for better analysis
-        const Transaction = require('../models/Transaction');
-        const transactions = await Transaction.find({
-            userId
-        }).populate('category', 'name').sort({ date: -1 }).limit(50);
-        
-        if (isDev) console.log(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
-        
-        // Store all transactions for UI display
-        ctx.allTransactions = transactions;
-        
-        // Extract expenses for this month for budget calculation
-        const currentMonthTransactions = transactions.filter(t => {
-            try {
-                const txDate = new Date(t.date);
-                return txDate >= firstOfMonth && t.type === 'expense';
-            } catch (e) {
-                return false;
-            }
-        });
-        
-        if (isDev) console.log(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
-        
-        // Calculate spent amount for each budget
-        if (ctx.budgets && ctx.budgets.length > 0) {
-            if (isDev) console.log("[enhanceContextData] Processing budget data with transactions");
-            ctx.budgets = ctx.budgets.map(budget => {
-                // Handle if budget is already a plain object from lean() query
-                const budgetObj = typeof budget.toObject === 'function' ? budget.toObject() : budget;
-                
-                // Find transactions that match this budget's category
-                const matchingTransactions = currentMonthTransactions.filter(t => {
-                    const budgetCategoryId = budgetObj.category ? 
-                        (typeof budgetObj.category === 'object' ? budgetObj.category._id.toString() : budgetObj.category.toString()) : 
-                        null;
-                    const transactionCategoryId = t.category ? 
-                        (typeof t.category === 'object' ? t.category._id.toString() : t.category.toString()) : 
-                        null;
-                    return budgetCategoryId === transactionCategoryId;
-                });
-                
-                // Calculate total spent
-                const spent = matchingTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-                const remaining = budgetObj.amount - spent;
-                const percentUsed = budgetObj.amount > 0 ? (spent / budgetObj.amount) * 100 : 0;
-                
-                // Add these calculated fields to the budget object
-                return {
-                    ...budgetObj,
-                    spent,
-                    remaining,
-                    percentUsed,
-                    transactions: matchingTransactions.slice(0, 5) // Include up to 5 recent transactions for this budget
-                };
-            });
-        }
-        
-        // Add expense analytics to context
-        ctx.expenseAnalytics = analyzeExpenses(transactions);
-        
-    } catch (error) {
-        console.error('[enhanceContextData] Error processing transactions:', error);
-    }
-    
-    // Enhance wallet data if needed
-    if (isBalanceQuery && ctx.wallets) {
-        if (isDev) console.log("[enhanceContextData] Processing wallet data");
-        // Add more details to wallets if needed
-        ctx.wallets = ctx.wallets.map(wallet => {
-            const walletObj = typeof wallet.toObject === 'function' ? wallet.toObject() : wallet;
-            return {
-                ...walletObj,
-                formattedBalance: `$${walletObj.balance.toFixed(2)}`
-            };
-        });
-    }
-    
-    // Always process savings goals to ensure data is properly formatted
-    if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
-        if (isDev) console.log("[enhanceContextData] Processing savings goals");
-        ctx.savingsGoals = ctx.savingsGoals.map(goal => {
-            const goalObj = typeof goal.toObject === 'function' ? goal.toObject() : goal;
-            
-            // Map the database field names to the expected names used in the formatContext function
-            const current = goalObj.currentAmount || 0;
-            const target = goalObj.targetAmount || 0;
-            
-            // Calculate progress percentage
-            const progress = target > 0 ? (current / target) * 100 : 0;
-            
-            // Calculate time remaining if target date exists
-            let timeRemaining = null;
-            let monthlyNeeded = null;
-            
-            if (goalObj.deadline) {
-                const now = new Date();
-                const targetDate = new Date(goalObj.deadline);
-                const monthsDiff = (targetDate.getFullYear() - now.getFullYear()) * 12 + 
-                                   (targetDate.getMonth() - now.getMonth());
-                
-                if (monthsDiff > 0) {
-                    timeRemaining = monthsDiff;
-                    monthlyNeeded = (target - current) / monthsDiff;
-                }
-            }
-            
-            return {
-                ...goalObj,
-                // Add the expected field names that formatContext uses
-                current,
-                target,
-                progress: progress.toFixed(1),
-                timeRemaining,
-                monthlyNeeded
-            };
-        });
-        
-        if (isDev) console.log(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
-    }
-    
-    // Log completion
-    if (isDev) console.log("[enhanceContextData] Data enhancement complete");
-    return ctx;
-}
 
-/**
- * Helper function to analyze expenses from transactions
- */
-function analyzeExpenses(transactions) {
-    const expenseTransactions = transactions.filter(t => t.type === 'expense');
-    const expensesByCategory = {};
-    const expensesByMonth = {};
-    let totalExpenses = 0;
-    
-    // Process each expense transaction
-    expenseTransactions.forEach(transaction => {
-        const amount = Math.abs(transaction.amount);
-        totalExpenses += amount;
-        
-        // Group by category
-        const categoryName = transaction.category?.name || 'Uncategorized';
-        if (!expensesByCategory[categoryName]) {
-            expensesByCategory[categoryName] = 0;
-        }
-        expensesByCategory[categoryName] += amount;
-        
-        // Group by month
-        try {
-            const date = new Date(transaction.date);
-            const monthKey = `${date.getFullYear()}-${date.getMonth()+1}`;
-            if (!expensesByMonth[monthKey]) {
-                expensesByMonth[monthKey] = 0;
-            }
-            expensesByMonth[monthKey] += amount;
-        } catch (e) {
-            console.error('Error parsing date:', e);
-        }
-    });
-    
-    // Calculate percentage by category
-    const categoriesWithPercentage = {};
-    Object.entries(expensesByCategory).forEach(([category, amount]) => {
-        categoriesWithPercentage[category] = {
-            amount,
-            percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
-        };
-    });
-    
-    // Find top expense categories
-    const topCategories = Object.entries(categoriesWithPercentage)
-        .sort((a, b) => b[1].amount - a[1].amount)
-        .slice(0, 3)
-        .map(([category, data]) => ({
-            category,
-            amount: data.amount,
-            percentage: data.percentage
-        }));
-    
-    // Find expense trend
-    const sortedMonths = Object.entries(expensesByMonth)
-        .sort(([monthA], [monthB]) => monthA.localeCompare(monthB));
-    
-    const trend = sortedMonths.length >= 2 ? 
-        (sortedMonths[sortedMonths.length-1][1] - sortedMonths[sortedMonths.length-2][1]) : 0;
-    
-    return {
-        totalExpenses,
-        expensesByCategory: categoriesWithPercentage,
-        topCategories,
-        monthlyTrend: trend,
-        trendDirection: trend > 0 ? 'increasing' : trend < 0 ? 'decreasing' : 'stable',
-        monthlyData: expensesByMonth
-    };
-}
 
 exports.getFinancialAdvice = async (req, res, next) => {
     try {
-        const userId = getAuthenticatedUserId(req);
-        if (isDev) console.log('[getFinancialAdvice] Fetching financial data');
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+            if (isDev) console.log('[getFinancialAdvice] Fetching financial data');
+        } catch (authError) {
+            console.error('[getFinancialAdvice] Authentication error:', authError.message);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
         
         const ctx = await contextService.getContext(userId);
         
         // Enhance financial data
-        await enhanceContextData(ctx, userId, {
+        await contextEnhancementService.enhanceContextData(ctx, userId, {
             isBudgetQuery: true,
             isBalanceQuery: true,
             isSavingsQuery: true,
@@ -706,29 +408,28 @@ exports.getFinancialAdvice = async (req, res, next) => {
     }
 };
 
-// Controller functions that use the above helpers
-exports.getProactiveInsights = async (req, res, next) => {
-    try {
-        const userId = getAuthenticatedUserId(req);
-        const ctx = await contextService.getContext(userId);
-        const insights = await analyzeUserActivity(ctx.recentTransactions, ctx.budgets);
-        return res.json({ insights });
-    } catch (err) {
-        next(err);
-    }
-};
+
 
 exports.getUserAccountInfo = async (req, res, next) => {
     try {
-        const userId = getAuthenticatedUserId(req);
-        if (isDev) console.log(`[getUserAccountInfo] Fetching account info for user: ${userId}`);
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+            if (isDev) console.log(`[getUserAccountInfo] Fetching account info for user: ${userId}`);
+        } catch (authError) {
+            console.error(`[getUserAccountInfo] Authentication error:`, authError.message);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
             
         // Fetch comprehensive user context
         const ctx = await contextService.getContext(userId);
         if (isDev) console.log(`[getUserAccountInfo] Data retrieved: budgets=${ctx.budgets?.length || 0}, wallets=${ctx.wallets?.length || 0}`);
             
         // Enhance all data for client-side consumption
-        await enhanceContextData(ctx, userId, {
+        await contextEnhancementService.enhanceContextData(ctx, userId, {
             isBudgetQuery: true, 
             isBalanceQuery: true, 
             isSavingsQuery: true, 
@@ -745,8 +446,17 @@ exports.getUserAccountInfo = async (req, res, next) => {
 
 exports.getContextSuggestions = async (req, res, next) => {
     try {
-        const userId = getAuthenticatedUserId(req);
-        if (isDev) console.log(`[getContextSuggestions] Generating suggestions for user: ${userId}`);
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+            if (isDev) console.log(`[getContextSuggestions] Generating suggestions for user: ${userId}`);
+        } catch (authError) {
+            console.error(`[getContextSuggestions] Authentication error:`, authError.message);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
         
         // Fetch comprehensive context
         const ctx = await contextService.getContext(userId);
@@ -760,7 +470,7 @@ exports.getContextSuggestions = async (req, res, next) => {
         }
         
         // Enhance data to ensure accurate suggestions
-        await enhanceContextData(ctx, userId, {
+        await contextEnhancementService.enhanceContextData(ctx, userId, {
             isBudgetQuery: true, 
             isBalanceQuery: true,
             isSavingsQuery: true,
@@ -787,8 +497,17 @@ exports.getContextSuggestions = async (req, res, next) => {
 
 exports.getUserContext = async (req, res, next) => {
     try {
-        const userId = getAuthenticatedUserId(req);
-        if (isDev) console.log(`[getUserContext] Fetching raw context for user: ${userId}`);
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+            if (isDev) console.log(`[getUserContext] Fetching raw context for user: ${userId}`);
+        } catch (authError) {
+            console.error(`[getUserContext] Authentication error:`, authError.message);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
         
         // Get raw context without enhancements for diagnostics/debugging
         const ctx = await contextService.getContext(userId);
@@ -816,6 +535,94 @@ exports.getUserContext = async (req, res, next) => {
     }
 };
 
+// Stub function for proactive insights (to be implemented)
+exports.getProactiveInsights = async (req, res, next) => {
+    try {
+        let userId;
+        try {
+            userId = getAuthenticatedUserId(req);
+        } catch (authError) {
+            console.error('[getProactiveInsights] Authentication error:', authError.message);
+            return res.status(authError.status || 401).json({ 
+                error: authError.message, 
+                code: 'AUTHENTICATION_ERROR'
+            });
+        }
+        const ctx = await contextService.getContext(userId);
+        
+        // Generate proactive insights based on user data
+        const insights = [];
+        
+        // Check for low wallet balances
+        if (ctx.wallets && ctx.wallets.length > 0) {
+            ctx.wallets.forEach(wallet => {
+                if (wallet.balance < 100) {
+                    insights.push({
+                        type: 'warning',
+                        title: 'Low Balance Alert',
+                        message: `Your ${wallet.name} wallet has a low balance of $${wallet.balance}`,
+                        priority: 'high'
+                    });
+                }
+            });
+        }
+        
+        // Check for budget overruns
+        if (ctx.budgets && ctx.budgets.length > 0) {
+            ctx.budgets.forEach(budget => {
+                if (budget.spent && budget.limit && budget.spent > budget.limit * 0.8) {
+                    insights.push({
+                        type: 'alert',
+                        title: 'Budget Warning',
+                        message: `You've spent ${(budget.spent / budget.limit * 100).toFixed(0)}% of your ${budget.name} budget`,
+                        priority: 'medium'
+                    });
+                }
+            });
+        }
+        
+        // Add general tips if no specific insights
+        if (insights.length === 0) {
+            insights.push({
+                type: 'tip',
+                title: 'Financial Tip',
+                message: 'Consider setting up automatic savings to build your emergency fund',
+                priority: 'low'
+            });
+        }
+        
+        return res.json({ insights, context: ctx });
+    } catch (err) {
+        console.error('[getProactiveInsights] Error:', err);
+        next(err);
+    }
+};
+
+// Stub function for health metrics (to be implemented)
+exports.getHealthMetrics = async (req, res, next) => {
+    try {
+        // Return basic health status
+        const healthMetrics = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            services: {
+                database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+                aiService: 'available'
+            },
+            metrics: {
+                uptime: process.uptime(),
+                memoryUsage: process.memoryUsage(),
+                version: process.version
+            }
+        };
+        
+        return res.json(healthMetrics);
+    } catch (err) {
+        console.error('[getHealthMetrics] Error:', err);
+        next(err);
+    }
+};
+
 // Make sure all exports are properly defined
 module.exports = {
     sendMessage: exports.sendMessage,
@@ -824,8 +631,9 @@ module.exports = {
     getContextSuggestions: exports.getContextSuggestions,
     getUserAccountInfo: exports.getUserAccountInfo,
     getUserContext: exports.getUserContext,
-    calculateNetWorth,
-    findRecurringTransactionsAndDueDates,
-    findUpcomingBills
+    getHealthMetrics: exports.getHealthMetrics,
+    calculateNetWorth: financialAnalyzerService.calculateNetWorth,
+    findRecurringTransactionsAndDueDates: financialAnalyzerService.findRecurringTransactionsAndDueDates,
+    findUpcomingBills: financialAnalyzerService.findUpcomingBills
 };
 

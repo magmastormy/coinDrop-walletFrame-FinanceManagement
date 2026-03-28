@@ -2,10 +2,11 @@
 const mongoose = require('mongoose');
 const Category = require('../models/Category');
 const CategoryAIModel = require('./categoryAIModel');
+const cacheUtil = require('../utils/cacheUtil');
 
 class CategoryAIService {
   constructor() {
-    this.cache = new Map(); // In-memory cache for frequent matches
+    // Using Redis cache instead of in-memory Map
   }
 
   async initialize() {
@@ -20,19 +21,56 @@ class CategoryAIService {
   }
 
   async matchOrCreateCategory(description) {
-    if (this.cache.has(description)) {
-      return this.cache.get(description);
+    // Generate cache key
+    const cacheKey = cacheUtil.generateKey('category_match', description);
+    
+    // Try to get from cache first
+    const cachedCategory = await cacheUtil.get(cacheKey);
+    if (cachedCategory) {
+      return cachedCategory;
+    }
+
+    // Check learning cache first (user corrections have priority)
+    const key = description.toLowerCase().trim();
+    const learnedCategoryId = CategoryAIModel.learningCache.get(key);
+    if (learnedCategoryId) {
+      const category = await Category.findById(learnedCategoryId);
+      if (category) {
+        console.log('[CategoryAIService] Using learned category for:', description);
+        // Cache the result
+        await cacheUtil.set(cacheKey, category.toObject(), 86400); // Cache for 24 hours
+        return category;
+      }
     }
 
     const predictedCategory = await CategoryAIModel.predictCategory(description);
     if (predictedCategory) {
-      this.cache.set(description, predictedCategory);
+      // Cache the result
+      await cacheUtil.set(cacheKey, predictedCategory, 86400); // Cache for 24 hours
       return predictedCategory;
     }
 
     // Fallback: Uncategorized
     const uncategorized = await Category.findOne({ name: 'Uncategorized' });
-    return uncategorized || await Category.create({ name: 'Uncategorized' });
+    const fallbackCategory = uncategorized || await Category.create({ name: 'Uncategorized' });
+    // Cache the fallback
+    await cacheUtil.set(cacheKey, fallbackCategory.toObject(), 86400); // Cache for 24 hours
+    return fallbackCategory;
+  }
+
+  /**
+   * Learn from user manual categorization
+   */
+  async learnCategory(description, categoryId) {
+    await CategoryAIModel.learnCorrection(description, categoryId);
+    
+    // Invalidate and update cache
+    const cacheKey = cacheUtil.generateKey('category_match', description);
+    const category = await Category.findById(categoryId);
+    if (category) {
+      // Update the cache with the new category
+      await cacheUtil.set(cacheKey, category.toObject(), 86400); // Cache for 24 hours
+    }
   }
 }
 

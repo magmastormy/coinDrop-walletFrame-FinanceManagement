@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TreeView, TreeItem } from '@mui/lab';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronRight, Folder, Tag } from 'lucide-react';
 import categoryService from '../../services/categoryService';
 import { useSelector } from 'react-redux';
-
+import { cn } from '../../lib/utils';
+import Card from '../ui/Card';
 
 const CategoryHierarchySelector = ({
     onSelect,
@@ -24,87 +24,101 @@ const CategoryHierarchySelector = ({
         try {
             const hierarchy = await categoryService.getCategoryHierarchy(user.id);
             setCategories(hierarchy);
-            // Expand root categories by default
             setExpanded(hierarchy.map(cat => cat._id));
-        } catch (error) {
-            console.error('Failed to load categories:', error);
+        } catch (_) {
+            // Error handling is done by service
         }
     };
 
-    const handleToggle = (event, nodeIds) => {
-        setExpanded(nodeIds);
+    const toggleExpand = (categoryId) => {
+        setExpanded(prev => 
+            prev.includes(categoryId) 
+                ? prev.filter(id => id !== categoryId)
+                : [...prev, categoryId]
+        );
     };
 
-    const handleSelect = (event, categoryId) => {
-        const findCategory = (cats, id) => {
-            for (const cat of cats) {
-                if (cat._id === id) return cat;
-                if (cat.children) {
-                    const found = findCategory(cat.children, id);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-
-        const category = findCategory(categories, categoryId);
-        if (category) {
-            // Only allow selection if category supports the budget type
-            if (budgetType && !category.budgetTypes.includes(budgetType)) {
-                return;
-            }
-            // Only allow selection of leaf categories if subcategories aren't allowed
-            if (!allowSubcategories && category.children?.length > 0) {
-                return;
-            }
-            onSelect(category);
-        }
+    const canSelectCategory = (category) => {
+        if (budgetType && !category.budgetTypes.includes(budgetType)) return false;
+        if (!allowSubcategories && category.children?.length > 0) return false;
+        return true;
     };
 
-    const renderTree = (nodes) => (
-        <TreeItem
-            key={nodes._id}
-            nodeId={nodes._id}
-            label={
-                <div className="category-tree-item">
-                    <FontAwesomeIcon
-                        icon={nodes.icon}
-                        style={{ color: nodes.color }}
-                        className="category-icon"
-                    />
-                    <span className="category-name">{nodes.name}</span>
-                    {budgetType && !nodes.budgetTypes.includes(budgetType) && (
-                        <span className="category-type-mismatch">
-                            (Not available for {budgetType})
-                        </span>
+    const renderCategory = (category, depth = 0) => {
+        const isExpanded = expanded.includes(category._id);
+        const isSelected = selectedCategory?._id === category._id;
+        const canSelect = canSelectCategory(category);
+
+        return (
+            <div key={category._id} className="space-y-2">
+                <Card
+                    variant={isSelected ? "selected" : "default"}
+                    elevation={1}
+                    className={cn(
+                        "flex items-center gap-3 p-3",
+                        !canSelect && "opacity-60",
+                        canSelect && "cursor-pointer hover:bg-surface-2"
                     )}
-                </div>
-            }
-            className={`
-                category-tree-node
-                ${selectedCategory?._id === nodes._id ? 'selected' : ''}
-                ${budgetType && !nodes.budgetTypes.includes(budgetType) ? 'disabled' : ''}
-                ${!allowSubcategories && nodes.children?.length > 0 ? 'disabled' : ''}
-            `}
-        >
-            {Array.isArray(nodes.children) && nodes.children.length > 0
-                ? nodes.children.map((node) => renderTree(node))
-                : null}
-        </TreeItem>
-    );
+                    onClick={() => canSelect && onSelect(category)}
+                >
+                    <button 
+                        className="flex-shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(category._id);
+                        }}
+                        disabled={!category.children?.length}
+                    >
+                        {category.children?.length ? (
+                            isExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            )
+                        ) : (
+                            <div className="w-4 h-4" />
+                        )}
+                    </button>
+
+                    <div className="flex-1 flex items-center gap-3">
+                        <Tag className="w-4 h-4 text-primary" />
+                        <span className={cn(
+                            "text-sm font-medium",
+                            isSelected ? "text-primary" : "text-foreground"
+                        )}>
+                            {category.name}
+                        </span>
+                    </div>
+                </Card>
+
+                <AnimatePresence>
+                    {isExpanded && category.children?.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="pl-6"
+                        >
+                            {category.children.map(child => renderCategory(child, depth + 1))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        );
+    };
 
     return (
-        <TreeView
-            className="category-hierarchy-selector"
-            defaultCollapseIcon={<FontAwesomeIcon icon={faChevronDown} />}
-            defaultExpandIcon={<FontAwesomeIcon icon={faChevronRight} />}
-            expanded={expanded}
-            selected={selectedCategory?._id || ''}
-            onNodeToggle={handleToggle}
-            onNodeSelect={handleSelect}
-        >
-            {categories.map((category) => renderTree(category))}
-        </TreeView>
+        <Card variant="default" elevation={1} className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+                <Folder className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-foreground">Category Hierarchy</h3>
+            </div>
+            
+            <div className="space-y-2">
+                {categories.map(category => renderCategory(category))}
+            </div>
+        </Card>
     );
 };
 

@@ -17,20 +17,20 @@ const Greetings = () => {
     const firstName = user?.firstName?.split(' ')[0] || 'User';
 
     return (
-        <div className="mb-8">
+        <div className="mb-6">
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3"
+                className="flex items-center gap-2"
             >
                 <div className="p-2 bg-primary/10 rounded-full text-primary">
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-display font-bold text-foreground">
+                    <h1 className="text-2xl font-display font-bold text-foreground">
                         {text}, <span className="text-primary">{firstName}</span>
                     </h1>
-                    <p className="text-muted-foreground">Here&apos;s your financial overview for today.</p>
+                    <p className="text-sm text-muted-foreground">Here&apos;s your financial overview for today.</p>
                 </div>
             </motion.div>
         </div>

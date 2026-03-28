@@ -1,0 +1,94 @@
+/* Layout Optimization - Inspired by Pieces Documentation */
+/* More efficient spacing system for better space utilization */
+
+:root {
+  /* Reduced spacing scale for efficiency */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  
+  /* Compact component sizing */
+  --card-pad-sm: 12px;
+  --card-pad-md: 16px;
+  --card-pad-lg: 20px;
+  
+  /* Optimized sidebar */
+  --sidebar-width-compact: 200px;
+  --sidebar-width-tablet-compact: 180px;
+  
+  /* Efficient content density */
+  --content-max-width: 1200px;
+  --section-gap: 16px;
+  --component-gap: 12px;
+}
+
+/* Compact grid systems */
+.grid-compact {
+  display: grid;
+  gap: var(--component-gap);
+}
+
+.grid-tight {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+/* Efficient card layouts */
+.card-compact {
+  padding: var(--card-pad-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+}
+
+.card-standard {
+  padding: var(--card-pad-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+}
+
+/* Optimized typography scale for efficiency */
+.text-xs-compact { font-size: 10px; }
+.text-sm-compact { font-size: 11px; }
+.text-base-compact { font-size: 12px; }
+.text-lg-compact { font-size: 14px; }
+.text-xl-compact { font-size: 16px; }
+.text-2xl-compact { font-size: 18px; }
+.text-3xl-compact { font-size: 20px; }
+.text-4xl-compact { font-size: 24px; }
+
+/* Efficient stat displays */
+.stat-compact {
+  height: 80px;
+  padding: var(--card-pad-sm);
+}
+
+.stat-standard {
+  height: 96px;
+  padding: var(--card-pad-md);
+}
+
+/* Responsive spacing adjustments */
+@media (max-width: 1200px) {
+  :root {
+    --spacing-xl: 16px;
+    --spacing-2xl: 20px;
+    --section-gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-lg: 12px;
+    --spacing-xl: 14px;
+    --spacing-2xl: 16px;
+    --component-gap: 8px;
+    --card-pad-sm: 10px;
+    --card-pad-md: 12px;
+  }
+}

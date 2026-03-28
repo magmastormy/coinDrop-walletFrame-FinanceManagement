@@ -1,11 +1,16 @@
 import axiosInstance from '../api/userAxios';
+import { makeRequest } from './apiRequestManager';
 
 const API_URL = '/transactions';
 
 export const getUserTransactions = async (userIdOrFilters = {}, maybeFilters = {}) => {
     const filters = typeof userIdOrFilters === 'object' ? userIdOrFilters : maybeFilters;
-    const response = await axiosInstance.get(API_URL, { params: filters });
-    return response;
+    const requestKey = `transactions_${JSON.stringify(filters)}`;
+    
+    return makeRequest(requestKey, async () => {
+        const response = await axiosInstance.get(API_URL, { params: filters });
+        return response.data;
+    });
 };
 
 const transactionService = {
@@ -91,6 +96,53 @@ const transactionService = {
     createBudgetTransaction: async (budgetId, transactionData) => {
         const response = await axiosInstance.post(`${API_URL}/budget/${budgetId}`, transactionData);
         return response;
+    },
+
+    getUncategorizedTransactions: async () => {
+        const response = await axiosInstance.get(`${API_URL}/uncategorized`);
+        return response.transactions || [];
+    },
+
+    bulkUpdate: async (transactionIds, updateData) => {
+        const response = await axiosInstance.patch(`${API_URL}/bulk-update`, {
+            transactionIds,
+            updateData
+        });
+        return response.data;
+    },
+
+    bulkDelete: async (transactionIds) => {
+        const response = await axiosInstance.post(`${API_URL}/bulk-delete`, {
+            transactionIds
+        });
+        return response.data;
+    },
+
+    importTransactionsFromCSV: async (formData) => {
+        const response = await axiosInstance.post(`${API_URL}/import-csv`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    },
+
+    parseCSV: (csvContent) => {
+        const lines = csvContent.split('\n');
+        const headers = lines[0].split(',').map(header => header.trim());
+        const transactions = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(value => value.trim());
+            if (values.length === headers.length) {
+                const transaction = {};
+                headers.forEach((header, index) => {
+                    transaction[header.toLowerCase()] = values[index];
+                });
+                transactions.push(transaction);
+            }
+        }
+        return transactions;
     }
 };
 

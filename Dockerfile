@@ -2,7 +2,7 @@
 FROM node:latest AS frontend-builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --ignore-scripts
 COPY . .
 RUN npm run build
 
@@ -10,19 +10,18 @@ RUN npm run build
 FROM node:latest AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm ci
+RUN npm install --ignore-scripts
 COPY backend ./
-RUN npm run build
 
 # Production stage
 FROM node:latest
 
 # Create app directory and user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 WORKDIR /app
 
 # Copy backend files
-COPY --from=backend-builder /app/backend/dist ./dist
+COPY --from=backend-builder /app/backend ./
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 
 # Copy frontend build to public directory
@@ -50,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=3s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/api/health || exit 1
 
 # Start the application
-CMD [ "node", "dist/server.js" ]
+CMD [ "node", "server.js" ]

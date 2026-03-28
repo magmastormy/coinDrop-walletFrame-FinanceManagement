@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Edit, Save, Loader2 } from 'lucide-react';
 import ViewProfileDetailsOnly from './userProfileDetailsViewMode';
 import ImageUpload from './imageUpload';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import profileService from '../../services/profileService';
 import {

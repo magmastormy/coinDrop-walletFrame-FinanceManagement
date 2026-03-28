@@ -4,10 +4,26 @@ const mongoose = require('mongoose');
 const Category = require('../models/Category');
 const Budget = require('../models/Budget');
 const { getAuthenticatedUserId } = require('../utils/authUser');
+const cacheUtil = require('../utils/cacheUtil');
 const isDev = process.env.NODE_ENV !== 'production';
 
+// Helper function to conditionally apply session to a query
+const withSession = (query, session) => session ? query.session(session) : query;
+
+// Helper function to conditionally save with session
+const saveWithSession = (doc, session) => session ? doc.save({ session }) : doc.save();
+
+/**
+ * Wallet Controller
+ * Handles wallet-related operations including creation, retrieval, updating, and deletion
+ */
 class WalletController {
-    // Create a new wallet
+    /**
+     * Create a new wallet
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async createWallet(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -18,6 +34,11 @@ class WalletController {
 
             const wallet = new Wallet(walletData);
             await wallet.save();
+
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
 
             res.status(201).json({
                 message: 'Wallet created successfully',
@@ -31,7 +52,12 @@ class WalletController {
         }
     }
 
-    // Get all wallets for a user
+    /**
+     * Get all wallets for a user
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getUserWallets(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
@@ -54,7 +80,12 @@ class WalletController {
         }
     }
 
-    // Update a wallet
+    /**
+     * Update a wallet
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async updateWallet(req, res) {
         try {
             const { id } = req.params;
@@ -79,6 +110,11 @@ class WalletController {
                 });
             }
 
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+
             res.json({
                 message: 'Wallet updated successfully',
                 wallet
@@ -91,14 +127,28 @@ class WalletController {
         }
     }
 
-    // Delete a wallet
+    /**
+     * Delete a wallet
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async deleteWallet(req, res) {
         let session = null;
+        let useTransaction = false;
         
         try {
-            // Start a MongoDB session for transaction
-            session = await mongoose.startSession();
-            session.startTransaction();
+            // Try to start a MongoDB session for transaction
+            try {
+                session = await mongoose.startSession();
+                session.startTransaction();
+                useTransaction = true;
+            } catch (sessionError) {
+                // If transactions are not supported (e.g., non-replica set), continue without transaction
+                if (isDev) console.log('[WalletController - deleteWallet] Transactions not supported, proceeding without transaction');
+                useTransaction = false;
+                session = null;
+            }
             
             // Get parameters from request
             const { id } = req.params;
@@ -108,10 +158,7 @@ class WalletController {
             if (isDev) console.log(`[WalletController - deleteWallet] Deleting wallet ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
             
             // Find the wallet to delete
-            const wallet = await Wallet.findOne({ 
-                _id: id, 
-                userId 
-            }).session(session);
+            const wallet = await withSession(Wallet.findOne({ _id: id, userId }), session);
             
             // Check if wallet exists
             if (!wallet) {
@@ -148,10 +195,7 @@ class WalletController {
                 
                 // If a specific target wallet was provided
                 if (transferToWalletId) {
-                    targetWallet = await Wallet.findOne({ 
-                        _id: transferToWalletId, 
-                        userId 
-                    }).session(session);
+                    targetWallet = await withSession(Wallet.findOne({ _id: transferToWalletId, userId }), session);
                     
                     if (!targetWallet) {
                         if (session) {
@@ -203,23 +247,21 @@ class WalletController {
                 
                 // Update target wallet balance
                 targetWallet.balance += remainingBalance;
-                await targetWallet.save({ session });
+                await saveWithSession(targetWallet, session);
                 
                 if (isDev) console.log(`[WalletController - deleteWallet] Transferred ${remainingBalance} to wallet ${targetWallet._id}`);
                 
                 // Find or create a category for account closures
                 let accountClosureCategory = null;
                 try {
-                    accountClosureCategory = await Category.findOne({
+                    accountClosureCategory = await withSession(Category.findOne({
                         userId,
                         name: "Account Closure"
-                    }).session(session);
+                    }), session);
 
                     if (!accountClosureCategory) {
                         // Find any category to use as fallback
-                        const anyCategory = await Category.findOne({
-                            userId
-                        }).session(session);
+                        const anyCategory = await withSession(Category.findOne({ userId }), session);
                         
                         if (anyCategory) {
                             accountClosureCategory = anyCategory;
@@ -230,7 +272,7 @@ class WalletController {
                                 name: "Account Closure",
                                 description: "Funds from closed accounts"
                             });
-                            accountClosureCategory = await newCategory.save({ session });
+                            accountClosureCategory = await saveWithSession(newCategory, session);
                         }
                     }
                 } catch (categoryError) {
@@ -270,7 +312,7 @@ class WalletController {
                         date: new Date(),
                     });
                     
-                    await transaction.save({ session });
+                    await saveWithSession(transaction, session);
                 } catch (transactionError) {
                     console.error('[WalletController - deleteWallet] Error creating transaction:', transactionError);
                     if (session) {
@@ -284,81 +326,232 @@ class WalletController {
                 }
             }
             
-            // Mark the wallet as inactive instead of deleting it
-            try {
-                await Wallet.updateOne(
-                    { _id: id, userId },
-                    { 
-                        $set: { 
-                            isActive: false,
-                            balance: 0,
-                            deletedAt: new Date()
-                        } 
-                    }
-                ).session(session);
-                
-                if (isDev) console.log(`[WalletController - deleteWallet] Wallet ${id} marked as inactive`);
-            } catch (updateError) {
-                console.error('[WalletController - deleteWallet] Error updating wallet:', updateError);
-                if (session) {
-                    await session.abortTransaction();
-                    session.endSession();
-                }
-                return res.status(500).json({
-                    error: 'Failed to mark wallet as inactive',
-                    details: updateError.message
-                });
+            // Soft delete the wallet by marking it as inactive
+            wallet.isActive = false;
+            wallet.deletedAt = new Date();
+            await saveWithSession(wallet, session);
+            
+            if (isDev) console.log(`[WalletController - deleteWallet] Wallet ${id} marked as deleted`);
+            
+            // Commit transaction if we're using one
+            if (session) {
+                await session.commitTransaction();
+                session.endSession();
             }
             
-            // Commit the transaction
-            await session.commitTransaction();
-            session.endSession();
-            session = null;
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
             
-            // Send success response
-            return res.json({
+            res.json({
                 message: 'Wallet deleted successfully',
-                transferredAmount: remainingBalance > 0 ? remainingBalance : 0,
-                transferredTo: targetWalletId
+                deletedWalletId: id,
+                transferredAmount: remainingBalance,
+                transferredToWalletId: targetWalletId
             });
+            
         } catch (error) {
             console.error('[WalletController - deleteWallet] Error:', error);
             
-            // Ensure transaction is aborted and session is ended
+            // Abort transaction if we're using one
             if (session) {
-                try {
-                    await session.abortTransaction();
-                    session.endSession();
-                } catch (sessionError) {
-                    console.error('[WalletController - deleteWallet] Error ending session:', sessionError);
-                }
+                await session.abortTransaction();
+                session.endSession();
             }
             
-            return res.status(500).json({
+            res.status(500).json({
                 error: 'Wallet deletion failed',
                 details: error.message
             });
         }
+    }
 
-}
+    /**
+     * Transfer balance between wallets
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
+    static async transferBalance(req, res) {
+        let session = null;
+        let useTransaction = false;
+        
+        try {
+            // Try to start a MongoDB session for transaction
+            try {
+                session = await mongoose.startSession();
+                session.startTransaction();
+                useTransaction = true;
+            } catch (sessionError) {
+                if (isDev) console.log('[WalletController - transferBalance] Transactions not supported, proceeding without transaction');
+                useTransaction = false;
+                session = null;
+            }
+            
+            const { fromWalletId, toWalletId, amount } = req.body;
+            const userId = getAuthenticatedUserId(req);
+            
+            if (!fromWalletId || !toWalletId || !amount) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(400).json({
+                    error: 'Missing required fields',
+                    details: 'fromWalletId, toWalletId, and amount are required'
+                });
+            }
+            
+            const transferAmount = parseFloat(amount);
+            if (isNaN(transferAmount) || transferAmount <= 0) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(400).json({
+                    error: 'Invalid amount',
+                    details: 'Amount must be a positive number'
+                });
+            }
+            
+            // Find source wallet
+            const sourceWallet = await withSession(Wallet.findOne({ 
+                _id: fromWalletId, 
+                userId 
+            }), session);
+            
+            if (!sourceWallet) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(404).json({
+                    error: 'Source wallet not found'
+                });
+            }
+            
+            if (sourceWallet.balance < transferAmount) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(400).json({
+                    error: 'Insufficient funds',
+                    details: `Available balance: ${sourceWallet.balance}`
+                });
+            }
+            
+            // Find destination wallet
+            const destWallet = await withSession(Wallet.findOne({ 
+                _id: toWalletId, 
+                userId 
+            }), session);
+            
+            if (!destWallet) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(404).json({
+                    error: 'Destination wallet not found'
+                });
+            }
+            
+            // Update balances
+            sourceWallet.balance -= transferAmount;
+            destWallet.balance += transferAmount;
+            
+            await saveWithSession(sourceWallet, session);
+            await saveWithSession(destWallet, session);
+            
+            // Commit transaction if we're using one
+            if (session) {
+                await session.commitTransaction();
+                session.endSession();
+            }
+            
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+            
+            res.json({
+                message: 'Transfer successful',
+                fromWallet: {
+                    id: sourceWallet._id,
+                    name: sourceWallet.name,
+                    newBalance: sourceWallet.balance
+                },
+                toWallet: {
+                    id: destWallet._id,
+                    name: destWallet.name,
+                    newBalance: destWallet.balance
+                },
+                amount: transferAmount
+            });
+            
+        } catch (error) {
+            console.error('[WalletController - transferBalance] Error:', error);
+            
+            if (session) {
+                await session.abortTransaction();
+                session.endSession();
+            }
+            
+            res.status(500).json({
+                error: 'Transfer failed',
+                details: error.message
+            });
+        }
+    }
 
-    // Get wallet statistics
+    /**
+     * Get wallet statistics
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
     static async getWalletStats(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
-
+            
             const stats = await Wallet.aggregate([
-                { $match: { userId: mongoose.Types.ObjectId(userId) } },
+                { $match: { userId: new mongoose.Types.ObjectId(userId), isActive: true } },
                 {
                     $group: {
-                        _id: '$type',
+                        _id: null,
+                        totalWallets: { $sum: 1 },
                         totalBalance: { $sum: '$balance' },
-                        count: { $sum: 1 }
+                        avgBalance: { $avg: '$balance' },
+                        maxBalance: { $max: '$balance' },
+                        minBalance: { $min: '$balance' }
                     }
                 }
             ]);
-
-            res.json({ stats });
+            
+            // Get wallet type distribution
+            const typeDistribution = await Wallet.aggregate([
+                { $match: { userId: new mongoose.Types.ObjectId(userId), isActive: true } },
+                {
+                    $group: {
+                        _id: '$type',
+                        count: { $sum: 1 },
+                        totalBalance: { $sum: '$balance' }
+                    }
+                }
+            ]);
+            
+            res.json({
+                summary: stats[0] || {
+                    totalWallets: 0,
+                    totalBalance: 0,
+                    avgBalance: 0,
+                    maxBalance: 0,
+                    minBalance: 0
+                },
+                typeDistribution
+            });
         } catch (error) {
             res.status(500).json({
                 error: 'Failed to retrieve wallet statistics',
@@ -367,144 +560,46 @@ class WalletController {
         }
     }
 
-    // Transfer balance between wallets
-    static async transferBalance(req, res) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+    /**
+     * Get budgets associated with a wallet
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>}
+     */
+    static async getWalletBudgets(req, res) {
         try {
-            const { fromWalletId, toWalletId, amount } = req.body;
-            const numAmount = parseFloat(amount);
+            const { id } = req.params;
             const userId = getAuthenticatedUserId(req);
-
-            if (!fromWalletId || !toWalletId || !amount) {
-                throw new Error('Missing required fields');
-            }
-
-            if (!Number.isFinite(numAmount) || numAmount <= 0) {
-                throw new Error('Amount must be a positive number');
-            }
-
-            if (fromWalletId === toWalletId) {
-                throw new Error('Source and destination wallets must be different');
-            }
-
-            // Validate wallets belong to user
-            const fromWallet = await Wallet.findOne({ 
-                _id: fromWalletId, 
-                userId,
-                isActive: true
-            }).session(session);
-
-            const toWallet = await Wallet.findOne({ 
-                _id: toWalletId, 
-                userId,
-                isActive: true 
-            }).session(session);
-
-            if (!fromWallet || !toWallet) {
-                await session.abortTransaction();
-                return res.status(404).json({ 
-                    error: 'One or both wallets not found' 
+            
+            // Verify wallet belongs to user
+            const wallet = await Wallet.findOne({ _id: id, userId });
+            if (!wallet) {
+                return res.status(404).json({
+                    error: 'Wallet not found or unauthorized'
                 });
             }
-
-            // Check sufficient balance
-            if (fromWallet.balance < numAmount) {
-                await session.abortTransaction();
-                return res.status(400).json({ 
-                    error: 'Insufficient balance' 
-                });
-            }
-
-            // Find default category or create one if needed
-            const defaultCategory = await Category.findOne({
+            
+            // Find budgets that use this wallet
+            const budgets = await Budget.find({
                 userId,
-                name: "Transfer"
-            }).session(session);
-
-            let categoryId;
-            if (defaultCategory) {
-                categoryId = defaultCategory._id;
-            } else {
-                // Find any category to use as fallback
-                const anyCategory = await Category.findOne({
-                    userId
-                }).session(session);
-                
-                if (anyCategory) {
-                    categoryId = anyCategory._id;
-                } else {
-                    // If no categories exist, create a Transfer category
-                    const newCategory = new Category({
-                        userId,
-                        name: "Transfer",
-                        description: "Transfers between wallets"
-                    });
-                    const savedCategory = await newCategory.save({ session });
-                    categoryId = savedCategory._id;
-                }
-            }
-
-            // Update wallet balances
-            fromWallet.balance -= numAmount;
-            toWallet.balance += numAmount;
-
-            await Promise.all([
-                fromWallet.save({ session }),
-                toWallet.save({ session })
-            ]);
-
-            // Create transfer transaction
-            const transferTransaction = new Transaction({
-                userId,
-                type: 'transfer',
-                amount: numAmount,
-                category: categoryId, 
-                description: `Transfer from ${fromWallet.name} to ${toWallet.name}`,
-                date: new Date(),
-                walletId: fromWallet._id,
-                fromWalletId: fromWallet._id,
-                toWalletId: toWallet._id
-            });
-
-            await transferTransaction.save({ session });
-            await session.commitTransaction();
-
+                $or: [
+                    { walletId: id },
+                    { sourceWalletId: id }
+                ]
+            }).populate('category', 'name');
+            
             res.json({
-                message: 'Transfer successfully',
-                fromWallet,
-                toWallet,
-                transferTransaction
+                walletId: id,
+                walletName: wallet.name,
+                budgets
             });
         } catch (error) {
-            await session.abortTransaction();
-            if (isDev) console.log(`Transfer failed: ${error.message}`);
-
-            res.status(400).json({
-                error: 'Transfer failed',
+            res.status(500).json({
+                error: 'Failed to retrieve wallet budgets',
                 details: error.message
             });
-        } finally {
-            session.endSession();
         }
     }
-
-    static async getWalletBudgets (req, res) {
-        try {
-            const userId = getAuthenticatedUserId(req);
-            const walletId = req.params.id || req.params.walletId;
-            const budgets = await Budget.find({ 
-                walletId,
-                userId
-            });
-            
-            res.json({ budgets });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    };
 }
 
 module.exports = WalletController;
-

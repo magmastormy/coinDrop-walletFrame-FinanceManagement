@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const SavingsRule = require('../models/SavingsRule');
+const SavingsAccount = require('../models/SavingsAccount');
+const Wallet = require('../models/Wallet');
+const Transaction = require('../models/Transaction');
 const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
 const { getAuthenticatedUserId } = require('../utils/authUser');
 
@@ -104,6 +107,71 @@ class SavingsRuleController {
         }
     }
 
+    // Execute all rules for a user
+    static async executeAllRules(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            if (!userId) {
+                return res.status(400).json({ error: 'User ID is required' });
+            }
+            
+            // Get all active rules
+            const rules = await SavingsRule.find({ userId, active: true });
+            const executedRules = [];
+            
+            for (const rule of rules) {
+                if (rule.triggerType === 'scheduled') {
+                    // Handle scheduled transfers
+                    if (rule.scheduleAmount > 0 && rule.sourceWalletId) {
+                        const wallet = await Wallet.findById(rule.sourceWalletId);
+                        if (wallet && wallet.balance >= rule.scheduleAmount) {
+                            // Find target savings account (use first one or specific one if specified)
+                            const savingsAccount = await SavingsAccount.findOne({ userId });
+                            if (savingsAccount) {
+                                // Deduct from wallet
+                                wallet.balance -= rule.scheduleAmount;
+                                await wallet.save();
+                                
+                                // Add to savings account
+                                savingsAccount.balance += rule.scheduleAmount;
+                                await savingsAccount.save();
+                                
+                                // Create transaction
+                                const transaction = new Transaction({
+                                    userId,
+                                    type: 'transfer',
+                                    amount: rule.scheduleAmount,
+                                    fromWalletId: rule.sourceWalletId,
+                                    toWalletId: savingsAccount._id,
+                                    description: `Scheduled transfer from rule: ${rule.name}`
+                                });
+                                await transaction.save();
+                                
+                                // Update last executed
+                                rule.lastExecuted = new Date();
+                                await rule.save();
+                                
+                                executedRules.push({
+                                    ruleId: rule._id,
+                                    name: rule.name,
+                                    amount: rule.scheduleAmount
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            res.json({ 
+                executedRules: executedRules.length, 
+                details: executedRules 
+            });
+        } catch (error) {
+            console.error('Error executing all savings rules:', error);
+            res.status(500).json({ error: 'Failed to execute savings rules' });
+        }
+    }
+
     // Get rule statistics
     static async getRuleStats(req, res) {
         try {
@@ -131,6 +199,88 @@ class SavingsRuleController {
         } catch (error) {
             console.error('Error fetching rule statistics:', error);
             res.status(500).json({ error: 'Failed to fetch rule statistics' });
+        }
+    }
+
+    // Setup auto-transfer
+    static async setupAutoTransfer(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { sourceWalletId, targetAccountId, amount, frequency, startDate } = req.body;
+            
+            if (!userId || !sourceWalletId || !targetAccountId || !amount) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            
+            // Validate source wallet
+            const wallet = await Wallet.findById(sourceWalletId);
+            if (!wallet || wallet.userId.toString() !== userId) {
+                return res.status(404).json({ error: 'Source wallet not found' });
+            }
+            
+            // Validate target savings account
+            const savingsAccount = await SavingsAccount.findById(targetAccountId);
+            if (!savingsAccount || savingsAccount.userId.toString() !== userId) {
+                return res.status(404).json({ error: 'Target savings account not found' });
+            }
+            
+            // Create auto-transfer rule
+            const autoTransferRule = new SavingsRule({
+                userId,
+                goalId: savingsAccount._id, // Use savings account as goal
+                name: 'Auto-Transfer Rule',
+                triggerType: 'scheduled',
+                active: true,
+                scheduleFrequency: frequency,
+                scheduleAmount: amount,
+                sourceWalletId,
+                lastExecuted: null
+            });
+            
+            await autoTransferRule.save();
+            res.status(201).json(autoTransferRule);
+        } catch (error) {
+            console.error('Error setting up auto-transfer:', error);
+            res.status(500).json({ error: 'Failed to setup auto-transfer' });
+        }
+    }
+
+    // Update goal-based savings
+    static async updateGoalBasedSavings(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { goalId } = req.params;
+            const { autoSaveEnabled, targetAmount, deadline } = req.body;
+            
+            if (!userId || !goalId) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            
+            // Find or create goal-based savings rule
+            let rule = await SavingsRule.findOne({ userId, goalId });
+            
+            if (!rule) {
+                rule = new SavingsRule({
+                    userId,
+                    goalId,
+                    name: 'Goal-Based Savings Rule',
+                    triggerType: 'income',
+                    active: autoSaveEnabled,
+                    savePercentage: 10, // Default 10%
+                    savingsPriority: 'high'
+                });
+            } else {
+                rule.active = autoSaveEnabled;
+                if (autoSaveEnabled) {
+                    rule.savingsPriority = 'high';
+                }
+            }
+            
+            await rule.save();
+            res.json(rule);
+        } catch (error) {
+            console.error('Error updating goal-based savings:', error);
+            res.status(500).json({ error: 'Failed to update goal-based savings' });
         }
     }
 }

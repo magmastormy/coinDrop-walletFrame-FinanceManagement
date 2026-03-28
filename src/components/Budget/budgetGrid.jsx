@@ -2,8 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import BudgetCard from './budgetCard';
 
-const BudgetGrid = ({ budgets = [], onEdit, onDelete, onSelect, selectedBudget, wallets }) => (
-  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch">
+const BudgetGrid = React.memo(({ budgets = [], onEdit, onDelete, onSelect, selectedBudget, wallets }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
     {budgets.map(b => (
       <BudgetCard
         key={b._id}
@@ -16,21 +16,8 @@ const BudgetGrid = ({ budgets = [], onEdit, onDelete, onSelect, selectedBudget, 
       />
     ))}
   </div>
-);
+));
 
-BudgetGrid.propTypes = {
-  budgets: PropTypes.arrayOf(
-    PropTypes.shape({
-      _id: PropTypes.string.isRequired
-    })
-  ),
-  onEdit: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  onSelect: PropTypes.func,
-  selectedBudget: PropTypes.shape({
-    _id: PropTypes.string
-  }),
-  wallets: PropTypes.array
-};
+BudgetGrid.displayName = 'BudgetGrid';
 
 export default React.memo(BudgetGrid);

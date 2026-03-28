@@ -20,8 +20,14 @@ export const getBudgetStats = async () => {
 
 const budgetService = {
     createBudget: async budgetData => {
+        // Create clean budget data, preserving the automation object
         const cleanBudgetData = Object.fromEntries(
-            Object.entries(budgetData).filter(([, value]) => value !== '')
+            Object.entries(budgetData).filter(([key, value]) => {
+                // Preserve automation object even if it's empty
+                if (key === 'automation') return true;
+                // Filter out other empty values
+                return value !== '';
+            })
         );
 
         if (cleanBudgetData.categoryId && !cleanBudgetData.category) {
@@ -48,7 +54,22 @@ const budgetService = {
         return response;
     },
 
-    getBudgetStats
+    getBudgetStats,
+
+    renewRecurringBudgets: async () => {
+        const response = await axiosInstance.post(`${API_URL}/renew`);
+        return response;
+    },
+
+    checkBudgetAlerts: async () => {
+        const response = await axiosInstance.get(`${API_URL}/alerts`);
+        return response.alerts || [];
+    },
+
+    getUncategorizedTransactions: async () => {
+        const response = await axiosInstance.get(`${API_URL}/uncategorized-transactions`);
+        return response.transactions || [];
+    }
 };
 
 export default budgetService;

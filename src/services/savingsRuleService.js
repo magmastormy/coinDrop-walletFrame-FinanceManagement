@@ -33,6 +33,11 @@ const savingsRuleService = {
         return response;
     },
 
+    executeAllRules: async () => {
+        const response = await axiosInstance.post(`${API_URL}/execute-all`);
+        return response;
+    },
+
     getRuleStats: async () => {
         try {
             const response = await axiosInstance.get(`${API_URL}/stats`);
@@ -41,6 +46,16 @@ const savingsRuleService = {
             console.error('Savings Rule Service - Error fetching rule stats:', error);
             return {};
         }
+    },
+
+    setupAutoTransfer: async transferData => {
+        const response = await axiosInstance.post(`${API_URL}/auto-transfer`, transferData);
+        return response;
+    },
+
+    updateGoalBasedSavings: async (goalId, config) => {
+        const response = await axiosInstance.put(`${API_URL}/goal-based/${goalId}`, config);
+        return response;
     }
 };
 

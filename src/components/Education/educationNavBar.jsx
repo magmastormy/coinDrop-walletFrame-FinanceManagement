@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { GraduationCap, Edit, Heart } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
 import { cn } from '../../lib/utils';
 
 const EducationNavBar = () => {
@@ -72,7 +71,15 @@ const EducationNavBar = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <GlassCard className="p-4 h-full">
+            <div
+                className="h-full"
+                style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-1)',
+                    padding: '12px',
+                }}
+            >
                 <h2 className="text-lg font-semibold text-foreground mb-4 px-2">
                     Education Center
                 </h2>
@@ -98,10 +105,16 @@ const EducationNavBar = () => {
                                                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                                                 isActive
                                                     ? "bg-primary/20 text-primary"
-                                                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                                    : "text-muted-foreground hover:text-foreground"
                                             )}
+                                            onMouseEnter={(e) => {
+                                                if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isActive) e.currentTarget.style.background = 'transparent';
+                                            }}
                                         >
-                                            <Icon className="w-5 h-5 flex-shrink-0" />
+                                            <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.5} />
                                             <span className="flex-1 text-left">{item.title}</span>
                                             {item.count > 0 && (
                                                 <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
@@ -134,10 +147,16 @@ const EducationNavBar = () => {
                                                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
                                                 isActive
                                                     ? "bg-primary/20 text-primary"
-                                                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                                    : "text-muted-foreground hover:text-foreground"
                                             )}
+                                            onMouseEnter={(e) => {
+                                                if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!isActive) e.currentTarget.style.background = 'transparent';
+                                            }}
                                         >
-                                            <Icon className="w-5 h-5 flex-shrink-0" />
+                                            <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.5} />
                                             <span className="flex-1 text-left">{item.title}</span>
                                             {item.count > 0 && (
                                                 <span className="px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
@@ -150,7 +169,7 @@ const EducationNavBar = () => {
                         </div>
                     </div>
                 </nav>
-            </GlassCard>
+            </div>
         </motion.div>
     );
 };

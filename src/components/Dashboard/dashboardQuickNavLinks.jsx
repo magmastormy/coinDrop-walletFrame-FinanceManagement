@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, PieChart, ArrowLeftRight, Settings, GraduationCap, TrendingUp } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
 
 const DashboardQuickNavLinks = () => {
     const navLinks = [
@@ -10,42 +9,36 @@ const DashboardQuickNavLinks = () => {
             icon: Wallet,
             title: 'Wallets',
             description: 'Manage your wallets and accounts',
-            gradient: 'from-blue-500 to-blue-400'
         },
         {
             to: '/budget',
             icon: PieChart,
             title: 'Budget',
             description: 'Manage budgets and categories',
-            gradient: 'from-purple-500 to-purple-400'
         },
         {
             to: '/transaction',
             icon: ArrowLeftRight,
             title: 'Transactions',
             description: 'Track income and expenses',
-            gradient: 'from-green-500 to-green-400'
         },
         {
             to: '/investments',
             icon: TrendingUp,
             title: 'Investments',
             description: 'Monitor your portfolio',
-            gradient: 'from-amber-500 to-amber-400'
         },
         {
             to: '/education',
             icon: GraduationCap,
             title: 'Learn',
             description: 'Financial education resources',
-            gradient: 'from-red-500 to-red-400'
         },
         {
-            to: '/settings',
+            to: '/user-management',
             icon: Settings,
-            title: 'Settings',
-            description: 'Configure your preferences',
-            gradient: 'from-gray-600 to-gray-500'
+            title: 'User Management',
+            description: 'Manage profile and settings',
         }
     ];
 
@@ -55,7 +48,14 @@ const DashboardQuickNavLinks = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
         >
-            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+            <div
+                style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-1)',
+                    padding: '24px',
+                }}
+            >
                 <h3 className="mb-4 text-xl font-bold text-foreground">Quick Navigation</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
                     {navLinks.map((link, index) => {
@@ -74,23 +74,28 @@ const DashboardQuickNavLinks = () => {
                             >
                                 <Link
                                     to={link.to}
-                                    className="group block h-full rounded-2xl border border-white/10 bg-background/45 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/10"
+                                    className="group block h-full p-4"
+                                    style={{
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface-1)',
+                                        transition: 'background 150ms ease',
+                                        textDecoration: 'none',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-surface-1)'; }}
                                 >
-                                    <motion.div
-                                        className={`mb-3 inline-flex rounded-xl bg-gradient-to-br p-3 ${link.gradient}`}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <Icon className="w-5 h-5 text-white" />
-                                    </motion.div>
-                                    <h4 className="mb-1 text-base font-semibold text-foreground">{link.title}</h4>
+                                    <div className="mb-3 flex items-center justify-between" style={{ gap: '12px' }}>
+                                        <h4 className="text-base font-semibold text-foreground">{link.title}</h4>
+                                        <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} aria-hidden="true" style={{ color: 'var(--color-text-secondary)' }} />
+                                    </div>
                                     <p className="text-xs leading-relaxed text-muted-foreground">{link.description}</p>
                                 </Link>
                             </motion.div>
                         );
                     })}
                 </div>
-            </GlassCard>
+            </div>
         </motion.div>
     );
 };

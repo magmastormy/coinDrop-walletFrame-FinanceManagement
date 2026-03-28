@@ -69,6 +69,25 @@ class CategoryService {
     // 3. Fallback (should never happen with proper UI controls)
     throw new Error(`Category "${categoryData.name}" doesn't exist`);
   }
+
+  async getDefaultCategory(userId) {
+    // Try to find an existing "Other" category
+    let defaultCategory = await Category.findOne({
+      name: { $regex: /^other$/i },
+      userId
+    });
+
+    // If no "Other" category exists, create one
+    if (!defaultCategory) {
+      defaultCategory = await Category.create({
+        name: 'Other',
+        userId,
+        isSystemGenerated: true
+      });
+    }
+
+    return defaultCategory;
+  }
 }
 
 module.exports = new CategoryService();

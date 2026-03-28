@@ -5,22 +5,22 @@ import PropTypes from 'prop-types';
 import LoadingSpinner from './components/LoadingSpinner';
 import MainLayout from './components/Layout/MainLayout';
 
-const LoginComponent = lazy(() => import('./components/Auth/userLoginForm'));
-const RegisterComponent = lazy(() => import('./components/Auth/userRegistrationForm'));
+const LoginComponent = lazy(() => import('./components/Auth/UserLoginForm'));
+const RegisterComponent = lazy(() => import('./components/Auth/UserRegistrationForm'));
 const ForgotPasswordComponent = lazy(() => import('./components/Auth/ForgotPassword'));
-const DashboardComponent = lazy(() => import('./components/Dashboard/dashboardManager'));
-const WalletComponent = lazy(() => import('./components/Wallet/walletManager'));
-const BudgetComponent = lazy(() => import('./components/Budget/budgetManager'));
-const TransactionComponent = lazy(() => import('./components/Transaction/transactionManager'));
+const DashboardComponent = lazy(() => import('./components/Dashboard/DashboardManager'));
+const WalletComponent = lazy(() => import('./components/Wallet/WalletManager'));
+const BudgetComponent = lazy(() => import('./components/Budget/BudgetManager'));
+const TransactionComponent = lazy(() => import('./components/Transaction/TransactionManager'));
 const HomeComponent = lazy(() => import('./pages/Home'));
-const ProfileComponent = lazy(() => import('./components/Profile/profileManager'));
-const CategoryComponent = lazy(() => import('./components/Category/categoryManager'));
-const EducationComponent = lazy(() => import('./components/Education/educationManager'));
-const UserEducationComponent = lazy(() => import('./components/Education/userEducation/userEducationManager'));
-const SavingGoalComponent = lazy(() => import('./components/SavingsGoal/savingsGoalManager'));
-const SavingAccountComponent = lazy(() => import('./components/Savings/savingsAccountManager'));
-const ChatBotComponent = lazy(() => import('./components/Chatbot/chatbotManager'));
-const SettingsComponent = lazy(() => import('./components/Settings/settingsManager'));
+const ResponsiveTestComponent = lazy(() => import('./pages/ResponsiveTest'));
+const CategoryComponent = lazy(() => import('./components/Category/CategoryManager'));
+const EducationComponent = lazy(() => import('./components/Education/EducationManager'));
+const UserEducationComponent = lazy(() => import('./components/Education/userEducation/UserEducationManager'));
+const SavingGoalComponent = lazy(() => import('./components/SavingsGoal/SavingsGoalManager'));
+const SavingAccountComponent = lazy(() => import('./components/Savings/SavingsAccountManager'));
+const ChatBotComponent = lazy(() => import('./components/Chatbot/ChatbotManager'));
+const UserManagementComponent = lazy(() => import('./components/UserManagement/UserManagement'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -109,12 +109,11 @@ const AppRoutes = () => {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/profile" element={
+                    <Route path="/user-management" element={
                         <ProtectedRoute>
-                            <ProfileComponent />
+                            <UserManagementComponent />
                         </ProtectedRoute>
                     } />
-
 
                     <Route path="/education" element={
                         <ProtectedRoute>
@@ -146,11 +145,15 @@ const AppRoutes = () => {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/settings" element={
+                    <Route path="/responsive-test" element={
                         <ProtectedRoute>
-                            <SettingsComponent />
+                            <ResponsiveTestComponent />
                         </ProtectedRoute>
                     } />
+
+                    {/* Redirect old profile and settings routes to new user-management */}
+                    <Route path="/profile" element={<Navigate to="/user-management" replace />} />
+                    <Route path="/settings" element={<Navigate to="/user-management" replace />} />
 
                     {/* Catch all route - redirect to home */}
                     <Route path="*" element={<Navigate to="/" replace />} />

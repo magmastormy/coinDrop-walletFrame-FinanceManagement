@@ -71,4 +71,8 @@ router.delete('/:id', BudgetController.deleteBudget);
 router.get('/stats', BudgetController.getBudgetStats);
 router.get('/performance', BudgetController.analyzeBudgetPerformance);
 
+// Budget Automation Routes
+router.post('/renew', BudgetController.renewRecurringBudgets);
+router.get('/alerts', BudgetController.checkBudgetAlerts);
+
 module.exports = router;

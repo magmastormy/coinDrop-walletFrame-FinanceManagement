@@ -1,0 +1,233 @@
+/* ========================================
+   COINDROP DESIGN SYSTEM TOKENS
+   ======================================== */
+
+:root {
+  /* 60-30-10 COLOR RULE */
+  
+  /* 60% - Neutral/Background */
+  --color-bg-primary: #FAFAFA;
+  --color-bg-secondary: #F5F5F5;
+  --color-bg-tertiary: #EFEFEF;
+  
+  /* 30% - Surface/Container */
+  --color-surface-0: #FFFFFF;
+  --color-surface-1: #F8FAFC;
+  --color-surface-2: #F1F5F9;
+  --color-surface-3: #E2E8F0;
+  
+  /* 10% - Accent (Finance Blue) */
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-300: #93C5FD;
+  --color-primary-400: #60A5FA;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary-900: #1E3A8A;
+  
+  /* Semantic Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #06B6D4;
+  
+  /* Text Colors */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748B;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+  
+  /* Border Colors */
+  --color-border-light: #E2E8F0;
+  --color-border: #CBD5E1;
+  --color-border-strong: #94A3B8;
+  
+  /* Legacy Support */
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-primary);
+  --card: var(--color-surface-0);
+  --border: var(--color-border);
+
+  /* ========================================
+     TYPOGRAPHY SYSTEM
+     ======================================== */
+  
+  /* Font Families */
+  --font-display: 'Inter Display', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Type Scale (Major Third: 1.250) */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 16px;
+  --text-md: 20px;
+  --text-lg: 25px;
+  --text-xl: 31px;
+  --text-2xl: 39px;
+  --text-3xl: 49px;
+  
+  /* Line Heights */
+  --leading-tight: 1.1;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.8;
+  
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  
+  /* Font Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 900;
+  
+  /* ========================================
+     SPATIAL SYSTEM (8px Base Grid)
+     ======================================== */
+  
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  
+  /* Component-specific spacing */
+  --component-gap: var(--space-3);
+  --card-gap: var(--space-4);
+  --section-gap: var(--space-8);
+  --layout-margin: var(--space-6);
+  
+  /* Card Padding */
+  --card-pad-sm: var(--space-3);
+  --card-pad-md: var(--space-4);
+  --card-pad-lg: var(--space-6);
+  
+  /* ========================================
+     BORDER RADIUS SYSTEM
+     ======================================== */
+  
+  /* Primary radius: Professional, controlled, slightly warm */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-pill: 9999px;
+  
+  /* Component-specific radius */
+  --radius-button: var(--radius-md);
+  --radius-card: var(--radius-lg);
+  --radius-modal: var(--radius-xl);
+  
+  /* ========================================
+     SHADOW & ELEVATION SYSTEM
+     ======================================== */
+  
+  /* Elevation levels */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* Finance-specific shadows */
+  --shadow-card: 0 2px 8px rgba(59, 130, 246, 0.08);
+  --shadow-raised: 0 8px 16px rgba(59, 130, 246, 0.12);
+  --shadow-floating: 0 12px 24px rgba(59, 130, 246, 0.16);
+  
+  /* ========================================
+     MOTION SYSTEM
+     ======================================== */
+  
+  /* Durations */
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-medium: 300ms;
+  --duration-slow: 500ms;
+  --duration-dramatic: 800ms;
+  
+  /* Easing */
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-in: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  
+  /* ========================================
+     BREAKPOINT SYSTEM
+     ======================================== */
+  
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* ========================================
+     Z-INDEX SCALE
+     ======================================== */
+  
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-modal: 1030;
+  --z-tooltip: 1040;
+  --z-notification: 1050;
+  --z-max: 9999;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 60% - Neutral/Background */
+    --color-bg-primary: #0F172A;
+    --color-bg-secondary: #1E293B;
+    --color-bg-tertiary: #334155;
+    
+    /* 30% - Surface/Container */
+    --color-surface-0: #1E293B;
+    --color-surface-1: #334155;
+    --color-surface-2: #475569;
+    --color-surface-3: #64748B;
+    
+    /* 10% - Accent (Finance Blue - desaturated) */
+    --color-primary-500: #60A5FA;
+    --color-primary-600: #3B82F6;
+    --color-primary-700: #2563EB;
+    
+    /* Text Colors */
+    --color-text-primary: #F8FAFC;
+    --color-text-secondary: #E2E8F0;
+    --color-text-tertiary: #CBD5E1;
+    --color-text-muted: #94A3B8;
+    --color-text-inverse: #0F172A;
+    
+    /* Border Colors */
+    --color-border-light: #475569;
+    --color-border: #64748B;
+    --color-border-strong: #94A3B8;
+  }
+}
+
+/* ======================================== 
+   GLASSMORPHISM
+   ======================================== */
+
+.glass-panel {
+  background: rgba(45, 52, 73, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

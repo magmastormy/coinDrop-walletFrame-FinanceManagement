@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 const transactionSchema = new mongoose.Schema({
     userId: {
@@ -12,9 +13,12 @@ const transactionSchema = new mongoose.Schema({
         required: true
     },
     amount: {
+        type: String,
+        required: true
+    },
+    amountDecrypted: {
         type: Number,
-        required: true,
-        min: [0, 'Amount must be a positive number']
+        required: true
     },
     category: {
         type: mongoose.Schema.Types.ObjectId,
@@ -25,6 +29,10 @@ const transactionSchema = new mongoose.Schema({
         ref: 'Category'
     },
     description: {
+        type: String,
+        default: ''
+    },
+    descriptionDecrypted: {
         type: String,
         default: '',
         maxlength: [200, 'Description cannot exceed 200 characters']
@@ -67,10 +75,30 @@ const transactionSchema = new mongoose.Schema({
     toWalletId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Wallet'
+    },
+    status: {
+        type: String,
+        required: true,
+        enum: ['pending', 'processing', 'completed', 'failed'],
+        default: 'pending'
     }
 }, {
     timestamps: true
 });
+
+// Indexes for performance
+transactionSchema.index({ userId: 1 });
+transactionSchema.index({ userId: 1, date: -1 });
+transactionSchema.index({ userId: 1, type: 1 });
+transactionSchema.index({ userId: 1, category: 1 });
+transactionSchema.index({ userId: 1, walletId: 1 });
+transactionSchema.index({ userId: 1, budgetId: 1 });
+transactionSchema.index({ userId: 1, status: 1 });
+transactionSchema.index({ date: -1, type: 1 });
+transactionSchema.index({ category: 1, date: -1 });
+transactionSchema.index({ walletId: 1, date: -1 });
+transactionSchema.index({ budgetId: 1, date: -1 });
+transactionSchema.index({ type: 1, date: -1 });
 
 // Validator: require either category or description for AI categorization
 transactionSchema.pre('validate', function(next) {
@@ -99,6 +127,42 @@ transactionSchema.pre('save', async function(next) {
     }
     next();
 });
+
+// Pre-save middleware to encrypt sensitive fields
+transactionSchema.pre('save', function(next) {
+    // Encrypt amount if it's a number or unencrypted string
+    if (typeof this.amount === 'number') {
+        this.amountDecrypted = this.amount;
+        this.amount = encrypt(this.amount.toString());
+    } else if (typeof this.amount === 'string' && !this.isEncrypted(this.amount)) {
+        // If amount is a string but not encrypted, encrypt it
+        this.amountDecrypted = parseFloat(this.amount);
+        this.amount = encrypt(this.amount);
+    }
+    
+    // Encrypt description if it's not already encrypted
+    if (this.description && !this.isEncrypted(this.description)) {
+        this.descriptionDecrypted = this.description;
+        this.description = encrypt(this.description);
+    }
+    
+    next();
+});
+
+// Helper method to check if a value is encrypted
+transactionSchema.methods.isEncrypted = function(value) {
+    if (!value || typeof value !== 'string') return false;
+    // Check if it matches the encrypted format: base64IV:encryptedData
+    const parts = value.split(':');
+    if (parts.length !== 2) return false;
+    try {
+        // Try to decode as base64 to verify format
+        Buffer.from(parts[0], 'base64');
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
 
 // Post-save middleware to update budget spent amount
 transactionSchema.post('save', async function(doc) {
@@ -137,5 +201,23 @@ transactionSchema.statics.getTransactionsByBudget = async function(budgetId, opt
         .populate('category subcategory')
         .sort({ date: -1 });
 };
+
+// Virtual fields for decrypted values
+transactionSchema.virtual('decryptedAmount').get(function() {
+    return this.amountDecrypted || (this.amount ? parseFloat(decrypt(this.amount)) : 0);
+});
+
+transactionSchema.virtual('decryptedDescription').get(function() {
+    return this.descriptionDecrypted || (this.description ? decrypt(this.description) : '');
+});
+
+// Ensure virtuals are included in JSON output
+transactionSchema.set('toJSON', {
+    virtuals: true
+});
+
+transactionSchema.set('toObject', {
+    virtuals: true
+});
 
 module.exports = mongoose.model('Transaction', transactionSchema);

@@ -69,12 +69,60 @@ const budgetSchema = new mongoose.Schema({
             default: 0,
             min: 0
         }
+    },
+    automation: {
+        autoCategorize: {
+            enabled: {
+                type: Boolean,
+                default: true
+            },
+            threshold: {
+                type: Number,
+                default: 0.7
+            }
+        },
+        recurring: {
+            enabled: {
+                type: Boolean,
+                default: true
+            },
+            autoRenew: {
+                type: Boolean,
+                default: true
+            }
+        },
+        alerts: {
+            enabled: {
+                type: Boolean,
+                default: true
+            },
+            thresholds: {
+                high: {
+                    type: Number,
+                    default: 90
+                },
+                medium: {
+                    type: Number,
+                    default: 75
+                }
+            }
+        }
     }
 }, {
     timestamps: true
 });
 
-budgetSchema.index({ userId: 1, name: 1 }, { unique: true });
+// Indexes for performance and to prevent DOS
+budgetSchema.index({ userId: 1 });
+budgetSchema.index({ userId: 1, isActive: 1 });
+budgetSchema.index({ userId: 1, type: 1 });
+budgetSchema.index({ userId: 1, period: 1 });
+budgetSchema.index({ walletId: 1 });
+budgetSchema.index({ category: 1 });
+budgetSchema.index({ startDate: -1 });
+budgetSchema.index({ endDate: -1 });
+// Remove unique constraint to prevent DOS attacks
+// budgetSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 budgetSchema.pre('save', async function(next) {
     if (this.isModified('category')) {

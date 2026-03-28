@@ -5,6 +5,7 @@ const Wallet = require('../models/Wallet');
 const Category = require('../models/Category');
 const Transaction = require('../models/Transaction');
 const { getAuthenticatedUserId } = require('../utils/authUser');
+const cacheUtil = require('../utils/cacheUtil');
 const isDev = process.env.NODE_ENV !== 'production';
 
 
@@ -26,6 +27,11 @@ class SavingsGoalController {
             const userId = getAuthenticatedUserId(req);
             const newGoal = new SavingsGoal({ ...req.body, userId: userId });
             await newGoal.save();
+            
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            
             res.status(201).json(newGoal);
         } catch (error) {
             console.error('[SavingsGoalController] Error creating savings goal:', error);
@@ -44,6 +50,10 @@ class SavingsGoalController {
             if (!goal) {
                 return res.status(404).json({ error: 'Savings goal not found' });
             }
+            // Invalidate user context cache
+            const cacheKey = cacheUtil.generateKey('user_context', userId);
+            await cacheUtil.del(cacheKey);
+            
             res.json(goal);
         } catch (error) {
             res.status(400).json({ error: 'Failed to update savings goal' });
@@ -165,6 +175,11 @@ class SavingsGoalController {
                     { $set: { isActive: false, currentAmount: 0, deletedAt: new Date(), status: 'deleted' } }
                 ).session(session);
                 await session.commitTransaction();
+                
+                // Invalidate user context cache
+                const cacheKey = cacheUtil.generateKey('user_context', userId);
+                await cacheUtil.del(cacheKey);
+                
                 return res.json({
                     success: true,
                     message: 'Savings goal deleted successfully',
@@ -216,10 +231,15 @@ class SavingsGoalController {
         // Maximum number of retry attempts for transaction
         const MAX_RETRY_ATTEMPTS = 3;
         
+        // Check if we can use transactions (requires replica set)
+        const useTransaction = process.env.MONGODB_REPLICA_SET || false;
+        
         // Function to execute the transaction with retry logic
         const executeTransaction = async () => {
-            const session = await mongoose.startSession();
-            session.startTransaction();
+            const session = useTransaction ? await mongoose.startSession() : null;
+            if (session) {
+                session.startTransaction();
+            }
             
             try {
             const { goalId } = req.params;
@@ -234,31 +254,61 @@ class SavingsGoalController {
                 throw new Error('Amount must be a positive number');
             }
 
+            // Validate minimum contribution amount (prevent fractional cents)
+            if (numericAmount < 0.01) {
+                throw new Error('Minimum contribution is $0.01');
+            }
+
             // Find the source (wallet or savings account)
             let source;
             if (sourceType == "wallet") {
                 if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
-                source = await Wallet.findOne({
-                    _id: sourceId,
-                    userId: userId,
-                    isActive: true
-                }).session(session);
+                // Use atomic operation to check and update balance
+                const sourceUpdate = await Wallet.findOneAndUpdate(
+                    {
+                        _id: sourceId,
+                        userId: userId,
+                        isActive: true,
+                        balance: { $gte: numericAmount }  // Atomic balance check
+                    },
+                    {
+                        $inc: { balance: -numericAmount }  // Atomic decrement
+                    },
+                    {
+                        session,
+                        runValidators: true
+                    }
+                );
+                
+                if (!sourceUpdate) {
+                    throw new Error('Insufficient balance in wallet or wallet not found');
+                }
+                
+                source = await Wallet.findById(sourceId).session(session);
             } else {
                 if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source is Savings");
-                source = await SavingsAccount.findOne({
-                    _id: sourceId,
-                    userId: userId,
-                    isActive: true
-                }).session(session);
-            }
-
-            if (!source) {
-                throw new Error('Source not found');
-            }
-
-            // Check if source has sufficient balance
-            if (source.balance < numericAmount) {
-                throw new Error('Insufficient balance in source');
+                // Use atomic operation for savings account
+                const sourceUpdate = await SavingsAccount.findOneAndUpdate(
+                    {
+                        _id: sourceId,
+                        userId: userId,
+                        isActive: true,
+                        balance: { $gte: numericAmount }  // Atomic balance check
+                    },
+                    {
+                        $inc: { balance: -numericAmount }  // Atomic decrement
+                    },
+                    {
+                        session,
+                        runValidators: true
+                    }
+                );
+                
+                if (!sourceUpdate) {
+                    throw new Error('Insufficient balance in savings account or account not found');
+                }
+                
+                source = await SavingsAccount.findById(sourceId).session(session);
             }
 
             // Find default category or create one if needed
@@ -316,7 +366,13 @@ class SavingsGoalController {
 
             await transaction.save({ session });
 
-                await session.commitTransaction();
+                if (session) {
+                    await session.commitTransaction();
+                }
+                
+                // Invalidate user context cache
+                const cacheKey = cacheUtil.generateKey('user_context', userId);
+                await cacheUtil.del(cacheKey);
                 
                 res.json({
                     success: true,
@@ -327,14 +383,18 @@ class SavingsGoalController {
                 });
                 return true; // Signal success to the retry mechanism
             } catch (error) {
-                try {
-                    await session.abortTransaction();
-                } catch (abortError) {
-                    console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction: ${abortError.message}`);
+                if (session) {
+                    try {
+                        await session.abortTransaction();
+                    } catch (abortError) {
+                        console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction: ${abortError.message}`);
+                    }
                 }
                 throw error; // Rethrow for retry mechanism
             } finally {
-                session.endSession();
+                if (session) {
+                    session.endSession();
+                }
             }
         };
         
@@ -374,6 +434,111 @@ class SavingsGoalController {
                 details: error.message,
                 operationId
             });
+        }
+    }
+
+    static async generateRecommendations(req, res) {
+        try {
+            const userId = getAuthenticatedUserId(req);
+            const { goals, wallets } = req.body;
+
+            // Validate input
+            if (!Array.isArray(goals)) {
+                return res.status(400).json({ error: 'Goals must be an array' });
+            }
+
+            if (!Array.isArray(wallets)) {
+                return res.status(400).json({ error: 'Wallets must be an array' });
+            }
+
+            // Generate recommendations based on goals and wallets
+            const recommendations = [];
+
+            // Recommendation 1: High Yield Savings Account
+            const totalSavings = goals.reduce((sum, goal) => sum + (goal.currentAmount || 0), 0);
+            if (totalSavings > 1000) {
+                recommendations.push({
+                    id: `rec-${Date.now()}-1`,
+                    type: 'high_yield',
+                    title: 'Move Emergency Fund to curator+',
+                    description: 'Earn up to 4.85% APY by switching your rainy day fund to a Curator Plus account.',
+                    priority: 'high',
+                    potentialSavings: Math.round(totalSavings * 0.0485 / 12 * 3) // 3 months of interest
+                });
+            }
+
+            // Recommendation 2: Auto-Stash
+            const activeGoals = goals.filter(goal => goal.currentAmount < goal.targetAmount);
+            if (activeGoals.length > 0) {
+                recommendations.push({
+                    id: `rec-${Date.now()}-2`,
+                    type: 'auto_stash',
+                    title: 'Set up Auto-Stash',
+                    description: 'Users who automate their savings reach goals 40% faster. Enable weekly transfers?',
+                    priority: 'medium',
+                    potentialImpact: '40% faster goal achievement'
+                });
+            }
+
+            // Recommendation 3: Diversify Large Goals
+            const largeGoals = goals.filter(goal => goal.targetAmount > 10000);
+            if (largeGoals.length > 0) {
+                recommendations.push({
+                    id: `rec-${Date.now()}-3`,
+                    type: 'diversify',
+                    title: 'Diversify Your Large Goal',
+                    description: 'Your "First Home" fund is large enough for short-term bonds. Maximize your return.',
+                    priority: 'medium',
+                    applicableGoals: largeGoals.map(goal => goal.name)
+                });
+            }
+
+            // Recommendation 4: Increase Contributions
+            goals.forEach(goal => {
+                const progress = (goal.currentAmount || 0) / goal.targetAmount;
+                const monthsRemaining = goal.targetDate ? Math.ceil((new Date(goal.targetDate) - new Date()) / (30 * 24 * 60 * 60 * 1000)) : 12;
+                
+                if (progress < 0.5 && monthsRemaining < 6) {
+                    const neededMonthly = (goal.targetAmount - (goal.currentAmount || 0)) / monthsRemaining;
+                    const currentMonthly = goal.monthlyContribution || 0;
+                    const suggestedIncrease = Math.round((neededMonthly - currentMonthly) * 1.1); // 10% buffer
+                    
+                    if (suggestedIncrease > 0) {
+                        recommendations.push({
+                            id: `rec-${Date.now()}-${goal._id}`,
+                            type: 'increase_contributions',
+                            title: `Increase Contributions for ${goal.name}`,
+                            description: `You need to contribute $${neededMonthly.toFixed(2)} monthly to reach your goal on time. Consider increasing by $${suggestedIncrease.toFixed(2)}.`,
+                            priority: 'high',
+                            applicableGoal: goal.name,
+                            suggestedIncrease
+                        });
+                    }
+                }
+            });
+
+            // Recommendation 5: Consolidate Small Goals
+            const smallGoals = goals.filter(goal => goal.targetAmount < 1000);
+            if (smallGoals.length > 2) {
+                const totalSmallGoals = smallGoals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+                recommendations.push({
+                    id: `rec-${Date.now()}-4`,
+                    type: 'consolidate',
+                    title: 'Consolidate Small Goals',
+                    description: `You have ${smallGoals.length} small goals totaling $${totalSmallGoals.toFixed(2)}. Consider consolidating them into a single "Miscellaneous" fund.`,
+                    priority: 'low',
+                    applicableGoals: smallGoals.map(goal => goal.name)
+                });
+            }
+
+            res.json({
+                success: true,
+                recommendations,
+                totalRecommendations: recommendations.length
+            });
+        } catch (error) {
+            console.error('[SavingsGoalController - generateRecommendations] Error:', error);
+            res.status(500).json({ error: 'Failed to generate recommendations', details: error.message });
         }
     }
 }

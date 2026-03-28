@@ -13,22 +13,22 @@ const BudgetTransactionList = ({ transactions, budget }) => {
     return (
         <div className="space-y-6">
             {/* Progress Section */}
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+            <Card variant="default" elevation={1} className="p-6 space-y-4">
                 <div className="flex justify-between text-sm font-medium">
                     <span className="text-muted-foreground">Budget Usage</span>
                     <span className={cn(
-                        progress.percentage > 100 ? "text-red-500" : "text-emerald-500"
+                        progress.percentage > 100 ? "text-error" : "text-success"
                     )}>
                         {progress.percentage.toFixed(1)}%
                     </span>
                 </div>
 
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
                     <motion.div
                         className={cn(
                             "h-full rounded-full",
-                            progress.percentage > 90 ? "bg-red-500" :
-                                progress.percentage > 70 ? "bg-amber-500" : "bg-emerald-500"
+                            progress.percentage > 90 ? "bg-error" :
+                                progress.percentage > 70 ? "bg-warning" : "bg-success"
                         )}
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(progress.percentage, 100)}%` }}
@@ -36,23 +36,23 @@ const BudgetTransactionList = ({ transactions, budget }) => {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 pt-2 text-center text-sm">
-                    <div className="p-2 rounded-lg bg-white/5">
-                        <div className="text-muted-foreground text-xs mb-1">Total Budget</div>
-                        <div className="font-bold text-foreground">${budget.amount}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5">
-                        <div className="text-muted-foreground text-xs mb-1">Spent</div>
-                        <div className="font-bold text-red-400">${progress.spent.toFixed(2)}</div>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5">
-                        <div className="text-muted-foreground text-xs mb-1">Remaining</div>
-                        <div className={cn("font-bold", progress.remaining < 0 ? "text-red-500" : "text-emerald-500")}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-center text-sm">
+                    <Card variant="secondary" className="p-3 text-center">
+                        <div className="text-xs text-muted-foreground mb-1">Total Budget</div>
+                        <div className="font-bold text-primary">${budget.amount}</div>
+                    </Card>
+                    <Card variant="secondary" className="p-3 text-center">
+                        <div className="text-xs text-muted-foreground mb-1">Spent</div>
+                        <div className="font-bold text-error">${progress.spent.toFixed(2)}</div>
+                    </Card>
+                    <Card variant="secondary" className="p-3 text-center">
+                        <div className="text-xs text-muted-foreground mb-1">Remaining</div>
+                        <div className={cn("font-bold", progress.remaining < 0 ? "text-error" : "text-success")}>
                             ${progress.remaining.toFixed(2)}
                         </div>
-                    </div>
+                    </Card>
                 </div>
-            </div>
+            </Card>
 
             {/* Transactions List */}
             <div className="space-y-2">
@@ -67,9 +67,9 @@ const BudgetTransactionList = ({ transactions, budget }) => {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-muted-foreground bg-white/5 rounded-xl border border-white/5">
-                        No transactions found for this budget
-                    </div>
+                    <Card variant="default" className="text-center py-8">
+                        <p className="text-muted-foreground">No transactions found for this budget</p>
+                    </Card>
                 )}
             </div>
         </div>

@@ -25,6 +25,7 @@ const WalletSchema = new mongoose.Schema({
     balance: {
         type: Number,
         default: 0,
+        min: [0, 'Balance cannot be negative'],
         validate: {
             validator: Number.isFinite,
             message: 'Balance must be a valid number'
@@ -73,6 +74,11 @@ const WalletSchema = new mongoose.Schema({
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
+
+// Indexes for performance
+WalletSchema.index({ userId: 1 });
+WalletSchema.index({ userId: 1, isActive: 1 });
+WalletSchema.index({ userId: 1, type: 1 });
 
 // Virtual for total transactions
 WalletSchema.virtual('totalTransactions', {

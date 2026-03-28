@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, Image as ImageIcon, Images, Eye, Check } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
 import EducationRenderer from './educationRenderer';
 import EducationFullDetailModal from './educationFullDetailModal';
 import { cn } from '../../lib/utils';
@@ -31,17 +30,17 @@ const EducationCard = ({
         });
     };
 
-    const handleLike = (e) => {
-        e.stopPropagation();
-        setIsLiked(!isLiked);
-        if (onLike) {
-            onLike(education._id);
-        }
-    };
-
     const handleReadMore = () => {
         setReadProgress(100);
         setIsModalOpen(true);
+    };
+
+    const handleLike = (e) => {
+        e.stopPropagation();
+        setIsLiked(prev => !prev);
+        if (onLike) {
+            onLike(education._id);
+        }
     };
 
     const getTimeAgo = (date) => {
@@ -94,11 +93,16 @@ const EducationCard = ({
                 transition={{ duration: 0.2 }}
                 className="h-full"
             >
-                <GlassCard
+                <div
                     className={cn(
-                        "group h-full cursor-pointer overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-0 dark:from-white/10 dark:via-white/5",
+                        "group h-full cursor-pointer overflow-hidden p-0",
                         isListMode ? "flex flex-col md:flex-row" : "flex flex-col"
                     )}
+                    style={{
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--color-surface-1)',
+                    }}
                     onClick={handleReadMore}
                 >
                     {/* Image */}
@@ -112,15 +116,21 @@ const EducationCard = ({
                                     loading="lazy"
                                 />
                                 {education.images.length > 1 && (
-                                    <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded-lg text-xs flex items-center gap-1">
-                                        <Images className="w-3 h-3" />
+                                    <div
+                                        className="absolute bottom-2 right-2 px-2 py-1 rounded-lg text-xs flex items-center gap-1"
+                                        style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-primary)' }}
+                                    >
+                                        <Images className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                         {education.images.length}
                                     </div>
                                 )}
                             </>
                         ) : (
-                            <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                                <ImageIcon className="w-12 h-12 text-muted-foreground opacity-40" />
+                            <div
+                                className="w-full h-full flex items-center justify-center"
+                                style={{ background: 'var(--color-surface-2)' }}
+                            >
+                                <ImageIcon className="w-12 h-12 text-muted-foreground opacity-60" />
                             </div>
                         )}
                     </div>
@@ -132,7 +142,7 @@ const EducationCard = ({
                             <div className="flex items-center gap-1 text-muted-foreground font-medium">
                                 <span>{education.author?.username || 'WalletFrame'}</span>
                                 {readProgress === 100 && (
-                                    <Check className="w-3 h-3 text-emerald-500" />
+                                    <Check className="w-[18px] h-[18px] text-emerald-500" strokeWidth={1.5} />
                                 )}
                             </div>
                             <span className="text-muted-foreground">
@@ -158,12 +168,15 @@ const EducationCard = ({
                             <div className="mb-3">
                                 <div className="flex items-center justify-between mb-1 text-xs">
                                     <span className="flex items-center gap-1 text-muted-foreground">
-                                        <Eye className="w-3 h-3" />
+                                        <Eye className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                         {readProgress === 100 ? 'Read' : 'Continue reading'}
                                     </span>
                                     <span className="text-muted-foreground">{readProgress}%</span>
                                 </div>
-                                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-1 rounded-full overflow-hidden"
+                                    style={{ background: 'var(--color-border)' }}
+                                >
                                     <div
                                         className="h-full bg-primary rounded-full transition-all duration-300"
                                         style={{ width: `${readProgress}%` }}
@@ -173,7 +186,10 @@ const EducationCard = ({
                         )}
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 pt-3 border-t border-white/10">
+                        <div
+                            className="flex items-center gap-4 pt-3"
+                            style={{ borderTop: '1px solid var(--color-border)' }}
+                        >
                             <button
                                 onClick={handleLike}
                                 className={cn(
@@ -201,7 +217,7 @@ const EducationCard = ({
                             </button>
                         </div>
                     </div>
-                </GlassCard>
+                </div>
             </motion.div>
 
             <EducationFullDetailModal

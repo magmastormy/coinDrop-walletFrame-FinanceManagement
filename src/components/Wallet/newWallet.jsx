@@ -4,11 +4,11 @@ import { Plus, Wallet, CreditCard, Building2, PiggyBank, MoreHorizontal } from '
 import { addWallet } from '../../slices/walletSlice';
 import walletService from '../../services/walletService';
 import Modal from '../ui/Modal';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import { cn } from '../../lib/utils';
 
-const CreateNewWallet = ({ onWalletCreated }) => {
+const CreateNewWallet = ({ onWalletCreated, triggerButton }) => {
     const dispatch = useDispatch();
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -55,15 +55,24 @@ const CreateNewWallet = ({ onWalletCreated }) => {
         }
     };
 
+    const handleOpen = () => setIsOpen(true);
+    const handleClose = () => setIsOpen(false);
+
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} className="gap-2">
-                <Plus className="w-4 h-4" /> Add Wallet
-            </Button>
+            {triggerButton ? (
+                <div onClick={handleOpen} className="cursor-pointer">
+                    {triggerButton}
+                </div>
+            ) : (
+                <Button onClick={handleOpen} className="gap-2">
+                    <Plus className="w-4 h-4" /> Add Wallet
+                </Button>
+            )}
 
             <Modal
                 isOpen={isOpen}
-                onClose={() => setIsOpen(false)}
+                onClose={handleClose}
                 title="Create New Wallet"
             >
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -119,7 +128,7 @@ const CreateNewWallet = ({ onWalletCreated }) => {
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                        <Button type="button" variant="ghost" className="flex-1" onClick={() => setIsOpen(false)}>
+                        <Button type="button" variant="ghost" className="flex-1" onClick={handleClose}>
                             Cancel
                         </Button>
                         <Button type="submit" className="flex-1" isLoading={isLoading}>

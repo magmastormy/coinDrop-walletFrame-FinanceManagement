@@ -1,24 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Loader2, AlertCircle, PieChart } from 'lucide-react';
-import Chart from 'chart.js/auto';
+import { Loader2, PieChart } from 'lucide-react';
 import { getUserTransactions } from '../../services/transactionService';
 import { getUserCategories } from '../../services/categoryService';
 
 const DashboardPieChart = () => {
-    const chartRef = useRef(null);
-    const chartInstance = useRef(null);
     const [loading, setLoading] = useState(true);
     const { user } = useSelector(state => state.auth);
-    const [chartData, setChartData] = useState(null);
-
-    const generateColors = (count) => {
-        const baseColors = [
-            '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444',
-            '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'
-        ];
-        return Array.from({ length: count }, (_, i) => baseColors[i % baseColors.length]);
-    };
+    const [categoryData, setCategoryData] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -44,17 +33,23 @@ const DashboardPieChart = () => {
                     }
 
                     if (Object.keys(expensesByCategory).length === 0) {
-                        setChartData(null);
+                        setCategoryData([]);
                     } else {
-                        const labels = Object.keys(expensesByCategory);
-                        const data = Object.values(expensesByCategory);
-                        const backgroundColor = generateColors(labels.length);
+                        const totalExpense = Object.values(expensesByCategory).reduce((sum, amount) => sum + amount, 0);
+                        const sortedCategories = Object.entries(expensesByCategory)
+                            .map(([name, amount]) => ({
+                                name,
+                                amount,
+                                percentage: totalExpense > 0 ? Math.round((amount / totalExpense) * 100) : 0
+                            }))
+                            .sort((a, b) => b.amount - a.amount)
+                            .slice(0, 4);
 
-                        setChartData({ labels, data, backgroundColor });
+                        setCategoryData(sortedCategories);
                     }
                 } catch (error) {
                     console.error('Error fetching data:', error);
-                    setChartData(null);
+                    setCategoryData([]);
                 } finally {
                     setLoading(false);
                 }
@@ -64,75 +59,23 @@ const DashboardPieChart = () => {
         fetchData();
     }, [user]);
 
-    useEffect(() => {
-        if (loading || !chartData) return;
-
-        if (chartInstance.current) {
-            chartInstance.current.destroy();
-        }
-
-        const ctx = chartRef.current.getContext('2d');
-
-        chartInstance.current = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: chartData.labels,
-                datasets: [{
-                    data: chartData.data,
-                    backgroundColor: chartData.backgroundColor,
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            font: { family: "'Inter', sans-serif", size: 11 },
-                            color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151',
-                            padding: 15
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: (context) => {
-                                const value = context.raw || 0;
-                                return ` $${value.toLocaleString()}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        return () => {
-            if (chartInstance.current) {
-                chartInstance.current.destroy();
-            }
-        };
-    }, [chartData, loading]);
+    const getCategoryColor = (index) => {
+        const colors = ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-error'];
+        return colors[index % colors.length];
+    };
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-full text-on-tertiary-container">
                 <Loader2 className="w-8 h-8 animate-spin mb-2 text-primary" />
                 <p>Loading...</p>
             </div>
         );
     }
 
-    if (!chartData) {
+    if (categoryData.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-full text-on-tertiary-container">
                 <PieChart className="w-12 h-12 mb-2 opacity-20" />
                 <p>No expense data yet</p>
             </div>
@@ -140,8 +83,18 @@ const DashboardPieChart = () => {
     }
 
     return (
-        <div className="w-full h-full min-h-[250px] relative">
-            <canvas ref={chartRef} />
+        <div className="space-y-6">
+            {categoryData.map((category, index) => (
+                <div key={category.name} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-on-surface font-medium">{category.name}</span>
+                        <span className="text-on-surface font-bold">{category.percentage}%</span>
+                    </div>
+                    <div className="w-full bg-surface-container-low h-2 rounded-full">
+                        <div className={`${getCategoryColor(index)} h-full rounded-full`} style={{ width: `${category.percentage}%` }}></div>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };

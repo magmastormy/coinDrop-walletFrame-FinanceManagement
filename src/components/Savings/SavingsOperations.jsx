@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 
 const SavingsOperations = ({
     modalState,
@@ -52,7 +52,18 @@ const SavingsOperations = ({
                             <select
                                 value={selectedWallet}
                                 onChange={(e) => setSelectedWallet(e.target.value)}
-                                className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                                style={{
+                                    width: '100%',
+                                    height: '40px',
+                                    padding: '0 12px',
+                                    borderRadius: 'var(--radius-lg)',
+                                    border: '1px solid var(--color-border)',
+                                    background: 'var(--color-surface-2)',
+                                    color: 'var(--color-text-primary)',
+                                    outline: 'none',
+                                    fontSize: '14px',
+                                    fontFamily: 'var(--font-body)',
+                                }}
                             >
                                 <option value="" disabled>Select a wallet</option>
                                 {wallets.map((wallet) => (
@@ -67,7 +78,7 @@ const SavingsOperations = ({
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                         <Button variant="ghost" onClick={() => handleClose(type)}>
                             Cancel
                         </Button>

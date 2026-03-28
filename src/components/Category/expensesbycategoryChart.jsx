@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { PieChart, Loader2 } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
+import Card from '../ui/Card';
 
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -93,7 +93,7 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+            <Card variant="default" elevation={1} className="p-6">
                 <div className="mb-4 flex items-center gap-2">
                     <PieChart className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold text-foreground">Expenses by Category</h3>
@@ -111,12 +111,12 @@ const ExpensesByCategoryChart = ({ transactions = [], categories = [], loading =
                             <p className="text-sm">No expense data available</p>
                         </div>
                     ) : (
-                        <div className="h-[320px] rounded-xl border border-white/10 bg-background/40 p-3">
+                        <Card variant="secondary" className="h-[320px] p-3">
                             <Pie data={chartData} options={chartOptions} />
-                        </div>
+                        </Card>
                     )}
                 </div>
-            </GlassCard>
+            </Card>
         </motion.div>
     );
 };

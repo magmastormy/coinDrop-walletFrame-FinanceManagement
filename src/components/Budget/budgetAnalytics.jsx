@@ -2,6 +2,7 @@ import React from 'react';
 import BudgetTransactionList from './budgetTransactionList';
 import BudgetChart from './budgetCharts';
 import BudgetPerformanceChart from './budgetPerformanceChart';
+import Card from '../ui/Card';
 
 const BudgetAnalytics = ({ budget, transactions, filter, onFilterChange }) => {
   if (!budget) {
@@ -19,13 +20,13 @@ const BudgetAnalytics = ({ budget, transactions, filter, onFilterChange }) => {
         onFilterChange={onFilterChange}
         filter={filter}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card variant="default" elevation={1} className="p-4 h-full">
           <BudgetChart budget={budget} />
-        </div>
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+        </Card>
+        <Card variant="default" elevation={1} className="p-4 h-full">
           <BudgetPerformanceChart budget={budget} />
-        </div>
+        </Card>
       </div>
     </div>
   );

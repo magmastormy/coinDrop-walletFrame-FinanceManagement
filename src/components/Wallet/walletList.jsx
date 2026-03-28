@@ -1,96 +1,167 @@
-import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
+import React, { useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet } from 'lucide-react';
+import { Wallet, LayoutGrid, List, SearchX } from 'lucide-react';
 import CreateNewWallet from './newWallet';
 import WalletCard from './walletCard';
-import { GlassCard } from '../ui/GlassCard';
 
-const WalletList = ({ wallets = [], onWalletUpdate, onWalletDelete, onTransfer }) => {
+const MaterialIcon = ({ name, className = '', filled = false }) => (
+    <span 
+        className={`material-symbols-outlined ${className}`}
+        style={{ fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0" }}
+    >
+        {name}
+    </span>
+);
+
+const WalletList = React.memo(({ 
+    wallets = [], 
+    allWallets = [],
+    onWalletUpdate, 
+    onWalletDelete, 
+    onTransfer, 
+    onWalletSelect,
+    viewMode = 'grid',
+    setViewMode,
+    searchQuery = ''
+}) => {
+    WalletList.displayName = 'WalletList';
+    
     const totalBalance = useMemo(() => {
-        return Array.isArray(wallets) ? wallets.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0) : 0;
+        return wallets?.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0) || 0;
     }, [wallets]);
 
-    const formatCurrency = (amount) => {
+    const formatCurrency = useCallback((amount) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }).format(amount);
-    };
+    }, []);
 
-    if (!wallets.length) {
+    // Empty state when no wallets exist at all
+    if (!allWallets?.length) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
-                    <Wallet className="w-8 h-8" />
+            <section>
+                <div className="flex flex-col items-center justify-center p-8 text-center bg-surface-container-low rounded-2xl border border-outline-variant/5">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
+                        <MaterialIcon name="account_balance_wallet" className="text-4xl" filled />
+                    </div>
+                    <h3 className="text-xl font-medium text-on-surface mb-2">No Wallets Found</h3>
+                    <p className="text-sm text-on-tertiary-container mb-6 max-w-md">
+                        Get started by creating your first wallet to track finances and manage budgets.
+                    </p>
+                    <CreateNewWallet onWalletCreated={onWalletUpdate} />
                 </div>
-                <h3 className="text-xl font-display font-bold mb-2">No Wallets Yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-sm">
-                    Create your first wallet to start tracking your finances and managing your budget effectively.
-                </p>
-                <CreateNewWallet onWalletCreated={onWalletUpdate} />
-            </div>
+            </section>
+        );
+    }
+
+    // Empty state when search returns no results
+    if (searchQuery && !wallets?.length) {
+        return (
+            <section>
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-2xl font-bold font-headline text-on-surface">Active Wallets</h3>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setViewMode('grid')}
+                            className={`p-2 rounded-lg transition-colors ${
+                                viewMode === 'grid' 
+                                    ? 'bg-surface-container-high text-on-surface' 
+                                    : 'text-on-surface-variant hover:bg-surface-container-high'
+                            }`}
+                        >
+                            <LayoutGrid className="w-5 h-5" />
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('list')}
+                            className={`p-2 rounded-lg transition-colors ${
+                                viewMode === 'list' 
+                                    ? 'bg-surface-container-high text-on-surface' 
+                                    : 'text-on-surface-variant hover:bg-surface-container-high'
+                            }`}
+                        >
+                            <List className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-12 text-center bg-surface-container-low rounded-2xl border border-outline-variant/5">
+                    <div className="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center mb-4 text-on-tertiary-container">
+                        <SearchX className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-medium text-on-surface mb-2">No Wallets Match Your Search</h3>
+                    <p className="text-sm text-on-tertiary-container mb-2 max-w-md">
+                        No wallets found matching "<span className="text-primary">{searchQuery}</span>"
+                    </p>
+                    <p className="text-xs text-on-tertiary-container/70 mb-6">
+                        Try searching by wallet name or type (e.g., "savings", "checking")
+                    </p>
+                </div>
+            </section>
         );
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-end gap-4">
-                <div>
-                    <h2 className="text-2xl font-display font-bold text-foreground">Your Wallets</h2>
-                    <p className="text-muted-foreground">Manage your accounts and balances</p>
+        <section>
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold font-headline text-on-surface">Active Wallets</h3>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-lg transition-colors ${
+                            viewMode === 'grid' 
+                                ? 'bg-surface-container-high text-on-surface' 
+                                : 'text-on-surface-variant hover:bg-surface-container-high'
+                        }`}
+                    >
+                        <LayoutGrid className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-lg transition-colors ${
+                            viewMode === 'list' 
+                                ? 'bg-surface-container-high text-on-surface' 
+                                : 'text-on-surface-variant hover:bg-surface-container-high'
+                        }`}
+                    >
+                        <List className="w-5 h-5" />
+                    </button>
                 </div>
-                <div className="text-right">
-                    <p className="text-sm text-muted-foreground font-medium">Total Balance</p>
-                    <p className="text-3xl font-display font-bold text-primary">
-                        {formatCurrency(totalBalance)}
-                    </p>
-                </div>
-            </div>
-
-            <div className="flex justify-end">
-                <CreateNewWallet onWalletCreated={onWalletUpdate} />
             </div>
 
             <AnimatePresence mode="popLayout">
-                <motion.div
-                    className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 2xl:grid-cols-3 items-stretch"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                >
+                <div className={`
+                    ${viewMode === 'grid' 
+                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' 
+                        : 'flex flex-col gap-4'
+                    }
+                `}>
                     {wallets.map((wallet, index) => (
                         <motion.div
                             key={wallet._id}
-                            className="h-full"
-                            layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ delay: index * 0.05 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ delay: index * 0.03, duration: 0.3 }}
+                            onClick={() => onWalletSelect?.(wallet)}
+                            className={viewMode === 'list' ? 'cursor-pointer' : ''}
                         >
                             <WalletCard
                                 wallet={wallet}
-                                wallets={wallets}
+                                wallets={allWallets}
                                 onUpdate={onWalletUpdate}
                                 onDelete={onWalletDelete}
                                 onTransfer={onTransfer}
+                                viewMode={viewMode}
                             />
                         </motion.div>
                     ))}
-                </motion.div>
+                </div>
             </AnimatePresence>
-        </div>
+        </section>
     );
-};
+});
 
-WalletList.propTypes = {
-    wallets: PropTypes.array,
-    onWalletUpdate: PropTypes.func.isRequired,
-    onWalletDelete: PropTypes.func.isRequired,
-    onTransfer: PropTypes.func
-};
-
-export default React.memo(WalletList);
-
-
+export default WalletList;

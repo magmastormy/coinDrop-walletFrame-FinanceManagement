@@ -1,0 +1,168 @@
+/* ========================================
+   COINDROP LAYOUT SYSTEM
+   ========================================
+   
+   /* ========================================
+      BENTO GRID SYSTEM
+      ======================================== */
+   
+   .bento-grid {
+     display: grid;
+     gap: var(--space-3);
+     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+     grid-auto-rows: minmax(160px, auto);
+   }
+   
+   .bento-cell-1x1 { grid-area: span 1 / span 1; }
+   .bento-cell-2x1 { grid-area: span 2 / span 1; }
+   .bento-cell-1x2 { grid-area: span 1 / span 2; }
+   .bento-cell-2x2 { grid-area: span 2 / span 2; }
+   
+   /* ========================================
+      CARD HIERARCHY
+      ======================================== */
+   
+   .card-level-0 {
+     background: var(--color-surface-0);
+     border: 1px solid var(--color-border-light);
+   }
+   
+   .card-level-1 {
+     background: var(--color-surface-1);
+     border: 1px solid var(--color-border);
+     box-shadow: var(--shadow-card);
+   }
+   
+   .card-level-2 {
+     background: var(--color-surface-2);
+     border: 1px solid var(--color-border);
+     box-shadow: var(--shadow-raised);
+   }
+   
+   .card-level-3 {
+     background: var(--color-surface-3);
+     border: 1px solid var(--color-border);
+     box-shadow: var(--shadow-floating);
+   }
+   
+   /* ========================================
+      RESPONSIVE LAYOUT PATTERNS
+      ======================================== */
+   
+   .container {
+     width: 100%;
+     max-width: 1400px;
+     margin: 0 auto;
+     padding: 0 var(--space-6);
+   }
+   
+   .section {
+     margin-bottom: var(--space-12);
+   }
+   
+   .stack {
+     display: flex;
+     flex-direction: column;
+     gap: var(--space-3);
+   }
+   
+   .cluster {
+     display: flex;
+     flex-wrap: wrap;
+     gap: var(--space-2);
+     align-items: center;
+   }
+   
+   .sidebar {
+     width: 280px;
+     flex-shrink: 0;
+   }
+   
+   .main-content {
+     flex: 1;
+     min-width: 0;
+   }
+   
+   /* ========================================
+      RESPONSIVE BREAKPOINTS
+      ======================================== */
+   
+   @media (max-width: 640px) {
+     .container {
+       padding: 0 var(--space-4);
+     }
+     
+     .bento-grid {
+       grid-template-columns: 1fr;
+       gap: var(--space-3);
+     }
+     
+     .stack {
+       gap: var(--space-2);
+     }
+     
+     .cluster {
+       gap: var(--space-1);
+     }
+   }
+   
+   @media (max-width: 768px) {
+     .bento-grid {
+       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+     }
+   }
+   
+   @media (min-width: 1200px) {
+     .container {
+       padding: 0 var(--space-8);
+     }
+     
+     .bento-grid {
+       gap: var(--space-6);
+     }
+   }
+   
+   /* ========================================
+      UTILITY CLASSES
+      ======================================== */
+   
+   .visually-hidden {
+     position: absolute;
+     width: 1px;
+     height: 1px;
+     padding: 0;
+     margin: -1px;
+     overflow: hidden;
+     clip: rect(0, 0, 0, 0);
+     white-space: nowrap;
+     border: 0;
+   }
+   
+   .focus-visible:focus-visible {
+     outline: 2px solid var(--color-primary-500);
+     outline-offset: 2px;
+   }
+   
+   .text-balance {
+     font-family: var(--font-mono);
+     font-weight: var(--weight-semibold);
+     color: var(--color-text-secondary);
+   }
+   
+   .text-primary {
+     font-family: var(--font-display);
+     font-weight: var(--weight-bold);
+     color: var(--color-text-primary);
+   }
+   
+   .text-secondary {
+     font-family: var(--font-body);
+     font-weight: var(--weight-medium);
+     color: var(--color-text-secondary);
+   }
+   
+   .text-muted {
+     font-family: var(--font-body);
+     font-weight: var(--weight-regular);
+     color: var(--color-text-muted);
+   }

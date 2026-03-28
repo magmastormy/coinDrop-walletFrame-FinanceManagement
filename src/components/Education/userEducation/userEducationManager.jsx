@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-    Plus, Loader2, AlertCircle, LayoutGrid, List,
+    Plus, Loader2, AlertCircle, LayoutGrid, List, Grid,
     ArrowUpDown, RefreshCw, X, ArrowDownAZ
 } from 'lucide-react';
 import educationService from '../../../services/educationService';
@@ -21,7 +21,8 @@ import CreateEditEducationPost from './createEditEducationPost';
 import UserEducationPostCard from './userEducationPostCard';
 import EducationNavBar from '../educationNavBar';
 import EducationSearchBar from '../educationSearchBar';
-import { Button } from '../../ui/Button';
+import Button from '../../ui/Button';
+import PageHeader from '../../Common/PageHeader';
 
 // Toast notifications
 import { toast } from 'react-toastify';
@@ -70,9 +71,10 @@ const UserEducationManager = () => {
         dispatch(setLoading(true));
         try {
             const response = await educationService.getUserEducations(user.id);
-            let filteredResponse = response;
+            // Extract data from axios response, handling both axios response and plain data
+            const educationsData = response?.data || response || [];
 
-            dispatch(setEducations(filteredResponse));
+            dispatch(setEducations(educationsData));
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -262,33 +264,14 @@ const UserEducationManager = () => {
     }
 
     return (
-        <div className="flex flex-row h-[calc(100vh-64px)] w-full bg-background overflow-hidden">
+        <div className="flex flex-row h-full w-full bg-background overflow-hidden">
             {/* Left Sidebar - Fixed width */}
-            <div className="w-64 min-w-[250px] p-4 h-full overflow-y-auto border-r border-border flex flex-col">
-                <EducationNavBar />
-
-                <div className="my-6 border-t border-border" />
-
-                <h3 className="text-xs font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
-                    My Content
-                </h3>
-
-                <div className="flex flex-col gap-2 mb-4">
-                    <button
-                        onClick={() => {
-                            setFilterType('all');
-                            navigate('/education');
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === 'all'
-                                ? 'bg-primary text-white'
-                                : 'bg-muted text-foreground hover:bg-muted/80'
-                            }`}
-                    >
-                        Other Posts
-                    </button>
+            <div className="w-64 min-w-[250px] h-full overflow-y-auto border-r border-border flex flex-col">
+                <div className="flex-grow">
+                    <EducationNavBar />
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-border">
+                <div className="pt-4 border-t border-border">
                     <Button
                         onClick={() => setShowCreateModal(true)}
                         className="w-full flex items-center justify-center gap-2"
@@ -301,60 +284,64 @@ const UserEducationManager = () => {
 
             {/* Main Content Area */}
             <div className="flex-grow h-full w-full flex flex-col overflow-y-hidden p-6">
-                {/* Header with Search and Controls */}
-                <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                    <h1 className="text-3xl font-semibold text-foreground flex-shrink-0">
-                        {getPageTitle()}
-                    </h1>
+                <PageHeader
+                    title={getPageTitle()}
+                    actions={(
+                        <div className="flex gap-2 items-center w-full sm:w-auto">
+                            <div className="flex-grow max-w-xs">
+                                <EducationSearchBar onSearch={handleSearch} />
+                            </div>
 
-                    <div className="flex gap-2 items-center w-full sm:w-auto">
-                        <div className="flex-grow max-w-xs">
-                            <EducationSearchBar onSearch={handleSearch} />
-                        </div>
+                            <div className="relative">
+                                <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => handleSortChange(e.target.value)}
+                                    className="h-10 rounded-xl pl-9 pr-8 text-sm text-foreground outline-none transition-all"
+                                    style={{
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface-2)',
+                                        color: 'var(--color-text-primary)',
+                                        fontFamily: 'var(--font-body)',
+                                    }}
+                                    aria-label="Sort my education posts"
+                                >
+                                    <option value="newest">Newest</option>
+                                    <option value="oldest">Oldest</option>
+                                    <option value="popular">Most Popular</option>
+                                    <option value="title">Title A-Z</option>
+                                </select>
+                            </div>
 
-                        <div className="relative">
-                            <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <select
-                                value={sortBy}
-                                onChange={(e) => handleSortChange(e.target.value)}
-                                className="h-10 rounded-xl border border-white/10 bg-background/70 pl-9 pr-8 text-sm text-foreground outline-none transition-all focus:border-primary/40"
-                                aria-label="Sort my education posts"
+                            <button
+                                onClick={handleViewModeChange}
+                                className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                                title="Toggle view mode"
                             >
-                                <option value="newest">Newest</option>
-                                <option value="oldest">Oldest</option>
-                                <option value="popular">Most Popular</option>
-                                <option value="title">Title A-Z</option>
-                            </select>
+                                {viewMode === 'grid' ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                            </button>
+
+                            <button
+                                onClick={toggleFilters}
+                                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
+                                    }`}
+                                title="Sort posts"
+                            >
+                                <ArrowUpDown className="w-5 h-5" />
+                            </button>
+
+                            <button
+                                onClick={fetchUserEducationPosts}
+                                className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                                title="Refresh"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                            </button>
                         </div>
+                    )}
+                />
 
-                        <button
-                            onClick={handleViewModeChange}
-                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
-                            title="Toggle view mode"
-                        >
-                            {viewMode === 'grid' ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                        </button>
-
-                        <button
-                            onClick={toggleFilters}
-                            className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'
-                                }`}
-                            title="Sort posts"
-                        >
-                            <ArrowUpDown className="w-5 h-5" />
-                        </button>
-
-                        <button
-                            onClick={fetchUserEducationPosts}
-                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
-                            title="Refresh"
-                        >
-                            <RefreshCw className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="mb-3 text-sm text-muted-foreground">
+                <div className="mt-4 mb-3 text-sm text-muted-foreground">
                     Showing <span className="font-medium text-foreground">{sortedEducations?.length || 0}</span> posts
                 </div>
 
@@ -409,28 +396,50 @@ const UserEducationManager = () => {
                 {/* Education Posts Grid/List */}
                 <div className="flex-grow overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                     {!sortedEducations || sortedEducations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center h-full p-8">
-                            <h3 className="text-xl font-semibold text-foreground mb-2">
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%',
+                            textAlign: 'center',
+                            padding: '64px'
+                        }}>
+                            <div style={{
+                                width: '80px',
+                                height: '80px',
+                                borderRadius: 'var(--radius-xl)',
+                                background: 'rgba(212, 175, 55, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '24px',
+                                color: 'var(--color-gold)'
+                            }}>
+                                <Grid className="w-10 h-10" />
+                            </div>
+                            <h2 style={{
+                                fontSize: '24px',
+                                fontWeight: 700,
+                                color: 'var(--color-text-primary)',
+                                marginBottom: '12px',
+                                fontFamily: 'var(--font-display)'
+                            }}>
                                 {getEmptyStateMessage()}
-                            </h3>
-
-                            {filterType === 'all' && (
-                                <Button
-                                    onClick={() => setShowCreateModal(true)}
-                                    className="mt-4 flex items-center gap-2"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Create your first post
-                                </Button>
-                            )}
-
-                            {filterType !== 'all' && (
-                                <p className="text-muted-foreground max-w-md mt-2">
-                                    {filterType === 'liked' ?
-                                        "Explore the Education Center to find posts you might want to like." :
-                                        "Browse the Education Center to discover educational content."}
-                                </p>
-                            )}
+                            </h2>
+                            <p style={{
+                                fontSize: '16px',
+                                color: 'var(--color-text-secondary)',
+                                maxWidth: '480px',
+                                lineHeight: 1.6,
+                                fontFamily: 'var(--font-body)'
+                            }}>
+                                {filterType === 'liked' ?
+                                    "Explore the Education Center to find posts you might want to like." :
+                                    filterType === 'bookmarked' ?
+                                        "Browse the Education Center to discover educational content." :
+                                        "Education content is being prepared. Check back soon for helpful financial tips and guides."}
+                            </p>
                         </div>
                     ) : (
                         <div className={`grid gap-5 md:gap-6 ${viewMode === 'list'

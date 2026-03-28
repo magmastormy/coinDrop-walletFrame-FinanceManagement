@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AlertTriangle, Wallet as WalletIcon, Shield, Loader } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
+import { Select } from '../ui/Select';
 
 const DeleteWalletDialog = ({
     isOpen,
@@ -18,26 +18,14 @@ const DeleteWalletDialog = ({
     useEffect(() => {
         if (isOpen && otherWallets.length > 0) {
             setSelectedWalletId(otherWallets[0]._id);
-        } else {
-            setSelectedWalletId('');
         }
     }, [isOpen, otherWallets]);
 
     const handleConfirm = async () => {
         setIsProcessing(true);
         try {
-            if (typeof onConfirm !== 'function') {
-                throw new Error('Delete confirmation function is not available');
-            }
-
-            console.log('Deleting wallet with ID:', wallet._id);
-            console.log('Transfer to wallet ID:', selectedWalletId || 'none');
-
             await onConfirm(wallet._id, selectedWalletId || null);
-            console.log('Wallet deleted successfully');
             onClose();
-        } catch (error) {
-            console.error('Error deleting wallet:', error);
         } finally {
             setIsProcessing(false);
         }
@@ -49,76 +37,82 @@ const DeleteWalletDialog = ({
     const hasOtherWallets = otherWallets.length > 0;
     const formatCurrency = (amount) => new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format(amount);
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <motion.div
-                onClick={e => e.stopPropagation()}
-                initial={{ opacity: 0, scale: 0.8 }}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div 
+                className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden"
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={e => e.stopPropagation()}
             >
-                <GlassCard className="w-full max-w-md">
-                    <div className="flex items-center gap-3 mb-6">
-                        {isSystemWallet ? (
-                            <Shield className="w-8 h-8 text-primary" />
-                        ) : (
-                            <AlertTriangle className="w-8 h-8 text-yellow-500" />
-                        )}
-                        <h2 className="text-xl font-bold text-foreground">
-                            {isSystemWallet ? "Protected System Wallet" : "Delete Wallet"}
-                        </h2>
-                    </div>
+                {/* Header */}
+                <div className="border-b border-gray-200 p-4 flex items-center gap-3">
+                    {isSystemWallet ? (
+                        <Shield className="w-5 h-5 text-blue-600" />
+                    ) : (
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                    )}
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        {isSystemWallet ? "Protected Wallet" : "Delete Wallet"}
+                    </h2>
+                </div>
 
+                {/* Content */}
+                <div className="p-6">
                     {isSystemWallet ? (
                         <div className="space-y-4">
-                            <p className="text-muted-foreground">
-                                This is a system wallet that contains funds from deleted accounts.
+                            <p className="text-gray-600">
+                                This is a protected system wallet that contains funds from deleted accounts.
                             </p>
-                            <p className="text-muted-foreground">
-                                You cannot delete this wallet while it contains funds. Please transfer all funds to another wallet first.
+                            <p className="text-gray-600">
+                                To delete this wallet, first transfer all funds to another wallet.
                             </p>
-                            <Button onClick={onClose} className="w-full">
-                                OK
+                            <Button 
+                                onClick={onClose}
+                                className="w-full mt-4"
+                            >
+                                Close
                             </Button>
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <p className="text-muted-foreground">
-                                Are you sure you want to delete the wallet <strong className="text-foreground">{wallet?.name}</strong>?
+                            <p className="text-gray-600">
+                                Are you sure you want to permanently delete <span className="font-medium text-gray-900">&quot;{wallet?.name}&quot;</span>?
                             </p>
 
                             {hasBalance && (
-                                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 space-y-3">
-                                    <p className="text-foreground">
-                                        This wallet has a balance of <strong>{formatCurrency(wallet.balance)}</strong>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-4">
+                                    <p className="font-medium text-yellow-800">
+                                        This wallet contains {formatCurrency(wallet.balance)}
                                     </p>
 
                                     {hasOtherWallets ? (
                                         <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">
-                                                Please select a wallet to transfer the funds to:
-                                            </p>
-                                            <select
+                                            <label className="block text-sm font-medium text-gray-700">
+                                                Transfer funds to:
+                                            </label>
+                                            <Select
                                                 value={selectedWalletId}
                                                 onChange={e => setSelectedWalletId(e.target.value)}
-                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                             >
                                                 {otherWallets.map(w => (
                                                     <option key={w._id} value={w._id}>
                                                         {w.name} ({formatCurrency(w.balance)})
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </Select>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
-                                            <WalletIcon className="w-5 h-5 text-muted-foreground" />
-                                            <p className="text-sm text-muted-foreground">
-                                                A system wallet will be created to hold these funds.
+                                        <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-md">
+                                            <WalletIcon className="w-4 h-4 text-gray-400 mt-0.5" />
+                                            <p className="text-sm text-gray-600">
+                                                Funds will be moved to a system wallet
                                             </p>
                                         </div>
                                     )}
@@ -127,7 +121,8 @@ const DeleteWalletDialog = ({
 
                             <div className="flex gap-3 pt-4">
                                 <Button
-                                    variant="secondary"
+                                    type="button"
+                                    variant="outline"
                                     onClick={onClose}
                                     disabled={isProcessing}
                                     className="flex-1"
@@ -135,6 +130,7 @@ const DeleteWalletDialog = ({
                                     Cancel
                                 </Button>
                                 <Button
+                                    type="button"
                                     variant="destructive"
                                     onClick={handleConfirm}
                                     disabled={isProcessing}
@@ -143,7 +139,7 @@ const DeleteWalletDialog = ({
                                     {isProcessing ? (
                                         <>
                                             <Loader className="w-4 h-4 mr-2 animate-spin" />
-                                            Processing...
+                                            Deleting...
                                         </>
                                     ) : (
                                         'Delete Wallet'
@@ -152,7 +148,7 @@ const DeleteWalletDialog = ({
                             </div>
                         </div>
                     )}
-                </GlassCard>
+                </div>
             </motion.div>
         </div>
     );

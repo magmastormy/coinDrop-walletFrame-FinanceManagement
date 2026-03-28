@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Image, X, Loader } from 'lucide-react';
 import ImageService from '../../services/imageService';
-import { useTheme } from '../../theme/ThemeContext';
 import { cn } from '../../lib/utils';
 
 const EducationImageUpload = ({
@@ -12,7 +11,6 @@ const EducationImageUpload = ({
     maxImages = 5,
     className = ''
 }) => {
-    const { theme } = useTheme();
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
 
@@ -72,7 +70,8 @@ const EducationImageUpload = ({
                         <img
                             src={image.preview || image.url}
                             alt={`Preview ${index + 1}`}
-                            className="w-full aspect-square object-cover rounded-lg border border-white/10"
+                            className="w-full aspect-square object-cover rounded-lg"
+                            style={{ border: '1px solid var(--color-border)' }}
                         />
                         <button
                             onClick={() => onImageRemove(index)}
@@ -83,7 +82,7 @@ const EducationImageUpload = ({
                             )}
                             aria-label="Remove image"
                         >
-                            <X className="w-3 h-3 text-white" />
+                            <X className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                         </button>
                     </div>
                 ))}
@@ -93,13 +92,25 @@ const EducationImageUpload = ({
                 <div
                     {...getRootProps()}
                     className={cn(
-                        "p-8 border-2 border-dashed border-white/20 rounded-lg",
-                        "hover:border-primary/50 hover:bg-white/5 transition-all cursor-pointer",
+                        "p-8 border-2 border-dashed rounded-lg",
+                        "transition-all cursor-pointer",
                         "flex flex-col items-center gap-3"
                     )}
+                    style={{
+                        borderColor: 'var(--color-border)',
+                        background: 'var(--color-surface-1)',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--color-surface-2)';
+                        e.currentTarget.style.borderColor = 'var(--color-border)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--color-surface-1)';
+                        e.currentTarget.style.borderColor = 'var(--color-border)';
+                    }}
                 >
                     <input {...getInputProps()} />
-                    <Image className="w-12 h-12 text-muted-foreground" />
+                    <Image className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
                     <p className="text-muted-foreground text-center">Drop images or click to select</p>
                     <span className="text-xs text-muted-foreground">
                         {currentImages.length} / {maxImages} images

@@ -6,8 +6,7 @@ import UserEducationFullDetailModal from './userEducationFullDetailModal';
 import { cn } from '../../../lib/utils';
 
 import EducationImageGallery from '../educationImageGallery';
-import { GlassCard } from '../../ui/GlassCard';
-import { Button } from '../../ui/Button';
+import Button from '../../ui/Button';
 import SafeHtml from '../../Common/SafeHtml';
 
 const UserEducationPostCard = ({
@@ -114,11 +113,16 @@ const UserEducationPostCard = ({
             whileHover={isListMode ? { y: -2 } : { scale: 1.01 }}
             className="h-full"
         >
-            <GlassCard
+            <div
                 className={cn(
-                    "h-full cursor-pointer overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-0 dark:from-white/10 dark:via-white/5",
+                    "h-full cursor-pointer overflow-hidden p-0",
                     isListMode ? "flex flex-col md:flex-row" : "flex flex-col"
                 )}
+                style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-1)',
+                }}
                 onClick={() => {
                     setReadProgress(100);
                     setIsModalOpen(true);
@@ -138,15 +142,18 @@ const UserEducationPostCard = ({
                                 }}
                             />
                             {post.images.length > 1 && (
-                                <div className="absolute bottom-3 right-3 bg-black/60 text-white rounded-xl px-3 py-1.5 text-xs flex items-center gap-1.5">
-                                    <ImageIcon className="w-3 h-3" />
+                                <div
+                                    className="absolute bottom-3 right-3 rounded-xl px-3 py-1.5 text-xs flex items-center gap-1.5"
+                                    style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-primary)' }}
+                                >
+                                    <ImageIcon className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                     {post.images.length}
                                 </div>
                             )}
                         </>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="w-12 h-12 text-muted-foreground/40" />
+                            <ImageIcon className="w-12 h-12 text-muted-foreground/80" aria-hidden="true" />
                         </div>
                     )}
                 </div>
@@ -173,7 +180,7 @@ const UserEducationPostCard = ({
                                     {post.author?.username || 'Anonymous User'}
                                 </p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <Calendar className="w-3 h-3" />
+                                    <Calendar className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                     {post.createdAt ? getTimeAgo(post.createdAt) : new Date(post.date).toLocaleDateString()}
                                 </p>
                             </div>
@@ -188,7 +195,7 @@ const UserEducationPostCard = ({
                                     }}
                                     className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted"
                                 >
-                                    <MoreVertical className="w-4 h-4" />
+                                    <MoreVertical className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                 </button>
                                 {anchorEl && (
                                     <div className="absolute right-0 top-full z-10 mt-1 min-w-[120px] rounded-lg border border-border bg-card py-1 shadow-lg">
@@ -199,7 +206,7 @@ const UserEducationPostCard = ({
                                             }}
                                             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
                                         >
-                                            <Edit className="w-4 h-4" />
+                                            <Edit className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                             Edit
                                         </button>
                                         <button
@@ -209,7 +216,7 @@ const UserEducationPostCard = ({
                                             }}
                                             className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-[18px] h-[18px]" strokeWidth={1.5} />
                                             Delete
                                         </button>
                                     </div>
@@ -236,9 +243,12 @@ const UserEducationPostCard = ({
                     {/* Read Progress */}
                     {readProgress > 0 && (
                         <div className="mt-3 w-full">
-                            <div className="h-1 bg-primary/20 rounded-full overflow-hidden">
+                            <div
+                                className="h-1 rounded-full overflow-hidden"
+                                style={{ background: 'var(--color-border)' }}
+                            >
                                 <div
-                                    className="h-full bg-primary transition-all duration-300"
+                                    className="h-full bg-primary rounded-full transition-all duration-300"
                                     style={{ width: `${readProgress}%` }}
                                 />
                             </div>
@@ -247,7 +257,10 @@ const UserEducationPostCard = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between border-t border-white/10 px-5 py-4">
+                <div
+                    className="flex items-center justify-between px-5 py-4"
+                    style={{ borderTop: '1px solid var(--color-border)' }}
+                >
                     <div className="flex gap-3">
                         <button
                             onClick={(e) => {
@@ -260,7 +273,7 @@ const UserEducationPostCard = ({
                                 }`}
                             title={isLiked ? "Unlike" : "Like"}
                         >
-                            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                            <Heart className={`w-[18px] h-[18px] ${isLiked ? 'fill-current' : ''}`} strokeWidth={1.5} />
                             {Array.isArray(post.likes) && post.likes.length > 0 && (
                                 <span className="text-sm">{post.likes.length}</span>
                             )}
@@ -274,7 +287,7 @@ const UserEducationPostCard = ({
                             className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted"
                             title="Comments"
                         >
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
                             {Array.isArray(post.comments) && post.comments.length > 0 && (
                                 <span className="text-sm">{post.comments.length}</span>
                             )}
@@ -284,7 +297,13 @@ const UserEducationPostCard = ({
 
                 {/* Comments Section */}
                 {showComments && (
-                    <div className="border-t border-white/10 bg-muted/30 px-5 py-4">
+                    <div
+                        className="px-5 py-4"
+                        style={{
+                            borderTop: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                        }}
+                    >
                         {post.comments?.map((comment, index) => (
                             <div key={`${post._id}-comment-${index}`} className="mb-3">
                                 <p className="font-semibold text-sm text-foreground">{comment.author?.username}</p>
@@ -327,7 +346,7 @@ const UserEducationPostCard = ({
                     onComment={onComment}
                     currentUser={currentUser}
                 />
-            </GlassCard>
+            </div>
         </motion.div>
     );
 };

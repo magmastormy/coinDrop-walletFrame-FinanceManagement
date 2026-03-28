@@ -1,7 +1,14 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-const Input = React.forwardRef(({ className, type, label, error, ...props }, ref) => {
+const Input = React.forwardRef(({ className, type, label, error, style, ...props }, ref) => {
+    const baseStyle = {
+        background: 'var(--color-surface-2)',
+        borderColor: error ? 'var(--color-negative)' : 'var(--color-border)',
+        borderRadius: 'var(--radius-md)',
+        color: 'var(--color-text-primary)'
+    };
+
     return (
         <div className="w-full space-y-1">
             {label && (
@@ -13,11 +20,16 @@ const Input = React.forwardRef(({ className, type, label, error, ...props }, ref
                 <input
                     type={type}
                     className={cn(
-                        "flex h-10 w-full rounded-xl border border-input bg-white/50 dark:bg-gray-900/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 backdrop-blur-sm",
-                        error && "border-red-500 focus-visible:ring-red-500",
+                        "flex h-12 w-full border px-3 text-sm transition-all duration-200",
+                        "disabled:cursor-not-allowed disabled:opacity-50",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
+                        error
+                            ? "border-red-500 focus-visible:ring-red-500/40"
+                            : "focus-visible:ring-[rgba(255,209,102,0.5)]",
                         className
                     )}
                     ref={ref}
+                    style={{ ...baseStyle, ...style }}
                     {...props}
                 />
             </div>

@@ -8,31 +8,16 @@ class AnalyticsController {
         try {
             const userId = req.user._id;
 
-            // Get total balance
-            const wallets = await Wallet.find({ userId });
-            const totalBalance = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
-
-            // Get current month's expenses
-            const currentMonth = new Date();
-            currentMonth.setDate(1);
-            currentMonth.setHours(0, 0, 0, 0);
-
-            const lastMonth = new Date(currentMonth);
-            lastMonth.setMonth(lastMonth.getMonth() - 1);
-
-            const [currentExpenses, lastMonthExpenses] = await Promise.all([
-                Transaction.aggregate([
+            // Optimized: Single query with aggregation
+            const [walletData, expenseData] = await Promise.all([
+                Wallet.aggregate([
                     {
-                        $match: {
-                            userId: mongoose.Types.ObjectId(userId),
-                            type: 'expense',
-                            date: { $gte: currentMonth }
-                        }
+                        $match: { userId: mongoose.Types.ObjectId(userId) }
                     },
                     {
                         $group: {
                             _id: null,
-                            total: { $sum: '$amount' }
+                            totalBalance: { $sum: '$balance' }
                         }
                     }
                 ]),
@@ -40,34 +25,58 @@ class AnalyticsController {
                     {
                         $match: {
                             userId: mongoose.Types.ObjectId(userId),
-                            type: 'expense',
-                            date: {
-                                $gte: lastMonth,
-                                $lt: currentMonth
-                            }
+                            type: 'expense'
                         }
                     },
                     {
-                        $group: {
-                            _id: null,
-                            total: { $sum: '$amount' }
+                        $facet: {
+                            currentMonth: [
+                                {
+                                    $match: {
+                                        date: { $gte: new Date(new Date().setDate(1)) }
+                                    }
+                                },
+                                {
+                                    $group: {
+                                        _id: null,
+                                        total: { $sum: '$amount' }
+                                    }
+                                }
+                            ],
+                            lastMonth: [
+                                {
+                                    $match: {
+                                        date: {
+                                            $gte: new Date(new Date().setMonth(new Date().getMonth() - 1)),
+                                            $lt: new Date(new Date().setDate(1))
+                                        }
+                                    }
+                                },
+                                {
+                                    $group: {
+                                        _id: null,
+                                        total: { $sum: '$amount' }
+                                    }
+                                }
+                            ]
                         }
                     }
                 ])
             ]);
 
-            const totalExpenses = currentExpenses[0]?.total || 0;
-            const lastMonthTotal = lastMonthExpenses[0]?.total || 0;
+            const totalBalance = walletData[0]?.totalBalance || 0;
+            const totalExpenses = expenseData[0]?.currentMonth[0]?.total || 0;
+            const lastMonthTotal = expenseData[0]?.lastMonth[0]?.total || 0;
             const expenseChange = lastMonthTotal ? 
                 ((totalExpenses - lastMonthTotal) / lastMonthTotal) * 100 : 0;
 
-            // Get savings (income - expenses)
-            const [currentIncome] = await Transaction.aggregate([
+            // Get income for same period
+            const [incomeData] = await Transaction.aggregate([
                 {
                     $match: {
                         userId: mongoose.Types.ObjectId(userId),
                         type: 'income',
-                        date: { $gte: currentMonth }
+                        date: { $gte: new Date(new Date().setDate(1)) }
                     }
                 },
                 {
@@ -78,7 +87,7 @@ class AnalyticsController {
                 }
             ]);
 
-            const totalSavings = (currentIncome[0]?.total || 0) - totalExpenses;
+            const totalSavings = (incomeData?.total || 0) - totalExpenses;
 
             res.json({
                 totalBalance,
@@ -88,7 +97,8 @@ class AnalyticsController {
             });
         } catch (error) {
             res.status(500).json({
-                error: 'Failed to retrieve financial overview',
+                error_code: 'ANALYTICS_FETCH_FAILED',
+                message: 'Failed to retrieve financial overview',
                 details: error.message
             });
         }

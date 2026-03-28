@@ -1,86 +1,246 @@
-//utils.logger.js
+/**
+ * Logger
+ * Handles logging using winston with structured logging support
+ */
 const winston = require('winston');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
-// Define log levels
-const levels = {
-    error: 0,
-    warn: 1,
-    info: 2,
-    http: 3,
-    debug: 4,
-};
-
-// Define log colors
-const colors = {
-    error: 'red',
-    warn: 'yellow',
-    info: 'green',
-    http: 'magenta',
-    debug: 'blue',
-};
-
-// Tell winston about the colors
-winston.addColors(colors);
-
-// Configure log format
+// Define log format with correlation ID support
 const logFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.colorize({ all: true }),
-    winston.format.printf(
-        (info) => `${info.timestamp} ${info.level}: ${info.message}`
-    )
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.json()
 );
 
-// Create logger
+// Define console format for development
+const consoleFormat = winston.format.combine(
+    winston.format.colorize(),
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+    winston.format.printf(({ timestamp, level, message, correlationId, ...metadata }) => {
+        const correlationPart = correlationId ? `[${correlationId}] ` : '';
+        const metadataPart = Object.keys(metadata).length ? ` ${JSON.stringify(metadata)}` : '';
+        return `${timestamp} ${level}: ${correlationPart}${message}${metadataPart}`;
+    })
+);
+
+// Create logger instance
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
-    levels,
     format: logFormat,
+    defaultMeta: { 
+        service: 'coindrip-api',
+        environment: process.env.NODE_ENV || 'development',
+        version: process.env.npm_package_version || '1.0.0'
+    },
     transports: [
-        // Console transport
+        // Console transport for all environments
         new winston.transports.Console({
-            format: logFormat
+            format: consoleFormat
         }),
         
-        // File transport for errors
+        // File transport for errors (production)
         new winston.transports.File({
-            filename: path.join(__dirname, '../logs/error.log'),
+            filename: path.join(__dirname, '../../logs/error.log'),
             level: 'error',
-            format: winston.format.combine(
-                winston.format.timestamp(),
-                winston.format.json()
-            )
+            maxsize: 5242880, // 5MB
+            maxFiles: 5,
+            tailable: true
         }),
         
-        // File transport for combined logs
+        // File transport for combined logs (production)
         new winston.transports.File({
-            filename: path.join(__dirname, '../logs/combined.log'),
-            format: winston.format.combine(
-                winston.format.timestamp(),
-                winston.format.json()
-            )
-        })
+            filename: path.join(__dirname, '../../logs/combined.log'),
+            maxsize: 5242880, // 5MB
+            maxFiles: 5,
+            tailable: true
+        }),
+        
+        // File transport for info logs (production)
+        new winston.transports.File({
+            filename: path.join(__dirname, '../../logs/info.log'),
+            level: 'info',
+            maxsize: 5242880, // 5MB
+            maxFiles: 5,
+            tailable: true
+        }),
+        
+        // CloudWatch transport for production
+        ...(process.env.NODE_ENV === 'production' ? [
+            new (require('winston-cloudwatch'))({
+                logGroupName: '/ecs/coindrop',
+                logStreamName: 'application-logs',
+                awsRegion: 'us-east-1',
+                jsonMessage: true,
+                retentionInDays: 14
+            })
+        ] : [])
+    ],
+    exceptionHandlers: [
+        new winston.transports.File({
+            filename: path.join(__dirname, '../../logs/exceptions.log'),
+            maxsize: 5242880, // 5MB
+            maxFiles: 5
+        }),
+        ...(process.env.NODE_ENV === 'production' ? [
+            new (require('winston-cloudwatch'))({
+                logGroupName: '/ecs/coindrop',
+                logStreamName: 'exceptions',
+                awsRegion: 'us-east-1',
+                jsonMessage: true,
+                retentionInDays: 14
+            })
+        ] : [])
+    ],
+    rejectionHandlers: [
+        new winston.transports.File({
+            filename: path.join(__dirname, '../../logs/rejections.log'),
+            maxsize: 5242880, // 5MB
+            maxFiles: 5
+        }),
+        ...(process.env.NODE_ENV === 'production' ? [
+            new (require('winston-cloudwatch'))({
+                logGroupName: '/ecs/coindrop',
+                logStreamName: 'rejections',
+                awsRegion: 'us-east-1',
+                jsonMessage: true,
+                retentionInDays: 14
+            })
+        ] : [])
     ]
 });
 
-// Middleware for logging HTTP requests
-logger.requestLogger = (req, res, next) => {
-    const { method, url, headers } = req;
-    const userAgent = headers['user-agent'];
-    const ip = req.ip || req.connection.remoteAddress;
+// Add correlation ID support
+/**
+ * Create a logger with correlation ID
+ * @param {string} correlationId - Correlation ID
+ * @returns {Object} Logger instance with correlation ID
+ */
+logger.correlate = (correlationId) => {
+    const id = correlationId || uuidv4();
+    return logger.child({ correlationId: id });
+};
 
-    logger.http(`${method} ${url} - IP: ${ip} - Agent: ${userAgent}`);
+// Add request logging middleware
+/**
+ * Request logging middleware
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @returns {void}
+ */
+logger.requestLogger = (req, res, next) => {
+    const correlationId = req.headers['x-correlation-id'] || uuidv4();
+    req.requestId = correlationId;
+    res.setHeader('X-Correlation-ID', correlationId);
+    
+    const requestLogger = logger.correlate(correlationId);
+    const start = Date.now();
+    
+    requestLogger.info('Request started', {
+        method: req.method,
+        path: req.path,
+        query: req.query,
+        userId: req.user?.userId || req.authUserId
+    });
+    
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const statusCode = res.statusCode;
+        const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
+        
+        requestLogger[level]('Request completed', {
+            method: req.method,
+            path: req.path,
+            statusCode,
+            duration,
+            userId: req.user?.userId || req.authUserId
+        });
+    });
+    
     next();
 };
 
-// Error logging method
-logger.logError = (error, additionalInfo = {}) => {
-    logger.error(JSON.stringify({
-        message: error.message,
-        stack: error.stack,
-        ...additionalInfo
-    }));
+// Add structured logging methods
+/**
+ * Log with metadata
+ * @param {string} level - Log level
+ * @param {string} message - Log message
+ * @param {Object} metadata - Log metadata
+ * @returns {void}
+ */
+logger.logWithMetadata = (level, message, metadata = {}) => {
+    logger[level](message, metadata);
+};
+
+/**
+ * Log info with metadata
+ * @param {string} message - Log message
+ * @param {Object} metadata - Log metadata
+ * @returns {void}
+ */
+logger.infoWithMetadata = (message, metadata = {}) => {
+    logger.info(message, metadata);
+};
+
+/**
+ * Log error with metadata
+ * @param {string} message - Log message
+ * @param {Object} metadata - Log metadata
+ * @returns {void}
+ */
+logger.errorWithMetadata = (message, metadata = {}) => {
+    logger.error(message, metadata);
+};
+
+/**
+ * Log warn with metadata
+ * @param {string} message - Log message
+ * @param {Object} metadata - Log metadata
+ * @returns {void}
+ */
+logger.warnWithMetadata = (message, metadata = {}) => {
+    logger.warn(message, metadata);
+};
+
+/**
+ * Log debug with metadata
+ * @param {string} message - Log message
+ * @param {Object} metadata - Log metadata
+ * @returns {void}
+ */
+logger.debugWithMetadata = (message, metadata = {}) => {
+    logger.debug(message, metadata);
+};
+
+// Ensure logs directory exists
+const fs = require('fs');
+const logsDir = path.join(__dirname, '../../logs');
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+}
+
+// Add health check endpoint for logging
+/**
+ * Get log statistics
+ * @returns {Object} Log statistics
+ */
+logger.getLogStats = () => {
+    try {
+        const logsDirStats = fs.statSync(logsDir);
+        return {
+            logsDir: logsDir,
+            exists: true,
+            size: logsDirStats.size
+        };
+    } catch (error) {
+        return {
+            logsDir: logsDir,
+            exists: false,
+            error: error.message
+        };
+    }
 };
 
 module.exports = logger;

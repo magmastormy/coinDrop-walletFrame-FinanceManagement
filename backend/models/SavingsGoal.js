@@ -46,5 +46,11 @@ const SavingsGoalSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Indexes for performance
+SavingsGoalSchema.index({ userId: 1 });
+SavingsGoalSchema.index({ userId: 1, isActive: 1 });
+SavingsGoalSchema.index({ userId: 1, deadline: -1 });
+SavingsGoalSchema.index({ userId: 1, currentAmount: -1 });
+
 const SavingsGoal = mongoose.model('SavingsGoal', SavingsGoalSchema);
 module.exports = SavingsGoal;

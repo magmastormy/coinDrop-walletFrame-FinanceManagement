@@ -119,9 +119,11 @@ const BudgetPerformanceChart = ({ budget }) => {
     };
 
     return (
-        <div className="h-[250px]">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Performance Overview</h3>
-            <Bar data={data} options={options} />
+        <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground">Performance Overview</h3>
+            <div className="h-[250px]">
+                <Bar data={data} options={options} />
+            </div>
         </div>
     );
 };

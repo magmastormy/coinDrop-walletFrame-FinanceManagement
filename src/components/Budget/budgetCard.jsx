@@ -4,10 +4,9 @@ import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { Edit2, Trash2, TrendingUp, Calendar, PiggyBank, Wallet, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-
 import savingsGoalService from '../../services/savingsGoalService';
-import { GlassCard } from '../ui/GlassCard';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
 import Modal from '../ui/Modal';
 import { cn } from '../../lib/utils';
 
@@ -29,8 +28,9 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
     try {
       const goals = await savingsGoalService.getSavingsGoals(user.id);
       setSavingsGoals(goals);
-    } catch (error) {
-      console.error('Failed to fetch savings goals:', error);
+    } catch (_) {
+      // Silently handle error - savings goals are optional
+      // Error intentionally not logged to avoid noise
     }
   };
 
@@ -59,9 +59,9 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
 
   const getStatusColor = () => {
     const progress = calculateProgress();
-    if (progress >= 90) return 'bg-red-500';
-    if (progress >= 70) return 'bg-amber-500';
-    return 'bg-emerald-500';
+    if (progress >= 90) return 'var(--color-error)';
+    if (progress >= 70) return 'var(--color-warning)';
+    return 'var(--color-success)';
   };
 
   const calculateSavings = () => {
@@ -105,14 +105,11 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
         onEdit(budget);
       }
     } catch (error) {
-      console.error('Failed to save to goal:', error);
-
       if (error.response?.data?.details === 'Insufficient balance in source wallet') {
         toast.error('Insufficient funds in wallet to complete this transfer');
       } else {
         toast.error('Failed to contribute to goal');
       }
-
       setError(error.message || 'Failed to contribute to goal');
     } finally {
       setIsProcessing(false);
@@ -130,45 +127,51 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
 
   return (
     <>
-      <GlassCard
-        className={cn(
-          "relative h-full min-h-[292px] overflow-hidden border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 transition-all duration-300 hover:translate-y-[-4px] dark:from-white/10 dark:via-white/5",
-          isSelected && "ring-2 ring-primary/60"
-        )}
+      <Card
+        variant="default"
+        elevation={1}
+        hover={true}
+        className={cn("p-4 h-full", isSelected && "ring-2 ring-primary")}
         onClick={() => onSelect?.(budget)}
       >
         <div className="flex h-full flex-col gap-4">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">{budget.name}</h3>
-              <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{budget.type}</span>
-            </div>
-            {walletName && (
-              <div className="flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                <Wallet className="w-3 h-3" />
-                {walletName}
+            {/* Header */}
+            <div className="flex justify-between items-start gap-2">
+              <div>
+                <h3 className="text-lg font-semibold text-primary">{budget.name}</h3>
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {budget.type}
+                </span>
               </div>
-            )}
-          </div>
+              {walletName && (
+                <div className="flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-1 text-xs font-medium text-primary whitespace-nowrap">
+                  <Wallet className="w-3 h-3" strokeWidth={1.5} />
+                  {walletName}
+                </div>
+              )}
+            </div>
 
-          <div className="rounded-2xl border border-white/10 bg-background/40 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Planned Limit</p>
-            <p className="mt-2 text-3xl font-display font-bold text-foreground">{formatCurrency(budget.amount)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Remaining: <span className="font-semibold text-emerald-500">{formatCurrency(savingsAmount)}</span>
-            </p>
+          {/* Financial Metrics */}
+          <div className="space-y-1">
+            <div className="text-sm text-muted-foreground">Planned Limit</div>
+            <div className="text-2xl font-bold text-primary">
+              {formatCurrency(budget.amount)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Remaining: <span className="font-semibold text-success">{formatCurrency(savingsAmount)}</span>
+            </div>
           </div>
 
           {/* Progress Bar */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium">{calculateProgress().toFixed(1)}%</span>
+              <span className="font-medium text-primary">{calculateProgress().toFixed(1)}%</span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-secondary/80">
+            <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
               <motion.div
-                className={cn("h-full rounded-full", getStatusColor())}
+                className="h-full rounded-full"
+                style={{ background: getStatusColor() }}
                 initial={{ width: 0 }}
                 animate={{ width: `${calculateProgress()}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
@@ -181,13 +184,13 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
 
           {/* Details */}
-          <div className="space-y-2 border-t border-white/10 pt-3">
+          <div className="space-y-2 pt-2 border-t border-border">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp size={14} strokeWidth={1.5} />
               <span>Category: {budget.category?.name || 'Uncategorized'}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="w-4 h-4" />
+              <Calendar size={14} strokeWidth={1.5} />
               <span>
                 {budget.startDate ? formatDate(budget.startDate) : 'N/A'} - {budget.endDate ? formatDate(budget.endDate) : 'N/A'}
               </span>
@@ -195,64 +198,91 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
 
           {/* Actions */}
-          <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-4">
+          <div className="flex gap-2 mt-auto pt-2 border-t border-border">
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-2 text-muted-foreground hover:text-foreground"
+              className="flex-1"
               onClick={(e) => { e.stopPropagation(); onEdit(budget); }}
             >
-              <Edit2 className="w-4 h-4 mr-1.5" /> Edit
+              <Edit2 size={14} strokeWidth={1.5} className="mr-1" /> Edit
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-2 text-red-400 hover:bg-red-500/10 hover:text-red-500"
+              className="flex-1"
               onClick={(e) => { e.stopPropagation(); onDelete(budget._id); }}
             >
-              <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+              <Trash2 size={14} strokeWidth={1.5} className="mr-1" /> Delete
             </Button>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
-              className="ml-auto h-9 text-xs"
+              className="flex-1"
               onClick={(e) => { e.stopPropagation(); setShowSaveDialog(true); }}
               disabled={savingsAmount <= 0}
             >
-              <PiggyBank className="w-4 h-4 mr-1.5" />
+              <PiggyBank size={14} strokeWidth={1.5} className="mr-1" />
               Save ${savingsAmount.toFixed(0)}
             </Button>
           </div>
         </div>
-      </GlassCard>
+      </Card>
 
       <Modal
         isOpen={showSaveDialog}
         onClose={() => setShowSaveDialog(false)}
         title="Save Budget Surplus"
-        className="max-w-md"
       >
-        <div className="space-y-4">
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-start gap-3">
-            <PiggyBank className="w-5 h-5 text-emerald-500 mt-0.5" />
+        <div className="stack" style={{ gap: 'var(--space-3)' }}>
+          <div style={{
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-success, 0.2)',
+            background: 'var(--color-success, 0.1)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 'var(--space-2)'
+          }}>
+            <PiggyBank size={16} style={{ color: 'var(--color-success)', marginTop: 'var(--space-1)' }} />
             <div>
-              <h4 className="font-medium text-emerald-500">Surplus Available</h4>
-              <p className="text-sm text-emerald-500/80">
-                You have <span className="font-bold">${savingsAmount.toFixed(2)}</span> remaining in this budget.
+              <h4 style={{ 
+                fontWeight: 'var(--weight-medium)', 
+                color: 'var(--color-success)' 
+              }}>Surplus Available</h4>
+              <p style={{ 
+                fontSize: 'var(--text-sm)', 
+                color: 'var(--color-success, 0.8)' 
+              }}>
+                You have <span style={{ fontWeight: 'var(--weight-bold)' }}>${savingsAmount.toFixed(2)}</span> remaining in this budget.
                 Would you like to move it to a savings goal?
               </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Select Savings Goal</label>
+          <div className="stack" style={{ gap: 'var(--space-2)' }}>
+            <label style={{ 
+              fontSize: 'var(--text-sm)', 
+              fontWeight: 'var(--weight-medium)', 
+              color: 'var(--color-text-primary)' 
+            }}>Select Savings Goal</label>
             <select
               value={selectedGoal || ''}
               onChange={(e) => {
                 setSelectedGoal(e.target.value);
                 setError('');
               }}
-              className="w-full h-10 pl-3 pr-8 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+              style={{
+                width: '100%',
+                height: '40px',
+                paddingLeft: 'var(--space-3)',
+                paddingRight: 'var(--space-6)',
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface-0)',
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--text-sm)'
+              }}
             >
               <option value="" disabled>Choose a goal...</option>
               {savingsGoals.map(goal => (
@@ -264,13 +294,24 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4" />
+            <div className="cluster" style={{
+              padding: 'var(--space-3)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-error)',
+              background: 'var(--color-error, 0.1)',
+              border: '1px solid var(--color-error, 0.2)',
+              borderRadius: 'var(--radius-lg)'
+            }}>
+              <AlertCircle size={16} />
               {error}
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="cluster" style={{ 
+              justifyContent: 'flex-end', 
+              gap: 'var(--space-2)', 
+              paddingTop: 'var(--space-2)' 
+            }}>
             <Button variant="ghost" onClick={() => setShowSaveDialog(false)}>
               Cancel
             </Button>

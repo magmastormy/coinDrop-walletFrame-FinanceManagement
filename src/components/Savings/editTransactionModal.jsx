@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 
 const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets = [], savingsAccounts = [], budgets = [], categories = [] }) => {
     const [amount, setAmount] = useState(transaction?.amount ?? '');
@@ -75,7 +75,18 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                     <select
                         value={type}
                         onChange={e => setType(e.target.value)}
-                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontFamily: 'var(--font-body)',
+                        }}
                     >
                         <option value="income">Income</option>
                         <option value="expense">Expense</option>
@@ -88,7 +99,18 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                     <select
                         value={category}
                         onChange={e => setCategory(e.target.value)}
-                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontFamily: 'var(--font-body)',
+                        }}
                     >
                         <option value="">Select a category</option>
                         {categories.map(cat => (
@@ -112,7 +134,18 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                             setWalletId(e.target.value);
                             setSavingsAccountId('');
                         }}
-                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontFamily: 'var(--font-body)',
+                        }}
                     >
                         <option value="">Select a wallet</option>
                         {wallets.map(wallet => (
@@ -129,7 +162,18 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                             setSavingsAccountId(e.target.value);
                             setWalletId('');
                         }}
-                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontFamily: 'var(--font-body)',
+                        }}
                     >
                         <option value="">Select a savings account</option>
                         {savingsAccounts.map(account => (
@@ -143,7 +187,18 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                     <select
                         value={budgetId}
                         onChange={e => setBudgetId(e.target.value)}
-                        className="w-full h-10 px-3 rounded-lg bg-black/20 border border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all text-sm"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)',
+                            background: 'var(--color-surface-2)',
+                            color: 'var(--color-text-primary)',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontFamily: 'var(--font-body)',
+                        }}
                     >
                         <option value="">Select a budget</option>
                         {budgets.map(budget => (
@@ -152,7 +207,7 @@ const EditTransactionModal = ({ isOpen, onClose, transaction, onUpdate, wallets 
                     </select>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
                     <Button variant="ghost" onClick={onClose} type="button">
                         Cancel
                     </Button>

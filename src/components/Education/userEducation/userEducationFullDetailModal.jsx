@@ -3,8 +3,7 @@ import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
-import { useTheme } from '../../../theme/ThemeContext';
-import { Button } from '../../ui/Button';
+import Button from '../../ui/Button';
 import SafeHtml from '../../Common/SafeHtml';
 
 
@@ -17,7 +16,6 @@ if (!portalRoot) {
 }
 
 const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment, currentUser }) => {
-  const { theme } = useTheme();
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [modalElement] = useState(() => document.createElement('div'));
@@ -92,8 +90,8 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
         <motion.div
           className="fixed inset-0 z-[9999] flex items-center justify-center"
           style={{
-            backgroundColor: `${theme.background.primary}CC`,
-            isolation: 'isolate'
+            isolation: 'isolate',
+            background: 'rgba(0,0,0,0.70)'
           }}
           onClick={handleBackdropClick}
           initial={{ opacity: 0 }}
@@ -115,7 +113,7 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
                 onClick={onClose}
                 className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
               >
-                <X className="w-5 h-5" />
+                <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
             </div>
 
@@ -157,7 +155,7 @@ const UserEducationFullDetailModal = ({ post, isOpen, onClose, onLike, onComment
                   onClick={handleLike}
                   className={isLiked ? 'border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20' : ''}
                 >
-                  <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`w-[18px] h-[18px] mr-2 ${isLiked ? 'fill-current' : ''}`} strokeWidth={1.5} />
                   {isLiked ? 'Liked' : 'Like'} {post.likes?.length > 0 && `(${post.likes.length})`}
                 </Button>
               </div>

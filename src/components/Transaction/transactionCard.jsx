@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 
 const TransactionCard = ({ transaction, onEdit, onDelete }) => {
@@ -27,53 +27,71 @@ const TransactionCard = ({ transaction, onEdit, onDelete }) => {
     };
 
     return (
-        <motion.div
-            whileHover={{ scale: 1.01 }}
-            className="group relative flex items-center justify-between p-4 mb-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+        <Card 
+            variant="default" 
+            elevation={1}
+            className="group p-3"
+            hover={true}
         >
-            <div className="flex items-center gap-4">
-                <div className={cn("p-2 rounded-full bg-white/5", amountColor)}>
-                    <Icon className="w-5 h-5" />
+            <motion.div
+                whileHover={{ scale: 1.01 }}
+                className="flex items-center justify-between"
+            >
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "p-1.5 rounded-full border", 
+                        amountColor,
+                        isExpense ? "border-error/20 bg-error/10" : "border-success/20 bg-success/10"
+                    )}>
+                        <Icon className="w-4 h-4" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-medium text-primary">
+                            {transaction.description || 'No Description'}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                            {formatDate(transaction.date)}
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h4 className="font-medium text-foreground">{transaction.description || 'No Description'}</h4>
-                    <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
-                </div>
-            </div>
 
-            <div className="flex items-center gap-4">
-                <span className={cn("font-bold", amountColor)}>
-                    {formatAmount(transaction.amount, transaction.type)}
-                </span>
+                <div className="flex items-center gap-3">
+                    <span className={cn(
+                        "font-bold",
+                        isExpense ? "text-error" : "text-success"
+                    )}>
+                        {formatAmount(transaction.amount, transaction.type)}
+                    </span>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {onEdit && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => onEdit(transaction)}
-                        >
-                            <Edit2 className="w-4 h-4" />
-                        </Button>
-                    )}
-                    {onDelete && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-400 hover:text-red-500 hover:bg-red-500/10"
-                            onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this transaction?')) {
-                                    onDelete(transaction._id);
-                                }
-                            }}
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {onEdit && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                onClick={() => onEdit(transaction)}
+                            >
+                                <Edit2 className="w-4 h-4" strokeWidth={1.5} />
+                            </Button>
+                        )}
+                        {onDelete && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 text-error hover:text-error hover:bg-error/10"
+                                onClick={() => {
+                                    if (window.confirm('Are you sure you want to delete this transaction?')) {
+                                        onDelete(transaction._id);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </Card>
     );
 };
 

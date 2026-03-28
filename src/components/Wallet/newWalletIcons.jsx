@@ -38,14 +38,19 @@ const CreateNewWalletIconOptions = ({ selectedIcon, onSelect }) => {
                         key={index}
                         className={cn(
                             "flex flex-col items-center gap-2 p-3 rounded-lg transition-all",
-                            "hover:bg-white/10",
                             isSelected && "bg-primary/20 ring-2 ring-primary"
                         )}
                         onClick={() => onSelect(item.name)}
+                        onMouseEnter={(e) => {
+                            if (!isSelected) e.currentTarget.style.background = 'var(--color-surface-2)';
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!isSelected) e.currentTarget.style.background = 'transparent';
+                        }}
                         type="button"
                         aria-label={`Select ${item.name} icon`}
                     >
-                        <Icon className="w-6 h-6 text-foreground" />
+                        <Icon className="w-[18px] h-[18px] text-foreground" strokeWidth={1.5} />
                         <span className="text-xs text-muted-foreground">{item.name}</span>
                     </button>
                 );

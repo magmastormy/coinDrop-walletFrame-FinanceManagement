@@ -1,5 +1,16 @@
+/**
+ * Authentication Middleware
+ * Handles user authentication and authorization
+ */
 const jwt = require('jsonwebtoken');
 
+/**
+ * Middleware to authenticate user using JWT token
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @returns {Promise<void>}
+ */
 const authMiddleware = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -37,6 +48,11 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+/**
+ * Middleware to check user role
+ * @param {Array} roles - Array of allowed roles
+ * @returns {Function} Middleware function
+ */
 const roleMiddleware = (roles) => {
     return async (req, res, next) => {
         if (!req.userProfile) {
@@ -51,6 +67,12 @@ const roleMiddleware = (roles) => {
     };
 };
 
+/**
+ * Middleware to check user expertise level
+ * @param {Array} areas - Array of expertise areas
+ * @param {string} minLevel - Minimum expertise level
+ * @returns {Function} Middleware function
+ */
 const expertiseMiddleware = (areas, minLevel = 'intermediate') => {
     const levelHierarchy = {
         'beginner': 0,
@@ -77,6 +99,11 @@ const expertiseMiddleware = (areas, minLevel = 'intermediate') => {
     };
 };
 
+/**
+ * Middleware to check user reputation score
+ * @param {number} minScore - Minimum reputation score required
+ * @returns {Function} Middleware function
+ */
 const reputationMiddleware = (minScore) => {
     return async (req, res, next) => {
         if (!req.userProfile) {
@@ -91,6 +118,13 @@ const reputationMiddleware = (minScore) => {
     };
 };
 
+/**
+ * Middleware to check user account verification status
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @returns {Promise<void>}
+ */
 const verificationMiddleware = async (req, res, next) => {
     if (!req.userProfile) {
         return res.status(403).json({ error: 'User profile not found' });
@@ -103,6 +137,13 @@ const verificationMiddleware = async (req, res, next) => {
     next();
 };
 
+/**
+ * Middleware to check user moderation privileges
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Next middleware function
+ * @returns {Promise<void>}
+ */
 const moderationMiddleware = async (req, res, next) => {
     if (!req.userProfile) {
         return res.status(403).json({ error: 'User profile not found' });

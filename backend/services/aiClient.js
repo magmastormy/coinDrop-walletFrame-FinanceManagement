@@ -30,6 +30,12 @@ let successfulRequests = 0;
 let failedRequests = 0;
 let totalProcessingTime = 0;
 
+// Process TTL and other constants
+const PROCESS_TTL_MS = 3600000; // 1 hour TTL for processes
+const PROCESS_MEMORY_LIMIT_MB = 256; // Memory limit per process in MB
+const MAX_REQUESTS_PER_PROCESS = 100; // Max requests before process refresh
+const IDLE_TIMEOUT_MS = 300000; // 5 minutes idle timeout for processes
+
 // Circuit breaker pattern implementation
 const circuitBreaker = {
   state: 'CLOSED', // CLOSED, OPEN, HALF_OPEN
@@ -108,11 +114,54 @@ function healthCheck() {
   console.log(`[aiClient] Metrics - Total: ${totalRequests}, Success: ${successfulRequests}, Failed: ${failedRequests}, Avg time: ${totalRequests > 0 ? (totalProcessingTime / totalRequests).toFixed(2) : 0}ms`);
 }
 
+// Track process metadata for TTL and memory monitoring
+const processMetadata = new Map(); // Map<process, {createdAt, requestCount, lastUsed, memoryUsage, idleTime}>
+
 /**
  * Maintain the process pool health by refreshing processes and ensuring pool size
  */
 async function maintainProcessPool() {
   healthCheck();
+  
+  const now = Date.now();
+  
+  // Check all processes for TTL expiration, memory issues, or idle timeout
+  for (let i = processPool.length - 1; i >= 0; i--) {
+    const proc = processPool[i];
+    const metadata = processMetadata.get(proc);
+    
+    if (!metadata) continue;
+    
+    const age = now - metadata.createdAt;
+    const idleTime = now - metadata.lastUsed;
+    const shouldRefresh = 
+      age > PROCESS_TTL_MS ||  // TTL expired
+      metadata.requestCount > MAX_REQUESTS_PER_PROCESS ||  // After max requests
+      idleTime > IDLE_TIMEOUT_MS ||  // Idle timeout
+      (metadata.memoryUsage && metadata.memoryUsage > PROCESS_MEMORY_LIMIT_MB);  // Memory limit exceeded
+    
+    if (shouldRefresh) {
+      console.log(`[aiClient] Refreshing process (age: ${(age/60000).toFixed(1)}min, requests: ${metadata.requestCount}, idle: ${(idleTime/60000).toFixed(1)}min, memory: ${metadata.memoryUsage || 'N/A'}MB)`);
+      try {
+        proc.kill('SIGTERM');
+        processPool.splice(i, 1);
+        processMetadata.delete(proc);
+        
+        // Create replacement process
+        const newProc = await createPythonProcess();
+        processPool.push(newProc);
+        processMetadata.set(newProc, {
+          createdAt: now,
+          requestCount: 0,
+          lastUsed: now,
+          memoryUsage: 0,
+          idleTime: 0
+        });
+      } catch (err) {
+        console.error(`[aiClient] Error refreshing process: ${err.message}`);
+      }
+    }
+  }
   
   // Check if we need to add processes to the pool
   const neededProcesses = MAX_POOL_SIZE - processPool.length;
@@ -124,6 +173,13 @@ async function maintainProcessPool() {
         await new Promise(resolve => setTimeout(resolve, i * 200));
         const proc = await createPythonProcess();
         processPool.push(proc);
+        processMetadata.set(proc, {
+          createdAt: now,
+          requestCount: 0,
+          lastUsed: now,
+          memoryUsage: 0,
+          idleTime: 0
+        });
         console.log(`[aiClient] Added process to pool (${processPool.length}/${MAX_POOL_SIZE})`);
       } catch (err) {
         console.error(`[aiClient] Error adding process to pool: ${err.message}`);
@@ -131,25 +187,14 @@ async function maintainProcessPool() {
     }
   }
   
-  // Refresh one process in the pool to prevent stale processes
-  if (processPool.length > 0 && requestQueue.length === 0 && processingCount === 0) {
-    const oldestProc = processPool.shift();
-    console.log('[aiClient] Refreshing one process in pool');
-    try {
-      oldestProc.kill('SIGTERM');
-    } catch (err) {
-      console.error(`[aiClient] Error killing process during refresh: ${err.message}`);
-    }
-    
-    // Create a new process to replace it
-    try {
-      const newProc = await createPythonProcess();
-      processPool.push(newProc);
-      console.log('[aiClient] Successfully replaced process in pool');
-    } catch (err) {
-      console.error(`[aiClient] Error creating replacement process: ${err.message}`);
-    }
-  }
+  // Log detailed pool health metrics
+  const activeProcesses = processPool.length;
+  const idleProcesses = processPool.filter(proc => {
+    const metadata = processMetadata.get(proc);
+    return metadata && (now - metadata.lastUsed) > 60000; // Idle for more than 1 minute
+  }).length;
+  
+  console.log(`[aiClient] Pool health - Active: ${activeProcesses}, Idle: ${idleProcesses}, Max: ${MAX_POOL_SIZE}`);
 }
 
 /**
@@ -159,80 +204,37 @@ async function maintainProcessPool() {
  */
 async function getProcess() {
   if (!isInitialized) {
-    initializePool();
+    await initializePool();
   }
   
   // Get a process from the pool if available
   if (processPool.length > 0) {
     const proc = processPool.pop();
-    console.log(`[aiClient] Reusing Python process from pool (${processPool.length} remaining)`);
+    const metadata = processMetadata.get(proc);
+    if (metadata) {
+      metadata.requestCount++;
+      metadata.lastUsed = Date.now();
+      metadata.idleTime = 0;
+    }
+    console.log(`[aiClient] Reusing Python process from pool (${processPool.length} remaining, requests: ${metadata?.requestCount || 0})`);
     return proc;
   }
   
-  // Create a new process with improved error handling
+  // Create a new process using the createPythonProcess function
   console.log('[aiClient] Creating new Python process');
-  const scriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');
+  const proc = await createPythonProcess();
   
-  // Use environment variables to configure the process
-  const env = { ...process.env };
-  
-  // Create the process with a larger buffer size
-  const proc = spawn('python', [scriptPath, '--server-mode'], {
-    env,
-    stdio: ['pipe', 'pipe', 'pipe'],
-    // Increase buffer size to handle larger responses
-    maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+  // Initialize metadata for this process
+  const now = Date.now();
+  processMetadata.set(proc, {
+    createdAt: now,
+    requestCount: 0,
+    lastUsed: now,
+    memoryUsage: 0,
+    idleTime: 0
   });
   
-  // Set up error handling
-  proc.on('error', (err) => {
-    console.error(`[aiClient] Process error: ${err.message}`);
-  });
-  
-  // Wait for the process to initialize with improved timeout handling
-  return new Promise((resolve, reject) => {
-    let initialized = false;
-    let initTimer = null;
-    
-    const cleanup = () => {
-      if (initTimer) {
-        clearTimeout(initTimer);
-        initTimer = null;
-      }
-    };
-    
-    proc.stdout.once('data', (data) => {
-      const output = data.toString();
-      if (output.includes('READY')) {
-        initialized = true;
-        cleanup();
-        resolve(proc);
-      }
-    });
-    
-    proc.stderr.once('data', (data) => {
-      if (!initialized) {
-        cleanup();
-        reject(new Error(`Failed to initialize Python process: ${data.toString()}`));
-      }
-    });
-    
-    // Set a timeout for initialization
-    initTimer = setTimeout(() => {
-      if (!initialized) {
-        proc.kill('SIGTERM'); // Kill the process if it times out
-        reject(new Error('Timeout waiting for Python process to initialize'));
-      }
-    }, 8000); // Increased timeout for initialization
-    
-    // Handle premature exit
-    proc.once('exit', (code) => {
-      if (!initialized) {
-        cleanup();
-        reject(new Error(`Python process exited with code ${code} during initialization`));
-      }
-    });
-  });
+  return proc;
 }
 
 /**
@@ -241,12 +243,27 @@ async function getProcess() {
  * @param {ChildProcess} proc - The process to release
  */
 function releaseProcess(proc) {
+  const metadata = processMetadata.get(proc);
+  
+  // Check memory usage before returning to pool
+  if (metadata && metadata.requestCount > 0) {
+    // Log memory info every 50 requests
+    if (metadata.requestCount % 50 === 0) {
+      console.log(`[aiClient] Process stats - Requests: ${metadata.requestCount}, Age: ${((Date.now() - metadata.createdAt)/60000).toFixed(1)}min, Memory: ${metadata.memoryUsage || 'N/A'}MB`);
+    }
+  }
+  
   if (processPool.length < MAX_POOL_SIZE) {
     console.log(`[aiClient] Returning process to pool (${processPool.length + 1} total)`);
     processPool.push(proc);
   } else {
     console.log('[aiClient] Pool full, destroying process');
-    proc.kill();
+    processMetadata.delete(proc);
+    try {
+      proc.kill('SIGTERM');
+    } catch (err) {
+      console.error(`[aiClient] Error killing process: ${err.message}`);
+    }
   }
 }
 
@@ -474,11 +491,20 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
         role: m.role,
         content: sanitizeUnicode(m.content)
       })),
-      requestId: requestId
+      requestId: requestId,
+      action: 'predict' // Explicit action for Python process
     });
     
     console.log(`[aiClient] Sending payload of ${payload.length} bytes`);
-    proc.stdin.write(payload + '\n');
+    try {
+      proc.stdin.write(payload + '\n');
+    } catch (writeError) {
+      console.error(`[aiClient][${requestId}] Error writing to process stdin: ${writeError.message}`);
+      isCompleted = true;
+      cleanup();
+      reject(new Error(`Failed to send request to AI process: ${writeError.message}`));
+      return;
+    }
     
     // Handle data from the process
     const dataHandler = (data) => {
@@ -487,15 +513,37 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       
       try {
         // Check for JSON response
-        if (output.includes('"content":')) {
+        if (output.includes('"response":') || output.includes('"error":') || output.includes('"memory_usage":')) {
           responseStarted = true;
           const lines = output.split('\n');
           
           for (const line of lines) {
-            if (line.trim() && line.includes('"content":')) {
+            if (line.trim() && (line.includes('"response":') || line.includes('"content":') || line.includes('"error":') || line.includes('"memory_usage":'))) {
               try {
                 const json = JSON.parse(line);
-                if (json.content) {
+                
+                // Update memory usage if provided
+                if (json.memory_usage) {
+                  const metadata = processMetadata.get(proc);
+                  if (metadata) {
+                    metadata.memoryUsage = json.memory_usage;
+                  }
+                }
+                
+                if (json.response) {
+                  result = json.response;
+                  isCompleted = true;
+                  cleanup();
+                  
+                  const processingTime = performance.now() - t0;
+                  console.log(`[aiClient] Request completed in ${processingTime.toFixed(1)}ms`);
+                  
+                  // Return the process to the pool
+                  releaseProcess(proc);
+                  
+                  resolve(result);
+                  return;
+                } else if (json.content) {
                   result = json.content;
                   isCompleted = true;
                   cleanup();
@@ -507,6 +555,15 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
                   releaseProcess(proc);
                   
                   resolve(result);
+                  return;
+                } else if (json.error) {
+                  isCompleted = true;
+                  cleanup();
+                  
+                  // Return the process to the pool
+                  releaseProcess(proc);
+                  
+                  reject(new Error(json.error));
                   return;
                 }
               } catch (parseErr) {
@@ -535,6 +592,16 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       }
     };
     
+    // Handle process error event
+    const processErrorHandler = (err) => {
+      if (!isCompleted) {
+        console.error(`[aiClient][${requestId}] Process error: ${err.message}`);
+        isCompleted = true;
+        cleanup();
+        reject(new Error(`AI client: process error: ${err.message}`));
+      }
+    };
+    
     // Clean up all listeners
     const cleanup = () => {
       clearTimeout(timer);
@@ -542,12 +609,14 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       proc.stdout.removeListener('data', dataHandler);
       proc.stderr.removeListener('data', errorHandler);
       proc.removeListener('exit', exitHandler);
+      proc.removeListener('error', processErrorHandler);
     };
     
     // Add listeners
     proc.stdout.on('data', dataHandler);
     proc.stderr.on('data', errorHandler);
     proc.on('exit', exitHandler);
+    proc.on('error', processErrorHandler);
   });
 }
 
@@ -560,37 +629,59 @@ async function createPythonProcess() {
   return new Promise((resolve, reject) => {
     console.log('[aiClient] Creating new Python process');
     const scriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');
-    const proc = spawn('python', [scriptPath, '--server']);
+    const proc = spawn('python', [scriptPath, '--server-mode']);
     
     let initialized = false;
     let stderr = '';
+    let stdout = '';
+    const timeoutMs = 8000; // 8 second timeout
+    
+    // Set up timeout
+    const timer = setTimeout(() => {
+      if (!initialized) {
+        console.error('[aiClient] Python process initialization timed out');
+        try {
+          proc.kill('SIGKILL');
+        } catch (e) {
+          console.error(`[aiClient] Error killing process on timeout: ${e.message}`);
+        }
+        reject(new Error(`Python process initialization timed out after ${timeoutMs}ms`));
+      }
+    }, timeoutMs);
     
     // Handle process startup
     proc.stdout.on('data', (data) => {
       const output = data.toString();
-      if (output.includes('Server mode enabled') && !initialized) {
+      stdout += output;
+      if (output.includes('READY') && !initialized) {
         initialized = true;
         console.log('[aiClient] Python process initialized successfully');
+        clearTimeout(timer);
         resolve(proc);
-        timeoutError += `\nPython stderr: ${stderr}`;
       }
-      if (stdout) {
-        // Include a truncated version of stdout to help with debugging
-        const truncatedStdout = stdout.length > 500 ? stdout.substring(0, 500) + '...' : stdout;
-        timeoutError += `\nPartial stdout: ${truncatedStdout}`;
+    });
+    
+    // Handle stderr - only log, don't reject on warnings
+    proc.stderr.on('data', (data) => {
+      const errorOutput = data.toString();
+      stderr += errorOutput;
+      // Log stderr output but don't treat warnings as errors during initialization
+      console.log(`[aiClient] Python stderr: ${errorOutput.trim()}`);
+    });
+    
+    // Handle process exit
+    proc.on('exit', (code) => {
+      if (!initialized) {
+        clearTimeout(timer);
+        reject(new Error(`Python process exited with code ${code} during initialization`));
       }
-      
-      cleanup();
-      
-      // Kill the process on timeout (don't return to pool)
-      try {
-        proc.kill('SIGKILL'); // Force kill to ensure it terminates
-      } catch (e) {
-        console.error(`[aiClient] Error killing process on timeout: ${e.message}`);
-      }
-      
-      reject(new Error(timeoutError));
-    }, timeoutMs);
+    });
+    
+    // Handle process error
+    proc.on('error', (err) => {
+      clearTimeout(timer);
+      reject(new Error(`Failed to start Python process: ${err.message}`));
+    });
   });
 }
 
@@ -731,6 +822,63 @@ async function send(messages, { timeoutMs = 30000, maxRetries = 1, priority = fa
       processQueue();
     }
   }
+}
+
+/**
+ * Get health metrics from Python service
+ * @returns {Promise<Object>} Health metrics
+ */
+async function getHealthMetrics() {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('python', [
+      path.join(__dirname, '../../volcanicEngine/glm_api.py'),
+      '--server-mode'
+    ], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    
+    let output = '';
+    let errorOutput = '';
+    
+    const timeout = setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(new Error('Health check timeout'));
+    }, 5000);
+    
+    proc.stdout.on('data', (data) => {
+      output += data.toString();
+      if (output.includes('READY')) {
+        // Send health request
+        proc.stdin.write(JSON.stringify({ action: 'health' }) + '\n');
+        proc.stdin.end();
+      } else if (output.startsWith('{') && output.includes('status')) {
+        clearTimeout(timeout);
+        try {
+          const metrics = JSON.parse(output.trim());
+          resolve(metrics);
+        } catch (e) {
+          reject(e);
+        }
+        proc.kill('SIGTERM');
+      }
+    });
+    
+    proc.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+    
+    proc.on('error', (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+    
+    proc.on('exit', (code) => {
+      if (code !== 0 && !output) {
+        clearTimeout(timeout);
+        reject(new Error(`Health check failed: ${errorOutput}`));
+      }
+    });
+  });
 }
 
 module.exports = { send };

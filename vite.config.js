@@ -6,8 +6,18 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.js'
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
   build: {
     rollupOptions: {
+      external: ['recharts'],
       treeshake: 'recommended',
       output: {
         manualChunks: {
@@ -31,5 +41,12 @@ export default defineConfig({
       '@mui/material/useTheme',
       '@mui/material/useMediaQuery'
     ]
+  },
+  define: {
+    'process.env': {
+      VITE_API_URL: process.env.VITE_API_URL,
+      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
+      NODE_ENV: process.env.NODE_ENV
+    }
   }
 })

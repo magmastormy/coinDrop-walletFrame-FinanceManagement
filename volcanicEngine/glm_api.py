@@ -11,10 +11,60 @@ import re
 import time
 import threading
 import traceback
+# Import resource module if available (Unix only)
+try:
+    import resource  # For memory monitoring
+except ImportError:
+    resource = None  # Not available on Windows
 
 # Set stdout to use UTF-8 encoding
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+# Performance tracking
+request_stats = {
+    'total_requests': 0,
+    'successful_requests': 0,
+    'failed_requests': 0,
+    'total_response_time': 0.0,
+    'start_time': time.time()
+}
+
+def get_memory_usage():
+    """Get current memory usage in MB"""
+    try:
+        if resource is not None:
+            usage = resource.getrusage(resource.RUSAGE_SELF)
+            return usage.ru_maxrss / 1024  # Convert KB to MB (Linux)
+        else:
+            # Return 0.0 on Windows where resource module is not available
+            return 0.0
+    except:
+        return 0.0
+
+def get_health_metrics():
+    """Get comprehensive health metrics"""
+    uptime = time.time() - request_stats['start_time']
+    avg_response_time = (
+        request_stats['total_response_time'] / request_stats['total_requests']
+        if request_stats['total_requests'] > 0 else 0.0
+    )
+    
+    return {
+        'status': 'healthy',
+        'uptime_seconds': round(uptime, 2),
+        'total_requests': request_stats['total_requests'],
+        'successful_requests': request_stats['successful_requests'],
+        'failed_requests': request_stats['failed_requests'],
+        'success_rate': round(
+            (request_stats['successful_requests'] / request_stats['total_requests'] * 100)
+            if request_stats['total_requests'] > 0 else 0.0, 2
+        ),
+        'avg_response_time_seconds': round(avg_response_time, 3),
+        'memory_usage_mb': round(get_memory_usage(), 2),
+        'python_version': sys.version,
+        'timestamp': time.time()
+    }
 
 # Load .env from the backend directory
 backend_env_path = Path(__file__).parent.parent / 'backend' / '.env'
@@ -49,10 +99,17 @@ args = parser.parse_args()
 client = ZhipuAI(api_key=api_key)
 
 def sanitize_unicode(text):
-    """Remove invalid Unicode characters and surrogate pairs"""
+    """Remove invalid Unicode characters and surrogate pairs - OPTIMIZED"""
     if not isinstance(text, str):
         return text
-        
+    
+    # Fast path: if text is ASCII, return as-is
+    try:
+        text.encode('ascii')
+        return text
+    except UnicodeEncodeError:
+        pass
+    
     # Replace lone surrogates with the Unicode replacement character
     text = text.encode('utf-16', 'surrogatepass').decode('utf-16', 'replace')
     
@@ -84,6 +141,9 @@ def process_messages(messages_data):
 def handle_request(messages_data, request_id=None):
     start_time = time.time()
     req_id = request_id or f"req-{int(time.time())}-{os.urandom(3).hex()}"
+    
+    # Update stats
+    request_stats['total_requests'] += 1
     
     try:
         print(f"[{req_id}] Processing request with {len(messages_data) if isinstance(messages_data, list) else 1} messages", file=sys.stderr)
@@ -126,16 +186,21 @@ def handle_request(messages_data, request_id=None):
         # Sanitize the response
         sanitized_response = sanitize_unicode(response_data["response"])
         
-        # Log completion time
+        # Log completion time and update stats
         elapsed = time.time() - start_time
+        request_stats['successful_requests'] += 1
+        request_stats['total_response_time'] += elapsed
+        
         print(f"[{req_id}] Request completed in {elapsed:.2f} seconds", file=sys.stderr)
         sys.stderr.flush()
         
-        return {"response": sanitized_response, "request_id": req_id, "elapsed_seconds": elapsed}
+        return {"response": sanitized_response, "request_id": req_id, "elapsed_seconds": elapsed, "memory_usage": get_memory_usage()}
 
     except Exception as e:
         elapsed = time.time() - start_time
         error_msg = str(e)
+        request_stats['failed_requests'] += 1
+        
         print(f"[{req_id}] Exception in handle_request: {error_msg}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         sys.stderr.flush()
@@ -144,7 +209,8 @@ def handle_request(messages_data, request_id=None):
             return {
                 "error": "Your Zhipu AI account has insufficient balance. Please recharge your account.", 
                 "request_id": req_id,
-                "elapsed_seconds": elapsed
+                "elapsed_seconds": elapsed,
+                "memory_usage": get_memory_usage()
             }
         else:
             # Sanitize error message to ensure it's valid UTF-8
@@ -152,7 +218,8 @@ def handle_request(messages_data, request_id=None):
             return {
                 "error": f"AI API error: {safe_error}", 
                 "request_id": req_id,
-                "elapsed_seconds": elapsed
+                "elapsed_seconds": elapsed,
+                "memory_usage": get_memory_usage()
             }
 
 def call_api(messages, result_dict, req_id):
@@ -217,6 +284,14 @@ if args.server_mode:
                 
             try:
                 request = json.loads(line)
+                
+                # Handle health check requests
+                if request.get('action') == 'health':
+                    metrics = get_health_metrics()
+                    print(json.dumps(metrics))
+                    sys.stdout.flush()
+                    continue
+                
                 if 'messages' in request:
                     # Extract request_id if provided
                     req_id = request.get('request_id', request_id)

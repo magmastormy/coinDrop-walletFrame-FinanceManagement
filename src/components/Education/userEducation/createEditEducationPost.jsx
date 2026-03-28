@@ -10,15 +10,14 @@ import {
     Image as ImageIcon, Heading2, Quote,
     Undo, Redo, X
 } from 'lucide-react';
-import { useTheme } from '../../../theme/ThemeContext';
-import { Button } from '../../ui/Button';
+import Button from '../../ui/Button';
 
 import ImageService from '../../../services/imageService';
 import { toast } from 'react-toastify';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
+const MenuBar = ({ editor, setImageFiles, setUploadedImages }) => {
     const fileInputRef = useRef(null);
     if (!editor) return null;
 
@@ -162,7 +161,6 @@ const MenuBar = ({ editor, theme, setImageFiles, setUploadedImages }) => {
 
 const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
     const post = initialData;
-    const { theme } = useTheme();
     const [title, setTitle] = useState('');
     const [imageFiles, setImageFiles] = useState([]);
     const [uploadedImages, setUploadedImages] = useState([]);
@@ -394,7 +392,8 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <motion.div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                    className="fixed inset-0"
+                    style={{ background: 'rgba(0,0,0,0.70)' }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -418,7 +417,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                             onClick={onClose}
                             aria-label="Close"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
                         </button>
                     </div>
 
@@ -475,7 +474,6 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                             <div className="border border-border rounded-lg overflow-hidden">
                                 <MenuBar
                                     editor={editor}
-                                    theme={theme}
                                     setImageFiles={setImageFiles}
                                     setUploadedImages={setUploadedImages}
                                 />

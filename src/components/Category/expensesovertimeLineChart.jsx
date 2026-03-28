@@ -13,7 +13,6 @@ import {
     Filler
 } from 'chart.js';
 import { LineChart, Loader2 } from 'lucide-react';
-import { GlassCard } from '../ui/GlassCard';
 
 
 ChartJS.register(
@@ -142,7 +141,14 @@ const ExpensesOverTimeLineChart = ({ transactions = [], categories = [], loading
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+            <div
+                style={{
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--color-surface-1)',
+                    padding: '24px',
+                }}
+            >
                 <div className="mb-4 flex items-center gap-2">
                     <LineChart className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold text-foreground">Expenses Over Time</h3>
@@ -160,12 +166,20 @@ const ExpensesOverTimeLineChart = ({ transactions = [], categories = [], loading
                             <p className="text-sm">No expense data available</p>
                         </div>
                     ) : (
-                        <div className="h-[320px] rounded-xl border border-white/10 bg-background/40 p-3">
+                        <div
+                            className="h-[320px]"
+                            style={{
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)',
+                                background: 'var(--color-surface-2)',
+                                padding: '12px',
+                            }}
+                        >
                             <Line data={chartData} options={chartOptions} />
                         </div>
                     )}
                 </div>
-            </GlassCard>
+            </div>
         </motion.div>
     );
 };

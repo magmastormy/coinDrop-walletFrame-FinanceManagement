@@ -7,9 +7,10 @@ import categoryService from '../../services/categoryService';
 import transactionService from '../../services/transactionService';
 import CategoryPanel from './categoryPanel';
 import ExpensesByCategoryChart from './expensesbycategoryChart';
-import { Button } from '../ui/Button';
+import Button from '../ui/Button';
 import { Input } from '../ui/Input';
-import { GlassCard } from '../ui/GlassCard';
+import Card from '../ui/Card';
+import PageHeader from '../Common/PageHeader';
 
 const CategoryManager = () => {
     const dispatch = useDispatch();
@@ -17,7 +18,7 @@ const CategoryManager = () => {
     const { user } = useSelector(state => state.auth);
     const [newCategory, setNewCategory] = useState('');
     const [editingCategory, setEditingCategory] = useState(null);
-    const [, setDeleteConfirm] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [txLoading, setTxLoading] = useState(false);
@@ -76,12 +77,16 @@ const CategoryManager = () => {
     };
 
     const handleDeleteCategory = async (categoryId) => {
-        try {
-            await categoryService.deleteCategory(categoryId);
-            fetchCategories();
-            setDeleteConfirm(null);
-        } catch (err) {
-            dispatch(setError(err.message));
+        if (deleteConfirm === categoryId) {
+            try {
+                await categoryService.deleteCategory(categoryId);
+                fetchCategories();
+                setDeleteConfirm(null);
+            } catch (err) {
+                dispatch(setError(err.message));
+            }
+        } else {
+            setDeleteConfirm(categoryId);
         }
     };
 
@@ -110,23 +115,24 @@ const CategoryManager = () => {
 
     return (
         <motion.div
-            className="container mx-auto space-y-6 px-4 py-6"
+            className="space-y-8 pb-8"
+            style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-foreground">Manage Categories</h1>
-                {loading && (
+            <PageHeader
+                title="Categories"
+                compact={true}
+                actions={loading ? (
                     <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     >
-                        <Loader className="w-5 h-5 text-primary" />
+                        <Loader className="w-4 h-4" strokeWidth={1.5} style={{ color: 'var(--color-text-secondary)' }} />
                     </motion.div>
-                )}
-            </div>
+                ) : null}
+            />
 
             {/* Error Message */}
             {error && (
@@ -141,8 +147,39 @@ const CategoryManager = () => {
                 </motion.div>
             )}
 
+            {/* Delete Confirmation */}
+            {deleteConfirm && (
+                <motion.div
+                    className="p-4 rounded-lg bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 flex items-center justify-between gap-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                >
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                        <span>Are you sure you want to delete this category?</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setDeleteConfirm(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="default" 
+                            size="sm" 
+                            onClick={() => handleDeleteCategory(deleteConfirm)}
+                        >
+                            Confirm
+                        </Button>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Create/Edit Form */}
-            <GlassCard className="border border-white/15 bg-gradient-to-b from-white/30 via-white/10 to-transparent p-5 dark:from-white/10 dark:via-white/5">
+            <Card variant="default" elevation={1} className="p-6">
                 <form
                     onSubmit={editingCategory ? handleEditCategory : handleCreateCategory}
                     className="flex flex-col sm:flex-row gap-3"
@@ -152,35 +189,36 @@ const CategoryManager = () => {
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value)}
                         placeholder="Category Name"
-                        className="h-10 flex-1 rounded-xl border-white/15 bg-white/50 dark:bg-black/20"
+                        className="h-10 flex-1"
                         required
                     />
                     <div className="flex gap-2">
                         {editingCategory ? (
                             <>
-                                <Button type="submit" className="h-10 gap-2 rounded-xl">
+                                <Button type="submit" size="sm" className="h-10 gap-2">
                                     <Check className="w-4 h-4" />
                                     Update
                                 </Button>
                                 <Button
                                     type="button"
-                                    variant="secondary"
+                                    variant="ghost"
                                     onClick={handleCancelEdit}
-                                    className="h-10 gap-2 rounded-xl"
+                                    size="sm"
+                                    className="h-10 gap-2"
                                 >
                                     <X className="w-4 h-4" />
                                     Cancel
                                 </Button>
                             </>
                         ) : (
-                            <Button type="submit" className="h-10 gap-2 rounded-xl">
+                            <Button type="submit" size="sm" className="h-10 gap-2">
                                 <Plus className="w-4 h-4" />
                                 Create Category
                             </Button>
                         )}
                     </div>
                 </form>
-            </GlassCard>
+            </Card>
 
             {/* Category Panel */}
             <CategoryPanel
@@ -192,11 +230,13 @@ const CategoryManager = () => {
             />
 
             {/* Charts */}
-            <ExpensesByCategoryChart
-                transactions={transactions}
-                categories={categories}
-                loading={loading || txLoading}
-            />
+            <div style={{ flex: 1, overflow: 'auto' }}>
+                <ExpensesByCategoryChart
+                    transactions={transactions}
+                    categories={categories}
+                    loading={loading || txLoading}
+                />
+            </div>
         </motion.div>
     );
 };

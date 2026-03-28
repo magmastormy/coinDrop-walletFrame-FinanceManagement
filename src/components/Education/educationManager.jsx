@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../contexts/authContext';
-import { Grid, LayoutGrid, Filter, RefreshCw, ArrowDownAZ } from 'lucide-react';
+import { Grid, LayoutGrid, RefreshCw, ArrowDownAZ } from 'lucide-react';
 import educationService from '../../services/educationService';
 import {
     setEducations,
@@ -12,11 +12,10 @@ import {
 
 // Components
 import EducationCard from './educationCard';
-import EducationNavBar from './educationNavBar';
 import EducationSearchBar from './educationSearchBar';
-import { Button } from '../ui/Button';
-import { GlassCard } from '../ui/GlassCard';
+import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
+import PageHeader from '../Common/PageHeader';
 
 const EducationManager = () => {
     const dispatch = useDispatch();
@@ -28,13 +27,13 @@ const EducationManager = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'popular', 'title'
-    const [showFilters, setShowFilters] = useState(false);
-
     const fetchEducationPosts = async () => {
         dispatch(setLoading(true));
         try {
             const response = await educationService.getEducations();
-            dispatch(setEducations(response));
+            // Extract data from axios response, handling both axios response and plain data
+            const educationsData = response?.data || response || [];
+            dispatch(setEducations(educationsData));
         } catch (err) {
             dispatch(setError(err.message));
         } finally {
@@ -56,10 +55,6 @@ const EducationManager = () => {
 
     const handleViewModeChange = () => {
         setViewMode(viewMode === 'grid' ? 'list' : 'grid');
-    };
-
-    const toggleFilters = () => {
-        setShowFilters(!showFilters);
     };
 
     useEffect(() => {
@@ -96,16 +91,7 @@ const EducationManager = () => {
         return 0;
     });
 
-    const bentoSpanPattern = [
-        'md:col-span-3 md:row-span-2',
-        'md:col-span-3 md:row-span-1',
-        'md:col-span-2 md:row-span-1',
-        'md:col-span-4 md:row-span-1',
-        'md:col-span-2 md:row-span-2',
-        'md:col-span-3 md:row-span-1',
-        'md:col-span-3 md:row-span-1'
-    ];
-
+    
     const bentoStylePattern = ['feature', 'standard', 'compact', 'wide', 'tall', 'standard', 'wide'];
 
     const handleLike = async (postId) => {
@@ -135,176 +121,233 @@ const EducationManager = () => {
     }
 
     return (
-        <div className="flex h-full overflow-hidden">
-            {/* Left Sidebar - Navigation */}
-            <div className="hidden md:block w-64 p-4 border-r border-white/10 overflow-y-auto">
-                <EducationNavBar
-                    onCategorySelect={handleCategorySelect}
-                    activeCategory={selectedCategory}
-                />
-            </div>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col overflow-hidden px-4 md:px-6 py-4">
-                {/* Header with Search and Filters */}
-                <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                    <h1 className="text-3xl font-bold text-foreground">
-                        Education Center
-                    </h1>
-
-                    <div className="flex w-full items-center gap-2 sm:w-auto">
-                        <div className="flex-1 sm:flex-initial">
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <PageHeader
+                title="Education"
+                actions={(
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ flex: '1', minWidth: '200px', maxWidth: '300px' }}>
                             <EducationSearchBar onSearch={handleSearch} />
                         </div>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ position: 'relative' }}>
+                                <ArrowDownAZ style={{
+                                    position: 'absolute',
+                                    left: '10px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    width: '14px',
+                                    height: '14px',
+                                    color: 'var(--color-text-muted)',
+                                    pointerEvents: 'none'
+                                }} />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => handleSortChange(e.target.value)}
+                                    style={{
+                                        height: '36px',
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface-2)',
+                                        paddingLeft: '32px',
+                                        paddingRight: '24px',
+                                        fontSize: '13px',
+                                        color: 'var(--color-text-primary)',
+                                        outline: 'none',
+                                        fontFamily: 'var(--font-body)',
+                                        minWidth: '100px'
+                                    }}
+                                    aria-label="Sort education posts"
+                                >
+                                    <option value="newest">Newest</option>
+                                    <option value="oldest">Oldest</option>
+                                    <option value="popular">Popular</option>
+                                    <option value="title">A-Z</option>
+                                </select>
+                            </div>
 
-                        <div className="relative">
-                            <ArrowDownAZ className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <select
-                                value={sortBy}
-                                onChange={(e) => handleSortChange(e.target.value)}
-                                className="h-10 rounded-xl border border-white/10 bg-background/70 pl-9 pr-8 text-sm text-foreground outline-none transition-all focus:border-primary/40"
-                                aria-label="Sort education posts"
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleViewModeChange}
+                                style={{ flexShrink: 0 }}
+                                title="Toggle view"
                             >
-                                <option value="newest">Newest</option>
-                                <option value="oldest">Oldest</option>
-                                <option value="popular">Most Popular</option>
-                                <option value="title">Title A-Z</option>
-                            </select>
+                                {viewMode === 'grid' ? <Grid className="w-4 h-4" strokeWidth={1.5} /> : <LayoutGrid className="w-4 h-4" strokeWidth={1.5} />}
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={fetchEducationPosts}
+                                style={{ flexShrink: 0 }}
+                                title="Refresh"
+                            >
+                                <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
+                            </Button>
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleViewModeChange}
-                            className="flex-shrink-0"
-                        >
-                            {viewMode === 'grid' ? <Grid className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={toggleFilters}
-                            className={cn(
-                                "flex-shrink-0",
-                                showFilters && "bg-primary/20 text-primary"
-                            )}
-                        >
-                            <Filter className="w-5 h-5" />
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={fetchEducationPosts}
-                            className="flex-shrink-0"
-                        >
-                            <RefreshCw className="w-5 h-5" />
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="mb-3 text-sm text-muted-foreground">
-                    Showing <span className="font-medium text-foreground">{sortedEducations?.length || 0}</span> posts
-                </div>
-
-                {/* Filter Options */}
-                <AnimatePresence>
-                    {showFilters && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <GlassCard className="p-4 mb-4">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-sm font-medium text-muted-foreground mr-2">
-                                        Sort by:
-                                    </span>
-                                    {['newest', 'oldest', 'popular', 'title'].map(option => (
-                                        <button
-                                            key={option}
-                                            onClick={() => handleSortChange(option)}
-                                            className={cn(
-                                                "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-                                                sortBy === option
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "bg-white/5 text-muted-foreground hover:bg-white/10"
-                                            )}
-                                        >
-                                            {option === 'title'
-                                                ? 'Title A-Z'
-                                                : option.charAt(0).toUpperCase() + option.slice(1)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </GlassCard>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Error Alert */}
-                {error && (
-                    <div className="p-4 mb-4 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-between">
-                        <span>{error}</span>
-                        <button
-                            onClick={() => dispatch(setError(null))}
-                            className="text-red-500 hover:text-red-400"
-                        >
-                            ×
-                        </button>
                     </div>
                 )}
+            />
 
-                {/* Education Posts Grid/List */}
-                <div className="flex-1 overflow-y-auto pr-2">
-                    {!sortedEducations || sortedEducations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                            <h2 className="text-xl font-semibold text-foreground mb-2">
-                                No education posts found
-                            </h2>
-                            <p className="text-muted-foreground max-w-md">
-                                {searchQuery ?
-                                    `No results found for "${searchQuery}". Try a different search term or browse all posts.` :
-                                    "There are no education posts available at the moment. Check back later for new content."}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className={cn(
-                            "grid gap-5 pb-4 md:gap-6",
-                            viewMode === 'list'
-                                ? "grid-cols-1"
-                                : "grid-cols-1 auto-rows-[minmax(220px,auto)] md:grid-cols-6"
-                        )}>
-                            <AnimatePresence>
-                                {sortedEducations.map((post, index) => (
-                                    <motion.div
-                                        key={post._id}
-                                        layout
-                                        className={cn(
-                                            "h-full",
-                                            viewMode === 'grid' && bentoSpanPattern[index % bentoSpanPattern.length]
-                                        )}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        transition={{ duration: 0.3 }}
-                                    >
-                                        <EducationCard
-                                            education={post}
-                                            onLike={handleLike}
-                                            onComment={handleComment}
-                                            currentUser={user}
-                                            viewMode={viewMode}
-                                            bentoVariant={bentoStylePattern[index % bentoStylePattern.length]}
-                                        />
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    )}
+            {/* Chip Filter Bar Below Header */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '16px 32px',
+                borderBottom: '1px solid var(--color-border)',
+                flexWrap: 'wrap'
+            }}>
+                <span style={{
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: 'var(--color-text-secondary)',
+                    marginRight: '8px'
+                }}>Category:</span>
+                {['all', 'budgeting', 'saving', 'investing', 'debt', 'retirement'].map(category => (
+                    <button
+                        key={category}
+                        onClick={() => handleCategorySelect(category)}
+                        style={{
+                            padding: '6px 14px',
+                            borderRadius: 'var(--radius-lg)',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            border: '1px solid var(--color-border)',
+                            background: selectedCategory === category ? 'var(--color-gold)' : 'var(--color-surface-1)',
+                            color: selectedCategory === category ? 'white' : 'var(--color-text-primary)',
+                            cursor: 'pointer',
+                            transition: 'all 150ms',
+                            fontFamily: 'var(--font-body)'
+                        }}
+                        onMouseEnter={e => {
+                            if (selectedCategory !== category) {
+                                e.target.style.background = 'var(--color-surface-2)';
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            if (selectedCategory !== category) {
+                                e.target.style.background = 'var(--color-surface-1)';
+                            }
+                        }}
+                    >
+                        {category === 'all' ? 'All Posts' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    </button>
+                ))}
+            </div>
+
+            <div style={{ margin: '12px 32px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
+                Showing <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{sortedEducations?.length || 0}</span> posts
+            </div>
+
+            {/* Error Alert */}
+            {error && (
+                <div style={{
+                    margin: '0 32px 16px',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    color: 'rgba(239, 68, 68, 0.9)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}>
+                    <span>{error}</span>
+                    <button
+                        onClick={() => dispatch(setError(null))}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'rgba(239, 68, 68, 0.9)',
+                            fontSize: '20px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        ×
+                    </button>
                 </div>
+            )}
+
+            {/* Education Posts Grid/List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px 32px' }}>
+                {!sortedEducations || sortedEducations.length === 0 ? (
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        textAlign: 'center',
+                        padding: '64px'
+                    }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: 'var(--radius-xl)',
+                            background: 'rgba(212, 175, 55, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '24px',
+                            color: 'var(--color-gold)'
+                        }}>
+                            <Grid className="w-10 h-10" />
+                        </div>
+                        <h2 style={{
+                            fontSize: '24px',
+                            fontWeight: 700,
+                            color: 'var(--color-text-primary)',
+                            marginBottom: '12px',
+                            fontFamily: 'var(--font-display)'
+                        }}>
+                            {searchQuery ? 'No Results Found' : 'No Education Posts Yet'}
+                        </h2>
+                        <p style={{
+                            fontSize: '16px',
+                            color: 'var(--color-text-secondary)',
+                            maxWidth: '480px',
+                            lineHeight: 1.6,
+                            fontFamily: 'var(--font-body)'
+                        }}>
+                            {searchQuery ?
+                                `No results found for "${searchQuery}". Try a different search term or browse all posts.` :
+                                "Education content is being prepared. Check back soon for helpful financial tips and guides."}
+                        </p>
+                    </div>
+                ) : (
+                    <div style={{
+                        display: 'grid',
+                        gap: '20px',
+                        paddingBottom: '16px',
+                        gridTemplateColumns: viewMode === 'list' ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))'
+                    }}>
+                        <AnimatePresence>
+                            {sortedEducations.map((post, index) => (
+                                <motion.div
+                                    key={post._id}
+                                    layout
+                                    style={{ height: '100%' }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <EducationCard
+                                        education={post}
+                                        onLike={handleLike}
+                                        onComment={handleComment}
+                                        currentUser={user}
+                                        viewMode={viewMode}
+                                        bentoVariant={viewMode === 'grid' ? bentoStylePattern[index % bentoStylePattern.length] : 'standard'}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
             </div>
         </div>
     );
