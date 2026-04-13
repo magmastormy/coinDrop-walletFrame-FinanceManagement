@@ -1,3 +1,5 @@
+import { useLogger } from './hooks/useLogger';
+
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
@@ -160,7 +162,7 @@ const DashboardUserShortAnalytics = () => {
                 netWorthGrowthRate: Number(netWorthGrowthRate.toFixed(1))
             });
         } catch (error) {
-            console.error('Error fetching analytics:', error);
+            logError('Error fetching analytics:', error);
             setError('Failed to load financial data. Please try again.');
         } finally {
             setLoading(false);

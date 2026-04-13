@@ -1,9 +1,29 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-    Edit2, Trash2, ArrowUpRight, ArrowDownLeft, ArrowRightLeft,
-    Calendar, Search, ChevronLeft, ChevronRight, ArrowUp, ArrowDown,
-    Filter, Check, Receipt, X
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+    Calendar, 
+    Edit2, 
+    Trash2, 
+    MoreHorizontal, 
+    ChevronDown, 
+    ChevronUp, 
+    Search, 
+    ChevronLeft, 
+    ChevronRight, 
+    ArrowUp, 
+    ArrowDown,
+    Filter, 
+    Check, 
+    Receipt, 
+    X, 
+    ArrowUpRight, 
+    ArrowDownLeft, 
+    ArrowRightLeft
 } from 'lucide-react';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
+import { useDateFormatter } from '../../hooks/useDateFormatter';
 import { cn } from '../../lib/utils';
 
 const TransactionTable = ({ 
@@ -38,12 +58,32 @@ const TransactionTable = ({
 
         // Sort
         result.sort((a, b) => {
-            if (a[sortConfig.key] < b[sortConfig.key]) {
-                return sortConfig.direction === 'asc' ? -1 : 1;
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+            
+            // Handle date sorting with validation
+            if (sortConfig.key === 'date') {
+                const aDate = aValue ? new Date(aValue) : null;
+                const bDate = bValue ? new Date(bValue) : null;
+                
+                // Validate dates
+                const isValidADate = aDate && !isNaN(aDate.getTime());
+                const isValidBDate = bDate && !isNaN(bDate.getTime());
+                
+                // Handle invalid dates consistently - put all invalid dates at the end
+                if (!isValidADate && !isValidBDate) return 0;
+                if (!isValidADate) return sortConfig.direction === 'asc' ? 1 : -1;
+                if (!isValidBDate) return sortConfig.direction === 'asc' ? -1 : 1;
+                
+                // Both dates are valid, compare them
+                if (aDate < bDate) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aDate > bDate) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
             }
-            if (a[sortConfig.key] > b[sortConfig.key]) {
-                return sortConfig.direction === 'asc' ? 1 : -1;
-            }
+            
+            // Handle other sorting
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
 
@@ -61,20 +101,8 @@ const TransactionTable = ({
         );
     }, [filteredAndSortedTransactions, currentPage, itemsPerPage]);
 
-    const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount);
-    }, []);
-
-    const formatDate = useCallback((dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    }, []);
+    const formatCurrency = useCurrencyFormatter();
+    const formatDate = useDateFormatter();
 
     const getSourceLabel = useCallback((transaction) => {
         if (transaction.walletId) {
@@ -278,7 +306,7 @@ const TransactionTable = ({
                                 <div className="relative mb-8">
                                     <div 
                                         className="absolute inset-0 blur-3xl rounded-full scale-150"
-                                        style={{ backgroundColor: 'rgba(182, 196, 255, 0.2)' }}
+                                        style={{ backgroundColor: 'var(--color-primary-200)' }}
                                     />
                                     <div 
                                         className="relative w-32 h-32 flex items-center justify-center"
@@ -311,7 +339,7 @@ const TransactionTable = ({
                                     <button 
                                         onClick={onAddTransaction}
                                         className="cta-gradient px-8 py-3.5 rounded-2xl font-bold transition-transform hover:scale-105 active:scale-95"
-                                        style={{ boxShadow: '0 0 30px rgba(77, 118, 255, 0.2)' }}
+                                        style={{ boxShadow: 'var(--shadow-lg)' }}
                                     >
                                         Add First Transaction
                                     </button>
@@ -319,9 +347,9 @@ const TransactionTable = ({
                                         onClick={onImportCsv}
                                         className="px-8 py-3.5 rounded-2xl font-semibold border transition-colors hover:bg-surface-container-highest"
                                         style={{ 
-                                            backgroundColor: 'rgba(34, 42, 61, 0.5)',
-                                            color: 'var(--fc-on-surface)',
-                                            border: '1px solid var(--fc-outline-variant)'
+                                            backgroundColor: 'var(--color-surface-1)',
+                                            color: 'var(--color-text-primary)',
+                                            border: '1px solid var(--color-border)'
                                         }}
                                     >
                                         Import CSV Data
@@ -336,8 +364,8 @@ const TransactionTable = ({
                         <div 
                             className="grid grid-cols-5 px-10 py-6 text-[10px] uppercase tracking-[0.2em] font-bold"
                             style={{ 
-                                backgroundColor: 'rgba(23, 31, 51, 0.5)',
-                                color: 'var(--fc-on-tertiary-container)'
+                                backgroundColor: 'var(--color-surface-2)',
+                                color: 'var(--color-text-secondary)'
                             }}
                         >
                             <div className="cursor-pointer flex items-center gap-1" onClick={() => requestSort('date')}>
@@ -442,7 +470,7 @@ const TransactionTable = ({
                                     <div className="relative mb-8">
                                         <div 
                                             className="absolute inset-0 blur-3xl rounded-full scale-150"
-                                            style={{ backgroundColor: 'rgba(182, 196, 255, 0.2)' }}
+                                            style={{ backgroundColor: 'var(--color-primary-200)' }}
                                         />
                                         <div 
                                             className="relative w-32 h-32 flex items-center justify-center"
@@ -475,7 +503,7 @@ const TransactionTable = ({
                                         <button 
                                             onClick={onAddTransaction}
                                             className="cta-gradient px-8 py-3.5 rounded-2xl font-bold transition-transform hover:scale-105 active:scale-95"
-                                            style={{ boxShadow: '0 0 30px rgba(77, 118, 255, 0.2)' }}
+                                            style={{ boxShadow: 'var(--shadow-lg)' }}
                                         >
                                             Add First Transaction
                                         </button>
@@ -483,7 +511,7 @@ const TransactionTable = ({
                                             onClick={onImportCsv}
                                             className="px-8 py-3.5 rounded-2xl font-semibold border transition-colors hover:bg-surface-container-highest"
                                             style={{ 
-                                                backgroundColor: 'rgba(34, 42, 61, 0.5)',
+                                                backgroundColor: 'var(--color-surface-1)',
                                                 color: 'var(--fc-on-surface)',
                                                 border: '1px solid var(--fc-outline-variant)'
                                             }}

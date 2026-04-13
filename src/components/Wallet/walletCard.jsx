@@ -6,16 +6,10 @@ import EditWalletModal from './editWallet';
 import WalletTransfer from './walletTransfer';
 import DeleteWalletDialog from './deleteWalletDialog';
 import ReportButton from '../Common/reportButton';
-
-// Material Symbols Icon component
-const MaterialIcon = ({ name, className = '', filled = false }) => (
-    <span 
-        className={`material-symbols-outlined ${className}`}
-        style={{ fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0" }}
-    >
-        {name}
-    </span>
-);
+import MaterialIcon from '../ui/MaterialIcon';
+import MenuItem from '../ui/MenuItem';
+import useCurrencyFormatter from '../../hooks/useCurrencyFormatter';
+import useDateFormatter from '../../hooks/useDateFormatter';
 
 // Wallet type to icon mapping using Material Symbols
 const getWalletIcon = (type) => {
@@ -37,30 +31,12 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer, viewMode 
     const [showTransferModal, setShowTransferModal] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    
+    const formatCurrencyHook = useCurrencyFormatter();
+    const formatDateHook = useDateFormatter();
 
     const walletIcon = useMemo(() => getWalletIcon(wallet.type), [wallet.type]);
     const otherWallets = useMemo(() => wallets.filter(w => w._id !== wallet._id), [wallets, wallet._id]);
-
-    const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    }, []);
-
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 0) return 'Updated Today';
-        if (diffDays === 1) return 'Updated Yesterday';
-        if (diffDays < 7) return `Updated ${diffDays} days ago`;
-        return `Updated ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    };
 
     const handleCardClick = (e) => {
         // Prevent card click when clicking menu or buttons
@@ -97,10 +73,10 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer, viewMode 
                             "text-xl font-bold font-headline",
                             wallet.balance < 0 ? "text-error" : "text-on-surface"
                         )}>
-                            {formatCurrency(wallet.balance)}
+                            {formatCurrencyHook(wallet.balance)}
                         </p>
                         <p className="text-[10px] text-on-tertiary-container font-medium uppercase tracking-tighter">
-                            {formatDate(wallet.updatedAt)}
+                            {formatDateHook(wallet.updatedAt)}
                         </p>
                     </div>
 
@@ -130,24 +106,21 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer, viewMode 
                                         transition={{ duration: 0.15 }}
                                         className="absolute right-0 mt-1 w-48 z-20 bg-surface-container-high rounded-xl border border-outline-variant/10 py-1 shadow-xl"
                                     >
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setShowEditModal(true); setShowMenu(false); }}
-                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
-                                        >
-                                            <Edit2 className="w-4 h-4" /> Edit Wallet
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setShowTransferModal(true); setShowMenu(false); }}
-                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
-                                        >
-                                            <ArrowRightLeft className="w-4 h-4" /> Transfer Funds
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setShowReportModal(true); setShowMenu(false); }}
-                                            className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container flex items-center gap-2 transition-colors"
-                                        >
-                                            <FileText className="w-4 h-4" /> Generate Report
-                                        </button>
+                                        <MenuItem
+                                            icon={Edit2}
+                                            label="Edit Wallet"
+                                            onClick={() => { setShowEditModal(true); setShowMenu(false); }}
+                                        />
+                                        <MenuItem
+                                            icon={ArrowRightLeft}
+                                            label="Transfer Funds"
+                                            onClick={() => { setShowTransferModal(true); setShowMenu(false); }}
+                                        />
+                                        <MenuItem
+                                            icon={FileText}
+                                            label="Generate Report"
+                                            onClick={() => { setShowReportModal(true); setShowMenu(false); }}
+                                        />
                                         <div className="border-t border-outline-variant/10 my-1" />
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); setShowMenu(false); }}
@@ -315,10 +288,10 @@ const WalletCard = ({ wallet, wallets, onUpdate, onDelete, onTransfer, viewMode 
                         "text-2xl font-bold font-headline",
                         wallet.balance < 0 ? "text-error" : "text-on-surface"
                     )}>
-                        {formatCurrency(wallet.balance)}
+                        {formatCurrencyHook(wallet.balance)}
                     </p>
                     <p className="text-[10px] text-on-tertiary-container font-medium uppercase tracking-tighter">
-                        {formatDate(wallet.updatedAt)}
+                        {formatDateHook(wallet.updatedAt)}
                     </p>
                 </div>
             </div>

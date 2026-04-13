@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Loader2, BarChart3 } from 'lucide-react';
@@ -52,7 +54,7 @@ const DashboardBarChart = () => {
                         expense: monthlyData.map(d => d.expense)
                     });
                 } catch (error) {
-                    console.error('Error fetching data:', error);
+                    logError('Error fetching data:', error);
                     setChartData({
                         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                         income: [0, 0, 0, 0, 0, 0],

@@ -83,7 +83,7 @@ const Toggle = ({
             backgroundColor: 'white',
             borderRadius: '50%',
             transition: 'transform 0.2s ease',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            boxShadow: 'var(--shadow-sm)',
             ...thumbStyles[size]
           }}
         />

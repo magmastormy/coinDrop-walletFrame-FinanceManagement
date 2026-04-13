@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/authContext';
 import savingsGoalService from '../../services/savingsGoalService';
@@ -14,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Loader2 } from 'lucide-react';
 import ReportSection from '../Common/ReportSection';
 import PageHeader from '../Common/PageHeader';
+import LoadingState from '../ui/LoadingState';
 
 const SavingsGoalManager = () => {
     const { user } = useAuth();
@@ -86,7 +89,7 @@ const SavingsGoalManager = () => {
             setGoals(Array.isArray(goalsData) ? goalsData : []);
             setWallets(Array.isArray(walletsData) ? walletsData : []);
         } catch (error) {
-            console.error('Failed to fetch data:', error);
+            logError('Failed to fetch data:', error);
         } finally {
             setIsLoading(false);
         }
@@ -97,7 +100,7 @@ const SavingsGoalManager = () => {
             await savingsGoalService.createSavingsGoal(goalData);
             fetchData();
         } catch (error) {
-            console.error('Failed to create goal:', error);
+            logError('Failed to create goal:', error);
         }
     };
 
@@ -106,7 +109,7 @@ const SavingsGoalManager = () => {
             await savingsGoalService.updateSavingsGoal(goalId, updates);
             fetchData();
         } catch (error) {
-            console.error('Failed to update goal:', error);
+            logError('Failed to update goal:', error);
         }
     };
 
@@ -116,7 +119,7 @@ const SavingsGoalManager = () => {
                 await savingsGoalService.deleteSavingsGoal(goalId);
                 fetchData();
             } catch (error) {
-                console.error('Failed to delete goal:', error);
+                logError('Failed to delete goal:', error);
             }
         }
     };
@@ -135,16 +138,12 @@ const SavingsGoalManager = () => {
             }
             fetchData();
         } catch (error) {
-            console.error('Failed to contribute:', error);
+            logError('Failed to contribute:', error);
         }
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
+        return <LoadingState loading={isLoading} height="md" />;
     }
 
     return (
@@ -185,10 +184,10 @@ const SavingsGoalManager = () => {
                         />
                     </div>
                     <div className="flex items-center gap-1">
-                        <button className="p-2 text-on-surface-variant hover:bg-[#222a3d] rounded-full transition-all">
+                        <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
                             <span className="material-symbols-outlined">notifications</span>
                         </button>
-                        <button className="p-2 text-on-surface-variant hover:bg-[#222a3d] rounded-full transition-all">
+                        <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
                             <span className="material-symbols-outlined">settings</span>
                         </button>
                     </div>

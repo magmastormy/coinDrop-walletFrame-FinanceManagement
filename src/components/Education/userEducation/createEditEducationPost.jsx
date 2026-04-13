@@ -1,3 +1,5 @@
+import { useLogger } from '../../../hooks/useLogger.jsx';
+
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -70,7 +72,7 @@ const MenuBar = ({ editor, setImageFiles, setUploadedImages }) => {
             });
 
         } catch (error) {
-            console.error('Error preparing image:', error);
+            logError('Error preparing image:', error);
             toast.error(`Error: ${error.message || 'Failed to prepare image'}`);
         }
 
@@ -193,7 +195,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
 
     useEffect(() => {
         if (post && editor) {
-            console.log("Loading post for editing:", post);
+            logInfo("Loading post for editing:", post);
             setTitle(post.title || '');
 
             // Process content to replace placeholder images with actual image URLs
@@ -201,7 +203,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
 
             // Check if we have actual images to use
             if (post.images && post.images.length > 0) {
-                console.log("Post has images:", post.images);
+                logInfo("Post has images:", post.images);
 
                 // Create an array to track loaded images
                 const loadedImages = [];
@@ -210,7 +212,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                 post.images.forEach((img, index) => {
                     if (img && (img.url || typeof img === 'string')) {
                         const imageUrl = img.url || img;
-                        console.log(`Processing image ${index + 1}:`, imageUrl);
+                        logInfo(`Processing image ${index + 1}:`, imageUrl);
 
                         // Replace [IMAGE] placeholders with actual URLs
                         contentToSet = contentToSet.replace('[IMAGE]', imageUrl);
@@ -224,8 +226,8 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                     }
                 });
 
-                console.log("Loaded images:", loadedImages);
-                console.log("Updated content:", contentToSet);
+                logInfo("Loaded images:", loadedImages);
+                logInfo("Updated content:", contentToSet);
 
                 // Set the uploaded images state
                 setUploadedImages(loadedImages);
@@ -235,7 +237,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
             editor.commands.setContent(contentToSet);
 
             // For debugging, check what was actually set
-            console.log("Editor content after setting:", editor.getHTML());
+            logInfo("Editor content after setting:", editor.getHTML());
         }
     }, [post, editor]);
 
@@ -250,7 +252,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
             setIsUploading(true);
 
             const response = await ImageService.uploadImage(file, 'education');
-            console.log("[CreateEditEducation] Image uploaded response:", response);
+            logInfo("[CreateEditEducation] Image uploaded response:", response);
 
             // Check for valid response data
             if (!response || !response.url) {
@@ -270,7 +272,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
             // Return the image URL for content embedding
             return response.url;
         } catch (error) {
-            console.error('[CreateEditEducation] Error uploading image:', error);
+            logError('[CreateEditEducation] Error uploading image:', error);
             return null;
         } finally {
             setIsUploading(false);
@@ -294,7 +296,7 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
             // First, upload any pending images
             let processedContent = editor.getHTML();
             const pendingImagesToUpload = uploadedImages.filter(img => img.file && !img.isUploaded && img.pendingUpload);
-            console.log('[CreateEditEducation] Pending images to upload:', pendingImagesToUpload.length);
+            logInfo('[CreateEditEducation] Pending images to upload:', pendingImagesToUpload.length);
 
             // Upload all pending images first
             if (pendingImagesToUpload.length > 0) {
@@ -315,12 +317,12 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                             });
                         }
                     } catch (uploadError) {
-                        console.error('Error uploading image:', uploadError);
+                        logError('Error uploading image:', uploadError);
                         toast.error(`Failed to upload image: ${uploadError.message || 'Unknown error'}`);
                     }
                 }
 
-                console.log('[CreateEditEducation] Uploaded images:', uploadResults);
+                logInfo('[CreateEditEducation] Uploaded images:', uploadResults);
             }
 
             // Create the post data with the processed content that has real image URLs
@@ -337,20 +339,20 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                 postData._id = post._id;
             }
 
-            console.log('[CreateEditEducationPost] Submitting education post data:', postData);
+            logInfo('[CreateEditEducationPost] Submitting education post data:', postData);
 
             // Save the post through the provided onSubmit handler
             let response;
             try {
                 if (isEditMode) {
-                    console.log("***[CreateEditEducationPost] update post");
+                    logInfo("***[CreateEditEducationPost] update post");
                     response = await onSubmit(post._id, postData);
                 } else {
-                    console.log("***[CreateEditEducationPost] create new post");
+                    logInfo("***[CreateEditEducationPost] create new post");
                     response = await onSubmit(postData);
                 }
 
-                console.log('[CreateEditEducationPost] Education post (onSubmit) response:', response);
+                logInfo('[CreateEditEducationPost] Education post (onSubmit) response:', response);
 
                 // Handle the response
                 if (response) {
@@ -366,11 +368,11 @@ const CreateEditEducationPost = ({ onSubmit, onClose, initialData = null }) => {
                     throw new Error('[CreateEditEducation] Failed to save post');
                 }
             } catch (submitError) {
-                console.error('[CreateEditEducation] Error submitting education post:', submitError);
+                logError('[CreateEditEducation] Error submitting education post:', submitError);
                 throw submitError; // Rethrow to be caught by the outer catch
             }
         } catch (err) {
-            console.error('[CreateEditEducation] Error saving education post:', err);
+            logError('[CreateEditEducation] Error saving education post:', err);
             setError('[CreateEditEducation] Error saving post: ' + (err.message || 'Unknown error'));
             toast.error('[CreateEditEducation] Error saving post');
         } finally {

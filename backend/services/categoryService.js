@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // backend/services/categoryService.js
 const mongoose = require('mongoose');
 const Category = require('../models/Category');
@@ -32,7 +34,7 @@ class CategoryService {
     });
 
     if (existingCategory) {
-      console.log(`Category "${selectedCategory.name}" already exists. Reusing it.`);
+      logger.debug(`Category "${selectedCategory.name}" already exists. Reusing it.`);
       return { ...existingCategory.toObject(), isNew: false };
     }
 

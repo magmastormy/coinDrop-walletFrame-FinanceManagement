@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 /**
  * Input Sanitization Utility for AI Prompts
  * Prevents prompt injection attacks and malicious input
@@ -29,7 +31,7 @@ function sanitizeInput(input) {
     // Limit maximum length to prevent DoS
     const MAX_LENGTH = 4000;
     if (sanitized.length > MAX_LENGTH) {
-        console.warn(`[sanitizeInput] Input truncated from ${sanitized.length} to ${MAX_LENGTH} chars`);
+        logger.warn(`[sanitizeInput] Input truncated from ${sanitized.length} to ${MAX_LENGTH} chars`);
         sanitized = sanitized.substring(0, MAX_LENGTH);
     }
     
@@ -117,7 +119,7 @@ function validateMessages(messages) {
         
         // Check for injection attempts in user messages
         if (msg.role === 'user' && detectInjectionAttempt(sanitizedContent)) {
-            console.warn(`[validateMessages] Injection attempt detected in message ${i + 1}`);
+            logger.warn(`[validateMessages] Injection attempt detected in message ${i + 1}`);
             return {
                 valid: false,
                 error: 'Invalid content detected'

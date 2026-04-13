@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Repeat, Target, TrendingUp, Brain, Calendar, PiggyBank } from 'lucide-react';
 import { useAuth } from '../../contexts/authContext';
@@ -64,13 +66,26 @@ const SavingsAccountManager = () => {
         }
     }, [user]);
 
+    // Cleanup effect for memory management
+    useEffect(() => {
+        return () => {
+            // Cancel any ongoing operations when component unmounts
+            setError(null);
+            setIsLoading(false);
+        };
+    }, []);
+
     const fetchAccounts = async () => {
+        if (!user?.id) return;
+        
+        // Set loading state at the beginning
+        setIsLoading(true);
+        
         try {
-            setIsLoading(true);
             const response = await savingsAccountService.getUserSavingsAccounts(user.id);
             setAccounts(response || []);
         } catch (error) {
-            console.error('Failed to fetch accounts:', error);
+            logError('Failed to fetch accounts:', error);
             setError('Failed to load savings accounts. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -78,14 +93,16 @@ const SavingsAccountManager = () => {
     };
 
     const fetchWallets = async () => {
+        // Don't set loading state here - let the main fetch handle it
         try {
+            if (!user || !user.id) {
+                throw new Error('User not authenticated');
+            }
             const response = await walletService.getAllWallets(user.id);
             setWallets(response || []);
         } catch (error) {
-            console.error('Failed to fetch wallets:', error);
+            logError('Failed to fetch wallets:', error);
             setError('Failed to load wallets. Please try again later.');
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -94,7 +111,7 @@ const SavingsAccountManager = () => {
             const response = await savingsGoalService.getSavingsGoals();
             setGoals(response || []);
         } catch (error) {
-            console.error('Failed to fetch savings goals:', error);
+            logError('Failed to fetch savings goals:', error);
         }
     };
 
@@ -208,7 +225,7 @@ const SavingsAccountManager = () => {
                 [type]: { open: false }
             }));
         } catch (error) {
-            console.error('Transaction failed:', error);
+            logError('Transaction failed:', error);
             setError('Transaction failed. Please try again later.');
         }
     };
@@ -232,7 +249,7 @@ const SavingsAccountManager = () => {
             });
             fetchAccounts();
         } catch (error) {
-            console.error('Failed to setup auto-transfer:', error);
+            logError('Failed to setup auto-transfer:', error);
             toast.error('Failed to setup auto-transfer. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -247,7 +264,7 @@ const SavingsAccountManager = () => {
             fetchAccounts();
             fetchGoals();
         } catch (error) {
-            console.error('Failed to execute savings rules:', error);
+            logError('Failed to execute savings rules:', error);
             toast.error('Failed to execute savings rules. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -271,7 +288,7 @@ const SavingsAccountManager = () => {
             toast.success('Savings goal progress updated successfully');
             fetchGoals();
         } catch (error) {
-            console.error('Failed to update goal progress:', error);
+            logError('Failed to update goal progress:', error);
             toast.error('Failed to update goal progress. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -743,7 +760,7 @@ const SavingsAccountManager = () => {
                         await fetchAccounts();
                         setModalState(prev => ({ ...prev, edit: { open: false } }));
                     } catch (error) {
-                        console.error('Failed to update account:', error);
+                        logError('Failed to update account:', error);
                         setError('Failed to update the account. Please try again later.');
                     }
                 }}
@@ -765,7 +782,7 @@ const SavingsAccountManager = () => {
                         await fetchAccounts();
                         setModalState(prev => ({ ...prev, transfer: { open: false } }));
                     } catch (error) {
-                        console.error('Transfer failed:', error);
+                        logError('Transfer failed:', error);
                         setError('Transfer failed. Please try again later.');
                     }
                 }}
@@ -781,7 +798,7 @@ const SavingsAccountManager = () => {
                         await fetchAccounts();
                         setCreateAccountOpen(false);
                     } catch (error) {
-                        console.error('Failed to create account:', error);
+                        logError('Failed to create account:', error);
                         setError('Failed to create the account. Please try again later.');
                     }
                 }}

@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import Button from '../ui/Button';
@@ -107,7 +109,7 @@ const ReportButton = ({
       const types = await reportService.getReportTypes();
       setReportTypes(types);
     } catch (error) {
-      console.error('Report types loading failed:', error);
+      logError('Report types loading failed:', error);
       setReportTypes([]); // Fail gracefully with empty state
     }
   };

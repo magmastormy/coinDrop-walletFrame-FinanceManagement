@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -99,7 +101,7 @@ const DashboardManager = () => {
                     prevSavingsRate: Math.max(0, prevSavingsRate)
                 });
             } catch (error) {
-                console.error('Error fetching stats:', error);
+                logError('Error fetching stats:', error);
             }
         };
         fetchStats();

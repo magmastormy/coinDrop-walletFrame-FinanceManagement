@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState } from 'react';
 import { Loader2, X, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import Modal from '../ui/Modal';
@@ -23,11 +25,60 @@ const CsvImportModal = ({ isOpen, onClose, onImportComplete }) => {
         reader.onload = (e) => {
             try {
                 const csvContent = e.target.result;
-                const transactions = transactionService.parseCSV(csvContent);
+                
+                // Validate CSV content
+                if (!csvContent || typeof csvContent !== 'string') {
+                    throw new Error('Invalid CSV content provided');
+                }
+
+                const lines = csvContent.split('\n').filter(line => line.trim());
+                if (lines.length < 2) {
+                    throw new Error('CSV must have at least a header and one data row');
+                }
+
+                const headers = lines[0].split(',').map(header => header.trim());
+                if (!headers || headers.length === 0) {
+                    throw new Error('CSV headers cannot be empty');
+                }
+
+                const transactions = [];
+                let lineNumber = 1;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const values = line.split(',').map(value => value.trim());
+                    if (values.length !== headers.length) {
+                        logWarn(`Row ${i + 1} has ${values.length} values but expected ${headers.length} columns. Skipping row.`);
+                        continue;
+                    }
+
+                    const transaction = {};
+                    headers.forEach((header, index) => {
+                        transaction[header.trim()] = values[index]?.trim() || '';
+                    });
+
+                    // Validate required fields
+                    if (!transaction.amount || isNaN(parseFloat(transaction.amount))) {
+                        logWarn(`Row ${i + 1}: Invalid amount. Skipping row.`);
+                        continue;
+                    }
+
+                    if (!transaction.date) {
+                        logWarn(`Row ${i + 1}: Invalid date. Skipping row.`);
+                        continue;
+                    }
+
+                    transactions.push(transaction);
+                    lineNumber++;
+                }
+
                 setPreview(transactions.slice(0, 5)); // Show first 5 rows as preview
                 setError('');
             } catch (err) {
-                setError('Invalid CSV format. Please check your file.');
+                logError('CSV parsing error:', err);
+                setError('Invalid CSV format. Please check your file and try again.');
                 setPreview([]);
             }
         };

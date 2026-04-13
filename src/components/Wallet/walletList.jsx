@@ -1,17 +1,9 @@
-import React, { useMemo, useCallback } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, LayoutGrid, List, SearchX } from 'lucide-react';
 import CreateNewWallet from './newWallet';
 import WalletCard from './walletCard';
-
-const MaterialIcon = ({ name, className = '', filled = false }) => (
-    <span 
-        className={`material-symbols-outlined ${className}`}
-        style={{ fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0" }}
-    >
-        {name}
-    </span>
-);
+import MaterialIcon from '../ui/MaterialIcon';
 
 const WalletList = React.memo(({ 
     wallets = [], 
@@ -25,19 +17,6 @@ const WalletList = React.memo(({
     searchQuery = ''
 }) => {
     WalletList.displayName = 'WalletList';
-    
-    const totalBalance = useMemo(() => {
-        return wallets?.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0) || 0;
-    }, [wallets]);
-
-    const formatCurrency = useCallback((amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    }, []);
 
     // Empty state when no wallets exist at all
     if (!allWallets?.length) {
@@ -93,10 +72,10 @@ const WalletList = React.memo(({
                     </div>
                     <h3 className="text-xl font-medium text-on-surface mb-2">No Wallets Match Your Search</h3>
                     <p className="text-sm text-on-tertiary-container mb-2 max-w-md">
-                        No wallets found matching "<span className="text-primary">{searchQuery}</span>"
+                        No wallets found matching &quot;<span className="text-primary">{searchQuery}</span>&quot;
                     </p>
                     <p className="text-xs text-on-tertiary-container/70 mb-6">
-                        Try searching by wallet name or type (e.g., "savings", "checking")
+                        Try searching by wallet name or type (e.g., &quot;savings&quot;, &quot;checking&quot;)
                     </p>
                 </div>
             </section>

@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 const API_URL = '/saving-goals';
 
@@ -53,7 +55,7 @@ export const savingsGoalService = {
             });
             return response.data?.recommendations || [];
         } catch (error) {
-            console.error('Error generating recommendations:', error);
+            logError('Error generating recommendations:', error);
             return [];
         }
     }

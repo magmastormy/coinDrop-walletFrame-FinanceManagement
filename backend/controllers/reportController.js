@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
 const Wallet = require('../models/Wallet');
@@ -20,11 +22,11 @@ class ReportController {
      */
     static async generateReport(req, res) {
         try {
-            if (isDev) console.log('[ReportController] Report generation request received');
+            if (isDev) logger.debug('[ReportController] Report generation request received');
             const userId = req.user._id || req.user.userId;
             const { reportType, format } = req.body;
             
-            if (isDev) console.log(`[ReportController] Generating report type=${reportType} format=${format}`);
+            if (isDev) logger.debug(`[ReportController] Generating report type=${reportType} format=${format}`);
             
             // Validate input
             if (!reportType || !format) {
@@ -42,35 +44,35 @@ class ReportController {
                 });
                 
                 await report.save();
-                if (isDev) console.log('Report record created:', report._id);
+                if (isDev) logger.debug('Report record created:', report._id);
                 
                 // Fetch data
-                if (isDev) console.log('Fetching data for report...');
+                if (isDev) logger.debug('Fetching data for report...');
                 const [transactions, wallets, budgets] = await Promise.all([
                     Transaction.find({ userId }),
                     Wallet.find({ userId }),
                     Budget.find({ userId })
                 ]);
                 
-                if (isDev) console.log(`Data fetched: ${transactions.length} transactions, ${wallets.length} wallets, ${budgets.length} budgets`);
+                if (isDev) logger.debug(`Data fetched: ${transactions.length} transactions, ${wallets.length} wallets, ${budgets.length} budgets`);
                 
                 // Calculate analytics
                 const analytics = await this.calculateAnalytics(transactions, wallets, budgets);
                 
-                if (isDev) console.log('Analytics calculated:', analytics);
+                if (isDev) logger.debug('Analytics calculated:', analytics);
                 
                 // Generate report content
                 let reportContent;
                 try {
                     if (format.toUpperCase() === 'PDF') {
-                        if (isDev) console.log('Generating PDF report...');
+                        if (isDev) logger.debug('Generating PDF report...');
                         reportContent = await this.generatePDFReport(analytics, reportType);
                     } else {
-                        if (isDev) console.log('Generating Excel report...');
+                        if (isDev) logger.debug('Generating Excel report...');
                         reportContent = await this.generateExcelReport(analytics, reportType);
                     }
                     
-                    if (isDev) console.log(`Report content generated, size: ${reportContent.length} bytes`);
+                    if (isDev) logger.debug(`Report content generated, size: ${reportContent.length} bytes`);
                     
                     // Create reports directory if it doesn't exist
                     const REPORTS_DIR = path.join(__dirname, '../reports');
@@ -80,14 +82,14 @@ class ReportController {
                     const filePath = path.join(REPORTS_DIR, `${report._id}.${format.toLowerCase()}`);
                     await fs.writeFile(filePath, reportContent);
                     
-                    if (isDev) console.log('[ReportController] Report file persisted');
+                    if (isDev) logger.debug('[ReportController] Report file persisted');
                     
                     // Update the report with the file path and status
                     report.filePath = filePath;
                     report.status = 'completed';
                     await report.save();
                     
-                    if (isDev) console.log('Report record updated, status: completed');
+                    if (isDev) logger.debug('Report record updated, status: completed');
                     
                     return res.json({
                         reportId: report._id,
@@ -95,17 +97,17 @@ class ReportController {
                         message: 'Report generated successfully'
                     });
                 } catch (genError) {
-                    console.error('Report content generation error:', genError);
+                    logger.error('Report content generation error:', genError);
                     report.status = 'failed';
                     await report.save();
                     return res.status(500).json({ error: 'Failed to generate report content', details: genError.message });
                 }
             } catch (dbError) {
-                console.error('Database operation error:', dbError);
+                logger.error('Database operation error:', dbError);
                 return res.status(500).json({ error: 'Database operation failed', details: dbError.message });
             }
         } catch (error) {
-            console.error('Report generation error:', error);
+            logger.error('Report generation error:', error);
             res.status(500).json({ error: 'Failed to generate report', details: error.message });
         }
     }
@@ -128,7 +130,7 @@ class ReportController {
             // Generate report asynchronously
             await generateReportAsync(reportId, analytics, reportType, format);
         } catch (error) {
-            console.error('Report generation process error:', error);
+            logger.error('Report generation process error:', error);
             const report = await Report.findById(reportId);
             if (report) {
                 report.status = 'failed';
@@ -310,7 +312,7 @@ class ReportController {
 
             return d3n.svgString();
         } catch (error) {
-            console.error('Error generating SVG chart:', error);
+            logger.error('Error generating SVG chart:', error);
             throw error;
         }
     }

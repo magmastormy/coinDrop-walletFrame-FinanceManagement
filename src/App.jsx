@@ -8,6 +8,7 @@ import DataManager from './components/userDataComponent';
 import { ThemeProvider } from './theme/ThemeContext';
 import { SidebarProvider } from './components/Sidebar/SidebarContext';
 import ErrorBoundary from './components/ErrorBoundary/errorBoundary';
+import { LoggerProvider } from './hooks/useLogger';
 import CommandPalette from './components/Common/CommandPalette';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -29,26 +30,28 @@ const AppLayout = () => {
   }, []);
 
   return (
-    <div className="app">
-      <AppRoutes />
-      <CommandPalette 
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-      />
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-        className="toast-theme-aware"
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="app">
+        <AppRoutes />
+        <CommandPalette 
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+        />
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+          className="toast-theme-aware"
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
 
@@ -57,13 +60,15 @@ function App() {
     <Provider store={store}>
       <ThemeProvider>
         <SidebarProvider>
-          <DataManager>
-            <Router>
-              <ErrorBoundary>
-                <AppLayout />
-              </ErrorBoundary>
-            </Router>
-          </DataManager>
+          <LoggerProvider>
+            <DataManager>
+              <Router>
+                <ErrorBoundary>
+                  <AppLayout />
+                </ErrorBoundary>
+              </Router>
+            </DataManager>
+          </LoggerProvider>
         </SidebarProvider>
       </ThemeProvider>
     </Provider>

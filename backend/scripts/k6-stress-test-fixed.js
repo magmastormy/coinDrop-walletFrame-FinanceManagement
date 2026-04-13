@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
@@ -79,10 +81,10 @@ export function setup() {
             password: password,
             userId: userId
           });
-          console.log(`Pre-created user ${i} with email ${email}`);
+          logger.debug(`Pre-created user ${i} with email ${email}`);
         }
       } catch (e) {
-        console.log(`Failed to parse registration response: ${e.message}`);
+        logger.debug(`Failed to parse registration response: ${e.message}`);
       }
     }
     
@@ -90,7 +92,7 @@ export function setup() {
     sleep(1);
   }
   
-  console.log(`Setup complete. Created ${sharedUsers.length} test users.`);
+  logger.debug(`Setup complete. Created ${sharedUsers.length} test users.`);
   return { sharedUsers };
 }
 
@@ -98,7 +100,7 @@ export function setup() {
 function handleRateLimit(response, operation) {
   if (response.status === 429) {
     // Rate limited - log and wait
-    console.log(`Rate limited during ${operation}. Backing off...`);
+    logger.debug(`Rate limited during ${operation}. Backing off...`);
     // Exponential backoff between 1-3 seconds
     const backoffTime = (Math.random() * 2) + 1;
     sleep(backoffTime);
@@ -190,14 +192,14 @@ export default function () {
               }
               
               if (token) {
-                console.log(`Login successful with pre-created user ${preCreatedUser.email}`);
+                logger.debug(`Login successful with pre-created user ${preCreatedUser.email}`);
               }
             } catch (e) {
-              console.log(`Failed to parse login response: ${e.message}`);
+              logger.debug(`Failed to parse login response: ${e.message}`);
             }
           }
         } catch (e) {
-          console.log(`Login request failed: ${e.message}`);
+          logger.debug(`Login request failed: ${e.message}`);
         }
       });
     }
@@ -246,7 +248,7 @@ export default function () {
             }
             
             if (userId) {
-              console.log(`User registered with ID: ${userId}`);
+              logger.debug(`User registered with ID: ${userId}`);
               
               // Store the email for login
               const userEmail = `user${__VU}_${timestamp}_${random}@test.com`;
@@ -283,19 +285,19 @@ export default function () {
                   }
                   
                   if (token) {
-                    console.log('Login successful with newly created user');
+                    logger.debug('Login successful with newly created user');
                   }
                 } catch (e) {
-                  console.log(`Failed to parse login response: ${e.message}`);
+                  logger.debug(`Failed to parse login response: ${e.message}`);
                 }
               }
             }
           } catch (e) {
-            console.log(`Failed to parse registration response: ${e.message}`);
+            logger.debug(`Failed to parse registration response: ${e.message}`);
           }
         }
       } catch (e) {
-        console.log(`Registration request failed: ${e.message}`);
+        logger.debug(`Registration request failed: ${e.message}`);
       }
     });
   }

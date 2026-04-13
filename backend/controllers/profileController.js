@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const cloudinary = require('cloudinary').v2; 
 const UserProfile = require('../models/UserProfile');
 const ImageService = require("../services/imageService");
@@ -25,14 +27,14 @@ class ProfileController {
         try {
             const userId = getAuthenticatedUserId(req);
 
-            if (isDev) console.log('[Profile Controller] Fetching profile for user:', userId);
+            if (isDev) logger.debug('[Profile Controller] Fetching profile for user:', userId);
             
             const profile = await UserProfile.findOne({ user: userId })
                 .populate('user', 'username email profilePicture firstName lastName');
             
             if (!profile) {
                 // If no profile exists, create a new one
-                if (isDev) console.log('[Profile Controller] No profile found, creating new profile...');
+                if (isDev) logger.debug('[Profile Controller] No profile found, creating new profile...');
                 const newProfile = await UserProfile.create({
                     user: userId,
                     username: req.user.username || `user_${userId}`,
@@ -46,7 +48,7 @@ class ProfileController {
 
             res.json({ profile });
         } catch (error) {
-            console.error('[Profile Controller] Error fetching profile:', error);
+            logger.error('[Profile Controller] Error fetching profile:', error);
             res.status(500).json({ error: error.message });
         }
     }
@@ -77,22 +79,22 @@ class ProfileController {
 
             res.json({ profile });
         } catch (error) {
-            console.error('[Profile Controller] Error updating profile:', error);
+            logger.error('[Profile Controller] Error updating profile:', error);
             res.status(400).json({ error: error.message });
         }
     }
 
     // Create user profile
     static async createProfile(req, res) {
-        if (isDev) console.log(`[ProfileController: createProfile] Route utilized: /create-profile`);
+        if (isDev) logger.debug(`[ProfileController: createProfile] Route utilized: /create-profile`);
         try {
             const userId = getAuthenticatedUserId(req);
-            if (isDev) console.log('[Profile Controller: createProfile] Creating profile for user:', userId);
+            if (isDev) logger.debug('[Profile Controller: createProfile] Creating profile for user:', userId);
     
             // Check if profile already exists
             const existingProfile = await UserProfile.findOne({ user: userId });
             if (existingProfile) {
-                if (isDev) console.log('[Profile Controller: createProfile] Profile already exists');
+                if (isDev) logger.debug('[Profile Controller: createProfile] Profile already exists');
                 return res.json({
                     message: '[Profile Controller: createProfile] Profile already exists',
                     profile: existingProfile
@@ -116,17 +118,17 @@ class ProfileController {
                 preferences: req.body.preferences || {}
             };
     
-            if (isDev) console.log('[Profile Controller: createProfile] Creating new profile');
+            if (isDev) logger.debug('[Profile Controller: createProfile] Creating new profile');
             const profile = await UserProfile.create(profileData);
             await profile.populate('user', 'username email profilePicture firstName lastName');
             
-            if (isDev) console.log('[Profile Controller: createProfile] Profile created successfully');
+            if (isDev) logger.debug('[Profile Controller: createProfile] Profile created successfully');
             return res.status(201).json({
                 message: '[Profile Controller: createProfile] Profile created successfully',
                 profile
             });
         } catch (error) {
-            console.error('[Profile Controller: createProfile] Profile creation error:', error);
+            logger.error('[Profile Controller: createProfile] Profile creation error:', error);
             return res.status(400).json({ 
                 error: 'Creation failed',
                 details: error.message 
@@ -138,7 +140,7 @@ class ProfileController {
     static async deleteProfile(req, res) {
         try {
             const userId = getAuthenticatedUserId(req);
-            if (isDev) console.log('[Profile Controller] Deleting profile for user:', userId);
+            if (isDev) logger.debug('[Profile Controller] Deleting profile for user:', userId);
             
             const profile = await UserProfile.findOneAndDelete({ user: userId });
             
@@ -167,7 +169,7 @@ class ProfileController {
             });
         }
         catch (error) {
-            console.error('[Profile Controller: deleteProfile] Delete profile error:', error);
+            logger.error('[Profile Controller: deleteProfile] Delete profile error:', error);
             res.status(500).json({ 
                 error: 'Server error',
                 details: 'Could not delete profile'
@@ -176,17 +178,17 @@ class ProfileController {
     }
 
     static async uploadProfileImage(req, res) {
-        if (isDev) console.log('[ProfileController: uploadProfileImage] Method invoked');
+        if (isDev) logger.debug('[ProfileController: uploadProfileImage] Method invoked');
         try {
             const userId = getAuthenticatedUserId(req);
             const imageType = req.query.type === 'cover' ? 'cover' : 'profile';
 
-            if (isDev) console.log(`[ProfileController: uploadProfileImage] Route utilized: /upload-image?type=${imageType}`);
+            if (isDev) logger.debug(`[ProfileController: uploadProfileImage] Route utilized: /upload-image?type=${imageType}`);
 
             let profile = await UserProfile.findOne({ user: userId });
 
             if (!profile) {
-                if (isDev) console.log('[ProfileController: uploadImage] Creating new profile for user:', userId);
+                if (isDev) logger.debug('[ProfileController: uploadImage] Creating new profile for user:', userId);
                 profile = await UserProfile.create({
                     user: userId,
                     username: req.user.username || `user_${userId}`,
@@ -195,7 +197,7 @@ class ProfileController {
                 });
             }
 
-            if (isDev) console.log('[ProfileController: uploadImage] Uploading image to Image Service');
+            if (isDev) logger.debug('[ProfileController: uploadImage] Uploading image to Image Service');
             const result = await ImageService.uploadImage(req.file.path, {
                 folder: `coinDrop_${imageType}`,
                 transformation: [
@@ -203,7 +205,7 @@ class ProfileController {
                     { fetch_format: 'auto' }
                 ]
             });
-            if (isDev) console.log('[ProfileController: uploadImage] Image uploaded to Image Service');
+            if (isDev) logger.debug('[ProfileController: uploadImage] Image uploaded to Image Service');
 
             profile[imageType === 'cover' ? 'coverPhoto' : 'profilePicture'] = result.secure_url;
             await profile.save();
@@ -218,7 +220,7 @@ class ProfileController {
             });
 
         } catch (error) {
-            console.error('[Profile Controller: uploadImage] Profile image upload error:', error);
+            logger.error('[Profile Controller: uploadImage] Profile image upload error:', error);
             return res.status(500).json({
                 success: false,
                 message: '[Profile Controller: uploadImage] Failed to upload profile image',

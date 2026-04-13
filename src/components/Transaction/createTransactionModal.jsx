@@ -1,12 +1,18 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect } from 'react';
 import { Loader2, X } from 'lucide-react';
 import transactionService from '../../services/transactionService';
 import Modal from '../ui/Modal';
+import ValidationUtils from '../../utils/validationUtils';
+import useFormManager from '../../hooks/useFormManager';
+import { Input } from '../ui/Input';
 
 const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets = [], categories = [], budgets = [], savingsAccounts = [], initialData }) => {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState({
+    
+    const { formData, updateField, resetForm } = useFormManager({
         amount: '',
         type: 'expense',
         category: '',
@@ -21,33 +27,20 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
 
     useEffect(() => {
         if (initialData) {
-            setFormData({
-                amount: initialData.amount ?? '',
-                type: initialData.type ?? 'expense',
-                category: initialData.category?._id || initialData.category || '',
-                description: initialData.description ?? '',
-                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-                walletId: initialData.walletId?._id || initialData.walletId || '',
-                savingsAccountId: initialData.savingsAccountId?._id || initialData.savingsAccountId || '',
-                budgetId: initialData.budgetId?._id || initialData.budgetId || '',
-                destinationWalletId: '',
-                destinationSavingsAccountId: ''
-            });
+            updateField('amount', initialData.amount ?? '');
+            updateField('type', initialData.type ?? 'expense');
+            updateField('category', initialData.category?._id || initialData.category || '');
+            updateField('description', initialData.description ?? '');
+            updateField('date', initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+            updateField('walletId', initialData.walletId?._id || initialData.walletId || '');
+            updateField('savingsAccountId', initialData.savingsAccountId?._id || initialData.savingsAccountId || '');
+            updateField('budgetId', initialData.budgetId?._id || initialData.budgetId || '');
+            updateField('destinationWalletId', '');
+            updateField('destinationSavingsAccountId', '');
         } else {
-            setFormData({
-                amount: '',
-                type: 'expense',
-                category: '',
-                description: '',
-                date: new Date().toISOString().split('T')[0],
-                walletId: '',
-                savingsAccountId: '',
-                budgetId: '',
-                destinationWalletId: '',
-                destinationSavingsAccountId: ''
-            });
+            resetForm();
         }
-    }, [initialData, isOpen]);
+    }, [initialData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,22 +48,35 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
         setIsSubmitting(true);
 
         try {
-            const amount = parseFloat(formData.amount);
-            if (isNaN(amount) || amount <= 0) throw new Error('Please enter a valid amount');
-            
-            if (formData.type === 'transfer') {
-                if (!formData.walletId && !formData.savingsAccountId) throw new Error('Please select a source account');
-                if (!formData.destinationWalletId && !formData.destinationSavingsAccountId) throw new Error('Please select a destination account');
-                if ((formData.walletId && formData.destinationWalletId) || (formData.savingsAccountId && formData.destinationSavingsAccountId)) {
-                    throw new Error('Source and destination accounts must be different types');
-                }
-            } else {
-                if (!formData.walletId && !formData.savingsAccountId) throw new Error('Please select a wallet or savings account');
+            // Validate amount
+            const amountValidation = ValidationUtils.validateAmount(formData.amount, false);
+            if (!amountValidation.isValid) {
+                throw new Error(amountValidation.error);
             }
 
+            // Validate date
+            const dateValidation = ValidationUtils.validateDate(formData.date, false);
+            if (!dateValidation.isValid) {
+                throw new Error(dateValidation.error);
+            }
+
+            // Validate source for transfers
+            if (formData.type === 'transfer') {
+                const hasSource = formData.walletId || formData.savingsAccountId;
+                const hasDestination = formData.destinationWalletId || formData.destinationSavingsAccountId;
+                
+                if (!hasSource) {
+                    throw new Error('Please select a source account for transfers');
+                }
+                
+                if (!hasDestination) {
+                    throw new Error('Please select a destination account for transfers');
+                }
+            }
+            
             const payload = {
                 ...formData,
-                amount,
+                amount: parseFloat(formData.amount) || 0,
                 category: formData.category || undefined,
                 walletId: formData.walletId || undefined,
                 savingsAccountId: formData.savingsAccountId || undefined,
@@ -79,16 +85,18 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                 destinationSavingsAccountId: formData.destinationSavingsAccountId || undefined
             };
 
-            if (initialData?._id) {
-                await transactionService.updateTransaction(initialData._id, payload);
-            } else {
-                await transactionService.createTransaction(payload);
-            }
-
+            // Add timeout protection
+            const apiCall = initialData?._id 
+                ? transactionService.updateTransaction(initialData._id, payload)
+                : transactionService.createTransaction(payload);
+            
+            await ValidationUtils.withTimeout(apiCall, 30000);
+            
             onTransactionCreated?.(payload);
             onClose();
         } catch (err) {
-            setError(err.message || 'Failed to save transaction');
+            logError('Transaction error:', err);
+            setError(err.message || 'Failed to save transaction. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -137,10 +145,15 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                                 <button
                                     key={type}
                                     type="button"
-                                    onClick={() => setFormData({ ...formData, type, destinationWalletId: '', destinationSavingsAccountId: '' })} 
+                                    onChange={(e) => updateField('type', e.target.value)}
+                                    onClick={() => {
+                                        updateField('type', type);
+                                        updateField('destinationWalletId', '');
+                                        updateField('destinationSavingsAccountId', '');
+                                    }}
                                     className="px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all border"
                                     style={{
-                                        backgroundColor: formData.type === type ? 'rgba(182, 196, 255, 0.1)' : 'transparent',
+                                        backgroundColor: formData.type === type ? 'var(--color-primary-100)' : 'transparent',
                                         borderColor: formData.type === type ? 'var(--fc-primary)' : 'var(--fc-outline-variant)',
                                         color: formData.type === type ? 'var(--fc-primary)' : 'var(--fc-on-tertiary-container)'
                                     }}
@@ -154,40 +167,34 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                     {/* Amount */}
                     <div>
                         <label style={labelStyles}>Amount</label>
-                        <input
+                        <Input
                             type="number"
                             step="0.01"
                             placeholder="0.00"
                             value={formData.amount}
-                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                            onChange={(e) => updateField('amount', e.target.value)}
                             required
-                            className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            style={inputStyles}
                         />
                     </div>
 
                     {/* Date */}
                     <div>
                         <label style={labelStyles}>Date</label>
-                        <input
+                        <Input
                             type="date"
                             value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            onChange={(e) => updateField('date', e.target.value)}
                             required
-                            className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            style={inputStyles}
                         />
                     </div>
 
                     {/* Description */}
                     <div className="col-span-2">
                         <label style={labelStyles}>Description</label>
-                        <input
+                        <Input
                             placeholder="What was this for?"
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            style={inputStyles}
+                            onChange={(e) => updateField('description', e.target.value)}
                         />
                     </div>
 
@@ -199,7 +206,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                                 <label style={labelStyles}>Category</label>
                                 <select
                                     value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    onChange={(e) => updateField('category', e.target.value)}
                                     className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                                     style={inputStyles}
                                 >
@@ -215,7 +222,7 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                                 <label style={labelStyles}>Budget (Optional)</label>
                                 <select
                                     value={formData.budgetId}
-                                    onChange={(e) => setFormData({ ...formData, budgetId: e.target.value })}
+                                    onChange={(e) => updateField('budgetId', e.target.value)}
                                     className="w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                                     style={inputStyles}
                                 >
@@ -234,7 +241,10 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                         <div className="grid grid-cols-2 gap-4">
                             <select
                                 value={formData.walletId}
-                                onChange={(e) => setFormData({ ...formData, walletId: e.target.value, savingsAccountId: '' })}
+                                onChange={(e) => {
+    updateField('walletId', e.target.value);
+    updateField('savingsAccountId', '');
+}}
                                 disabled={!!formData.savingsAccountId}
                                 className="px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                                 style={inputStyles}
@@ -246,7 +256,10 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             </select>
                             <select
                                 value={formData.savingsAccountId}
-                                onChange={(e) => setFormData({ ...formData, savingsAccountId: e.target.value, walletId: '' })}
+                                onChange={(e) => {
+    updateField('savingsAccountId', e.target.value);
+    updateField('walletId', '');
+}}
                                 disabled={!!formData.walletId}
                                 className="px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                                 style={inputStyles}
@@ -266,7 +279,10 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                             <div className="grid grid-cols-2 gap-4">
                                 <select
                                     value={formData.destinationWalletId}
-                                    onChange={(e) => setFormData({ ...formData, destinationWalletId: e.target.value, destinationSavingsAccountId: '' })}
+                                    onChange={(e) => {
+    updateField('destinationWalletId', e.target.value);
+    updateField('destinationSavingsAccountId', '');
+}}
                                     disabled={!!formData.destinationSavingsAccountId}
                                     className="px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                                     style={inputStyles}
@@ -278,7 +294,10 @@ const CreateTransactionModal = ({ isOpen, onClose, onTransactionCreated, wallets
                                 </select>
                                 <select
                                     value={formData.destinationSavingsAccountId}
-                                    onChange={(e) => setFormData({ ...formData, destinationSavingsAccountId: e.target.value, destinationWalletId: '' })}
+                                    onChange={(e) => {
+    updateField('destinationSavingsAccountId', e.target.value);
+    updateField('destinationWalletId', '');
+}}
                                     disabled={!!formData.destinationWalletId}
                                     className="px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-50"
                                     style={inputStyles}

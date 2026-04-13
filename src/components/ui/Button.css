@@ -120,8 +120,8 @@
    }
    
    .btn-destructive:hover {
-    background: #DC2626;
-    border-color: #DC2626;
+    background: var(--color-negative);
+    border-color: var(--color-negative);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }

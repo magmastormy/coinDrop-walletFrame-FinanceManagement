@@ -109,6 +109,14 @@ export default {
           DEFAULT: '#690005',
           'container': '#ffdad6',
         },
+        'warning': {
+          DEFAULT: '#f59e0b',
+          'container': '#78350f',
+        },
+        'on-warning': {
+          DEFAULT: '#78350f',
+          'container': '#fef3c7',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

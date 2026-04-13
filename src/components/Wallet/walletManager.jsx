@@ -1,26 +1,22 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ArrowLeft, Loader2, Search, Bell, Settings, X } from 'lucide-react';
 import walletService from '../../services/walletService';
 import transactionService from '../../services/transactionService';
+import ValidationUtils from '../../utils/validationUtils';
 import { setWallets, setLoading, setError, updateWallet } from '../../slices/walletSlice';
 import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
 import TransactionTable from '../Transaction/transactionTable';
 import WalletChart from './walletCharts';
 import CreateTransactionModal from '../Transaction/createTransactionModal';
-import Button from '../ui/Button';
 import CreateNewWallet from './newWallet';
-
-// Material Symbols Icon component
-const MaterialIcon = ({ name, className = '', filled = false }) => (
-    <span 
-        className={`material-symbols-outlined ${className}`}
-        style={{ fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0" }}
-    >
-        {name}
-    </span>
-);
+import LoadingState from '../ui/LoadingState';
+import MaterialIcon from '../ui/MaterialIcon';
+import useCurrencyFormatter from '../../hooks/useCurrencyFormatter';
+import Button from '../ui/Button';
 
 const WalletManager = () => {
     const dispatch = useDispatch();
@@ -33,9 +29,11 @@ const WalletManager = () => {
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
     const [searchQuery, setSearchQuery] = useState('');
+    
+    const formatCurrency = useCurrencyFormatter();
 
     useEffect(() => {
-        if (user && user.id) {
+        if (user?.id) {
             fetchWallets();
         }
     }, [user]);
@@ -43,7 +41,9 @@ const WalletManager = () => {
     const fetchWallets = async () => {
         dispatch(setLoading(true));
         try {
-            if (!user || !user.id) throw new Error('User not authenticated');
+            if (!user?.id) {
+                throw new Error('User not authenticated or missing user ID');
+            }
             const walletdata = await walletService.getAllWallets(user.id);
             dispatch(setWallets(walletdata || []));
         } catch (error) {
@@ -65,7 +65,7 @@ const WalletManager = () => {
 
             setWalletTransactions(txs);
         } catch (err) {
-            console.error('Error fetching wallet details:', err);
+            logError('Error fetching wallet details:', err);
         }
     };
 
@@ -79,14 +79,14 @@ const WalletManager = () => {
             dispatch(setLoading(true));
             const result = await walletService.deleteWallet(walletId, transferToWalletId);
             if (result.transferredAmount > 0) {
-                console.log(`Transferred $${result.transferredAmount}`);
+                logInfo(`Transferred $${result.transferredAmount}`);
             }
             await fetchWallets();
             if (selectedWallet?._id === walletId) {
                 setSelectedWallet(null);
             }
         } catch (err) {
-            console.error('Error deleting wallet:', err);
+            logError('Error deleting wallet:', err);
             dispatch(setError(err.response?.data?.error || err.message));
         } finally {
             dispatch(setLoading(false));
@@ -96,24 +96,73 @@ const WalletManager = () => {
     const handleWalletUpdate = async (walletId, updatedData) => {
         // Guard against undefined walletId (happens when called from wallet creation)
         if (!walletId) {
-            console.log('handleWalletUpdate called with undefined walletId, refreshing wallets instead');
+            logInfo('handleWalletUpdate called with undefined walletId, refreshing wallets instead');
             await fetchWallets();
             return;
         }
 
+        // Validate walletId format
+        if (typeof walletId !== 'string' && typeof walletId !== 'number') {
+            logError('Invalid walletId format:', walletId);
+            return;
+        }
+
         try {
-            await walletService.updateWallet(walletId, updatedData);
-            dispatch(updateWallet({ _id: walletId, ...updatedData }));
-            fetchWallets();
+            dispatch(setLoading(true));
+            const result = await walletService.updateWallet(walletId, updatedData);
+            
+            // Update local state if the updated wallet is currently selected
+            if (selectedWallet?._id === walletId) {
+                setSelectedWallet(result);
+            }
+            
+            toast.success('Wallet updated successfully');
         } catch (err) {
-            dispatch(setError(err.message));
+            logError('Error updating wallet:', err);
+            toast.error('Failed to update wallet');
+        } finally {
+            dispatch(setLoading(false));
         }
     };
 
     const handleTransfer = async (fromWalletId, toWalletId, amount) => {
+        // Validate inputs
+        const fromWalletValidation = ValidationUtils.validateId(fromWalletId, 'Source wallet');
+        const toWalletValidation = ValidationUtils.validateId(toWalletId, 'Destination wallet');
+        const amountValidation = ValidationUtils.validateAmount(amount, false);
+        
+        if (!fromWalletValidation.isValid) {
+            dispatch(setError(fromWalletValidation.error));
+            return;
+        }
+        
+        if (!toWalletValidation.isValid) {
+            dispatch(setError(toWalletValidation.error));
+            return;
+        }
+        
+        if (!amountValidation.isValid) {
+            dispatch(setError(amountValidation.error));
+            return;
+        }
+        
+        // Check if source and destination are different
+        if (fromWalletId === toWalletId) {
+            dispatch(setError('Source and destination wallets must be different'));
+            return;
+        }
+
         try {
             dispatch(setLoading(true));
-            await walletService.transferBetweenWallets(fromWalletId, toWalletId, amount);
+            await ValidationUtils.withTimeout(
+                ValidationUtils.withRetry(
+                    () => walletService.transferBetweenWallets(fromWalletId, toWalletId, parseFloat(amount)),
+                    'transferBetweenWallets',
+                    3,
+                    1000
+                ),
+                30000
+            );
             await fetchWallets();
             if (selectedWallet) {
                 fetchWalletDetails(selectedWallet._id);
@@ -147,26 +196,13 @@ const WalletManager = () => {
     // Calculate total balance of filtered wallets
     const totalBalance = filteredWallets?.reduce((sum, wallet) => sum + (wallet?.balance || 0), 0) || 0;
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(amount);
-    };
-
     if (loading && !wallets.length) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
+        return <LoadingState loading={loading} height="md" />;
     }
 
     if (error) {
         return (
-            <div className="p-4 bg-red-50 text-red-500 rounded-lg border border-red-100">
+            <div className="p-4 bg-error/10 text-error rounded-lg border border-error/20">
                 {error}
             </div>
         );
@@ -205,12 +241,18 @@ const WalletManager = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
-                            <Bell className="w-5 h-5" />
-                        </button>
-                        <button className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
-                            <Settings className="w-5 h-5" />
-                        </button>
+                        <Button 
+                        variant="ghost"
+                        className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full"
+                    >
+                        <Bell className="w-5 h-5" />
+                    </Button>
+                    <Button 
+                        variant="ghost"
+                        className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </Button>
                         <div className="w-8 h-8 rounded-full overflow-hidden ml-2 ring-1 ring-outline-variant/20">
                             <img 
                                 alt="User profile avatar" 
@@ -233,7 +275,7 @@ const WalletManager = () => {
                                 </p>
                                 <div className="flex items-baseline gap-4">
                                     <h2 className="text-6xl font-extrabold font-headline tracking-tight text-on-surface">
-                                        {formatCurrency(totalBalance)}
+                                        {formatCurrencyHook(totalBalance)}
                                     </h2>
                                     {!searchQuery && (
                                         <span className="bg-secondary/10 text-secondary text-sm px-3 py-1 rounded-full font-semibold flex items-center gap-1">
@@ -251,10 +293,10 @@ const WalletManager = () => {
                             <CreateNewWallet 
                                 onWalletCreated={fetchWallets}
                                 triggerButton={
-                                    <button className="bg-gradient-to-r from-primary-fixed-dim to-on-primary-container text-on-primary px-8 py-4 rounded-xl font-bold text-sm tracking-wide shadow-xl shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2">
+                                    <Button className="px-8 py-4 rounded-xl font-bold text-sm tracking-wide shadow-xl shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2">
                                         <MaterialIcon name="add_card" className="text-xl" />
                                         Add Wallet
-                                    </button>
+                                    </Button>
                                 }
                             />
                         </section>
@@ -293,7 +335,7 @@ const WalletManager = () => {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-display font-bold text-on-surface">{selectedWallet.name}</h2>
-                                <p className="text-on-tertiary-container text-sm">{formatCurrency(selectedWallet.balance)}</p>
+                                <p className="text-on-tertiary-container text-sm">{formatCurrencyHook(selectedWallet.balance)}</p>
                             </div>
                         </div>
 

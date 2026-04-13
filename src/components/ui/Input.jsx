@@ -25,7 +25,7 @@ const Input = React.forwardRef(({ className, type, label, error, style, ...props
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
                         error
                             ? "border-red-500 focus-visible:ring-red-500/40"
-                            : "focus-visible:ring-[rgba(255,209,102,0.5)]",
+                            : "focus-visible:ring-ring-primary/50",
                         className
                     )}
                     ref={ref}

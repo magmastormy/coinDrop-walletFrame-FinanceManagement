@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const SavingsAccount = require('../models/SavingsAccount');
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
@@ -23,7 +25,7 @@ class SavingsAccountController {
             if (!Number.isFinite(numericInitialBalance) || numericInitialBalance < 0) {
                 return res.status(400).json({ error: 'Initial balance must be a number greater than or equal to zero.' });
             }
-            if (isDev) console.log('[SavingsAccountController - createSavingsAccount] Creating new savings account');
+            if (isDev) logger.debug('[SavingsAccountController - createSavingsAccount] Creating new savings account');
 
             const savingsAccount = new SavingsAccount({
                 userId: userId,
@@ -86,7 +88,7 @@ class SavingsAccountController {
             const accounts = await SavingsAccount.find({ userId: userId, isActive: true });
             res.json(accounts);
         } catch (error) {
-            if (isDev) console.error(`[SavingsAccountController - getUserSavingsAccounts] ${error.message}`);
+            if (isDev) logger.error(`[SavingsAccountController - getUserSavingsAccounts] ${error.message}`);
             res.status(500).json({ error: 'Failed to get savings accounts' });
         }
     }
@@ -124,7 +126,7 @@ class SavingsAccountController {
         let operationId = new ObjectId().toString(); // Unique ID for tracking this operation
         
         try {
-            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Starting deletion process`);
+            if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Starting deletion process`);
             
             // Check if we can use transactions (requires replica set)
             const useTransaction = process.env.MONGODB_REPLICA_SET || false;
@@ -149,17 +151,17 @@ class SavingsAccountController {
             
             // Validate MongoDB ObjectId for account ID
             if (!ObjectId.isValid(id)) {
-                console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Invalid ObjectId format for account: ${id}`);
+                logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Invalid ObjectId format for account: ${id}`);
                 throw new Error('Invalid savings account ID format');
             }
             
             // If transferToWalletId is provided, validate it as well
             if (transferToWalletId && !ObjectId.isValid(transferToWalletId)) {
-                console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Invalid wallet ObjectId format: ${transferToWalletId}`);
+                logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Invalid wallet ObjectId format: ${transferToWalletId}`);
                 throw new Error('Invalid wallet ID format');
             }
             
-            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Deleting account ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
+            if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Deleting account ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
             
             // Check if account is already deleted
             const existingAccount = await SavingsAccount.findOne({ 
@@ -169,7 +171,7 @@ class SavingsAccountController {
             }).session(session);
             
             if (existingAccount) {
-                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Account ${id} is already deleted`);
+                if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Account ${id} is already deleted`);
                 throw new Error('Account is already deleted');
             }
             
@@ -182,14 +184,14 @@ class SavingsAccountController {
             
             // Check if savings account exists
             if (!savingsAccount) {
-                console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account not found: ${id}`);
+                logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account not found: ${id}`);
                 throw new Error('Savings account not found');
             }
             
             const remainingBalance = parseFloat((Number(savingsAccount.balance || 0)).toFixed(2));
             const accountName = savingsAccount.name;
             
-            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Found account with balance: ${remainingBalance}`);
+            if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Found account with balance: ${remainingBalance}`);
             
             // If account has balance, transfer it
             if (remainingBalance > 0) {
@@ -230,11 +232,11 @@ class SavingsAccountController {
                     }).session(session);
                     
                     if (!targetWallet) {
-                        console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Target wallet not found: ${transferToWalletId}`);
+                        logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Target wallet not found: ${transferToWalletId}`);
                         throw new Error('Target wallet not found or does not belong to you');
                     }
                     
-                    if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet found, current balance: ${targetWallet.balance}`);
+                    if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet found, current balance: ${targetWallet.balance}`);
                 } else {
                     // No wallet specified, find or create a system wallet
                     try {
@@ -246,14 +248,14 @@ class SavingsAccountController {
                             session
                         );
                     } catch (walletError) {
-                        console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error creating system wallet:`, walletError);
+                        logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error creating system wallet:`, walletError);
                         throw new Error(`Failed to create system wallet: ${walletError.message}`);
                     }
                 }
                 
                 // Ensure target wallet exists
                 if (!targetWallet) {
-                    console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] No valid wallet found`);
+                    logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] No valid wallet found`);
                     throw new Error('Could not find or create a wallet to transfer funds to');
                 }
                 
@@ -265,7 +267,7 @@ class SavingsAccountController {
                 targetWallet.balance = parseFloat((Number(targetWallet.balance || 0) + remainingBalance).toFixed(2));
                 await targetWallet.save({ session });
                 
-                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet balance updated from ${oldWalletBalance} to ${targetWallet.balance}`);
+                if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Wallet balance updated from ${oldWalletBalance} to ${targetWallet.balance}`);
                 
                 // Record the transaction
                 const transaction = new Transaction({
@@ -281,7 +283,7 @@ class SavingsAccountController {
                 
                 await transaction.save({ session });
                 
-                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction recorded for ${remainingBalance}`);
+                if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction recorded for ${remainingBalance}`);
             }
             
             // Mark the savings account as deleted instead of completely removing it
@@ -298,17 +300,17 @@ class SavingsAccountController {
             ).session(session);
             
             if (updateResult.modifiedCount !== 1) {
-                console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Failed to update account status, modified count: ${updateResult.modifiedCount}`);
+                logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Failed to update account status, modified count: ${updateResult.modifiedCount}`);
                 throw new Error('Failed to mark savings account as deleted');
             }
             
-            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account ${id} marked as deleted`);
+            if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Savings account ${id} marked as deleted`);
             
             // Commit the transaction
             if (session) {
                 await session.commitTransaction();
             }
-            if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction committed successfully`);
+            if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction committed successfully`);
             
             // Send success response
             return res.json({
@@ -320,15 +322,15 @@ class SavingsAccountController {
                 operationId: operationId
             });
         } catch (error) {
-            console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] ${error.message}`);
+            logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] ${error.message}`);
             
             // Ensure transaction is aborted and session is ended
             if (session) {
                 try {
                     await session.abortTransaction();
-                    if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction aborted`);
+                    if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Transaction aborted`);
                 } catch (sessionError) {
-                    console.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error aborting transaction: ${sessionError.message}`);
+                    logger.error(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Error aborting transaction: ${sessionError.message}`);
                 }
             }
             
@@ -349,7 +351,7 @@ class SavingsAccountController {
             // Always end the session if it exists
             if (session) {
                 session.endSession();
-                if (isDev) console.log(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Session ended`);
+                if (isDev) logger.debug(`[SavingsAccountController - deleteSavingsAccount][${operationId}] Session ended`);
             }
         }
     }

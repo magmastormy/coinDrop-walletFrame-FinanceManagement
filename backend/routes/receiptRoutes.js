@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -7,7 +9,6 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { getAuthenticatedUserId } = require('../utils/authUser');
 const metricsCollector = require('../utils/metricsCollector');
-const logger = require('../utils/logger');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads/receipts');

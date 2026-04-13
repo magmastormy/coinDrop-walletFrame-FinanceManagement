@@ -13,7 +13,7 @@ const ReadOnlySwitch = ({ checked, label }) => {
             disabled
             className="relative inline-flex h-6 w-11 items-center rounded-full"
             style={{
-                background: checked ? 'rgba(212, 175, 55, 0.25)' : 'var(--color-surface-2)',
+                background: checked ? 'var(--color-warning)' : 'var(--color-surface-2)',
                 border: '1px solid var(--color-border)',
                 cursor: 'not-allowed',
                 opacity: 0.9,
@@ -63,7 +63,7 @@ const UserManagement = () => {
         <div className="space-y-4 pb-4" style={{ maxWidth: '900px' }}>
             <PageHeader title="User Management" />
             {/* Tabs */}
-            <div className="flex flex-wrap gap-2 border-b border-border" style={{ paddingBottom: '6px' }}>
+            <div className="flex flex-wrap gap-2 border-b border-border" style={{ paddingBottom: 'var(--spacing-md)' }}>
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -190,7 +190,7 @@ const UserManagement = () => {
                                         borderRadius: 'var(--radius-md)',
                                         border: '1px solid var(--color-border)',
                                         background: 'var(--color-surface-2)',
-                                        padding: '0 8px',
+                                        padding: '0 var(--spacing-sm)',
                                         fontSize: '13px',
                                         color: 'var(--color-text-primary)',
                                         outline: 'none',
@@ -214,7 +214,7 @@ const UserManagement = () => {
                                         borderRadius: 'var(--radius-md)',
                                         border: '1px solid var(--color-border)',
                                         background: 'var(--color-surface-2)',
-                                        padding: '0 8px',
+                                        padding: '0 var(--spacing-sm)',
                                         fontSize: '13px',
                                         color: 'var(--color-text-primary)',
                                         outline: 'none',
@@ -238,7 +238,7 @@ const UserManagement = () => {
                                         borderRadius: 'var(--radius-md)',
                                         border: '1px solid var(--color-border)',
                                         background: 'var(--color-surface-2)',
-                                        padding: '0 8px',
+                                        padding: '0 var(--spacing-sm)',
                                         fontSize: '13px',
                                         color: 'var(--color-text-primary)',
                                         outline: 'none',

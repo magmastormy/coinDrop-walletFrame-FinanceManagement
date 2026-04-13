@@ -5,6 +5,7 @@
  * This module is separated from the main context service for better organization
  * and performance optimization.
  */
+const logger = require('../../utils/logger');
 const { performance } = require('perf_hooks');
 
 // Configuration for prompt optimization
@@ -101,8 +102,13 @@ function formatContext(ctx, type = 'full', complexity = 'standard') {
     result = trimPromptToLength(result, complexitySettings.maxLength);
   }
   
-  console.log(`[formatContext] Built ${type} context (${complexity} complexity) in ${(performance.now() - t0).toFixed(1)}ms, length: ${result.length} chars`);
+  logPerformance('formatContext', t0, complexity);
   return result;
+}
+
+function logPerformance(operation, startTime, complexity = 'medium') {
+  const duration = performance.now() - startTime;
+  logger.performance(`Context formatter ${operation}`, duration, { complexity });
 }
 
 /**

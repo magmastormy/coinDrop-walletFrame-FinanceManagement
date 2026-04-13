@@ -1,15 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 const WalletChart = ({ wallets = [] }) => {
     const [timePeriod, setTimePeriod] = useState('monthly');
-
-    if (!Array.isArray(wallets) || wallets.length === 0) {
-        return null;
-    }
+    const formatCurrencyHook = useCurrencyFormatter();
 
     // Filter wallets based on time period
     const filteredWallets = useMemo(() => {
+        if (!Array.isArray(wallets) || wallets.length === 0) {
+            return [];
+        }
+        
         const now = new Date();
         
         if (timePeriod === 'weekly') {
@@ -28,7 +30,11 @@ const WalletChart = ({ wallets = [] }) => {
 
     // Sort wallets by balance descending and take top 4
     const sortedWallets = useMemo(() => {
-        const walletsToSort = filteredWallets.length > 0 ? filteredWallets : wallets;
+        if (!Array.isArray(wallets) || wallets.length === 0) {
+            return [];
+        }
+        
+        const walletsToSort = (filteredWallets && filteredWallets.length > 0) ? filteredWallets : (wallets || []);
         return [...walletsToSort]
             .sort((a, b) => (b.balance || 0) - (a.balance || 0))
             .slice(0, 4);
@@ -36,16 +42,23 @@ const WalletChart = ({ wallets = [] }) => {
 
     // Calculate max balance for scaling
     const maxBalance = useMemo(() => {
+        if (!Array.isArray(sortedWallets) || sortedWallets.length === 0) {
+            return 1;
+        }
         return Math.max(...sortedWallets.map(w => w.balance || 0), 1);
     }, [sortedWallets]);
 
     // Calculate total balance for the period
     const totalBalance = useMemo(() => {
-        return sortedWallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
+        return (sortedWallets || []).reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
     }, [sortedWallets]);
 
+    if (!Array.isArray(wallets) || wallets.length === 0) {
+        return null;
+    }
+
     // Bar colors based on wallet type/index
-    const getBarColor = (index, type) => {
+    const getBarColor = (index) => {
         const colors = [
             { bg: 'bg-primary/20', fill: 'from-primary-fixed-dim to-on-primary-container' },
             { bg: 'bg-secondary/20', fill: 'bg-secondary' },
@@ -60,18 +73,9 @@ const WalletChart = ({ wallets = [] }) => {
         if (wallet.name) {
             // Return first word or first 4 chars
             const firstWord = wallet.name.split(' ')[0];
-            return firstWord.length > 6 ? firstWord.substring(0, 6) : firstWord;
+            return firstWord.length > 4 ? firstWord.substring(0, 4) : firstWord;
         }
         return `Wallet ${index + 1}`;
-    };
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount);
     };
 
     // Get period label
@@ -95,7 +99,7 @@ const WalletChart = ({ wallets = [] }) => {
                     {/* Period total */}
                     <div className="text-right hidden sm:block">
                         <p className="text-xs text-on-tertiary-container uppercase tracking-wider">{getPeriodLabel()}</p>
-                        <p className="text-lg font-bold text-on-surface">{formatCurrency(totalBalance)}</p>
+                        <p className="text-lg font-bold text-on-surface">{formatCurrencyHook(totalBalance)}</p>
                     </div>
                     <div className="flex bg-surface-container-lowest p-1 rounded-xl">
                         <button 
@@ -123,7 +127,7 @@ const WalletChart = ({ wallets = [] }) => {
             </div>
 
             {/* Empty state for weekly filter */}
-            {sortedWallets.length === 0 && timePeriod === 'weekly' && (
+            {!sortedWallets.length && timePeriod === 'weekly' && (
                 <div className="h-64 flex items-center justify-center">
                     <div className="text-center">
                         <p className="text-on-tertiary-container text-sm mb-2">No wallets updated in the last 7 days</p>
@@ -141,7 +145,7 @@ const WalletChart = ({ wallets = [] }) => {
             {sortedWallets.length > 0 && (
                 <div className="h-64 flex items-end justify-between gap-4 px-4">
                     {sortedWallets.map((wallet, index) => {
-                        const colors = getBarColor(index, wallet.type);
+                        const colors = getBarColor(index);
                         const heightPercentage = maxBalance > 0 
                             ? Math.max(((wallet.balance || 0) / maxBalance) * 100, 2) 
                             : 2;
@@ -164,7 +168,7 @@ const WalletChart = ({ wallets = [] }) => {
                                         {/* Tooltip on hover */}
                                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <span className="text-xs font-bold text-on-surface bg-surface-container-high/90 px-2 py-1 rounded">
-                                                {formatCurrency(wallet.balance || 0)}
+                                                {formatCurrencyHook(wallet.balance || 0)}
                                             </span>
                                         </div>
                                     </div>

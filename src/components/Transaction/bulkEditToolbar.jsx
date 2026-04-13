@@ -1,13 +1,89 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React from 'react';
 import { Check, X, Trash2, Tag } from 'lucide-react';
+import { toast } from 'react-toastify';
+import transactionService from '../../services/transactionService';
 
 const BulkEditToolbar = ({ 
     selectedCount,
+    selectedTransactions = [],
     onCategoryChange,
     onDelete,
     onCancel,
     categories = []
 }) => {
+    const handleCategoryChange = async (e) => {
+        try {
+            // Validate category selection
+            if (!e.target.value) {
+                logWarn('No category selected for bulk update');
+                return;
+            }
+
+            if (!selectedTransactions || !selectedTransactions.length || selectedTransactions.length === 0) {
+                toast.error('No transactions selected for category update');
+                return;
+            }
+
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timed out')), 30000)
+            );
+
+            const response = await Promise.race([
+                transactionService.bulkUpdateCategories(selectedTransactions, { category: e.target.value }),
+                timeoutPromise
+            ]);
+            
+            if (response.success) {
+                toast.success(`Updated ${selectedTransactions.length} transactions to ${e.target.value}`);
+            } else {
+                toast.error(`Failed to update categories: ${response.error}`);
+            }
+        } catch (error) {
+            logError('Bulk category update failed:', error);
+            toast.error(error.message === 'Request timed out' 
+                ? 'Request timed out. Please try again.' 
+                : 'Failed to update categories. Please try again.');
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            if (!selectedTransactions || !selectedTransactions.length || selectedTransactions.length === 0) {
+                toast.error('No transactions selected for deletion');
+                return;
+            }
+
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timed out')), 30000)
+            );
+
+            const response = await Promise.race([
+                transactionService.bulkDelete(selectedTransactions),
+                timeoutPromise
+            ]);
+            
+            if (response.success) {
+                toast.success(`Deleted ${selectedTransactions.length} transactions successfully`);
+            } else {
+                toast.error(`Failed to delete transactions: ${response.error}`);
+            }
+        } catch (error) {
+            logError('Bulk delete failed:', error);
+            toast.error(error.message === 'Request timed out' 
+                ? 'Request timed out. Please try again.' 
+                : 'Failed to delete transactions. Please try again.');
+        }
+    };
+
+    const handleCancel = () => {
+        // Cancel operation - no API call needed
+        onCancel?.();
+    };
+
     return (
         <div 
             className="glass-card flex items-center justify-between p-4"

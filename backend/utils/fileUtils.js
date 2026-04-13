@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 /**
  * Utilities for file operations
  */
@@ -26,7 +28,7 @@ const readFileToBuffer = async (filePath) => {
   try {
     return await fs.readFile(filePath);
   } catch (error) {
-    console.error(`Error reading file ${filePath}:`, error);
+    logger.error(`Error reading file ${filePath}:`, error);
     return null;
   }
 };

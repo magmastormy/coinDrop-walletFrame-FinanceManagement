@@ -1,7 +1,7 @@
 import {createSlice} from '@reduxjs/toolkit';
 
-const storedToken = localStorage.getItem('token');
-const storedUser = localStorage.getItem('user');
+const storedToken = sessionStorage.getItem('token');
+const storedUser = sessionStorage.getItem('user');
 let parsedUser = null;
 try {
     parsedUser = storedUser ? JSON.parse(storedUser) : null;
@@ -30,10 +30,13 @@ const authSlice = createSlice({
             state.user = action.payload.user;
             state.token = action.payload.accessToken;
             state.isAuthenticated = true;
-            localStorage.setItem('token', action.payload.accessToken);
-            localStorage.setItem('user', JSON.stringify(action.payload.user));
+            sessionStorage.setItem('token', action.payload.accessToken);
+            sessionStorage.setItem('user', JSON.stringify(action.payload.user));
             if (action.payload.refreshToken) {
-                localStorage.setItem('refreshToken', action.payload.refreshToken);
+                sessionStorage.setItem('refreshToken', action.payload.refreshToken);
+            }
+            if (action.payload.csrfToken) {
+                sessionStorage.setItem('csrfToken', action.payload.csrfToken);
             }
         },
         loginFailure: (state, action) => {
@@ -47,19 +50,20 @@ const authSlice = createSlice({
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('refreshToken');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('csrfToken');
         },
         setUser: (state, action) => {
             state.user = action.payload;
             state.isAuthenticated = true;
-            localStorage.setItem('user', JSON.stringify(action.payload));
+            sessionStorage.setItem('user', JSON.stringify(action.payload));
 
         },
         setToken: (state, action) => {
             state.token = action.payload;
-            localStorage.setItem('token', action.payload);
+            sessionStorage.setItem('token', action.payload);
         },
         setError: (state, action) => {
             state.error = action.payload;

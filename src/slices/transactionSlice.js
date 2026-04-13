@@ -13,7 +13,8 @@ const transactionSlice = createSlice({
     reducers: {
         setTransactions: (state, action) => {
             state.transactions = action.payload;
-            state.loading = false
+            state.loading = false;
+            state.error = null;
         },
         setLoading: (state, action) => {
             state.loading = action.payload;

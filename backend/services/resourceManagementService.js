@@ -12,6 +12,13 @@ class ResourceManagementService {
         
         this.currentConnections = 0;
         this.maxConnectionsReached = false;
+        this.memoryCleanupInterval = null;
+        this.memoryLeakDetection = {
+            lastMemoryUsage: 0,
+            memoryGrowthTrend: [],
+            leakThreshold: 5 // percentage increase over 5 intervals
+        };
+        this.objectPools = new Map();
     }
 
     // Initialize resource management
@@ -21,6 +28,7 @@ class ResourceManagementService {
         
         // Set up resource monitoring
         this.startResourceMonitoring();
+        this.startMemoryCleanup();
         
         logger.info('✅ Resource management service initialized');
     }
@@ -31,7 +39,18 @@ class ResourceManagementService {
         if (process.env.NODE_ENV !== 'test') {
             setInterval(() => {
                 this.checkResourceUsage();
+                this.detectMemoryLeaks();
             }, 10000);
+        }
+    }
+
+    // Start memory cleanup process
+    startMemoryCleanup() {
+        // Clean up memory every 30 seconds
+        if (process.env.NODE_ENV !== 'test') {
+            this.memoryCleanupInterval = setInterval(() => {
+                this.optimizeMemoryUsage();
+            }, 30000);
         }
     }
 
@@ -43,6 +62,7 @@ class ResourceManagementService {
         // Check memory usage
         if (memoryUsage > this.resourceLimits.maxMemoryUsage) {
             logger.warn(`⚠️ Memory usage exceeded limit: ${memoryUsage.toFixed(2)}% > ${this.resourceLimits.maxMemoryUsage}%`);
+            this.optimizeMemoryUsage(true);
         }
         
         // Check CPU usage
@@ -146,6 +166,101 @@ class ResourceManagementService {
                 arch: os.arch()
             }
         };
+    }
+
+    // Optimize memory usage
+    optimizeMemoryUsage(force = false) {
+        const memoryUsage = this.getMemoryUsage();
+        
+        // Only optimize if memory usage is high or forced
+        if (force || memoryUsage > this.resourceLimits.maxMemoryUsage * 0.7) {
+            logger.info('🔧 Optimizing memory usage...');
+            
+            // Force garbage collection if available
+            if (global.gc) {
+                try {
+                    const beforeMemory = process.memoryUsage();
+                    global.gc();
+                    const afterMemory = process.memoryUsage();
+                    const freedMemory = ((beforeMemory.heapUsed - afterMemory.heapUsed) / 1024 / 1024).toFixed(2);
+                    logger.info(`✅ Garbage collection performed, freed ${freedMemory} MB`);
+                } catch (error) {
+                    logger.warn('⚠️ Garbage collection not available, run node with --expose-gc');
+                }
+            }
+            
+            // Clear object pools if memory is critically low
+            if (memoryUsage > this.resourceLimits.maxMemoryUsage * 0.9) {
+                this.clearObjectPools();
+            }
+        }
+    }
+
+    // Detect memory leaks
+    detectMemoryLeaks() {
+        const currentMemoryUsage = this.getMemoryUsage();
+        const lastMemoryUsage = this.memoryLeakDetection.lastMemoryUsage;
+        
+        if (lastMemoryUsage > 0) {
+            const memoryIncrease = currentMemoryUsage - lastMemoryUsage;
+            this.memoryLeakDetection.memoryGrowthTrend.push(memoryIncrease);
+            
+            // Keep only the last 5 measurements
+            if (this.memoryLeakDetection.memoryGrowthTrend.length > 5) {
+                this.memoryLeakDetection.memoryGrowthTrend.shift();
+            }
+            
+            // Check for consistent memory growth
+            const averageGrowth = this.memoryLeakDetection.memoryGrowthTrend.reduce((sum, val) => sum + val, 0) / this.memoryLeakDetection.memoryGrowthTrend.length;
+            
+            if (averageGrowth > this.memoryLeakDetection.leakThreshold) {
+                logger.warn(`⚠️ Potential memory leak detected: Average memory growth of ${averageGrowth.toFixed(2)}% over 5 intervals`);
+            }
+        }
+        
+        this.memoryLeakDetection.lastMemoryUsage = currentMemoryUsage;
+    }
+
+    // Object pool management
+    getFromPool(poolName, createFn) {
+        if (!this.objectPools.has(poolName)) {
+            this.objectPools.set(poolName, []);
+        }
+        
+        const pool = this.objectPools.get(poolName);
+        if (pool.length > 0) {
+            return pool.pop();
+        }
+        
+        return createFn();
+    }
+
+    returnToPool(poolName, object) {
+        if (!this.objectPools.has(poolName)) {
+            this.objectPools.set(poolName, []);
+        }
+        
+        const pool = this.objectPools.get(poolName);
+        // Limit pool size to prevent memory issues
+        if (pool.length < 100) {
+            pool.push(object);
+        }
+    }
+
+    // Clear object pools
+    clearObjectPools() {
+        const poolCount = this.objectPools.size;
+        this.objectPools.clear();
+        logger.info(`✅ Cleared ${poolCount} object pools to free memory`);
+    }
+
+    // Clean up resources
+    cleanup() {
+        if (this.memoryCleanupInterval) {
+            clearInterval(this.memoryCleanupInterval);
+        }
+        this.clearObjectPools();
+        logger.info('✅ Resource management service cleaned up');
     }
 }
 

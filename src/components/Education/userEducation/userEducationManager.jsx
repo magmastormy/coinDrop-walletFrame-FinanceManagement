@@ -1,3 +1,5 @@
+import { useLogger } from '../../../hooks/useLogger.jsx';
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,16 +54,21 @@ const UserEducationManager = () => {
 
     // Parse URL query parameters for filtering
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const filter = params.get('filter');
-        if (filter) {
-            if (filter === 'liked') {
-                setFilterType('liked');
-            } else if (filter === 'history') {
-                setFilterType('history');
-            } else {
-                setFilterType('all');
+        try {
+            const params = new URLSearchParams(location.search);
+            const filter = params.get('filter');
+            if (filter) {
+                if (filter === 'liked') {
+                    setFilterType('liked');
+                } else if (filter === 'history') {
+                    setFilterType('history');
+                } else {
+                    setFilterType('all');
+                }
             }
+        } catch (error) {
+            logError('Error parsing URL parameters:', error);
+            setFilterType('all');
         }
     }, [location]);
 
@@ -99,7 +106,8 @@ const UserEducationManager = () => {
     };
 
     // Filter and sort education posts
-    const filteredEducations = educations?.filter(post => {
+    const filteredEducations = (educations || []).filter(post => {
+        if (!post) return false;
         // Search filter
         return searchQuery === '' ||
             post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -109,9 +117,31 @@ const UserEducationManager = () => {
     // Sort filtered posts
     const sortedEducations = [...(filteredEducations || [])].sort((a, b) => {
         if (sortBy === 'newest') {
-            return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+            const aDate = (a.createdAt || a.date) ? new Date(a.createdAt || a.date) : null;
+            const bDate = (b.createdAt || b.date) ? new Date(b.createdAt || b.date) : null;
+            
+            // Validate dates
+            const isValidADate = aDate && !isNaN(aDate.getTime());
+            const isValidBDate = bDate && !isNaN(bDate.getTime());
+            
+            if (!isValidADate && !isValidBDate) return 0;
+            if (!isValidADate) return sortConfig.direction === 'asc' ? 1 : -1;
+            if (!isValidBDate) return sortConfig.direction === 'asc' ? -1 : 1;
+            
+            return bDate.getTime() - aDate.getTime();
         } else if (sortBy === 'oldest') {
-            return new Date(a.createdAt || a.date) - new Date(b.createdAt || b.date);
+            const aDate = (a.createdAt || a.date) ? new Date(a.createdAt || a.date) : null;
+            const bDate = (b.createdAt || b.date) ? new Date(b.createdAt || b.date) : null;
+            
+            // Validate dates
+            const isValidADate = aDate && !isNaN(aDate.getTime());
+            const isValidBDate = bDate && !isNaN(bDate.getTime());
+            
+            if (!isValidADate && !isValidBDate) return 0;
+            if (!isValidADate) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (!isValidBDate) return sortConfig.direction === 'asc' ? 1 : -1;
+            
+            return aDate.getTime() - bDate.getTime();
         } else if (sortBy === 'popular') {
             const aPopularity = (a.likes?.length || 0) + (a.comments?.length || 0);
             const bPopularity = (b.likes?.length || 0) + (b.comments?.length || 0);
@@ -140,12 +170,12 @@ const UserEducationManager = () => {
             let result;
 
             if (typeof postId === 'object' && !postData) {
-                console.log("Creating new post with data:", postId);
+                logInfo("Creating new post with data:", postId);
                 result = await educationService.createEducation(postId);
                 dispatch(addEducation(result));
                 toast.success('Post created successfully');
             } else {
-                console.log("Updating post with ID:", postId, "and data:", postData);
+                logInfo("Updating post with ID:", postId, "and data:", postData);
                 result = await educationService.updateEducation(postId, postData);
                 dispatch(updateEducation(result));
                 toast.success('Post updated successfully');
@@ -178,7 +208,7 @@ const UserEducationManager = () => {
                 return;
             }
 
-            console.log(`[userEducationManager] Deleting post with ID: ${postId}`);
+            logInfo(`[userEducationManager] Deleting post with ID: ${postId}`);
 
             // Attempt to delete the post
             await educationService.deleteEducation(postId);
@@ -187,7 +217,7 @@ const UserEducationManager = () => {
             dispatch(deleteEducation(postId));
             toast.success('Post deleted successfully');
         } catch (error) {
-            console.error('[userEducationManager] Error deleting post:', error);
+            logError('[userEducationManager] Error deleting post:', error);
 
             // User-friendly error message
             toast.error(error.message || 'Failed to delete post. Please try again later.');
@@ -214,21 +244,21 @@ const UserEducationManager = () => {
                 return;
             }
 
-            console.log(`[userEducationManager] Adding comment to post ${postId}: ${comment}`);
+            logInfo(`[userEducationManager] Adding comment to post ${postId}: ${comment}`);
             await educationService.addComment(postId, comment);
 
             // Refresh the posts to show the new comment
             fetchUserEducationPosts();
             toast.success('Comment added successfully');
         } catch (err) {
-            console.error('[userEducation Manager] Error adding comment:', err);
+            logError('[userEducation Manager] Error adding comment:', err);
             dispatch(setError(err.message));
             toast.error(err.message || 'Failed to add comment');
         }
     };
 
     const handleEditClick = (post) => {
-        console.log("Setting post for editing:", post);
+        logInfo("Setting post for editing:", post);
         setEditingPost(post);
         setShowCreateModal(true);
     };

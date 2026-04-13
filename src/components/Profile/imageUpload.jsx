@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Image, X, Loader } from 'lucide-react';
@@ -32,7 +34,7 @@ const ImageUpload = ({ onImageUpload, onImageRemove, currentImage, imageType }) 
                 await onImageUpload(file);
 
             } catch (error) {
-                console.error('Error in image drop handler:', error);
+                logError('Error in image drop handler:', error);
                 setError(error.message || 'Failed to upload image');
             } finally {
                 setUploading(false);

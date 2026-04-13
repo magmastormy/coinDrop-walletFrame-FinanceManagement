@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // backend/ai/categoryAIService.js
 const mongoose = require('mongoose');
 const Category = require('../models/Category');
@@ -13,9 +15,9 @@ class CategoryAIService {
     try {
       const categories = await Category.find({});
       await CategoryAIModel.loadCategories(categories);
-      console.log('AI Service initialized with', categories.length, 'categories');
+      logger.debug('AI Service initialized with', categories.length, 'categories');
     } catch (error) {
-      console.error('AI Service initialization failed:', error);
+      logger.error('AI Service initialization failed:', error);
       throw error;
     }
   }
@@ -36,7 +38,7 @@ class CategoryAIService {
     if (learnedCategoryId) {
       const category = await Category.findById(learnedCategoryId);
       if (category) {
-        console.log('[CategoryAIService] Using learned category for:', description);
+        logger.debug('[CategoryAIService] Using learned category for:', description);
         // Cache the result
         await cacheUtil.set(cacheKey, category.toObject(), 86400); // Cache for 24 hours
         return category;

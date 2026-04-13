@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { setLoading, setError } from '../../slices/transactionSlice';
@@ -33,7 +35,7 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
                     const account = await savingsAccountService.getSavingsAccount(accountId);
                     setTransactions(account.transactions || []);
                 } catch (err) {
-                    console.error('Error fetching transactions:', err);
+                    logError('Error fetching transactions:', err);
                     dispatch(setError('Unable to fetch transactions. Please try again later.'));
                 } finally {
                     dispatch(setLoading(false));
@@ -58,7 +60,7 @@ const SavingsAccountTransactionTable = ({ accountId, wallets = [], savingsAccoun
             ));
             setEditModalOpen(false);
         } catch (err) {
-            console.error('Error updating transaction:', err);
+            logError('Error updating transaction:', err);
             dispatch(setError('Failed to update transaction. Please try again.'));
         } finally {
             dispatch(setLoading(false));

@@ -2,6 +2,7 @@ const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
+const logger = require('../utils/logger');
 
 class BudgetService {
     /**
@@ -247,7 +248,11 @@ class BudgetService {
                 await budget.save();
 
             } catch (error) {
-                console.error(`Failed to renew budget ${budget._id}:`, error);
+                logger.error(`Failed to renew budget ${budget._id}`, {
+                    budgetId: budget._id,
+                    error: error.message,
+                    stack: error.stack
+                });
             }
         }
 

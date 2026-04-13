@@ -1,10 +1,12 @@
+import { useLogger } from './hooks/useLogger';
+
 import React from 'react';
 import EducationCard from './educationCard';
 
 
 const EducationGrid = ({ educations = [], onEdit, onDelete, onLike, onComment }) => {
     if (!Array.isArray(educations)) {
-        console.warn('EducationGrid: educations prop is not an array');
+        logWarn('EducationGrid: educations prop is not an array');
         return null;
     }
 

@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // backend/ai/categoryAIModel.js
 const natural = require('natural');
 const tokenizer = new natural.WordTokenizer();
@@ -48,14 +50,14 @@ class CategoryAIModel {
         await this.loadLearnedPatterns();
         
         this.isInitialized = true;
-        console.log(`[CategoryAIModel] Loaded ${categories.length} categories and ${this.learningCache.size} learned patterns`);
+        logger.debug(`[CategoryAIModel] Loaded ${categories.length} categories and ${this.learningCache.size} learned patterns`);
         
         // Try to persist model for faster restarts
         await this.persistModel().catch(err => 
-          console.warn('[CategoryAIModel] Could not persist model:', err.message)
+          logger.warn('[CategoryAIModel] Could not persist model:', err.message)
         );
       } catch (error) {
-        console.error('[CategoryAIModel] Error loading categories:', error);
+        logger.error('[CategoryAIModel] Error loading categories:', error);
         throw error;
       } finally {
         this.loadPromise = null;
@@ -74,9 +76,9 @@ class CategoryAIModel {
       patterns.forEach(pattern => {
         this.learningCache.set(pattern.description, pattern.categoryId);
       });
-      console.log(`[CategoryAIModel] Loaded ${patterns.length} learned patterns from database`);
+      logger.debug(`[CategoryAIModel] Loaded ${patterns.length} learned patterns from database`);
     } catch (error) {
-      console.warn('[CategoryAIModel] Error loading learned patterns:', error.message);
+      logger.warn('[CategoryAIModel] Error loading learned patterns:', error.message);
     }
   }
 
@@ -99,7 +101,7 @@ class CategoryAIModel {
       
       fs.writeFileSync(this.modelPath, JSON.stringify(modelData, null, 2));
     } catch (error) {
-      console.warn('[CategoryAIModel] Model persistence failed:', error.message);
+      logger.warn('[CategoryAIModel] Model persistence failed:', error.message);
     }
   }
 
@@ -119,15 +121,15 @@ class CategoryAIModel {
         { categoryId },
         { upsert: true, new: true }
       );
-      console.log(`[CategoryAIModel] Learned: "${description}" -> Category ${categoryId} (saved to database)`);
+      logger.debug(`[CategoryAIModel] Learned: "${description}" -> Category ${categoryId} (saved to database)`);
     } catch (error) {
-      console.warn('[CategoryAIModel] Error saving learned pattern to database:', error.message);
+      logger.warn('[CategoryAIModel] Error saving learned pattern to database:', error.message);
     }
     
     // Periodically retrain model with new learnings
     if (this.learningCache.size % 10 === 0) {
       await this.retrainModel().catch(err => 
-        console.warn('[CategoryAIModel] Error retraining model:', err.message)
+        logger.warn('[CategoryAIModel] Error retraining model:', err.message)
       );
     }
   }
@@ -137,7 +139,7 @@ class CategoryAIModel {
    */
   async retrainModel() {
     try {
-      console.log('[CategoryAIModel] Retraining model with accumulated learnings...');
+      logger.debug('[CategoryAIModel] Retraining model with accumulated learnings...');
       // Reinitialize TF-IDF with learned patterns
       this.tfidf = new natural.TfIdf();
       
@@ -155,9 +157,9 @@ class CategoryAIModel {
         }
       }
       
-      console.log('[CategoryAIModel] Model retrained successfully');
+      logger.debug('[CategoryAIModel] Model retrained successfully');
     } catch (error) {
-      console.error('[CategoryAIModel] Error retraining model:', error);
+      logger.error('[CategoryAIModel] Error retraining model:', error);
       throw error;
     }
   }
@@ -257,7 +259,7 @@ class CategoryAIModel {
    */
   async batchPredictCategories(transactions) {
     try {
-      console.log(`[CategoryAIModel] Batch processing ${transactions.length} transactions`);
+      logger.debug(`[CategoryAIModel] Batch processing ${transactions.length} transactions`);
       
       const results = await Promise.all(
         transactions.map(async (transaction) => {
@@ -270,10 +272,10 @@ class CategoryAIModel {
         })
       );
       
-      console.log(`[CategoryAIModel] Batch prediction completed`);
+      logger.debug(`[CategoryAIModel] Batch prediction completed`);
       return results;
     } catch (error) {
-      console.error('[CategoryAIModel] Error in batch prediction:', error);
+      logger.error('[CategoryAIModel] Error in batch prediction:', error);
       throw error;
     }
   }
@@ -283,7 +285,7 @@ class CategoryAIModel {
    */
   async batchLearnCorrections(corrections) {
     try {
-      console.log(`[CategoryAIModel] Batch learning from ${corrections.length} corrections`);
+      logger.debug(`[CategoryAIModel] Batch learning from ${corrections.length} corrections`);
       
       const promises = corrections.map(async (correction) => {
         const { description, categoryId } = correction;
@@ -295,9 +297,9 @@ class CategoryAIModel {
       // Retrain model after batch learning
       await this.retrainModel();
       
-      console.log(`[CategoryAIModel] Batch learning completed`);
+      logger.debug(`[CategoryAIModel] Batch learning completed`);
     } catch (error) {
-      console.error('[CategoryAIModel] Error in batch learning:', error);
+      logger.error('[CategoryAIModel] Error in batch learning:', error);
       throw error;
     }
   }

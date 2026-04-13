@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
@@ -29,7 +31,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json' },
     });
     latencyTrend.add(res.timings.duration);
-    console.log(`[Login Invalid] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Login Invalid] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'login returns 401': (r) => r.status === 401,
       'error message present': (r) => r.body && r.body.includes('Wrong email or password')
@@ -51,7 +53,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json' },
     });
     latencyTrend.add(res.timings.duration);
-    console.log(`[Register Weak] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Register Weak] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'registration returns 422/400': (r) => r.status === 422 || r.status === 400,
       'validation error': (r) => r.body && r.body.includes('Password')
@@ -65,7 +67,7 @@ export default function () {
       headers: { 'Authorization': 'Bearer invalidtoken' },
     });
     latencyTrend.add(res.timings.duration);
-    console.log(`[Profile Invalid Token] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Profile Invalid Token] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'returns 401': (r) => r.status === 401,
       'error message present': (r) => r.body && r.body.includes('Invalid token')
@@ -80,7 +82,7 @@ export default function () {
     const badBody = '{ username: "fuzz", email: "fuzz@test.com", password: }';
     const res = http.post(url, badBody, params);
     latencyTrend.add(res.timings.duration);
-    console.log(`[Fuzzing Malformed JSON] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Fuzzing Malformed JSON] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'returns 400/422/500': (r) => [400, 422, 500].includes(r.status),
     });
@@ -101,7 +103,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json' },
     });
     latencyTrend.add(res.timings.duration);
-    console.log(`[Register Max Length] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Register Max Length] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'registration returns 400/422': (r) => r.status === 400 || r.status === 422,
       'validation error': (r) => r.body && (r.body.includes('Username') || r.body.includes('First name') || r.body.includes('Last name'))
@@ -116,7 +118,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json' },
     });
     latencyTrend.add(res.timings.duration);
-    console.log(`[Login Empty Fields] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[Login Empty Fields] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'login returns 400/422': (r) => r.status === 400 || r.status === 422,
       'validation error': (r) => r.body && r.body.includes('Password')
@@ -128,7 +130,7 @@ export default function () {
   group('Non-existent Endpoint', function () {
     const res = http.get('http://localhost:5001/api/doesnotexist');
     latencyTrend.add(res.timings.duration);
-    console.log(`[404 Test] Status: ${res.status}, Body: ${res.body}`);
+    logger.debug(`[404 Test] Status: ${res.status}, Body: ${res.body}`);
     check(res, {
       'returns 404': (r) => r.status === 404,
     });

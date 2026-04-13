@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 //config/db.js
 
 const mongoose = require('mongoose');
@@ -6,7 +8,7 @@ const mongoose = require('mongoose');
 // Mongoose connection function with optimized connection pooling and replica set support
 const connectDB = async () => {
     try {
-        console.log('🔄 Attempting MongoDB connection...');
+        logger.debug('🔄 Attempting MongoDB connection...');
         
         // Connection options with optimized pooling for high load and replica set support
         const connectionOptions = {
@@ -27,11 +29,11 @@ const connectDB = async () => {
         };
 
         // Use your remote database with replica set
-        const mongoURI = process.env.MONGO_URI || process.env.MONGO_REPLICA_SET_URI;
+        const mongoURI = process.env.MONGODB_URI || process.env.MONGO_REPLICA_SET_URI;
         if (mongoURI) {
-            console.log(`📍 Connecting to: ${mongoURI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`);
+            logger.debug(`📍 Connecting to: ${mongoURI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`);
         } else {
-            console.log('📍 No remote MongoDB URI found, will use local fallback');
+            logger.debug('📍 No remote MongoDB URI found, will use local fallback');
         }
         
         if (mongoURI) {
@@ -41,39 +43,39 @@ const connectDB = async () => {
         }
          
         // Log successful connection details
-        console.log('🟢 MongoDB Connection Established 🌐');
-        console.log(`📍 Connected to Database: ${mongoose.connection.db.databaseName}`);
-        console.log(`🔗 Host: ${mongoose.connection.host}`);
-        console.log(`📊 Connection State: ${mongoose.ConnectionStates[mongoose.connection.readyState]}`);
-        console.log(`🔄 Pool Size: Max ${connectionOptions.maxPoolSize}, Min ${connectionOptions.minPoolSize}`);
-        console.log(`🔄 Read Preference: ${connectionOptions.readPreference}`);
+        logger.debug('🟢 MongoDB Connection Established 🌐');
+        logger.debug(`📍 Connected to Database: ${mongoose.connection.db.databaseName}`);
+        logger.debug(`🔗 Host: ${mongoose.connection.host}`);
+        logger.debug(`📊 Connection State: ${mongoose.ConnectionStates[mongoose.connection.readyState]}`);
+        logger.debug(`🔄 Pool Size: Max ${connectionOptions.maxPoolSize}, Min ${connectionOptions.minPoolSize}`);
+        logger.debug(`🔄 Read Preference: ${connectionOptions.readPreference}`);
 
         // Set up event listeners for connection monitoring
         mongoose.connection.on('open', () => {
-            console.log('📨 MongoDB Connection Fully Initialized');
+            logger.debug('📨 MongoDB Connection Fully Initialized');
         });
 
         mongoose.connection.on('disconnected', () => {
-            console.log('⚠️ MongoDB Connection Disconnected');
+            logger.debug('⚠️ MongoDB Connection Disconnected');
         });
 
         mongoose.connection.on('reconnected', () => {
-            console.log('🔄 MongoDB Connection Reconnected');
+            logger.debug('🔄 MongoDB Connection Reconnected');
         });
 
         mongoose.connection.on('error', (err) => {
-            console.error('MongoDB Connection Error:', err);
+            logger.error('MongoDB Connection Error:', err);
         });
 
         // Monitor replica set status
         mongoose.connection.on('topologyDescriptionChanged', (event) => {
-            console.log('🔄 MongoDB Topology Changed:', event.newDescription.type);
+            logger.debug('🔄 MongoDB Topology Changed:', event.newDescription.type);
         });
 
         return mongoose.connection;
     } catch (error) {
-        console.error('MongoDB Remote Connection Error:', error);
-        console.log('Attempting local MongoDB fallback...');
+        logger.error('MongoDB Remote Connection Error:', error);
+        logger.debug('Attempting local MongoDB fallback...');
         const localURI = process.env.MONGO_URI_LOCAL || 'mongodb://localhost:27017/coinDrip';
         try {
             // Use same connection options for local connection
@@ -87,9 +89,9 @@ const connectDB = async () => {
                 family: 4
             };
             await mongoose.connect(localURI, connectionOptions);
-            console.log('🟢 Local MongoDB Connection Established 🏠');
+            logger.debug('🟢 Local MongoDB Connection Established 🏠');
         } catch (localError) {
-            console.error('Local MongoDB Connection Error:', localError);
+            logger.error('Local MongoDB Connection Error:', localError);
             process.exit(1);
         }
     }

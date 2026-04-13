@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
@@ -79,10 +81,10 @@ export function setup() {
             password: password,
             userId: userId
           });
-          console.log(`Pre-created user ${i} with email ${email}`);
+          logger.debug(`Pre-created user ${i} with email ${email}`);
         }
       } catch (e) {
-        console.log(`Failed to parse registration response: ${e.message}`);
+        logger.debug(`Failed to parse registration response: ${e.message}`);
       }
     }
     
@@ -90,7 +92,7 @@ export function setup() {
     sleep(1);
   }
   
-  console.log(`Setup complete. Created ${sharedUsers.length} test users.`);
+  logger.debug(`Setup complete. Created ${sharedUsers.length} test users.`);
   return { sharedUsers };
 }
 
@@ -98,7 +100,7 @@ export function setup() {
 function handleRateLimit(response, operation) {
   if (response.status === 429) {
     // Rate limited - log and wait
-    console.log(`Rate limited during ${operation}. Backing off...`);
+    logger.debug(`Rate limited during ${operation}. Backing off...`);
     // Exponential backoff between 1-3 seconds
     const backoffTime = (Math.random() * 2) + 1;
     sleep(backoffTime);
@@ -190,14 +192,14 @@ export default function () {
               }
               
               if (token) {
-                console.log(`Login successful with pre-created user ${preCreatedUser.email}`);
+                logger.debug(`Login successful with pre-created user ${preCreatedUser.email}`);
               }
             } catch (e) {
-              console.log(`Failed to parse login response: ${e.message}`);
+              logger.debug(`Failed to parse login response: ${e.message}`);
             }
           }
         } catch (e) {
-          console.log(`Login request failed: ${e.message}`);
+          logger.debug(`Login request failed: ${e.message}`);
         }
       });
     }
@@ -246,7 +248,7 @@ export default function () {
             }
             
             if (userId) {
-              console.log(`User registered with ID: ${userId}`);
+              logger.debug(`User registered with ID: ${userId}`);
               
               // Store the email for login
               const userEmail = `user${__VU}_${timestamp}_${random}@test.com`;
@@ -283,19 +285,19 @@ export default function () {
                   }
                   
                   if (token) {
-                    console.log('Login successful with newly created user');
+                    logger.debug('Login successful with newly created user');
                   }
                 } catch (e) {
-                  console.log(`Failed to parse login response: ${e.message}`);
+                  logger.debug(`Failed to parse login response: ${e.message}`);
                 }
               }
             }
           } catch (e) {
-            console.log(`Failed to parse registration response: ${e.message}`);
+            logger.debug(`Failed to parse registration response: ${e.message}`);
           }
         }
       } catch (e) {
-        console.log(`Registration request failed: ${e.message}`);
+        logger.debug(`Registration request failed: ${e.message}`);
       }
     });
   }
@@ -367,7 +369,7 @@ export default function () {
               }
             }
           } catch (e) {
-            console.log(`Failed to parse categories response: ${e.message}`);
+            logger.debug(`Failed to parse categories response: ${e.message}`);
           }
         }
         
@@ -394,7 +396,7 @@ export default function () {
               }
             }
           } catch (e) {
-            console.log(`Failed to parse wallets response: ${e.message}`);
+            logger.debug(`Failed to parse wallets response: ${e.message}`);
           }
         }
         
@@ -417,7 +419,7 @@ export default function () {
                 walletId = walletData.id;
               }
             } catch (e) {
-              console.log(`Failed to parse wallet creation response: ${e.message}`);
+              logger.debug(`Failed to parse wallet creation response: ${e.message}`);
             }
           }
         }
@@ -467,11 +469,11 @@ export default function () {
           successRate.add(success);
           
           if (!success) {
-            console.log(`Budget creation failed with status ${budgetRes.status}: ${budgetRes.body}`);
+            logger.debug(`Budget creation failed with status ${budgetRes.status}: ${budgetRes.body}`);
           }
         }
       } catch (e) {
-        console.log(`Budget creation request failed: ${e.message}`);
+        logger.debug(`Budget creation request failed: ${e.message}`);
       }
     });
   }
@@ -503,7 +505,7 @@ export default function () {
               }
             }
           } catch (e) {
-            console.log(`Failed to parse wallets response: ${e.message}`);
+            logger.debug(`Failed to parse wallets response: ${e.message}`);
           }
         }
         
@@ -526,7 +528,7 @@ export default function () {
                 walletId = walletData.id;
               }
             } catch (e) {
-              console.log(`Failed to parse wallet creation response: ${e.message}`);
+              logger.debug(`Failed to parse wallet creation response: ${e.message}`);
             }
           }
         }
@@ -598,7 +600,7 @@ export default function () {
               }
             }
           } catch (e) {
-            console.log(`Failed to parse categories response: ${e.message}`);
+            logger.debug(`Failed to parse categories response: ${e.message}`);
           }
         }
         
@@ -645,7 +647,7 @@ export default function () {
               const randomSuffix = Math.floor(Math.random() * 10000);
               const categoryName = `Entertainment_${timestamp}_${randomSuffix}`;
               
-              console.log(`Attempting to create category: ${categoryName}`);
+              logger.debug(`Attempting to create category: ${categoryName}`);
               
               const categoryPayload = JSON.stringify({
                 name: categoryName,
@@ -681,10 +683,10 @@ export default function () {
                     return categoryData.id;
                   }
                 } catch (e) {
-                  console.log(`Failed to parse category creation response: ${e.message}`);
+                  logger.debug(`Failed to parse category creation response: ${e.message}`);
                 }
               } else {
-                console.log(`Failed to create category. Status: ${createCategoryRes.status}, Response: ${createCategoryRes.body}`);
+                logger.debug(`Failed to create category. Status: ${createCategoryRes.status}, Response: ${createCategoryRes.body}`);
               }
               
               // If we get here, the request failed but wasn't rate limited
@@ -694,7 +696,7 @@ export default function () {
                 delay *= 2; // Exponential backoff
               }
             } catch (e) {
-              console.log(`Category creation exception: ${e.message}`);
+              logger.debug(`Category creation exception: ${e.message}`);
               retries--;
               if (retries > 0) {
                 sleep(delay);
@@ -711,9 +713,9 @@ export default function () {
           // Create category without using Promise
           categoryId = createCategory(token, userId);
           if (categoryId) {
-            console.log(`Successfully created category with ID: ${categoryId}`);
+            logger.debug(`Successfully created category with ID: ${categoryId}`);
           } else {
-            console.log('Failed to create category after multiple attempts');
+            logger.debug('Failed to create category after multiple attempts');
           }
         }
         
@@ -736,7 +738,7 @@ export default function () {
                 currency: 'USD'
               });
               
-              console.log(`Attempting to create wallet: ${uniqueWalletName}`);
+              logger.debug(`Attempting to create wallet: ${uniqueWalletName}`);
               
               const createWalletRes = http.post('http://localhost:5001/api/wallets', walletPayload, {
                 headers: {
@@ -766,10 +768,10 @@ export default function () {
                     return walletData.id;
                   }
                 } catch (e) {
-                  console.log(`Failed to parse wallet creation response: ${e.message}`);
+                  logger.debug(`Failed to parse wallet creation response: ${e.message}`);
                 }
               } else {
-                console.log(`Failed to create wallet. Status: ${createWalletRes.status}, Response: ${createWalletRes.body}`);
+                logger.debug(`Failed to create wallet. Status: ${createWalletRes.status}, Response: ${createWalletRes.body}`);
               }
               
               // If we get here, the request failed but wasn't rate limited
@@ -779,7 +781,7 @@ export default function () {
                 delay *= 2; // Exponential backoff
               }
             } catch (e) {
-              console.log(`Wallet creation exception: ${e.message}`);
+              logger.debug(`Wallet creation exception: ${e.message}`);
               retries--;
               if (retries > 0) {
                 sleep(delay);
@@ -796,9 +798,9 @@ export default function () {
           // Try to create a wallet with our improved function
           walletId = createWallet(token);
           if (walletId) {
-            console.log(`Successfully created wallet with ID: ${walletId}`);
+            logger.debug(`Successfully created wallet with ID: ${walletId}`);
           } else {
-            console.log('Failed to create wallet after multiple attempts');
+            logger.debug('Failed to create wallet after multiple attempts');
           }
         }
         
@@ -835,13 +837,13 @@ export default function () {
           successRate.add(success);
           
           if (!success) {
-            console.log(`Transaction creation failed with status ${transactionRes.status}: ${transactionRes.body}`);
+            logger.debug(`Transaction creation failed with status ${transactionRes.status}: ${transactionRes.body}`);
           } else {
-            console.log(`Transaction created successfully with category ${categoryName} and wallet ID ${walletId}`);
+            logger.debug(`Transaction created successfully with category ${categoryName} and wallet ID ${walletId}`);
           }
         }
       } catch (e) {
-        console.log(`Transaction creation request failed: ${e.message}`);
+        logger.debug(`Transaction creation request failed: ${e.message}`);
       }
     });
   }
@@ -861,19 +863,19 @@ export default function () {
       if (walletsRes.status === 200) {
         try {
           const walletsData = JSON.parse(walletsRes.body);
-          console.log('\n!!! WALLET DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Number of wallets: ${Array.isArray(walletsData) ? walletsData.length : 'N/A'}`);
+          logger.debug('\n!!! WALLET DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Number of wallets: ${Array.isArray(walletsData) ? walletsData.length : 'N/A'}`);
           
           if (Array.isArray(walletsData) && walletsData.length > 0) {
-            console.log('First wallet details:');
-            console.log(`  ID: ${walletsData[0]._id || walletsData[0].id || 'N/A'}`);
-            console.log(`  Name: ${walletsData[0].name || 'N/A'}`);
-            console.log(`  Balance: $${walletsData[0].balance || 0}`);
-            console.log(`  Type: ${walletsData[0].type || 'N/A'}`);
+            logger.debug('First wallet details:');
+            logger.debug(`  ID: ${walletsData[0]._id || walletsData[0].id || 'N/A'}`);
+            logger.debug(`  Name: ${walletsData[0].name || 'N/A'}`);
+            logger.debug(`  Balance: $${walletsData[0].balance || 0}`);
+            logger.debug(`  Type: ${walletsData[0].type || 'N/A'}`);
           }
-          console.log('!!! END WALLET DATA !!!\n');
+          logger.debug('!!! END WALLET DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse wallet data: ${e.message}`);
+          logger.debug(`Failed to parse wallet data: ${e.message}`);
         }
       }
     });
@@ -894,19 +896,19 @@ export default function () {
       if (budgetsRes.status === 200) {
         try {
           const budgetsData = JSON.parse(budgetsRes.body);
-          console.log('\n!!! BUDGET DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Number of budgets: ${Array.isArray(budgetsData) ? budgetsData.length : 'N/A'}`);
+          logger.debug('\n!!! BUDGET DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Number of budgets: ${Array.isArray(budgetsData) ? budgetsData.length : 'N/A'}`);
           
           if (Array.isArray(budgetsData) && budgetsData.length > 0) {
-            console.log('First budget details:');
-            console.log(`  ID: ${budgetsData[0]._id || budgetsData[0].id || 'N/A'}`);
-            console.log(`  Name: ${budgetsData[0].name || 'N/A'}`);
-            console.log(`  Amount: $${budgetsData[0].amount || 0}`);
-            console.log(`  Category: ${budgetsData[0].category || 'N/A'}`);
+            logger.debug('First budget details:');
+            logger.debug(`  ID: ${budgetsData[0]._id || budgetsData[0].id || 'N/A'}`);
+            logger.debug(`  Name: ${budgetsData[0].name || 'N/A'}`);
+            logger.debug(`  Amount: $${budgetsData[0].amount || 0}`);
+            logger.debug(`  Category: ${budgetsData[0].category || 'N/A'}`);
           }
-          console.log('!!! END BUDGET DATA !!!\n');
+          logger.debug('!!! END BUDGET DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse budget data: ${e.message}`);
+          logger.debug(`Failed to parse budget data: ${e.message}`);
         }
       }
     });
@@ -929,14 +931,14 @@ export default function () {
       if (dashRes.status === 200) {
         try {
           const dashData = JSON.parse(dashRes.body);
-          console.log('\n!!! DASHBOARD DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Total Balance: ${dashData.totalBalance || 0}`);
-          console.log(`Total Expenses: ${dashData.totalExpenses || 0}`);
-          console.log(`Total Savings: ${dashData.totalSavings || 0}`);
-          console.log(`Expense Change: ${dashData.expenseChange || 0}%`);
-          console.log('!!! END DASHBOARD DATA !!!\n');
+          logger.debug('\n!!! DASHBOARD DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Total Balance: ${dashData.totalBalance || 0}`);
+          logger.debug(`Total Expenses: ${dashData.totalExpenses || 0}`);
+          logger.debug(`Total Savings: ${dashData.totalSavings || 0}`);
+          logger.debug(`Expense Change: ${dashData.expenseChange || 0}%`);
+          logger.debug('!!! END DASHBOARD DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse dashboard data: ${e.message}`);
+          logger.debug(`Failed to parse dashboard data: ${e.message}`);
         }
       }
     });
@@ -969,15 +971,15 @@ export default function () {
       successRate.add(success);
       
       if (!success) {
-        console.log(`AI chat failed with status ${aiRes.status}: ${aiRes.body}`);
+        logger.debug(`AI chat failed with status ${aiRes.status}: ${aiRes.body}`);
       } else {
         try {
           const aiResponse = JSON.parse(aiRes.body);
-          console.log('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-          console.log('!!!!!!!!!!! AI CHAT RESPONSE RECEIVED !!!!!!!!!!!');
-          console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-          console.log(`USER QUERY: 'Give me a quick summary of my finances'`);
-          console.log('----------------------------------------------');
+          logger.debug('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+          logger.debug('!!!!!!!!!!! AI CHAT RESPONSE RECEIVED !!!!!!!!!!!');
+          logger.debug('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+          logger.debug(`USER QUERY: 'Give me a quick summary of my finances'`);
+          logger.debug('----------------------------------------------');
           
           if (aiResponse.response) {
             // Format and display the AI response for better readability
@@ -985,47 +987,47 @@ export default function () {
               .replace(/\n/g, '\n  ') // Indent new lines for better console readability
               .trim();
             
-            console.log(`AI RESPONSE:\n  ${formattedResponse}`);
-            console.log('----------------------------------------------');
+            logger.debug(`AI RESPONSE:\n  ${formattedResponse}`);
+            logger.debug('----------------------------------------------');
             
             // Log performance metrics if available
-            console.log('AI PERFORMANCE METRICS:');
+            logger.debug('AI PERFORMANCE METRICS:');
             
             // If using the optimized process pooling
             if (aiResponse.metrics) {
-              console.log(`  Processing Time: ${aiResponse.metrics.processingTime || 'N/A'}ms`);
-              console.log(`  Context Size: ${aiResponse.metrics.contextSize || 'N/A'} characters`);
-              console.log(`  Response Size: ${aiResponse.metrics.responseSize || 'N/A'} characters`);
+              logger.debug(`  Processing Time: ${aiResponse.metrics.processingTime || 'N/A'}ms`);
+              logger.debug(`  Context Size: ${aiResponse.metrics.contextSize || 'N/A'} characters`);
+              logger.debug(`  Response Size: ${aiResponse.metrics.responseSize || 'N/A'} characters`);
               
               // Additional metrics that might be available with your optimizations
               if (aiResponse.metrics.pythonProcessTime) {
-                console.log(`  Python Process Time: ${aiResponse.metrics.pythonProcessTime}ms`);
+                logger.debug(`  Python Process Time: ${aiResponse.metrics.pythonProcessTime}ms`);
               }
               if (aiResponse.metrics.contextBuildTime) {
-                console.log(`  Context Build Time: ${aiResponse.metrics.contextBuildTime}ms`);
+                logger.debug(`  Context Build Time: ${aiResponse.metrics.contextBuildTime}ms`);
               }
               if (aiResponse.metrics.apiCallTime) {
-                console.log(`  API Call Time: ${aiResponse.metrics.apiCallTime}ms`);
+                logger.debug(`  API Call Time: ${aiResponse.metrics.apiCallTime}ms`);
               }
               if (aiResponse.metrics.processPooling) {
-                console.log(`  Process Pooling: ${aiResponse.metrics.processPooling ? 'Enabled' : 'Disabled'}`);
+                logger.debug(`  Process Pooling: ${aiResponse.metrics.processPooling ? 'Enabled' : 'Disabled'}`);
               }
               if (aiResponse.metrics.pooledProcessId) {
-                console.log(`  Pooled Process ID: ${aiResponse.metrics.pooledProcessId}`);
+                logger.debug(`  Pooled Process ID: ${aiResponse.metrics.pooledProcessId}`);
               }
             } else {
-              console.log('  No detailed metrics available');
+              logger.debug('  No detailed metrics available');
             }
             
             // Log response timing from k6
-            console.log(`  Total Request Duration: ${aiRes.timings.duration.toFixed(2)}ms`);
-            console.log(`  Time to First Byte: ${aiRes.timings.receiving.toFixed(2)}ms`);
+            logger.debug(`  Total Request Duration: ${aiRes.timings.duration.toFixed(2)}ms`);
+            logger.debug(`  Time to First Byte: ${aiRes.timings.receiving.toFixed(2)}ms`);
           } else {
-            console.log('AI chat successful but no response content found');
+            logger.debug('AI chat successful but no response content found');
           }
-          console.log('==============================================\n');
+          logger.debug('==============================================\n');
         } catch (e) {
-          console.log('AI chat successful but could not parse response');
+          logger.debug('AI chat successful but could not parse response');
         }
       }
       successRate.add(aiRes.status === 200);

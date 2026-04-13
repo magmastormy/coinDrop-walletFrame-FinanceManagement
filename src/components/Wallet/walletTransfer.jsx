@@ -4,6 +4,7 @@ import { X, ArrowLeftRight, ArrowRight, Wallet as WalletIcon, DollarSign } from 
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
+import ModalContainer from '../ui/ModalContainer';
 
 const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) => {
     const [formData, setFormData] = useState({
@@ -60,7 +61,8 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
         if (!amount || isNaN(amount) || amount <= 0) {
             throw new Error('Please enter a valid amount');
         }
-        if (parseFloat(amount) > sourceWallet.balance) {
+        const parsedAmount = parseFloat(amount) || 0;
+        if (parsedAmount > sourceWallet.balance) {
             throw new Error(`Insufficient funds (max ${formatBalance(sourceWallet.balance)})`);
         }
     };
@@ -80,7 +82,7 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
             await onTransfer(
                 formData.fromWalletId, 
                 formData.toWalletId, 
-                parseFloat(formData.amount)
+                parseFloat(formData.amount) || 0
             );
             handleClose();
         } catch (error) {
@@ -101,36 +103,29 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <motion.div 
-                className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-            >
-                {/* Header */}
-                <div className="border-b border-gray-200 p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <ArrowLeftRight className="w-5 h-5 text-blue-600" />
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            Transfer Funds
-                        </h2>
-                    </div>
-                    <button 
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-500"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <ModalContainer size="md">
+          {/* Header */}
+          <div className="border-b border-gray-200 p-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                  <ArrowLeftRight className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold text-on-surface">
+                      Transfer Funds
+                  </h2>
+              </div>
+              <button 
+                  onClick={handleClose}
+                  className="text-muted-foreground hover:text-on-surface"
+              >
+                  <X className="w-5 h-5" />
+              </button>
+          </div>
 
-                {/* Form */}
-                <div className="p-6">
+          {/* Form */}
+          <div className="p-6">
                     <AnimatePresence>
                         {error && (
                             <motion.div
-                                className="mb-4 bg-red-50 text-red-600 p-3 rounded-md text-sm"
+                                className="mb-4 bg-error/10 text-error p-3 rounded-md text-sm"
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
@@ -143,11 +138,11 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Source Wallet */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-on-surface mb-1">
                                 From Wallet
                             </label>
                             <div className="relative">
-                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Select
                                     name="fromWalletId"
                                     value={formData.fromWalletId}
@@ -164,16 +159,16 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
 
                         {/* Arrow Animation */}
                         <div className="flex justify-center py-2">
-                            <ArrowRight className="w-5 h-5 text-gray-400" />
+                            <ArrowRight className="w-5 h-5 text-muted-foreground" />
                         </div>
 
                         {/* Destination Wallet */}
                         <div>
-<label htmlFor="toWalletId" className="block text-sm font-medium text-gray-700 mb-1">
+<label htmlFor="toWalletId" className="block text-sm font-medium text-on-surface mb-1">
     To Wallet
 </label>
                             <div className="relative">
-                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <WalletIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Select
                                     name="toWalletId"
                                     value={formData.toWalletId}
@@ -196,11 +191,11 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
 
                         {/* Amount */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-on-surface mb-1">
                                 Amount
                             </label>
                             <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="number"
                                     name="amount"
@@ -213,7 +208,7 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
                                     className="pl-10"
                                 />
                             </div>
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                                 Available: {formatBalance(sourceWallet.balance)}
                             </p>
                         </div>
@@ -222,13 +217,13 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
                         <AnimatePresence>
                             {showConfirmation && (
                                 <motion.div
-                                    className="bg-blue-50 border border-blue-100 rounded-md p-3"
+                                    className="bg-primary/10 border border-primary/20 rounded-md p-3"
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                 >
-                                    <h3 className="font-medium text-gray-900 mb-1">Confirm Transfer</h3>
-                                    <p className="text-sm text-gray-600">
+                                    <h3 className="font-medium text-on-surface mb-1">Confirm Transfer</h3>
+                                    <p className="text-sm text-muted-foreground">
                                         Transfer {formatBalance(formData.amount)} from {sourceWallet.name} to {getDestinationWallet()?.name}
                                     </p>
                                 </motion.div>
@@ -256,8 +251,7 @@ const WalletTransfer = ({ isOpen, sourceWallet, wallets, onClose, onTransfer }) 
                         </div>
                     </form>
                 </div>
-            </motion.div>
-        </div>
+        </ModalContainer>
     );
 };
 

@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import zhipuaiModelService from './zhipuaiModelService';
 import aiResponseCache from '../utils/aiResponseCache';
 
@@ -83,7 +85,7 @@ class AIServiceCircuitBreaker {
             if (userState.successCount >= SUCCESS_THRESHOLD) {
                 userState.state = CircuitState.CLOSED;
                 userState.successCount = 0;
-                if (isDev) console.log(`[Circuit Breaker] User ${userId}: Circuit CLOSED`);
+                if (isDev) logInfo(`[Circuit Breaker] User ${userId}: Circuit CLOSED`);
             }
         }
 
@@ -99,7 +101,7 @@ class AIServiceCircuitBreaker {
         if (userState.state === CircuitState.HALF_OPEN || userState.failureCount >= FAILURE_THRESHOLD) {
             userState.state = CircuitState.OPEN;
             userState.nextAttempt = Date.now() + TIMEOUT;
-            if (isDev) console.log(`[Circuit Breaker] User ${userId}: Circuit OPEN`);
+            if (isDev) logInfo(`[Circuit Breaker] User ${userId}: Circuit OPEN`);
         }
 
         throw error;
@@ -160,11 +162,11 @@ const aiServiceWrapper = {
         // Check cache first
         const cached = aiResponseCache.get(userId, 'userContext');
         if (cached) {
-            if (isDev) console.log('[AI Service] Cache HIT: userContext');
+            if (isDev) logInfo('[AI Service] Cache HIT: userContext');
             return cached;
         }
 
-        if (isDev) console.log('[AI Service] Cache MISS: userContext');
+        if (isDev) logInfo('[AI Service] Cache MISS: userContext');
         const result = await circuitBreaker.execute(
             userId,
             () => zhipuaiModelService.getUserContext(userId),
@@ -184,11 +186,11 @@ const aiServiceWrapper = {
 
         const cached = aiResponseCache.get(userId, 'contextSuggestions');
         if (cached) {
-            if (isDev) console.log('[AI Service] Cache HIT: contextSuggestions');
+            if (isDev) logInfo('[AI Service] Cache HIT: contextSuggestions');
             return cached;
         }
 
-        if (isDev) console.log('[AI Service] Cache MISS: contextSuggestions');
+        if (isDev) logInfo('[AI Service] Cache MISS: contextSuggestions');
         const result = await circuitBreaker.execute(
             userId,
             () => zhipuaiModelService.getContextSuggestions(userId),
@@ -207,11 +209,11 @@ const aiServiceWrapper = {
 
         const cached = aiResponseCache.get(userId, 'accountInfo');
         if (cached) {
-            if (isDev) console.log('[AI Service] Cache HIT: accountInfo');
+            if (isDev) logInfo('[AI Service] Cache HIT: accountInfo');
             return cached;
         }
 
-        if (isDev) console.log('[AI Service] Cache MISS: accountInfo');
+        if (isDev) logInfo('[AI Service] Cache MISS: accountInfo');
         const result = await circuitBreaker.execute(
             userId,
             () => zhipuaiModelService.getUserAccountInfo(userId),
@@ -230,11 +232,11 @@ const aiServiceWrapper = {
 
         const cached = aiResponseCache.get(userId, 'proactiveInsights');
         if (cached) {
-            if (isDev) console.log('[AI Service] Cache HIT: proactiveInsights');
+            if (isDev) logInfo('[AI Service] Cache HIT: proactiveInsights');
             return cached;
         }
 
-        if (isDev) console.log('[AI Service] Cache MISS: proactiveInsights');
+        if (isDev) logInfo('[AI Service] Cache MISS: proactiveInsights');
         const result = await circuitBreaker.execute(
             userId,
             () => zhipuaiModelService.getProactiveInsights(userId),

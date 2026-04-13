@@ -1,15 +1,17 @@
+const logger = require('../utils/logger');
+
 const mongoose = require('mongoose');
 const Wallet = require('../models/Wallet');
 const isDev = process.env.NODE_ENV !== 'production';
 
 const analyzeUserActivity = async (transactions, budgets) => {
     try {
-        if (isDev) console.log(`analyzeUserActivity: Analyzing ${transactions.length} transactions and ${budgets.length} budgets`);
+        if (isDev) logger.debug(`analyzeUserActivity: Analyzing ${transactions.length} transactions and ${budgets.length} budgets`);
         
         const insights = [];
         
         if (!transactions || transactions.length === 0) {
-            if (isDev) console.log('analyzeUserActivity: No transactions to analyze');
+            if (isDev) logger.debug('analyzeUserActivity: No transactions to analyze');
             insights.push("We don't have enough transaction data to provide insights yet. Try adding some transactions.");
             return insights;
         }
@@ -18,7 +20,7 @@ const analyzeUserActivity = async (transactions, budgets) => {
         const categorySpending = {};
         const expenseTransactions = transactions.filter(t => t.type === 'expense');
         
-        if (isDev) console.log(`analyzeUserActivity: Found ${expenseTransactions.length} expense transactions`);
+        if (isDev) logger.debug(`analyzeUserActivity: Found ${expenseTransactions.length} expense transactions`);
         
         // Group by category
         expenseTransactions.forEach(t => {
@@ -75,7 +77,7 @@ const analyzeUserActivity = async (transactions, budgets) => {
                 const txDate = new Date(t.date);
                 return txDate >= last24Hours;
             } catch (e) {
-                console.error(`Error parsing date ${t.date}:`, e);
+                logger.error(`Error parsing date ${t.date}:`, e);
                 return false;
             }
         });
@@ -116,10 +118,10 @@ const analyzeUserActivity = async (transactions, budgets) => {
             }
         }
         
-        if (isDev) console.log(`analyzeUserActivity: Generated ${insights.length} insights`);
+        if (isDev) logger.debug(`analyzeUserActivity: Generated ${insights.length} insights`);
         return insights;
     } catch (error) {
-        console.error('Error in analyzeUserActivity:', error);
+        logger.error('Error in analyzeUserActivity:', error);
         return ["We encountered an error analyzing your financial data. Please try again later."];
     }
 };

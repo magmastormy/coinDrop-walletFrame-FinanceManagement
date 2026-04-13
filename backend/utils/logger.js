@@ -81,7 +81,7 @@ const logger = winston.createLogger({
         new winston.transports.File({
             filename: path.join(__dirname, '../../logs/exceptions.log'),
             maxsize: 5242880, // 5MB
-            maxFiles: 5
+            maxFiles: 5,
         }),
         ...(process.env.NODE_ENV === 'production' ? [
             new (require('winston-cloudwatch'))({
@@ -97,7 +97,7 @@ const logger = winston.createLogger({
         new winston.transports.File({
             filename: path.join(__dirname, '../../logs/rejections.log'),
             maxsize: 5242880, // 5MB
-            maxFiles: 5
+            maxFiles: 5,
         }),
         ...(process.env.NODE_ENV === 'production' ? [
             new (require('winston-cloudwatch'))({

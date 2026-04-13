@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/authContext';
 import ChatContainer from './chatContainer';
@@ -33,7 +35,7 @@ const ChatbotManager = () => {
                 initialFetchDone.current = true;
                 // getContextSuggestions now requires userId parameter
                 const suggestions = await aiServiceWrapper.getContextSuggestions(user.id);
-                if (isDev) console.log('[ChatbotManager] Initial suggestions (cached)');
+                if (isDev) logInfo('[ChatbotManager] Initial suggestions (cached)');
                 setContextSuggestions(suggestions);
 
                 // Show welcome message with suggestion if available
@@ -136,8 +138,8 @@ const ChatbotManager = () => {
 
             // Debug: Log the actual response structure
             if (isDev) {
-                console.log('[ChatbotManager] Raw response:', chatResponse);
-                console.log('[ChatbotManager] Response data:', chatResponse?.data);
+                logInfo('[ChatbotManager] Raw response:', chatResponse);
+                logInfo('[ChatbotManager] Response data:', chatResponse?.data);
             }
 
             // Extract response from axios response structure
@@ -152,7 +154,7 @@ const ChatbotManager = () => {
                 '';
 
             if (isDev) {
-                console.log('[ChatbotManager] Extracted response:', response);
+                logInfo('[ChatbotManager] Extracted response:', response);
             }
 
             const botResponse = {
@@ -190,7 +192,7 @@ const ChatbotManager = () => {
             setMessages(prev => prev.filter((_, i) => i !== index));
         } else if (action === 'view-details') {
             // Could open a modal or navigate to detailed view
-            if (isDev) console.log('[ChatbotManager] View details:', data);
+            if (isDev) logInfo('[ChatbotManager] View details:', data);
         }
     }, []);
 

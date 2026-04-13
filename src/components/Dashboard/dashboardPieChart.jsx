@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Loader2, PieChart } from 'lucide-react';
@@ -48,7 +50,7 @@ const DashboardPieChart = () => {
                         setCategoryData(sortedCategories);
                     }
                 } catch (error) {
-                    console.error('Error fetching data:', error);
+                    logError('Error fetching data:', error);
                     setCategoryData([]);
                 } finally {
                     setLoading(false);

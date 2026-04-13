@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -43,12 +45,12 @@ const DashboardStats = () => {
 
                 const monthTx = transactions.filter(t => {
                     const d = new Date(t.date);
-                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                    return d && !isNaN(d.getTime()) && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 });
 
                 const prevMonthTx = transactions.filter(t => {
                     const d = new Date(t.date);
-                    return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+                    return d && !isNaN(d.getTime()) && d.getMonth() === prevMonth && d.getFullYear() === prevYear;
                 });
 
                 const monthlySpend = monthTx
@@ -85,7 +87,7 @@ const DashboardStats = () => {
                     prevSavingsRate: Math.max(0, prevSavingsRate)
                 });
             } catch (error) {
-                console.error('Error fetching stats:', error);
+                logError('Error fetching stats:', error);
             }
         };
         fetchStats();
@@ -166,10 +168,10 @@ const DashboardStats = () => {
                 <div className="absolute -right-12 -top-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
                 <div className="z-10">
                     <p className="text-on-tertiary-container text-sm font-semibold tracking-wider uppercase">Total Balance</p>
-                    <h2 className="text-6xl font-extrabold font-headline mt-2 text-primary">${stats.totalBalance.toFixed(2).split('.')[0]}<span className="text-3xl font-medium opacity-50">.{stats.totalBalance.toFixed(2).split('.')[1]}</span></h2>
+                    <h2 className="text-6xl font-extrabold font-headline mt-2 text-primary">${stats.totalBalance.toFixed(2).split('.')[0]}<span className="text-3xl font-medium opacity-50">.{(stats.totalBalance.toFixed(2).split('.')[1] || '00')}</span></h2>
                     <div className="flex items-center mt-4 text-secondary space-x-1">
                         <span className="material-symbols-outlined text-sm">trending_up</span>
-                        <span className="text-sm font-bold">{formatPercent(((stats.monthlyIncome - stats.monthlySpend) - (stats.prevMonthlyIncome - stats.prevMonthlySpend)) / Math.abs(stats.prevMonthlyIncome - stats.prevMonthlySpend) * 100)} from last month</span>
+                        <span className="text-sm font-bold">{formatPercent(Math.abs(stats.prevMonthlyIncome - stats.prevMonthlySpend) > 0.01 ? ((stats.monthlyIncome - stats.monthlySpend) - (stats.prevMonthlyIncome - stats.prevMonthlySpend)) / Math.abs(stats.prevMonthlyIncome - stats.prevMonthlySpend) * 100 : 0)} from last month</span>
                     </div>
                 </div>
                 <div className="mt-8 flex space-x-4 z-10">
@@ -184,11 +186,11 @@ const DashboardStats = () => {
                 <div className="flex items-baseline space-x-2">
                     <h3 className="text-2xl font-bold font-headline text-on-surface">${stats.monthlyIncome.toFixed(0)}</h3>
                     <span className={`text-${stats.monthlyIncome >= stats.prevMonthlyIncome ? 'secondary' : 'error'} text-xs font-bold`}>
-                        {stats.monthlyIncome >= stats.prevMonthlyIncome ? '+' : ''}{formatPercent((stats.monthlyIncome - stats.prevMonthlyIncome) / Math.abs(stats.prevMonthlyIncome) * 100)}
+                        {stats.monthlyIncome >= stats.prevMonthlyIncome ? '+' : ''}{formatPercent(Math.abs(stats.prevMonthlyIncome) > 0 ? (stats.monthlyIncome - stats.prevMonthlyIncome) / Math.abs(stats.prevMonthlyIncome) * 100 : 0)}
                     </span>
                 </div>
                 <div className="w-full bg-surface-container-low h-1.5 rounded-full mt-4">
-                    <div className="bg-secondary h-full rounded-full" style={{ width: `${Math.min(100, (stats.monthlyIncome / (stats.monthlyIncome + stats.monthlySpend)) * 100}%` }}></div>
+                    <div className="bg-secondary h-full rounded-full" style={{ width: Math.min(100, (stats.monthlyIncome + stats.monthlySpend) > 0 ? (stats.monthlyIncome / (stats.monthlyIncome + stats.monthlySpend)) * 100 : 0) + '%' }}></div>
                 </div>
             </div>
             <div className="glass-card rounded-xl p-6 flex flex-col justify-center space-y-2 border-l-4 border-error/30">
@@ -196,11 +198,11 @@ const DashboardStats = () => {
                 <div className="flex items-baseline space-x-2">
                     <h3 className="text-2xl font-bold font-headline text-on-surface">${stats.monthlySpend.toFixed(0)}</h3>
                     <span className={`text-${stats.monthlySpend <= stats.prevMonthlySpend ? 'secondary' : 'error'} text-xs font-bold`}>
-                        {stats.monthlySpend <= stats.prevMonthlySpend ? '-' : '+'}{formatPercent((stats.monthlySpend - stats.prevMonthlySpend) / Math.abs(stats.prevMonthlySpend) * 100)}
+                        {stats.monthlySpend <= stats.prevMonthlySpend ? '-' : '+'}{formatPercent(Math.abs(stats.prevMonthlySpend) > 0 ? (stats.monthlySpend - stats.prevMonthlySpend) / Math.abs(stats.prevMonthlySpend) * 100 : 0)}
                     </span>
                 </div>
                 <div className="w-full bg-surface-container-low h-1.5 rounded-full mt-4">
-                    <div className="bg-error h-full rounded-full" style={{ width: `${Math.min(100, (stats.monthlySpend / (stats.monthlyIncome + stats.monthlySpend)) * 100}%` }}></div>
+                    <div className="bg-error h-full rounded-full" style={{ width: Math.min(100, (stats.monthlyIncome + stats.monthlySpend) > 0 ? (stats.monthlySpend / (stats.monthlyIncome + stats.monthlySpend)) * 100 : 0) + '%' }}></div>
                 </div>
             </div>
         </>

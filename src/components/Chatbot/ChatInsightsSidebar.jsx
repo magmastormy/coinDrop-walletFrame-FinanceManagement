@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/authContext';
 import aiServiceWrapper from '../../services/aiServiceWrapper';
@@ -62,7 +64,7 @@ const ChatInsightsSidebar = () => {
             });
         } catch (err) {
             setError('Failed to load insights');
-            console.error('Error fetching insights:', err);
+            logError('Error fetching insights:', err);
         } finally {
             setLoading(false);
         }
@@ -76,13 +78,13 @@ const ChatInsightsSidebar = () => {
     // Handle link new institution
     const handleLinkNewInstitution = () => {
         // This would typically open a modal or redirect to account linking flow
-        console.log('Linking new institution...');
+        logInfo('Linking new institution...');
         // Implementation would connect to account aggregation service
     };
 
     // Handle account click
     const handleAccountClick = (account) => {
-        console.log('Account clicked:', account);
+        logInfo('Account clicked:', account);
         // Could open account details modal or navigate to account page
     };
 

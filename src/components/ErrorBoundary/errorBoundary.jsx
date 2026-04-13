@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React from 'react';
 
 const isDev = import.meta.env.DEV;
@@ -22,7 +24,7 @@ class ErrorBoundary extends React.Component {
             errorInfo: errorInfo
         });
         // Log error to your error tracking service
-        console.error('Error caught by boundary:', error, errorInfo);
+        logError('Error caught by boundary:', error, errorInfo);
     }
 
     render() {

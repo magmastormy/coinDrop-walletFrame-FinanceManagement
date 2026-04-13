@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/zhipuai';
@@ -17,16 +19,16 @@ const zhipuaiModelService = {
      */
     async sendMessage(messages, userId) {
         try {
-            if (isDev) console.log('[ZhipuAI] Sending message for user:', userId);
+            if (isDev) logInfo('[ZhipuAI] Sending message for user:', userId);
 
             const response = await axiosInstance.post(`${API_URL}/send`, {
                 messages
             });
 
-            if (isDev) console.log('[ZhipuAI] Response received');
+            if (isDev) logInfo('[ZhipuAI] Response received');
             return response;
         } catch (error) {
-            console.error('[ZhipuAI] Error sending message:', error.message);
+            logError('[ZhipuAI] Error sending message:', error.message);
             throw error;
         }
     },
@@ -38,14 +40,14 @@ const zhipuaiModelService = {
      */
     async getUserContext(userId) {
         try {
-            if (isDev) console.log('[ZhipuAI] Fetching context for user:', userId);
+            if (isDev) logInfo('[ZhipuAI] Fetching context for user:', userId);
 
             const response = await axiosInstance.get(`${API_URL}/user-context`);
 
-            if (isDev) console.log('[ZhipuAI] Context received');
+            if (isDev) logInfo('[ZhipuAI] Context received');
             return response;
         } catch (error) {
-            console.error('[ZhipuAI] Error fetching context:', error.message);
+            logError('[ZhipuAI] Error fetching context:', error.message);
             throw error;
         }
     },
@@ -57,12 +59,12 @@ const zhipuaiModelService = {
      */
     async getContextSuggestions(userId) {
         try {
-            if (isDev) console.log('[ZhipuAI] Fetching suggestions for user:', userId);
+            if (isDev) logInfo('[ZhipuAI] Fetching suggestions for user:', userId);
 
             const response = await axiosInstance.get(`${API_URL}/context-suggestions`);
             return response.suggestions || response;
         } catch (error) {
-            console.error('[ZhipuAI] Error fetching suggestions:', error.message);
+            logError('[ZhipuAI] Error fetching suggestions:', error.message);
             throw error;
         }
     },
@@ -74,12 +76,12 @@ const zhipuaiModelService = {
      */
     async getUserAccountInfo(userId) {
         try {
-            if (isDev) console.log('[ZhipuAI] Fetching account info for user:', userId);
+            if (isDev) logInfo('[ZhipuAI] Fetching account info for user:', userId);
 
             const response = await axiosInstance.get(`${API_URL}/user-account-info`);
             return response.context || response;
         } catch (error) {
-            console.error('[ZhipuAI] Error fetching account info:', error.message);
+            logError('[ZhipuAI] Error fetching account info:', error.message);
             throw error;
         }
     },
@@ -91,12 +93,12 @@ const zhipuaiModelService = {
      */
     async getProactiveInsights(userId) {
         try {
-            if (isDev) console.log('[ZhipuAI] Fetching insights for user:', userId);
+            if (isDev) logInfo('[ZhipuAI] Fetching insights for user:', userId);
 
             const response = await axiosInstance.get(`${API_URL}/proactive-insights`);
             return response.insights || response;
         } catch (error) {
-            console.error('[ZhipuAI] Error fetching insights:', error.message);
+            logError('[ZhipuAI] Error fetching insights:', error.message);
             throw error;
         }
     }

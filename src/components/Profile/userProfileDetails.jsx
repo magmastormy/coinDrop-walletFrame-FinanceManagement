@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Edit, Save, Loader2 } from 'lucide-react';
@@ -68,7 +70,7 @@ const UserProfileDetails = () => {
             try {
                 dispatch(fetchProfileStart());
                 const profileData = await profileService.getUserProfile(user.id);
-                console.log('[Profile] Profile data:', profileData);
+                logInfo('[Profile] Profile data:', profileData);
 
                 if (profileData.profile) {
                     dispatch(fetchProfileSuccess(profileData.profile));
@@ -139,7 +141,7 @@ const UserProfileDetails = () => {
                 throw new Error(`Invalid interests: ${invalidInterests.join(', ')}`);
             }
 
-            console.log('[userProfileDetails] Submitting form data:', profileData);
+            logInfo('[userProfileDetails] Submitting form data:', profileData);
             if (!profile) {
                 dispatch(createProfileStart());
                 const result = await profileService.createUserProfile(profileData);
@@ -151,7 +153,7 @@ const UserProfileDetails = () => {
             }
             setIsEditing(false);
         } catch (err) {
-            console.error('[userProfileDetails] Profile operation error:', err);
+            logError('[userProfileDetails] Profile operation error:', err);
             const action = profile ? updateProfileFailure : createProfileFailure;
             dispatch(action(err.message || 'Operation failed. Please try again.'));
         }
@@ -159,9 +161,9 @@ const UserProfileDetails = () => {
 
     const handleProfileImageUpload = async (file) => {
         try {
-            console.log('[UserProfileDetails] Starting image upload:', file);
+            logInfo('[UserProfileDetails] Starting image upload:', file);
             const result = await profileService.uploadProfileImage(file);
-            console.log('[UserProfileDetails] Upload Image result:', result);
+            logInfo('[UserProfileDetails] Upload Image result:', result);
 
             // Check if we have a result with a URL
             if (result && result.url) {
@@ -188,7 +190,7 @@ const UserProfileDetails = () => {
                 throw new Error('Image upload failed. Please try again.');
             }
         } catch (error) {
-            console.error('[UserProfileDetails] Image upload error:', error);
+            logError('[UserProfileDetails] Image upload error:', error);
             const errorMessage = error.response?.data?.error || error.message || 'An unknown error occurred';
             dispatch(updateProfileFailure(errorMessage));
         }

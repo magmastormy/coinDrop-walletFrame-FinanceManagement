@@ -4,6 +4,17 @@
  */
 const logger = require('./logger');
 const metricsCollector = require('./metricsCollector');
+const {
+    AppError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    RateLimitError,
+    InternalServerError,
+    DatabaseError
+} = require('./errorClasses');
 
 // Standard error codes
 const ERROR_CODES = {
@@ -24,33 +35,76 @@ const ERROR_CODES = {
     AI_SERVICE_ERROR: 'AI_SERVICE_ERROR',
     DATABASE_ERROR: 'DATABASE_ERROR',
     EXTERNAL_API_ERROR: 'EXTERNAL_API_ERROR',
-    CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN'
+    CIRCUIT_BREAKER_OPEN: 'CIRCUIT_BREAKER_OPEN',
+    CONFLICT: 'CONFLICT',
+    AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+    AUTHORIZATION_ERROR: 'AUTHORIZATION_ERROR',
+    RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
+    INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR'
 };
 
 /**
- * Application error class
+ * Handle JWT Error
+ * Converts JWT errors to AuthenticationError
+ * @param {Error} err - JWT error
+ * @returns {AuthenticationError} AuthenticationError instance
  */
-class AppError extends Error {
-    /**
-     * Create a new application error
-     * @param {string} message - Error message
-     * @param {number} statusCode - HTTP status code
-     * @param {string} errorCode - Error code
-     * @param {boolean} isOperational - Whether the error is operational
-     * @param {Object} metadata - Additional metadata
-     */
-    constructor(message, statusCode = 500, errorCode = ERROR_CODES.SERVER_ERROR, isOperational = true, metadata = {}) {
-        super(message);
-        this.statusCode = statusCode;
-        this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-        this.errorCode = errorCode;
-        this.isOperational = isOperational;
-        this.timestamp = new Date().toISOString();
-        this.metadata = metadata;
+function handleJWTError(err) {
+    const message = err.message || 'Invalid token. Please log in again!';
+    return new AuthenticationError(message);
+}
 
-        // Capture stack trace
-        Error.captureStackTrace(this, this.constructor);
-    }
+/**
+ * Handle JWT Expired Error
+ * Converts JWT expired errors to AuthenticationError
+ * @returns {AuthenticationError} AuthenticationError instance
+ */
+function handleJWTExpiredError() {
+    return new AuthenticationError('Your token has expired! Please log in again.');
+}
+
+/**
+ * Handle Validation Error
+ * Converts Mongoose validation errors to ValidationError
+ * @param {Error} err - Mongoose validation error
+ * @returns {ValidationError} ValidationError instance
+ */
+function handleValidationError(err) {
+    const errors = Object.values(err.errors).map(el => ({
+        field: el.path,
+        message: el.message,
+        value: el.value
+    }));
+    const message = `Invalid input data. ${errors.map(e => e.message).join('. ')}`;
+    return new ValidationError(message, errors);
+}
+
+/**
+ * Handle Cast Error
+ * Converts Mongoose cast errors (invalid ObjectId, etc.) to ValidationError
+ * @param {Error} err - Mongoose cast error
+ * @returns {ValidationError} ValidationError instance
+ */
+function handleCastError(err) {
+    const message = `Invalid ${err.path}: ${err.value}.`;
+    const details = [{
+        field: err.path,
+        message: `Invalid value for ${err.path}`,
+        value: err.value
+    }];
+    return new ValidationError(message, details);
+}
+
+/**
+ * Handle Duplicate Fields Error
+ * Converts MongoDB duplicate key errors to ConflictError
+ * @param {Error} err - MongoDB duplicate key error
+ * @returns {ConflictError} ConflictError instance
+ */
+function handleDuplicateFieldsError(err) {
+    const value = err.message.match(/(["'])(\?.)*?\1/)?.[0] || 'value';
+    const message = `Duplicate field value: ${value}. Please use another value!`;
+    return new ConflictError(message);
 }
 
 /**
@@ -66,6 +120,24 @@ class ErrorHandler {
      * @returns {void}
      */
     static handleError(err, req, res, next) {
+        // Convert known error types to our error classes
+        let error = err;
+
+        if (err.name === 'ValidationError') {
+            error = handleValidationError(err);
+        } else if (err.name === 'CastError') {
+            error = handleCastError(err);
+        } else if (err.code === 11000) {
+            error = handleDuplicateFieldsError(err);
+        } else if (err.name === 'JsonWebTokenError') {
+            error = handleJWTError(err);
+        } else if (err.name === 'TokenExpiredError') {
+            error = handleJWTExpiredError();
+        } else if (!(err instanceof AppError)) {
+            // Wrap unknown errors as internal server errors
+            error = new InternalServerError(err.message || 'Something went wrong');
+        }
+
         // Create structured error log
         const errorLog = {
             method: req.method,
@@ -74,11 +146,10 @@ class ErrorHandler {
             params: req.params,
             requestId: req.requestId,
             userId: req.user?.userId || req.authUserId,
-            statusCode: err.statusCode || 500,
-            errorCode: err.errorCode || ERROR_CODES.SERVER_ERROR,
-            message: err.message,
-            stack: err.stack,
-            metadata: err.metadata || {},
+            statusCode: error.statusCode || 500,
+            errorCode: error.code || ERROR_CODES.SERVER_ERROR,
+            message: error.message,
+            stack: error.stack,
             timestamp: new Date().toISOString()
         };
 
@@ -95,33 +166,35 @@ class ErrorHandler {
         }
 
         // Log the error
-        if (err.statusCode >= 500) {
+        if (error.statusCode >= 500) {
             logger.error('Server Error', errorLog);
-            metricsCollector.incrementCounter('server_errors_total', 1, { errorCode: err.errorCode });
-        } else if (err.statusCode >= 400) {
+            metricsCollector.incrementCounter('server_errors_total', 1, { errorCode: error.code });
+        } else if (error.statusCode >= 400) {
             logger.warn('Client Error', errorLog);
-            metricsCollector.incrementCounter('client_errors_total', 1, { errorCode: err.errorCode });
+            metricsCollector.incrementCounter('client_errors_total', 1, { errorCode: error.code });
         }
 
-        // Determine error response
-        const statusCode = err.statusCode || 500;
+        // Build error response with standardized format
         const errorResponse = {
             success: false,
-            status: err.status || 'error',
-            message: err.message || 'Internal Server Error',
-            errorCode: err.errorCode || ERROR_CODES.SERVER_ERROR,
-            timestamp: err.timestamp || new Date().toISOString(),
-            requestId: req.requestId,
-            ...(process.env.NODE_ENV === 'development' && { 
-                stack: err.stack,
-                path: req.path,
-                method: req.method,
-                metadata: err.metadata
-            })
+            error: {
+                code: error.code || ERROR_CODES.SERVER_ERROR,
+                message: error.message || 'Internal Server Error',
+                details: error.details || null
+            }
         };
 
+        // Add additional metadata in development
+        if (process.env.NODE_ENV === 'development') {
+            errorResponse.error.stack = error.stack;
+            errorResponse.error.path = req.path;
+            errorResponse.error.method = req.method;
+            errorResponse.error.timestamp = error.timestamp || new Date().toISOString();
+            errorResponse.error.requestId = req.requestId;
+        }
+
         // Send error response
-        res.status(statusCode).json(errorResponse);
+        res.status(error.statusCode || 500).json(errorResponse);
     }
 
     /**
@@ -132,57 +205,54 @@ class ErrorHandler {
      * @param {boolean} isOperational - Whether the error is operational
      * @param {Object} metadata - Additional metadata
      * @returns {AppError} AppError instance
+     * @deprecated Use error classes from errorClasses.js directly
      */
     static createError(message, statusCode = 500, errorCode = ERROR_CODES.SERVER_ERROR, isOperational = true, metadata = {}) {
         return new AppError(message, statusCode, errorCode, isOperational, metadata);
     }
 
     /**
-     * Handle validation error
+     * Handle validation error (static method)
      * @param {Error} err - Mongoose validation error
-     * @returns {AppError} AppError instance
+     * @returns {ValidationError} ValidationError instance
      */
     static handleValidationError(err) {
-        const errors = Object.values(err.errors).map(el => el.message);
-        const message = `Invalid input data. ${errors.join('. ')}`;
-        return new AppError(message, 400, ERROR_CODES.VALIDATION_ERROR);
+        return handleValidationError(err);
     }
 
     /**
      * Handle duplicate key error
      * @param {Error} err - MongoDB duplicate key error
-     * @returns {AppError} AppError instance
+     * @returns {ConflictError} ConflictError instance
      */
     static handleDuplicateKeyError(err) {
-        const value = err.message.match(/(["'])(\\?.)*?\1/)[0];
-        const message = `Duplicate field value: ${value}. Please use another value!`;
-        return new AppError(message, 400, ERROR_CODES.DUPLICATE_KEY);
+        return handleDuplicateFieldsError(err);
     }
 
     /**
      * Handle cast error
      * @param {Error} err - Mongoose cast error
-     * @returns {AppError} AppError instance
+     * @returns {ValidationError} ValidationError instance
      */
     static handleCastError(err) {
-        const message = `Invalid ${err.path}: ${err.value}.`;
-        return new AppError(message, 400, ERROR_CODES.CAST_ERROR);
+        return handleCastError(err);
     }
 
     /**
      * Handle JWT error
-     * @returns {AppError} AppError instance
+     * @param {Error} err - JWT error
+     * @returns {AuthenticationError} AuthenticationError instance
      */
-    static handleJWTError() {
-        return new AppError('Invalid token. Please log in again!', 401, ERROR_CODES.JWT_ERROR);
+    static handleJWTError(err) {
+        return handleJWTError(err);
     }
 
     /**
      * Handle JWT expired error
-     * @returns {AppError} AppError instance
+     * @returns {AuthenticationError} AuthenticationError instance
      */
     static handleJWTExpiredError() {
-        return new AppError('Your token has expired! Please log in again.', 401, ERROR_CODES.JWT_EXPIRED);
+        return handleJWTExpiredError();
     }
 
     /**
@@ -248,15 +318,12 @@ class ErrorHandler {
     /**
      * Handle database error
      * @param {Error} err - Database error
-     * @returns {AppError} AppError instance
+     * @returns {DatabaseError} DatabaseError instance
      */
     static handleDatabaseError(err) {
-        return new AppError(
-            'Database error',
-            503,
-            ERROR_CODES.DATABASE_ERROR,
-            true,
-            { error: err.message }
+        return new DatabaseError(
+            err.message || 'Database error',
+            err.operation
         );
     }
 
@@ -281,10 +348,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {ValidationError} ValidationError instance
      */
     static badRequest(message, errorCode = ERROR_CODES.BAD_REQUEST, metadata = {}) {
-        return new AppError(message, 400, errorCode, true, metadata);
+        const error = new ValidationError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -292,10 +362,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {AuthenticationError} AuthenticationError instance
      */
     static unauthorized(message = 'Unauthorized access', errorCode = ERROR_CODES.UNAUTHORIZED, metadata = {}) {
-        return new AppError(message, 401, errorCode, true, metadata);
+        const error = new AuthenticationError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -303,10 +376,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {AuthorizationError} AuthorizationError instance
      */
     static forbidden(message = 'Access forbidden', errorCode = ERROR_CODES.FORBIDDEN, metadata = {}) {
-        return new AppError(message, 403, errorCode, true, metadata);
+        const error = new AuthorizationError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -314,10 +390,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {NotFoundError} NotFoundError instance
      */
     static notFound(message = 'Resource not found', errorCode = ERROR_CODES.NOT_FOUND, metadata = {}) {
-        return new AppError(message, 404, errorCode, true, metadata);
+        const error = new NotFoundError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -325,10 +404,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {InternalServerError} InternalServerError instance
      */
     static serverError(message = 'Internal server error', errorCode = ERROR_CODES.SERVER_ERROR, metadata = {}) {
-        return new AppError(message, 500, errorCode, true, metadata);
+        const error = new InternalServerError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -347,10 +429,13 @@ class ErrorHandler {
      * @param {string} message - Error message
      * @param {string} errorCode - Error code
      * @param {Object} metadata - Additional metadata
-     * @returns {AppError} AppError instance
+     * @returns {RateLimitError} RateLimitError instance
      */
     static tooManyRequests(message = 'Too many requests', errorCode = ERROR_CODES.TOO_MANY_REQUESTS, metadata = {}) {
-        return new AppError(message, 429, errorCode, true, metadata);
+        const error = new RateLimitError(message);
+        error.code = errorCode;
+        Object.assign(error, metadata);
+        return error;
     }
 
     /**
@@ -383,5 +468,18 @@ class ErrorHandler {
 module.exports = {
     AppError,
     ErrorHandler,
-    ERROR_CODES
+    ERROR_CODES,
+    handleJWTError,
+    handleJWTExpiredError,
+    handleValidationError,
+    handleCastError,
+    handleDuplicateFieldsError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    RateLimitError,
+    InternalServerError,
+    DatabaseError
 };

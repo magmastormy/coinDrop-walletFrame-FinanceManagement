@@ -1,12 +1,14 @@
+const logger = require('../utils/logger');
+
         
         // If we still don't have a wallet ID, try to create one with retries
         if (!walletId) {
           // Try to create a wallet with our improved function
           walletId = createWallet(token);
           if (walletId) {
-            console.log(`Successfully created wallet with ID: ${walletId}`);
+            logger.debug(`Successfully created wallet with ID: ${walletId}`);
           } else {
-            console.log('Failed to create wallet after multiple attempts');
+            logger.debug('Failed to create wallet after multiple attempts');
           }
         }
         
@@ -43,13 +45,13 @@
           successRate.add(success);
           
           if (!success) {
-            console.log(`Transaction creation failed with status ${transactionRes.status}: ${transactionRes.body}`);
+            logger.debug(`Transaction creation failed with status ${transactionRes.status}: ${transactionRes.body}`);
           } else {
-            console.log(`Transaction created successfully with category ${categoryName} and wallet ID ${walletId}`);
+            logger.debug(`Transaction created successfully with category ${categoryName} and wallet ID ${walletId}`);
           }
         }
       } catch (e) {
-        console.log(`Transaction creation request failed: ${e.message}`);
+        logger.debug(`Transaction creation request failed: ${e.message}`);
       }
     });
   }
@@ -69,19 +71,19 @@
       if (walletsRes.status === 200) {
         try {
           const walletsData = JSON.parse(walletsRes.body);
-          console.log('\n!!! WALLET DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Number of wallets: ${Array.isArray(walletsData) ? walletsData.length : 'N/A'}`);
+          logger.debug('\n!!! WALLET DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Number of wallets: ${Array.isArray(walletsData) ? walletsData.length : 'N/A'}`);
           
           if (Array.isArray(walletsData) && walletsData.length > 0) {
-            console.log('First wallet details:');
-            console.log(`  ID: ${walletsData[0]._id || walletsData[0].id || 'N/A'}`);
-            console.log(`  Name: ${walletsData[0].name || 'N/A'}`);
-            console.log(`  Balance: $${walletsData[0].balance || 0}`);
-            console.log(`  Type: ${walletsData[0].type || 'N/A'}`);
+            logger.debug('First wallet details:');
+            logger.debug(`  ID: ${walletsData[0]._id || walletsData[0].id || 'N/A'}`);
+            logger.debug(`  Name: ${walletsData[0].name || 'N/A'}`);
+            logger.debug(`  Balance: $${walletsData[0].balance || 0}`);
+            logger.debug(`  Type: ${walletsData[0].type || 'N/A'}`);
           }
-          console.log('!!! END WALLET DATA !!!\n');
+          logger.debug('!!! END WALLET DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse wallet data: ${e.message}`);
+          logger.debug(`Failed to parse wallet data: ${e.message}`);
         }
       }
     });
@@ -102,19 +104,19 @@
       if (budgetsRes.status === 200) {
         try {
           const budgetsData = JSON.parse(budgetsRes.body);
-          console.log('\n!!! BUDGET DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Number of budgets: ${Array.isArray(budgetsData) ? budgetsData.length : 'N/A'}`);
+          logger.debug('\n!!! BUDGET DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Number of budgets: ${Array.isArray(budgetsData) ? budgetsData.length : 'N/A'}`);
           
           if (Array.isArray(budgetsData) && budgetsData.length > 0) {
-            console.log('First budget details:');
-            console.log(`  ID: ${budgetsData[0]._id || budgetsData[0].id || 'N/A'}`);
-            console.log(`  Name: ${budgetsData[0].name || 'N/A'}`);
-            console.log(`  Amount: $${budgetsData[0].amount || 0}`);
-            console.log(`  Category: ${budgetsData[0].category || 'N/A'}`);
+            logger.debug('First budget details:');
+            logger.debug(`  ID: ${budgetsData[0]._id || budgetsData[0].id || 'N/A'}`);
+            logger.debug(`  Name: ${budgetsData[0].name || 'N/A'}`);
+            logger.debug(`  Amount: $${budgetsData[0].amount || 0}`);
+            logger.debug(`  Category: ${budgetsData[0].category || 'N/A'}`);
           }
-          console.log('!!! END BUDGET DATA !!!\n');
+          logger.debug('!!! END BUDGET DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse budget data: ${e.message}`);
+          logger.debug(`Failed to parse budget data: ${e.message}`);
         }
       }
     });
@@ -137,14 +139,14 @@
       if (dashRes.status === 200) {
         try {
           const dashData = JSON.parse(dashRes.body);
-          console.log('\n!!! DASHBOARD DATA RETRIEVED SUCCESSFULLY !!!');
-          console.log(`Total Balance: ${dashData.totalBalance || 0}`);
-          console.log(`Total Expenses: ${dashData.totalExpenses || 0}`);
-          console.log(`Total Savings: ${dashData.totalSavings || 0}`);
-          console.log(`Expense Change: ${dashData.expenseChange || 0}%`);
-          console.log('!!! END DASHBOARD DATA !!!\n');
+          logger.debug('\n!!! DASHBOARD DATA RETRIEVED SUCCESSFULLY !!!');
+          logger.debug(`Total Balance: ${dashData.totalBalance || 0}`);
+          logger.debug(`Total Expenses: ${dashData.totalExpenses || 0}`);
+          logger.debug(`Total Savings: ${dashData.totalSavings || 0}`);
+          logger.debug(`Expense Change: ${dashData.expenseChange || 0}%`);
+          logger.debug('!!! END DASHBOARD DATA !!!\n');
         } catch (e) {
-          console.log(`Failed to parse dashboard data: ${e.message}`);
+          logger.debug(`Failed to parse dashboard data: ${e.message}`);
         }
       }
     });
@@ -177,15 +179,15 @@
       successRate.add(success);
       
       if (!success) {
-        console.log(`AI chat failed with status ${aiRes.status}: ${aiRes.body}`);
+        logger.debug(`AI chat failed with status ${aiRes.status}: ${aiRes.body}`);
       } else {
         try {
           const aiResponse = JSON.parse(aiRes.body);
-          console.log('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-          console.log('!!!!!!!!!!! AI CHAT RESPONSE RECEIVED !!!!!!!!!!!');
-          console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-          console.log(`USER QUERY: 'Give me a quick summary of my finances'`);
-          console.log('----------------------------------------------');
+          logger.debug('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+          logger.debug('!!!!!!!!!!! AI CHAT RESPONSE RECEIVED !!!!!!!!!!!');
+          logger.debug('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+          logger.debug(`USER QUERY: 'Give me a quick summary of my finances'`);
+          logger.debug('----------------------------------------------');
           
           if (aiResponse.response) {
             // Format and display the AI response for better readability
@@ -193,47 +195,47 @@
               .replace(/\n/g, '\n  ') // Indent new lines for better console readability
               .trim();
             
-            console.log(`AI RESPONSE:\n  ${formattedResponse}`);
-            console.log('----------------------------------------------');
+            logger.debug(`AI RESPONSE:\n  ${formattedResponse}`);
+            logger.debug('----------------------------------------------');
             
             // Log performance metrics if available
-            console.log('AI PERFORMANCE METRICS:');
+            logger.debug('AI PERFORMANCE METRICS:');
             
             // If using the optimized process pooling
             if (aiResponse.metrics) {
-              console.log(`  Processing Time: ${aiResponse.metrics.processingTime || 'N/A'}ms`);
-              console.log(`  Context Size: ${aiResponse.metrics.contextSize || 'N/A'} characters`);
-              console.log(`  Response Size: ${aiResponse.metrics.responseSize || 'N/A'} characters`);
+              logger.debug(`  Processing Time: ${aiResponse.metrics.processingTime || 'N/A'}ms`);
+              logger.debug(`  Context Size: ${aiResponse.metrics.contextSize || 'N/A'} characters`);
+              logger.debug(`  Response Size: ${aiResponse.metrics.responseSize || 'N/A'} characters`);
               
               // Additional metrics that might be available with your optimizations
               if (aiResponse.metrics.pythonProcessTime) {
-                console.log(`  Python Process Time: ${aiResponse.metrics.pythonProcessTime}ms`);
+                logger.debug(`  Python Process Time: ${aiResponse.metrics.pythonProcessTime}ms`);
               }
               if (aiResponse.metrics.contextBuildTime) {
-                console.log(`  Context Build Time: ${aiResponse.metrics.contextBuildTime}ms`);
+                logger.debug(`  Context Build Time: ${aiResponse.metrics.contextBuildTime}ms`);
               }
               if (aiResponse.metrics.apiCallTime) {
-                console.log(`  API Call Time: ${aiResponse.metrics.apiCallTime}ms`);
+                logger.debug(`  API Call Time: ${aiResponse.metrics.apiCallTime}ms`);
               }
               if (aiResponse.metrics.processPooling) {
-                console.log(`  Process Pooling: ${aiResponse.metrics.processPooling ? 'Enabled' : 'Disabled'}`);
+                logger.debug(`  Process Pooling: ${aiResponse.metrics.processPooling ? 'Enabled' : 'Disabled'}`);
               }
               if (aiResponse.metrics.pooledProcessId) {
-                console.log(`  Pooled Process ID: ${aiResponse.metrics.pooledProcessId}`);
+                logger.debug(`  Pooled Process ID: ${aiResponse.metrics.pooledProcessId}`);
               }
             } else {
-              console.log('  No detailed metrics available');
+              logger.debug('  No detailed metrics available');
             }
             
             // Log response timing from k6
-            console.log(`  Total Request Duration: ${aiRes.timings.duration.toFixed(2)}ms`);
-            console.log(`  Time to First Byte: ${aiRes.timings.receiving.toFixed(2)}ms`);
+            logger.debug(`  Total Request Duration: ${aiRes.timings.duration.toFixed(2)}ms`);
+            logger.debug(`  Time to First Byte: ${aiRes.timings.receiving.toFixed(2)}ms`);
           } else {
-            console.log('AI chat successful but no response content found');
+            logger.debug('AI chat successful but no response content found');
           }
-          console.log('==============================================\n');
+          logger.debug('==============================================\n');
         } catch (e) {
-          console.log('AI chat successful but could not parse response');
+          logger.debug('AI chat successful but could not parse response');
         }
       }
       successRate.add(aiRes.status === 200);

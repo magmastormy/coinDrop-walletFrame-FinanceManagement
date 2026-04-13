@@ -1,10 +1,12 @@
+const logger = require('../utils/logger');
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * Helper function to enhance context data with additional calculations and information
  */
 async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, isSavingsQuery, isBillQuery }) {
-    if (isDev) console.log(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
+    if (isDev) logger.debug(`[enhanceContextData] Enhancing data for queries: budget=${isBudgetQuery}, balance=${isBalanceQuery}, savings=${isSavingsQuery}, bills=${isBillQuery}`);
     
     // Calculate if this is a general financial overview
     const isFinancialOverview = isBudgetQuery && isBalanceQuery;
@@ -14,16 +16,16 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
         // Double-check if budgets exist directly from the database
         const Budget = require('../models/Budget');
         const directBudgets = await Budget.find({ userId }).lean();
-        if (isDev) console.log(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
+        if (isDev) logger.debug(`[enhanceContextData] Direct budget check: found ${directBudgets.length} budgets`);
         if (directBudgets.length > 0) {
             ctx.budgets = directBudgets;
-            if (isDev) console.log("[enhanceContextData] Updated context with direct budgets");
+            if (isDev) logger.debug("[enhanceContextData] Updated context with direct budgets");
         }
     }
     
     // ALWAYS process transactions to improve expense data quality regardless of query type
     try {
-        if (isDev) console.log("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
+        if (isDev) logger.debug("[enhanceContextData] Processing all transaction data for comprehensive expense analysis");
         
         const firstOfMonth = new Date();
         firstOfMonth.setDate(1);
@@ -35,7 +37,7 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             userId
         }).populate('category', 'name').sort({ date: -1 }).limit(50);
         
-        if (isDev) console.log(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
+        if (isDev) logger.debug(`[enhanceContextData] Found ${transactions.length} transactions for analysis`);
         
         // Store all transactions for UI display
         ctx.allTransactions = transactions;
@@ -50,11 +52,11 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             }
         });
         
-        if (isDev) console.log(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
+        if (isDev) logger.debug(`[enhanceContextData] ${currentMonthTransactions.length} expense transactions in current month`);
         
         // Calculate spent amount for each budget
         if (ctx.budgets && ctx.budgets.length > 0) {
-            if (isDev) console.log("[enhanceContextData] Processing budget data with transactions");
+            if (isDev) logger.debug("[enhanceContextData] Processing budget data with transactions");
             ctx.budgets = ctx.budgets.map(budget => {
                 // Handle if budget is already a plain object from lean() query
                 const budgetObj = typeof budget.toObject === 'function' ? budget.toObject() : budget;
@@ -90,12 +92,12 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
         ctx.expenseAnalytics = analyzeExpenses(transactions);
         
     } catch (error) {
-        console.error('[enhanceContextData] Error processing transactions:', error);
+        logger.error('[enhanceContextData] Error processing transactions:', error);
     }
     
     // Enhance wallet data if needed
     if (isBalanceQuery && ctx.wallets) {
-        if (isDev) console.log("[enhanceContextData] Processing wallet data");
+        if (isDev) logger.debug("[enhanceContextData] Processing wallet data");
         // Add more details to wallets if needed
         ctx.wallets = ctx.wallets.map(wallet => {
             const walletObj = typeof wallet.toObject === 'function' ? wallet.toObject() : wallet;
@@ -108,7 +110,7 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
     
     // Always process savings goals to ensure data is properly formatted
     if (ctx.savingsGoals && ctx.savingsGoals.length > 0) {
-        if (isDev) console.log("[enhanceContextData] Processing savings goals");
+        if (isDev) logger.debug("[enhanceContextData] Processing savings goals");
         ctx.savingsGoals = ctx.savingsGoals.map(goal => {
             const goalObj = typeof goal.toObject === 'function' ? goal.toObject() : goal;
             
@@ -146,11 +148,11 @@ async function enhanceContextData(ctx, userId, { isBudgetQuery, isBalanceQuery, 
             };
         });
         
-        if (isDev) console.log(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
+        if (isDev) logger.debug(`[enhanceContextData] Processed ${ctx.savingsGoals.length} savings goals with field mapping`);
     }
     
     // Log completion
-    if (isDev) console.log("[enhanceContextData] Data enhancement complete");
+    if (isDev) logger.debug("[enhanceContextData] Data enhancement complete");
     return ctx;
 }
 
@@ -184,7 +186,7 @@ function analyzeExpenses(transactions) {
             }
             expensesByMonth[monthKey] += amount;
         } catch (e) {
-            console.error('Error parsing date:', e);
+            logger.error('Error parsing date:', e);
         }
     });
     

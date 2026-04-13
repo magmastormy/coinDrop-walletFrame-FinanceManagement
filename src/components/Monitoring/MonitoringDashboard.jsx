@@ -1,0 +1,227 @@
+import { useLogger } from './hooks/useLogger';
+
+import React, { useState, useEffect } from 'react';
+import PerformanceMonitor from '../utils/performanceMonitor';
+import TestUtils from '../utils/testUtils';
+
+const MonitoringDashboard = () => {
+    const [isMonitoringEnabled, setIsMonitoringEnabled] = useState(false);
+    const [testResults, setTestResults] = useState(null);
+    const [performanceMetrics, setPerformanceMetrics] = useState(null);
+    const [isRunningTests, setIsRunningTests] = useState(false);
+
+    const performanceMonitor = new PerformanceMonitor();
+
+    useEffect(() => {
+        // Add performance observer to monitor component renders
+        performanceMonitor.addObserver((event, data) => {
+            if (event === 'component-render') {
+                logInfo(`🎨 Component Render: ${data.componentName} (${data.duration.toFixed(2)}ms)`);
+            }
+        });
+
+        return () => {
+            performanceMonitor.removeObserver((event, data) => {
+                if (event === 'component-render') {
+                    logInfo(`🎨 Component Render: ${data.componentName} (${data.duration.toFixed(2)}ms)`);
+                }
+            });
+        };
+    }, []);
+
+    const runValidationTests = async () => {
+        setIsRunningTests(true);
+        
+        try {
+            const results = TestUtils.runValidationTests();
+            setTestResults(results);
+            
+            if (process.env.NODE_ENV === 'development') {
+                logInfo('🧪 Validation tests completed');
+            }
+        } catch (error) {
+            logError('Test execution failed:', error);
+        } finally {
+            setIsRunningTests(false);
+        }
+    };
+
+    const runApiTests = async () => {
+        setIsRunningTests(true);
+        
+        try {
+            const results = await TestUtils.runApiTests();
+            setTestResults(results);
+            
+            if (process.env.NODE_ENV === 'development') {
+                logInfo('🔧 API tests completed');
+            }
+        } catch (error) {
+            logError('API test execution failed:', error);
+        } finally {
+            setIsRunningTests(false);
+        }
+    };
+
+    const refreshMetrics = () => {
+        const metrics = performanceMonitor.getMetrics();
+        setPerformanceMetrics(metrics);
+    };
+
+    const clearResults = () => {
+        setTestResults(null);
+        TestUtils.clearResults();
+    };
+
+    return (
+        <div style={{
+            padding: '20px',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            backgroundColor: '#f5f5f5',
+            color: '#ffffff',
+            borderRadius: '8px',
+            margin: '10px'
+        }}>
+            <h3 style={{ marginBottom: '20px', color: '#00ff00' }}>🔧 Development Monitoring Dashboard</h3>
+            
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                <div style={{ flex: 1 }}>
+                    <h4>🧪 Test Controls</h4>
+                    
+                    <button
+                        onClick={runValidationTests}
+                        disabled={isRunningTests}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: isRunningTests ? '#666' : '#007acc',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: isRunningTests ? 'not-allowed' : 'pointer',
+                            marginRight: '10px'
+                        }}
+                    >
+                        {isRunningTests ? '⏳ Running...' : '🧪 Run Validation Tests'}
+                    </button>
+                    
+                    <button
+                        onClick={runApiTests}
+                        disabled={isRunningTests}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: isRunningTests ? '#666' : '#007acc',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: isRunningTests ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {isRunningTests ? '⏳ Running...' : '🔧 Run API Tests'}
+                    </button>
+                    
+                    <button
+                        onClick={clearResults}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        🗑️ Clear Results
+                    </button>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                    <h4>📊 Performance Metrics</h4>
+                    
+                    <button
+                        onClick={refreshMetrics}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#007acc',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            marginBottom: '10px'
+                        }}
+                    >
+                        🔄 Refresh Metrics
+                    </button>
+                </div>
+            </div>
+
+            {performanceMetrics && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h4>📈 Current Performance</h4>
+                    <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '4px' }}>
+                        <div>Total API Calls: {performanceMetrics.summary.totalCalls}</div>
+                        <div>Success Rate: {performanceMetrics.summary.successCalls}/{performanceMetrics.summary.totalCalls} ({((performanceMetrics.summary.successCalls / performanceMetrics.summary.totalCalls) * 100).toFixed(1)}%)</div>
+                        <div>Average Duration: {performanceMetrics.summary.averageDuration.toFixed(2)}ms</div>
+                        <div>Slow Calls: {performanceMetrics.summary.slowCalls}</div>
+                    </div>
+                    
+                    {performanceMetrics.summary.recommendations.length > 0 && (
+                        <div style={{ marginTop: '10px' }}>
+                            <h4>⚠️ Recommendations</h4>
+                            {performanceMetrics.summary.recommendations.map((rec, index) => (
+                                <div key={index} style={{ 
+                                    backgroundColor: rec.severity === 'high' ? '#ffebee' : '#fff3cd',
+                                    color: rec.severity === 'high' ? '#721c24' : '#856404',
+                                    padding: '10px',
+                                    margin: '5px 0',
+                                    borderRadius: '4px',
+                                    border: '1px solid ' + (rec.severity === 'high' ? '#f59e0b' : '#fff3cd')
+                                }}>
+                                    <strong>{rec.type.toUpperCase()}:</strong> {rec.message}
+                                    <br />
+                                    <small>Action: {rec.action}</small>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {testResults && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h4>🧪 Test Results</h4>
+                    <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '4px' }}>
+                        <div>Tests Run: {testResults.summary.totalTests}</div>
+                        <div>Passed: {testResults.summary.passedTests}</div>
+                        <div>Failed: {testResults.summary.failedTests}</div>
+                        <div>Pass Rate: {testResults.summary.passRate}</div>
+                        
+                        {testResults.categories && Object.entries(testResults.categories).map(([category, tests]) => (
+                            <div key={category} style={{ marginTop: '10px' }}>
+                                <h5>{category.toUpperCase()} ({tests.length})</h5>
+                                {tests.map((test, index) => (
+                                    <div key={index} style={{ 
+                                        fontSize: '11px',
+                                        padding: '5px',
+                                        margin: '2px 0',
+                                        borderRadius: '3px',
+                                        backgroundColor: test.passed ? '#d4edda' : '#f8d7da',
+                                        border: '1px solid ' + (test.passed ? '#c3e688' : '#ef4444')
+                                    }}>
+                                        {test.passed ? '✅' : '❌'} {test.description}
+                                        <br />
+                                        <small>
+                                            Input: {test.input} | Expected: {test.expected} | Actual: {test.actual}
+                                        </small>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default MonitoringDashboard;

@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 /**
  * Secure Logger Utility
  * Prevents sensitive data leakage in logs
@@ -64,7 +66,7 @@ class SecureLogger {
      */
     info(message, data = {}) {
         const safeData = sanitizeObject(data);
-        console.log(JSON.stringify({
+        logger.debug(JSON.stringify({
             level: 'info',
             timestamp: new Date().toISOString(),
             prefix: this.prefix,
@@ -78,7 +80,7 @@ class SecureLogger {
      */
     warn(message, data = {}) {
         const safeData = sanitizeObject(data);
-        console.warn(JSON.stringify({
+        logger.warn(JSON.stringify({
             level: 'warn',
             timestamp: new Date().toISOString(),
             prefix: this.prefix,
@@ -98,7 +100,7 @@ class SecureLogger {
             ...sanitizeObject(error)
         };
         
-        console.error(JSON.stringify({
+        logger.error(JSON.stringify({
             level: 'error',
             timestamp: new Date().toISOString(),
             prefix: this.prefix,

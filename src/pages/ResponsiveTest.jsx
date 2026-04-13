@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import React, { useState } from 'react';
 import TransactionTable from '../components/Transaction/transactionTable';
 import SavingsAccountTransactionTable from '../components/Savings/savingsAccountTransactionTable';
@@ -47,11 +49,11 @@ const ResponsiveTest = () => {
   ];
 
   const handleEdit = (transaction) => {
-    console.log('Edit transaction:', transaction);
+    logInfo('Edit transaction:', transaction);
   };
 
   const handleDelete = (id) => {
-    console.log('Delete transaction:', id);
+    logInfo('Delete transaction:', id);
   };
 
   return (

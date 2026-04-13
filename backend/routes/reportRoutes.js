@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const express = require('express');
 const router = express.Router();
 const { getReportFromStorage } = require('../utils/reportGenerator');
@@ -54,7 +56,7 @@ router.post('/generate', authMiddleware, async (req, res) => {
   try {
     await ReportController.generateReport(req, res);
   } catch (error) {
-    console.error('Report route error:', error);
+    logger.error('Report route error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -111,7 +113,7 @@ router.get('/:reportId/download', authMiddleware, async (req, res) => {
     // Send file
     return res.send(content);
   } catch (error) {
-    console.error('Download report error:', error);
+    logger.error('Download report error:', error);
     res.status(500).json({ error: 'Failed to download report', details: error.message });
   }
 });

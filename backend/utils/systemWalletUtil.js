@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 const Wallet = require('../models/Wallet');
 const mongoose = require('mongoose');
 
@@ -11,7 +13,7 @@ const mongoose = require('mongoose');
  * @returns {Promise<Object>} The created system wallet
  */
 async function createSystemWallet(userId, initialBalance = 0, session = null) {
-    console.log(`[SystemWalletUtil] Creating system wallet for user ${userId} with initial balance ${initialBalance}`);
+    logger.debug(`[SystemWalletUtil] Creating system wallet for user ${userId} with initial balance ${initialBalance}`);
     
     const walletData = {
         userId,
@@ -30,7 +32,7 @@ async function createSystemWallet(userId, initialBalance = 0, session = null) {
     const systemWallet = new Wallet(walletData);
     await systemWallet.save(saveOptions);
     
-    console.log(`[SystemWalletUtil] System wallet created successfully with ID: ${systemWallet._id}`);
+    logger.debug(`[SystemWalletUtil] System wallet created successfully with ID: ${systemWallet._id}`);
     return systemWallet;
 }
 
@@ -45,7 +47,7 @@ async function createSystemWallet(userId, initialBalance = 0, session = null) {
  * @returns {Promise<Object>} The target wallet
  */
 async function findOrCreateTargetWallet(userId, excludeWalletId = null, amountToTransfer = 0, session = null) {
-    console.log(`[SystemWalletUtil] Finding target wallet for user ${userId}, excluding wallet ${excludeWalletId}`);
+    logger.debug(`[SystemWalletUtil] Finding target wallet for user ${userId}, excluding wallet ${excludeWalletId}`);
     
     const query = { 
         userId, 
@@ -60,14 +62,14 @@ async function findOrCreateTargetWallet(userId, excludeWalletId = null, amountTo
     let targetWallet = await Wallet.findOne(query).sort({ balance: -1 }).session(session);
     
     if (!targetWallet) {
-        console.log(`[SystemWalletUtil] No existing wallet found, creating system wallet`);
+        logger.debug(`[SystemWalletUtil] No existing wallet found, creating system wallet`);
         targetWallet = await createSystemWallet(userId, amountToTransfer, session);
     } else {
-        console.log(`[SystemWalletUtil] Found existing wallet: ${targetWallet._id}`);
+        logger.debug(`[SystemWalletUtil] Found existing wallet: ${targetWallet._id}`);
         if (amountToTransfer > 0) {
             targetWallet.balance += amountToTransfer;
             await targetWallet.save(findOptions);
-            console.log(`[SystemWalletUtil] Updated wallet balance to: ${targetWallet.balance}`);
+            logger.debug(`[SystemWalletUtil] Updated wallet balance to: ${targetWallet.balance}`);
         }
     }
     

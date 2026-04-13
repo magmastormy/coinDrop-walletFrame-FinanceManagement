@@ -4,6 +4,7 @@
  * Analyzes user questions to identify multi-part queries and specific data requests
  * to enhance AI response quality and accuracy.
  */
+const logger = require('../utils/logger');
 const { performance } = require('perf_hooks');
 
 /**
@@ -49,20 +50,25 @@ function analyzeQuestion(userMessage) {
     const questionParts = message.split(/(?:[?]|\band\b|\bor\b|\balso\b|\bthen\b|\bplus\b)/);
     const filteredParts = questionParts.map(part => part.trim()).filter(part => part.length > 3);
     
-    // Only consider it multi-part if we have meaningful parts
-    if (filteredParts.length > 1) {
-        // Further check - look for actual question patterns in each part
-        const questionPatterns = filteredParts.filter(part => 
-            /\b(what|when|where|which|who|why|how|can|could|would|should|is|are|do|does|did|will|tell me|show me|explain|describe|list|find|get)\b/i.test(part));
         
-        if (questionPatterns.length > 1) {
-            analysis.isMultiPart = true;
-            analysis.parts = questionPatterns;
+        // Only consider it multi-part if we have meaningful parts
+        if (filteredParts.length > 1) {
+            // Further check - look for actual question patterns in each part
+            const questionPatterns = filteredParts.filter(part => 
+                /\b(what|when|where|which|who|why|how|can|could|would|should|is|are|do|does|did|will|tell me|show me|explain|describe|list|find|get)\b/i.test(part));
+            
+            if (questionPatterns.length > 1) {
+                analysis.isMultiPart = true;
+                analysis.parts = questionPatterns;
+            }
         }
-    }
-    
-    // Detect specific data requests
-    // Last Transaction: Expanded terms for "last" and "transaction", and common phrasings.
+        
+        // Detect specific data requests
+        // Last Transaction: Expanded terms for "last" and "transaction", and common phrasings.
+        analysis.specificDataRequests.lastTransaction = 
+            /\b(last|previous|recent|latest|most recent|we last)\b.{0,35}\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|spend|spending|charge|charges|debit|debits|outgoing|outgoings|did|made|incurred|activity|record)\b/i.test(message) ||
+            /\b(tell me about|show me|list|give me|what was|what were|find|get|display|view|see).{0,35}\b(my last|my recent|the latest|my previous|most recent)\b.{0,25}\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|charge|charges|debit|debits|outgoing|outgoings|activity|record)\b/i.test(message) ||
+            /\b(tell|show|list|give|display|find|get|view|see).{0,35}\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|charge|charges|debit|debits|outgoing|outgoings|activity|record)\b/i.test(message);
     analysis.specificDataRequests.lastTransaction = 
         /\b(last|previous|recent|latest|most recent|we last)\b.{0,35}\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|spend|spending|charge|charges|debit|debits|outgoing|outgoings|did|made|incurred|activity|record)\b/i.test(message) ||
         /\b(tell me about|show me|list|give me|what was|what were|find|get|display|view|see).{0,35}\b(my last|my recent|the latest|my previous|most recent)\b.{0,25}\b(transaction|transactions|expense|expenses|purchase|purchases|payment|payments|charge|charges|debit|debits|outgoing|outgoings|activity|record)\b/i.test(message) ||
@@ -162,7 +168,7 @@ function analyzeQuestion(userMessage) {
         }
     }
     
-    console.log(`[questionAnalyzer] Analysis completed in ${(performance.now() - t0).toFixed(1)}ms`);
+    logger.log(`[questionAnalyzer] Analysis completed in ${(performance.now() - t0).toFixed(1)}ms`);
     return analysis;
 }
 

@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 const crypto = require('crypto');
 
 // Validate ENCRYPTION_KEY exists and is properly formatted
@@ -41,7 +43,7 @@ function encrypt(data) {
         // Return format: "iv:encryptedData"
         return iv.toString('base64') + ':' + encrypted;
     } catch (error) {
-        console.error('Encryption error:', error);
+        logger.error('Encryption error:', error);
         throw new Error('Failed to encrypt data');
     }
 }
@@ -76,7 +78,7 @@ function decrypt(encryptedData) {
         
         return decrypted;
     } catch (error) {
-        console.error('Decryption error:', error);
+        logger.error('Decryption error:', error);
         throw new Error('Failed to decrypt data');
     }
 }

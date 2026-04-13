@@ -1,9 +1,12 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader } from 'lucide-react';
 import { loginUser } from '../../services/authService';
 import { Input } from '../ui/Input';
 import { SkeletonForm } from '../ui/LoadingSkeleton';
+import ValidationUtils from '../../utils/validationUtils';
 
 const UserLogin = () => {
     const navigate = useNavigate();
@@ -30,23 +33,15 @@ const UserLogin = () => {
     }, [cooldownTime]);
 
     const validateField = (name, value) => {
-        let error = '';
+        let validation;
         
         if (name === 'email') {
-            if (!value) {
-                error = 'Email is required';
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                error = 'Please enter a valid email address';
-            }
+            validation = ValidationUtils.validateEmail(value);
         } else if (name === 'password') {
-            if (!value) {
-                error = 'Password is required';
-            } else if (value.length < 6) {
-                error = 'Password must be at least 6 characters';
-            }
+            validation = ValidationUtils.validateRequiredString(value, 'Password', 6, 128);
         }
         
-        return error;
+        return validation.error || '';
     };
 
     const handleChange = (e) => {
@@ -83,34 +78,30 @@ const UserLogin = () => {
             password: passwordError
         };
         
-        setFieldErrors(newFieldErrors);
-        
         // Check if there are any errors
         if (emailError || passwordError) {
             setError('Please fix the errors below');
             return;
         }
         
-        try {
-            setError('');
-            setLoading(true);
+        setFieldErrors(newFieldErrors);
+        setError('');
+        setLoading(true);
 
+        try {
             const response = await loginUser(formData);
 
             if (response.accessToken) {
+                // Success - clear form and navigate
+                setFormData({ email: '', password: '' });
+                setFieldErrors({ email: '', password: '' });
                 navigate('/dashboard');
             } else {
-                throw new Error('Authentication failed: No tokens received');
+                setError(response.error || 'Login failed. Please try again.');
             }
         } catch (err) {
-            // Handle cooldown errors
-            if (err.message && err.message.includes('Please wait')) {
-                const seconds = parseInt(err.message.match(/\d+/)?.[0] || '10');
-                setCooldownTime(seconds);
-                setError(err.message);
-            } else {
-                setError(err.response?.data?.message || err.details || err.message || 'Failed to sign in. Please check your credentials.');
-            }
+            logError('Login error:', err);
+            setError(err.message || 'An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }

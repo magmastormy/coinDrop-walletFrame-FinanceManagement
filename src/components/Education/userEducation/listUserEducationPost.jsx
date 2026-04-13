@@ -1,3 +1,5 @@
+import { useLogger } from './hooks/useLogger';
+
 // src/components/Education/userEducation/listUserEducationPost.jsx
 import UserEducationCard from './userEducationPostCard';
 import { useState } from 'react';
@@ -24,7 +26,7 @@ const ListUserEducationPost = ({ educations, onEdit, onDelete, onLike, onComment
   }
 
   if (!Array.isArray(educations)) {
-    console.error('Invalid educations prop:', educations);
+    logError('Invalid educations prop:', educations);
     return <div className="listUserEducationPost-errorState">Error: Invalid data format</div>;
   }
 

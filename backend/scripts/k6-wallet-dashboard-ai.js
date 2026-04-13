@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
@@ -31,7 +33,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer {{VALID_TOKEN}}' },
     });
     latencyTrend.add(createRes.timings.duration);
-    console.log(`[Wallet Create] Status: ${createRes.status}, Body: ${createRes.body}`);
+    logger.debug(`[Wallet Create] Status: ${createRes.status}, Body: ${createRes.body}`);
     check(createRes, {
       'wallet created': (r) => r.status === 201,
     });
@@ -49,7 +51,7 @@ export default function () {
         headers: { 'Authorization': 'Bearer {{VALID_TOKEN}}' },
       });
       latencyTrend.add(delRes.timings.duration);
-      console.log(`[Wallet Delete] Status: ${delRes.status}, Body: ${delRes.body}`);
+      logger.debug(`[Wallet Delete] Status: ${delRes.status}, Body: ${delRes.body}`);
       check(delRes, {
         'wallet deleted': (r) => r.status === 200 || r.status === 204,
       });
@@ -64,7 +66,7 @@ export default function () {
       headers: { 'Authorization': 'Bearer {{VALID_TOKEN}}' },
     });
     latencyTrend.add(res1.timings.duration);
-    console.log(`[Dashboard No Filter] Status: ${res1.status}`);
+    logger.debug(`[Dashboard No Filter] Status: ${res1.status}`);
     check(res1, {
       'dashboard returns 200': (r) => r.status === 200,
     });
@@ -75,7 +77,7 @@ export default function () {
       headers: { 'Authorization': 'Bearer {{VALID_TOKEN}}' },
     });
     latencyTrend.add(res2.timings.duration);
-    console.log(`[Dashboard Date Filter] Status: ${res2.status}`);
+    logger.debug(`[Dashboard Date Filter] Status: ${res2.status}`);
     check(res2, {
       'dashboard with filter returns 200': (r) => r.status === 200,
     });
@@ -90,7 +92,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer {{VALID_TOKEN}}' },
     });
     latencyTrend.add(validRes.timings.duration);
-    console.log(`[AI Chat Valid] Status: ${validRes.status}`);
+    logger.debug(`[AI Chat Valid] Status: ${validRes.status}`);
     check(validRes, {
       'AI chat returns 200': (r) => r.status === 200,
     });
@@ -102,7 +104,7 @@ export default function () {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer {{VALID_TOKEN}}' },
     });
     latencyTrend.add(invalidRes.timings.duration);
-    console.log(`[AI Chat Invalid] Status: ${invalidRes.status}, Body: ${invalidRes.body}`);
+    logger.debug(`[AI Chat Invalid] Status: ${invalidRes.status}, Body: ${invalidRes.body}`);
     check(invalidRes, {
       'AI chat returns 400/422': (r) => r.status === 400 || r.status === 422,
     });

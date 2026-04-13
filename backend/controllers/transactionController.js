@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 /**
  * Transaction Controller
  * Handles transaction-related operations including creation, retrieval, updating, and deletion
@@ -13,7 +15,6 @@ const TransactionService = require('../services/transactionService');
 const { executeRulesForTransaction } = require('../services/savingsRuleExecutor');
 const { addTransactionToQueue, getJobStatus } = require('../services/transactionQueueService');
 const { getAuthenticatedUserId } = require('../utils/authUser');
-const logger = require('../utils/logger');
 const { ErrorHandler } = require('../utils/errorHandler');
 const cacheUtil = require('../utils/cacheUtil');
 const isDev = process.env.NODE_ENV !== 'production';
@@ -297,7 +298,7 @@ class TransactionController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[transactionController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[transactionController] Invalidated cache for user ${userId}`);
 
             res.status(201).json({ 
                 success: true,
@@ -478,7 +479,7 @@ class TransactionController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[transactionController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[transactionController] Invalidated cache for user ${userId}`);
 
             res.json({
                 message: 'Transaction updated successfully',
@@ -517,7 +518,7 @@ class TransactionController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[transactionController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[transactionController] Invalidated cache for user ${userId}`);
 
             res.json({
                 message: 'Transaction deleted successfully',
@@ -738,7 +739,7 @@ class TransactionController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[transactionController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[transactionController] Invalidated cache for user ${userId}`);
 
             res.json({
                 message: 'Bulk update successful',
@@ -798,7 +799,7 @@ class TransactionController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[transactionController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[transactionController] Invalidated cache for user ${userId}`);
 
             res.json({
                 message: 'Bulk delete successful',

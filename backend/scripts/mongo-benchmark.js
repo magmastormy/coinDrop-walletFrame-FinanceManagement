@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // MongoDB Benchmark Script (Node.js)
 // Usage: node mongo-benchmark.js
 const { MongoClient } = require('mongodb');

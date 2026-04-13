@@ -1,11 +1,24 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 import { makeRequest } from './apiRequestManager';
+import ValidationUtils from '../utils/validationUtils';
 
 const API_URL = '/transactions';
 
+// Helper function to create stable cache keys
+const createStableKey = (filters) => {
+    const sortedKeys = Object.keys(filters).sort();
+    const sortedFilters = {};
+    sortedKeys.forEach(key => {
+        sortedFilters[key] = filters[key];
+    });
+    return `transactions_${JSON.stringify(sortedFilters)}`;
+};
+
 export const getUserTransactions = async (userIdOrFilters = {}, maybeFilters = {}) => {
     const filters = typeof userIdOrFilters === 'object' ? userIdOrFilters : maybeFilters;
-    const requestKey = `transactions_${JSON.stringify(filters)}`;
+    const requestKey = createStableKey(filters);
     
     return makeRequest(requestKey, async () => {
         const response = await axiosInstance.get(API_URL, { params: filters });
@@ -19,12 +32,12 @@ const transactionService = {
     getAllUserTransactions: async (userIdOrFilters = {}, maybeFilters = {}) => {
         const filters = typeof userIdOrFilters === 'object' ? userIdOrFilters : maybeFilters;
         const response = await axiosInstance.get(API_URL, { params: { ...filters, limit: 1000 } });
-        return response.transactions || [];
+        return response.data?.transactions || [];
     },
 
     createTransaction: async transactionData => {
         const payload = {
-            amount: parseFloat(transactionData.amount),
+            amount: parseFloat(transactionData.amount) || 0,
             type: transactionData.type,
             category: transactionData.category,
             description: transactionData.description,
@@ -46,7 +59,7 @@ const transactionService = {
 
     updateTransaction: async (id, transactionData) => {
         const payload = {
-            amount: parseFloat(transactionData.amount),
+            amount: parseFloat(transactionData.amount) || 0,
             type: transactionData.type,
             category: transactionData.category,
             description: transactionData.description,
@@ -73,7 +86,7 @@ const transactionService = {
 
     getTransactionStats: async () => {
         const response = await axiosInstance.get(`${API_URL}/stats`);
-        return response.stats || [];
+        return response.data?.stats || [];
     },
 
     transferBalance: async transferData => {
@@ -100,7 +113,7 @@ const transactionService = {
 
     getUncategorizedTransactions: async () => {
         const response = await axiosInstance.get(`${API_URL}/uncategorized`);
-        return response.transactions || [];
+        return response.data?.transactions || [];
     },
 
     bulkUpdate: async (transactionIds, updateData) => {
@@ -128,20 +141,68 @@ const transactionService = {
     },
 
     parseCSV: (csvContent) => {
-        const lines = csvContent.split('\n');
+        if (!csvContent || typeof csvContent !== 'string') {
+            throw new Error('Invalid CSV content provided');
+        }
+
+        const lines = csvContent.split('\n').filter(line => line.trim()); // Remove empty lines
+        if (lines.length < 2) {
+            throw new Error('CSV must have at least a header and one data row');
+        }
+
         const headers = lines[0].split(',').map(header => header.trim());
+        if (headers.length === 0) {
+            throw new Error('CSV headers cannot be empty');
+        }
+
         const transactions = [];
 
         for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(value => value.trim());
-            if (values.length === headers.length) {
-                const transaction = {};
-                headers.forEach((header, index) => {
-                    transaction[header.toLowerCase()] = values[index];
-                });
+            const line = lines[i].trim();
+            if (!line) continue; // Skip empty lines
+
+            const values = line.split(',').map(value => value.trim());
+            
+            // Validate row length
+            if (values.length !== headers.length) {
+                logWarn(`Row ${i + 1} has ${values.length} values but expected ${headers.length}. Skipping row.`);
+                continue;
+            }
+
+            // Validate required fields
+            const transaction = {};
+            let hasValidData = false;
+
+            headers.forEach((header, index) => {
+                const value = values[index];
+                const key = header.toLowerCase();
+                
+                if (value) {
+                    hasValidData = true;
+                }
+
+                // Basic validation for common fields
+                if (key === 'amount') {
+                    const numValue = parseFloat(value);
+                    transaction[key] = isNaN(numValue) ? 0 : numValue;
+                } else if (key === 'date') {
+                    const dateValue = new Date(value);
+                    transaction[key] = isNaN(dateValue.getTime()) ? new Date().toISOString() : dateValue.toISOString();
+                } else {
+                    transaction[key] = value;
+                }
+            });
+
+            // Only add transactions with some valid data
+            if (hasValidData) {
                 transactions.push(transaction);
             }
         }
+
+        if (transactions.length === 0) {
+            throw new Error('No valid transactions found in CSV');
+        }
+
         return transactions;
     }
 };

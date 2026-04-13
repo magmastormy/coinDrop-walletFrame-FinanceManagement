@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 const Report = require('../models/Report');
 const { readFileToBuffer, saveBufferToFile } = require('./fileUtils');
 const fs = require('fs').promises;
@@ -172,7 +174,7 @@ async function generateReportAsync(reportId, analytics, reportType, format) {
     
     return { success: true, reportId };
   } catch (error) {
-    console.error('Async report generation failed:', error);
+    logger.error('Async report generation failed:', error);
     const report = await Report.findById(reportId);
     if (report) {
       report.status = 'failed';

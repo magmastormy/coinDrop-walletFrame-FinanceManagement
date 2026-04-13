@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Wallet = require('../models/Wallet');
 const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
@@ -38,7 +40,7 @@ class WalletController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[walletController] Invalidated cache for user ${userId}`);
 
             res.status(201).json({
                 message: 'Wallet created successfully',
@@ -113,7 +115,7 @@ class WalletController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[walletController] Invalidated cache for user ${userId}`);
 
             res.json({
                 message: 'Wallet updated successfully',
@@ -145,7 +147,7 @@ class WalletController {
                 useTransaction = true;
             } catch (sessionError) {
                 // If transactions are not supported (e.g., non-replica set), continue without transaction
-                if (isDev) console.log('[WalletController - deleteWallet] Transactions not supported, proceeding without transaction');
+                if (isDev) logger.debug('[WalletController - deleteWallet] Transactions not supported, proceeding without transaction');
                 useTransaction = false;
                 session = null;
             }
@@ -155,7 +157,7 @@ class WalletController {
             const { transferToWalletId } = req.body || {};
             const userId = getAuthenticatedUserId(req);
             
-            if (isDev) console.log(`[WalletController - deleteWallet] Deleting wallet ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
+            if (isDev) logger.debug(`[WalletController - deleteWallet] Deleting wallet ${id} with transfer to wallet ${transferToWalletId || 'none'}`);
             
             // Find the wallet to delete
             const wallet = await withSession(Wallet.findOne({ _id: id, userId }), session);
@@ -189,7 +191,7 @@ class WalletController {
             
             // If wallet has balance, transfer it to another wallet
             if (remainingBalance > 0) {
-                if (isDev) console.log(`[WalletController - deleteWallet] Wallet has balance: ${remainingBalance}`);
+                if (isDev) logger.debug(`[WalletController - deleteWallet] Wallet has balance: ${remainingBalance}`);
                 
                 let targetWallet = null;
                 
@@ -218,7 +220,7 @@ class WalletController {
                             session
                         );
                     } catch (utilError) {
-                        console.error('[WalletController - deleteWallet] Error finding target wallet:', utilError);
+                        logger.error('[WalletController - deleteWallet] Error finding target wallet:', utilError);
                         if (session) {
                             await session.abortTransaction();
                             session.endSession();
@@ -249,7 +251,7 @@ class WalletController {
                 targetWallet.balance += remainingBalance;
                 await saveWithSession(targetWallet, session);
                 
-                if (isDev) console.log(`[WalletController - deleteWallet] Transferred ${remainingBalance} to wallet ${targetWallet._id}`);
+                if (isDev) logger.debug(`[WalletController - deleteWallet] Transferred ${remainingBalance} to wallet ${targetWallet._id}`);
                 
                 // Find or create a category for account closures
                 let accountClosureCategory = null;
@@ -276,7 +278,7 @@ class WalletController {
                         }
                     }
                 } catch (categoryError) {
-                    console.error('[WalletController - deleteWallet] Error with category:', categoryError);
+                    logger.error('[WalletController - deleteWallet] Error with category:', categoryError);
                     if (session) {
                         await session.abortTransaction();
                         session.endSession();
@@ -314,7 +316,7 @@ class WalletController {
                     
                     await saveWithSession(transaction, session);
                 } catch (transactionError) {
-                    console.error('[WalletController - deleteWallet] Error creating transaction:', transactionError);
+                    logger.error('[WalletController - deleteWallet] Error creating transaction:', transactionError);
                     if (session) {
                         await session.abortTransaction();
                         session.endSession();
@@ -331,7 +333,7 @@ class WalletController {
             wallet.deletedAt = new Date();
             await saveWithSession(wallet, session);
             
-            if (isDev) console.log(`[WalletController - deleteWallet] Wallet ${id} marked as deleted`);
+            if (isDev) logger.debug(`[WalletController - deleteWallet] Wallet ${id} marked as deleted`);
             
             // Commit transaction if we're using one
             if (session) {
@@ -342,7 +344,7 @@ class WalletController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[walletController] Invalidated cache for user ${userId}`);
             
             res.json({
                 message: 'Wallet deleted successfully',
@@ -352,7 +354,7 @@ class WalletController {
             });
             
         } catch (error) {
-            console.error('[WalletController - deleteWallet] Error:', error);
+            logger.error('[WalletController - deleteWallet] Error:', error);
             
             // Abort transaction if we're using one
             if (session) {
@@ -384,7 +386,7 @@ class WalletController {
                 session.startTransaction();
                 useTransaction = true;
             } catch (sessionError) {
-                if (isDev) console.log('[WalletController - transferBalance] Transactions not supported, proceeding without transaction');
+                if (isDev) logger.debug('[WalletController - transferBalance] Transactions not supported, proceeding without transaction');
                 useTransaction = false;
                 session = null;
             }
@@ -474,7 +476,7 @@ class WalletController {
             // Invalidate user context cache
             const cacheKey = cacheUtil.generateKey('user_context', userId);
             await cacheUtil.del(cacheKey);
-            if (isDev) console.log(`[walletController] Invalidated cache for user ${userId}`);
+            if (isDev) logger.debug(`[walletController] Invalidated cache for user ${userId}`);
             
             res.json({
                 message: 'Transfer successful',
@@ -492,7 +494,7 @@ class WalletController {
             });
             
         } catch (error) {
-            console.error('[WalletController - transferBalance] Error:', error);
+            logger.error('[WalletController - transferBalance] Error:', error);
             
             if (session) {
                 await session.abortTransaction();

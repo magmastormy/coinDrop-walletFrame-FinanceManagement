@@ -21,7 +21,7 @@ const LoadingSpinner = ({
         "fixed inset-0 z-50 flex flex-col items-center justify-center"
       )}
       style={{
-        background: overlay ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.50)'
+        background: overlay ? 'var(--color-overlay-dark)' : 'var(--color-overlay-light)'
       }}>
         <Loader2 className={cn(
           "animate-spin text-primary",

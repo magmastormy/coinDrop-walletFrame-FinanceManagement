@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
   // Create wallet (only for some users to avoid too many duplicates)
   if (token && (__VU % 3 === 0)) {
     group('Create Wallet', function () {
@@ -43,7 +45,7 @@
               }
             }
           } catch (e) {
-            console.log(`Failed to parse categories response: ${e.message}`);
+            logger.debug(`Failed to parse categories response: ${e.message}`);
           }
         }
         
@@ -70,7 +72,7 @@
               }
             }
           } catch (e) {
-            console.log(`Failed to parse wallets response: ${e.message}`);
+            logger.debug(`Failed to parse wallets response: ${e.message}`);
           }
         }
         
@@ -93,7 +95,7 @@
                 walletId = walletData.id;
               }
             } catch (e) {
-              console.log(`Failed to parse wallet creation response: ${e.message}`);
+              logger.debug(`Failed to parse wallet creation response: ${e.message}`);
             }
           }
         }
@@ -143,11 +145,11 @@
           successRate.add(success);
           
           if (!success) {
-            console.log(`Budget creation failed with status ${budgetRes.status}: ${budgetRes.body}`);
+            logger.debug(`Budget creation failed with status ${budgetRes.status}: ${budgetRes.body}`);
           }
         }
       } catch (e) {
-        console.log(`Budget creation request failed: ${e.message}`);
+        logger.debug(`Budget creation request failed: ${e.message}`);
       }
     });
   }
@@ -179,7 +181,7 @@
               }
             }
           } catch (e) {
-            console.log(`Failed to parse wallets response: ${e.message}`);
+            logger.debug(`Failed to parse wallets response: ${e.message}`);
           }
         }
         
@@ -202,7 +204,7 @@
                 walletId = walletData.id;
               }
             } catch (e) {
-              console.log(`Failed to parse wallet creation response: ${e.message}`);
+              logger.debug(`Failed to parse wallet creation response: ${e.message}`);
             }
           }
         }

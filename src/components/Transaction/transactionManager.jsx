@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useLogger } from '../../hooks/useLogger.jsx';
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Loader2 } from 'lucide-react';
 import BulkEditToolbar from './bulkEditToolbar';
@@ -12,10 +14,11 @@ import CreateTransactionModal from './createTransactionModal';
 import CsvImportModal from './csvImportModal';
 import TransactionTable from './transactionTable';
 import FilterTransactions from './filterTransactions';
+import LoadingState from '../ui/LoadingState';
 
 const TransactionManager = () => {
     const dispatch = useDispatch();
-    const { transactions = [], loading, error } = useSelector(state => state.transaction || {});
+    const { transactions = [], loading } = useSelector(state => state.transaction || {});
     const { user } = useSelector(state => state.auth || {});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
@@ -39,18 +42,33 @@ const TransactionManager = () => {
             fetchInitialData();
             fetchBudgets();
         }
-    }, [user]);
+    }, [user, fetchInitialData, fetchBudgets]);
 
-    const fetchInitialData = async () => {
+    const fetchInitialData = useCallback(async () => {
         if (!user?.id) return;
         dispatch(setLoading(true));
         try {
-            const [walletsRes, savingsRes, categoriesRes, transactionsRes] = await Promise.all([
+            // Use Promise.allSettled to handle individual failures gracefully
+            const results = await Promise.allSettled([
                 walletService.getAllWallets(user.id),
                 savingsAccountService.getUserSavingsAccounts(user.id),
                 categoryService.getUserCategories(user.id),
                 transactionService.getUserTransactions(user.id, { ...filters, limit: 1000 })
             ]);
+
+            // Extract successful results
+            const walletsRes = results[0].status === 'fulfilled' ? results[0].value : [];
+            const savingsRes = results[1].status === 'fulfilled' ? results[1].value : [];
+            const categoriesRes = results[2].status === 'fulfilled' ? results[2].value : [];
+            const transactionsRes = results[3].status === 'fulfilled' ? results[3].value : { transactions: [] };
+
+            // Log any failures but continue with successful data
+            results.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    const operations = ['wallets', 'savings accounts', 'categories', 'transactions'];
+                    logError(`Failed to fetch ${operations[index]}:`, result.reason);
+                }
+            });
 
             setLocalWallets(walletsRes || []);
             setSavingsAccounts(savingsRes || []);
@@ -61,16 +79,18 @@ const TransactionManager = () => {
         } finally {
             dispatch(setLoading(false));
         }
-    };
+    }, [dispatch, user?.id, filters]);
 
-    const fetchBudgets = async () => {
+    const fetchBudgets = useCallback(async () => {
+        if (!user?.id) return;
         try {
             const res = await budgetService.getUserBudgets(user.id);
             setBudgets(res || []);
         } catch (err) {
-            console.error('Error fetching budgets:', err);
+            logError('Error fetching budgets:', err);
+            toast.error('Failed to load budgets. Please try again.');
         }
-    };
+    }, [user?.id]);
 
     const handleDeleteTransaction = async (transactionId) => {
         try {
@@ -78,7 +98,7 @@ const TransactionManager = () => {
             fetchInitialData();
             fetchBudgets();
         } catch (err) {
-            console.error('Error deleting transaction:', err);
+            logError('Error deleting transaction:', err);
         }
     };
 
@@ -90,7 +110,7 @@ const TransactionManager = () => {
             fetchInitialData();
             fetchBudgets();
         } catch (err) {
-            console.error('Error bulk deleting transactions:', err);
+            logError('Error bulk deleting transactions:', err);
         }
     };
 
@@ -101,7 +121,7 @@ const TransactionManager = () => {
             setBulkEditMode(false);
             fetchInitialData();
         } catch (err) {
-            console.error('Error bulk updating transactions:', err);
+            logError('Error bulk updating transactions:', err);
         }
     };
 
@@ -112,16 +132,33 @@ const TransactionManager = () => {
             const categoryMatch = !filters.category || t.category === filters.category || t.category?._id === filters.category;
             const walletMatch = !filters.walletId || t.walletId === filters.walletId || t.walletId?._id === filters.walletId;
             const savingsMatch = !filters.savingsAccountId || t.savingsAccountId === filters.savingsAccountId || t.savingsAccountId?._id === filters.savingsAccountId;
-            const startDateMatch = !filters.startDate || new Date(t.date) >= new Date(filters.startDate);
-            const endDateMatch = !filters.endDate || new Date(t.date) <= new Date(filters.endDate);
+            
+            // Validate dates before comparison
+            const transactionDate = t.date ? new Date(t.date) : null;
+            const startDate = filters.startDate ? new Date(filters.startDate) : null;
+            const endDate = filters.endDate ? new Date(filters.endDate) : null;
+            
+            // Check if dates are valid before comparing
+            const isValidTransactionDate = transactionDate && !isNaN(transactionDate.getTime());
+            const isValidStartDate = startDate && !isNaN(startDate.getTime());
+            const isValidEndDate = endDate && !isNaN(endDate.getTime());
+            
+            const startDateMatch = !filters.startDate || (!isValidStartDate || (isValidTransactionDate && transactionDate >= startDate));
+            const endDateMatch = !filters.endDate || (!isValidEndDate || (isValidTransactionDate && transactionDate <= endDate));
 
             return categoryMatch && walletMatch && savingsMatch && startDateMatch && endDateMatch;
         });
     }, [transactions, filters]);
 
     const stats = useMemo(() => {
-        const income = filteredTransactions.reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum, 0);
-        const expense = filteredTransactions.reduce((sum, t) => t.type === 'expense' ? sum + t.amount : sum, 0);
+        const income = filteredTransactions.reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' && !isNaN(t.amount) ? t.amount : 0;
+            return t.type === 'income' ? sum + amount : sum;
+        }, 0);
+        const expense = filteredTransactions.reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' && !isNaN(t.amount) ? t.amount : 0;
+            return t.type === 'expense' ? sum + amount : sum;
+        }, 0);
         return { income, expense, net: income - expense };
     }, [filteredTransactions]);
 
@@ -147,11 +184,7 @@ const TransactionManager = () => {
     };
 
     if (loading && !transactions.length) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--fc-primary)' }} />
-            </div>
-        );
+        return <LoadingState loading={loading} height="md" />;
     }
 
     return (
@@ -163,7 +196,7 @@ const TransactionManager = () => {
                     <div 
                         className="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-2xl transition-colors duration-500"
                         style={{ 
-                            backgroundColor: 'rgba(78, 222, 163, 0.05)',
+                            backgroundColor: 'var(--color-success-100)',
                         }}
                     />
                     <p className="font-medium text-sm mb-2 tracking-wide uppercase" style={{ color: 'var(--fc-on-tertiary-container)' }}>
@@ -183,7 +216,7 @@ const TransactionManager = () => {
                     <div 
                         className="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-2xl transition-colors duration-500"
                         style={{ 
-                            backgroundColor: 'rgba(255, 180, 171, 0.05)',
+                            backgroundColor: 'var(--color-error-100)',
                         }}
                     />
                     <p className="font-medium text-sm mb-2 tracking-wide uppercase" style={{ color: 'var(--fc-on-tertiary-container)' }}>
@@ -203,7 +236,7 @@ const TransactionManager = () => {
                     <div 
                         className="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-2xl transition-colors duration-500"
                         style={{ 
-                            backgroundColor: 'rgba(182, 196, 255, 0.05)',
+                            backgroundColor: 'var(--color-primary-100)'
                         }}
                     />
                     <p className="font-medium text-sm mb-2 tracking-wide uppercase" style={{ color: 'var(--fc-on-tertiary-container)' }}>

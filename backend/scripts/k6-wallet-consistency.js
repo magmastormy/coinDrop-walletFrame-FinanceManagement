@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
@@ -19,7 +21,7 @@ const USERS = [];
 
 // Setup function to create test users and wallets
 export function setup() {
-  console.log('Setting up test users and wallets...');
+  logger.debug('Setting up test users and wallets...');
   
   // Create 5 test users
   for (let i = 1; i <= 5; i++) {
@@ -105,30 +107,30 @@ export function setup() {
                     walletId: walletId,
                     email: email
                   });
-                  console.log(`Created test user ${i} with wallet ID: ${walletId}`);
+                  logger.debug(`Created test user ${i} with wallet ID: ${walletId}`);
                 }
               } catch (e) {
-                console.log(`Failed to parse wallet response: ${e.message}`);
+                logger.debug(`Failed to parse wallet response: ${e.message}`);
               }
             } else {
-              console.log(`Failed to create wallet for user ${i}. Status: ${walletRes.status}`);
+              logger.debug(`Failed to create wallet for user ${i}. Status: ${walletRes.status}`);
             }
           }
         } catch (e) {
-          console.log(`Failed to parse login response: ${e.message}`);
+          logger.debug(`Failed to parse login response: ${e.message}`);
         }
       } else {
-        console.log(`Failed to login as user ${i}. Status: ${loginRes.status}`);
+        logger.debug(`Failed to login as user ${i}. Status: ${loginRes.status}`);
       }
     } else {
-      console.log(`Failed to register user ${i}. Status: ${regRes.status}`);
+      logger.debug(`Failed to register user ${i}. Status: ${regRes.status}`);
     }
     
     // Wait between user creations to avoid rate limiting
     sleep(1);
   }
   
-  console.log(`Setup complete. Created ${USERS.length} test users with wallets.`);
+  logger.debug(`Setup complete. Created ${USERS.length} test users with wallets.`);
   return { USERS };
 }
 
@@ -136,7 +138,7 @@ export default function () {
   // Pick a random user for this iteration
   const user = USERS[Math.floor(Math.random() * USERS.length)];
   if (!user) {
-    console.error('No test users available. Check if setup function completed successfully.');
+    logger.error('No test users available. Check if setup function completed successfully.');
     return;
   }
   
@@ -163,7 +165,7 @@ export default function () {
           JSON.parse(r.body);
           return true;
         } catch (e) {
-          console.log(`Invalid JSON response: ${e.message}`);
+          logger.debug(`Invalid JSON response: ${e.message}`);
           return false;
         }
       },
@@ -183,12 +185,12 @@ export default function () {
     if (res.status === 200) {
       try {
         const data = JSON.parse(res.body);
-        console.log(`Updated wallet ${user.walletId} balance: ${data.balance}`);
+        logger.debug(`Updated wallet ${user.walletId} balance: ${data.balance}`);
       } catch (e) {
-        console.log(`Could not parse response: ${e.message}`);
+        logger.debug(`Could not parse response: ${e.message}`);
       }
     } else {
-      console.log(`Failed to update wallet. Status: ${res.status}, Response: ${res.body}`);
+      logger.debug(`Failed to update wallet. Status: ${res.status}, Response: ${res.body}`);
     }
   });
   

@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 const API_URL = '/saving-accounts';
 
@@ -46,25 +48,94 @@ export const savingsAccountService = {
     },
 
     transferFunds: async ({ accountId, walletId, amount, direction = 'deposit', description = 'Savings transfer' }) => {
-        const endpoint = direction === 'withdraw'
-            ? `${API_URL}/${accountId}/withdraw`
-            : `${API_URL}/${accountId}/deposit`;
+        // Validate inputs
+        if (!accountId || typeof accountId !== 'string') {
+            throw new Error('Valid account ID is required');
+        }
+        
+        if (!walletId || typeof walletId !== 'string') {
+            throw new Error('Valid wallet ID is required');
+        }
+        
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            throw new Error('Valid positive amount is required');
+        }
 
-        const response = await axiosInstance.post(endpoint, {
-            walletId,
-            amount: parseFloat(amount),
-            description
-        });
+        try {
+            const endpoint = direction === 'withdraw'
+                ? `${API_URL}/${accountId}/withdraw`
+                : `${API_URL}/${accountId}/deposit`;
+            
+            const response = await axiosInstance.post(endpoint, {
+                walletId,
+                amount: numAmount,
+                description
+            });
 
-        return response;
+            return response;
+        } catch (error) {
+            logError(`Transfer ${direction} failed:`, error);
+            throw error;
+        }
     },
 
     depositToSavings: async ({ accountId, walletId, amount }) => {
-        return savingsAccountService.transferFunds({ accountId, walletId, amount, direction: 'deposit' });
+        // Validate inputs
+        if (!accountId || typeof accountId !== 'string') {
+            throw new Error('Valid account ID is required');
+        }
+        
+        if (!walletId || typeof walletId !== 'string') {
+            throw new Error('Valid wallet ID is required');
+        }
+
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            throw new Error('Valid positive amount is required');
+        }
+
+        try {
+            const response = await axiosInstance.post(`${API_URL}/${accountId}/deposit`, {
+                walletId,
+                amount: numAmount,
+                description: 'Wallet to savings transfer'
+            });
+
+            return response;
+        } catch (error) {
+            logError('Deposit to savings failed:', error);
+            throw error;
+        }
     },
 
     withdrawFromSavings: async ({ accountId, walletId, amount }) => {
-        return savingsAccountService.transferFunds({ accountId, walletId, amount, direction: 'withdraw' });
+        // Validate inputs
+        if (!accountId || typeof accountId !== 'string') {
+            throw new Error('Valid account ID is required');
+        }
+        
+        if (!walletId || typeof walletId !== 'string') {
+            throw new Error('Valid wallet ID is required');
+        }
+
+        const numAmount = parseFloat(amount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            throw new Error('Valid positive amount is required');
+        }
+
+        try {
+            const response = await axiosInstance.post(`${API_URL}/${accountId}/withdraw`, {
+                walletId,
+                amount: numAmount,
+                description: 'Savings to wallet transfer'
+            });
+
+            return response;
+        } catch (error) {
+            logError('Withdraw from savings failed:', error);
+            throw error;
+        }
     },
 
     transferBetweenSavings: async ({ fromAccountId, toAccountId, amount }) => {

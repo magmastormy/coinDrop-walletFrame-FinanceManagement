@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -40,7 +42,7 @@ const Sidebar = () => {
         try {
             await logout();
         } catch (error) {
-            console.error('Logout failed:', error);
+            logError('Logout failed:', error);
         } finally {
             closeSidebar();
             navigate('/login');

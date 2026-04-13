@@ -1,3 +1,5 @@
+import { useLogger } from './hooks/useLogger';
+
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Image, X, Loader } from 'lucide-react';
@@ -33,7 +35,7 @@ const EducationImageUpload = ({
             }
         } catch (error) {
             setError(error.message || 'Error uploading image');
-            console.error('Image upload error:', error);
+            logError('Image upload error:', error);
         } finally {
             setUploading(false);
         }

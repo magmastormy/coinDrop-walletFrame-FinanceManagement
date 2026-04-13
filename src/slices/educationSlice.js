@@ -13,16 +13,10 @@ const educationSlice = createSlice({
     reducers: {
         setEducations: (state, action) => {
             // Ensure we only store serializable data (array of education objects)
-            const payload = action.payload;
-            if (Array.isArray(payload)) {
-                state.educations = payload;
-            } else if (payload && Array.isArray(payload.data)) {
-                state.educations = payload.data;
-            } else if (payload && Array.isArray(payload.educations)) {
-                state.educations = payload.educations;
-            } else {
-                state.educations = [];
-            }
+            state.educations = Array.isArray(action.payload) ? action.payload : 
+                         (action.payload?.data && Array.isArray(action.payload.data)) ? action.payload.data :
+                         (action.payload?.educations && Array.isArray(action.payload.educations)) ? action.payload.educations :
+                         [];
             state.loading = false;
             state.error = null;
         },
@@ -55,51 +49,79 @@ const educationSlice = createSlice({
 
         addLike: (state, action) => {
             const { educationId, userId } = action.payload;
-            const education = state.educations.find(e => e._id === educationId);
-            if (education && !education.likes.includes(userId)) {
-                education.likes.push(userId);
+            const educationIndex = state.educations.findIndex(e => e._id === educationId);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                const likes = education.likes || [];
+                if (!likes.includes(userId)) {
+                    state.educations[educationIndex] = {
+                        ...education,
+                        likes: [...likes, userId]
+                    };
+                }
             }
         },
         removeLike: (state, action) => {
             const { educationId, userId } = action.payload;
-            const education = state.educations.find(e => e._id === educationId);
-            if (education) {
-                education.likes = education.likes.filter(id => id !== userId);
+            const educationIndex = state.educations.findIndex(e => e._id === educationId);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                state.educations[educationIndex] = {
+                    ...education,
+                    likes: (education.likes || []).filter(id => id !== userId)
+                };
             }
         },
         addComment: (state, action) => {
             const { educationId, comment } = action.payload;
-            const education = state.educations.find(e => e._id === educationId);
-            if (education) {
-                education.comments.push(comment);
+            const educationIndex = state.educations.findIndex(e => e._id === educationId);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                const comments = education.comments || [];
+                state.educations[educationIndex] = {
+                    ...education,
+                    comments: [...comments, comment]
+                };
             }
         },
         deleteComment: (state, action) => {
             const { educationId, commentId } = action.payload;
-            const education = state.educations.find(e => e._id === educationId);
-            if (education) {
-                education.comments = education.comments.filter(c => c._id !== commentId);
+            const educationIndex = state.educations.findIndex(e => e._id === educationId);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                state.educations[educationIndex] = {
+                    ...education,
+                    comments: (education.comments || []).filter(c => c._id !== commentId)
+                };
             }
         },
 
         updateEditorContent: (state, action) => {
             const { id, content } = action.payload;
-            const education = state.educations.find(e => e._id === id);
-            if (education) {
-                education.details = content;
+            const educationIndex = state.educations.findIndex(e => e._id === id);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                state.educations[educationIndex] = {
+                    ...education,
+                    details: content
+                };
             }
         },
 
         addImageToPost: (state, action) => {
             const { id, imageUrl } = action.payload;
-            const education = state.educations.find(e => e._id === id);
-            if (education) {
-                education.images = education.images || [];
-                education.images.push({
-                    url: imageUrl,
-                    alt: '',
-                    caption: ''
-                });
+            const educationIndex = state.educations.findIndex(e => e._id === id);
+            if (educationIndex !== -1) {
+                const education = state.educations[educationIndex];
+                const images = education.images || [];
+                state.educations[educationIndex] = {
+                    ...education,
+                    images: [...images, {
+                        url: imageUrl,
+                        alt: '',
+                        caption: ''
+                    }]
+                };
             }
         },
 

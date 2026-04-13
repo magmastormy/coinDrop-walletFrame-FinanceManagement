@@ -5,6 +5,7 @@ import { Plus, Check, X, AlertTriangle, Loader } from 'lucide-react';
 import { setCategories, setLoading, setError } from '../../slices/categorySlice';
 import categoryService from '../../services/categoryService';
 import transactionService from '../../services/transactionService';
+import ValidationUtils from '../../utils/validationUtils';
 import CategoryPanel from './categoryPanel';
 import ExpensesByCategoryChart from './expensesbycategoryChart';
 import Button from '../ui/Button';
@@ -49,11 +50,25 @@ const CategoryManager = () => {
 
     const handleCreateCategory = async (e) => {
         e.preventDefault();
-        if (!newCategory.trim()) return;
+        
+        // Validate category name
+        const nameValidation = ValidationUtils.validateRequiredString(newCategory, 'Category name', 1, 50);
+        if (!nameValidation.isValid) {
+            dispatch(setError(nameValidation.error));
+            return;
+        }
 
         try {
             const categoryData = { name: newCategory.trim() };
-            await categoryService.createCategory(categoryData);
+            await ValidationUtils.withTimeout(
+                ValidationUtils.withRetry(
+                    () => categoryService.createCategory(categoryData),
+                    'createCategory',
+                    3,
+                    1000
+                ),
+                30000
+            );
             fetchCategories();
             setNewCategory('');
         } catch (err) {
@@ -63,11 +78,25 @@ const CategoryManager = () => {
 
     const handleEditCategory = async (e) => {
         e.preventDefault();
-        if (!newCategory.trim()) return;
+        
+        // Validate category name
+        const nameValidation = ValidationUtils.validateRequiredString(newCategory, 'Category name', 1, 50);
+        if (!nameValidation.isValid) {
+            dispatch(setError(nameValidation.error));
+            return;
+        }
 
         try {
             const categoryData = { name: newCategory.trim() };
-            await categoryService.updateCategory(editingCategory._id, categoryData);
+            await ValidationUtils.withTimeout(
+                ValidationUtils.withRetry(
+                    () => categoryService.updateCategory(editingCategory._id, categoryData),
+                    'updateCategory',
+                    3,
+                    1000
+                ),
+                30000
+            );
             fetchCategories();
             setNewCategory('');
             setEditingCategory(null);

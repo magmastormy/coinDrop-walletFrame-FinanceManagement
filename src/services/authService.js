@@ -15,13 +15,13 @@ export const AUTH_ERRORS = {
 };
 
 const storeUserData = (accessToken, refreshToken, userData, csrfToken) => {
-    localStorage.setItem('token', accessToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', accessToken);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken);
+        sessionStorage.setItem('refreshToken', refreshToken);
     }
     if (csrfToken) {
-        localStorage.setItem('csrfToken', csrfToken);
+        sessionStorage.setItem('csrfToken', csrfToken);
     }
 
     store.dispatch(loginSuccess({
@@ -33,10 +33,10 @@ const storeUserData = (accessToken, refreshToken, userData, csrfToken) => {
 };
 
 const clearUserData = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('csrfToken');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('csrfToken');
 };
 
 // Rate limiting to prevent rapid login attempts
@@ -127,14 +127,14 @@ export const logoutUser = () => {
 };
 
 export const isAuthenticated = () => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const user = sessionStorage.getItem('user');
     return Boolean(token && user);
 };
 
 export const getStoredUser = () => {
     try {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     } catch (_error) {
         return null;

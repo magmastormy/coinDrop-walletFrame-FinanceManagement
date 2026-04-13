@@ -1,6 +1,9 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import budgetService from '../../services/budgetService';
+import ValidationUtils from '../../utils/validationUtils';
 import Modal from '../ui/Modal';
 import { Input } from '../ui/Input';
 import Button from '../ui/Button';
@@ -89,6 +92,13 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
         setError('');
         setLoading(true);
 
+        // Validate userId first
+        if (!userId || typeof userId !== 'string') {
+            setError('User authentication required. Please log in again.');
+            setLoading(false);
+            return;
+        }
+
         // Validate required fields
         if (!budgetFormData.name || !budgetFormData.amount || !budgetFormData.categoryId || !budgetFormData.walletId || !budgetFormData.type) {
             setError('All fields are required: name, amount, category, wallet, and type');
@@ -96,17 +106,27 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             return;
         }
 
-        // Validate amount is a positive number
-        const amount = parseFloat(budgetFormData.amount);
-        if (isNaN(amount) || amount <= 0) {
-            setError('Amount must be a positive number');
+        // Validate amount using ValidationUtils
+        const amountValidation = ValidationUtils.validateAmount(budgetFormData.amount, false);
+        if (!amountValidation.isValid) {
+            setError(amountValidation.error);
             setLoading(false);
             return;
         }
 
+        // Validate budget name
+        const nameValidation = ValidationUtils.validateRequiredString(budgetFormData.name, 'Budget name', 1, 100);
+        if (!nameValidation.isValid) {
+            setError(nameValidation.error);
+            setLoading(false);
+            return;
+        }
+
+        const amount = parseFloat(budgetFormData.amount);
+
         try {
             const budgetPayload = {
-                name: budgetFormData.name,
+                name: budgetFormData.name.trim(),
                 amount: amount,
                 categoryId: budgetFormData.categoryId,
                 walletId: budgetFormData.walletId,
@@ -119,16 +139,32 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
             };
 
             if (budgetData) {
-                await budgetService.updateBudget(budgetData._id, budgetPayload);
+                await ValidationUtils.withTimeout(
+                    ValidationUtils.withRetry(
+                        () => budgetService.updateBudget(budgetData._id, budgetPayload),
+                        'updateBudget',
+                        3,
+                        1000
+                    ),
+                    30000
+                );
             } else {
-                await budgetService.createBudget(budgetPayload);
+                await ValidationUtils.withTimeout(
+                    ValidationUtils.withRetry(
+                        () => budgetService.createBudget(budgetPayload),
+                        'createBudget',
+                        3,
+                        1000
+                    ),
+                    30000
+                );
             }
 
             onCreateBudget();
             resetForm();
             onClose();
         } catch (err) {
-            // Error already handled by form validation
+            logError('Budget operation failed:', err);
             setError(err.message || 'Failed to save budget. Please try again.');
         } finally {
             setLoading(false);
@@ -181,7 +217,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 <Input
                     label="Budget Name"
                     value={budgetFormData.name}
-                    onChange={e => setBudgetFormData({ ...budgetFormData, name: e.target.value })}
+                    onChange={e => setBudgetFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Monthly Groceries"
                     required
                     fullWidth
@@ -191,7 +227,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                     label="Amount"
                     type="number"
                     value={budgetFormData.amount}
-                    onChange={e => setBudgetFormData({ ...budgetFormData, amount: e.target.value })}
+                    onChange={e => setBudgetFormData(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="0.00"
                     icon={DollarSign}
                     required
@@ -201,7 +237,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 <Select
                     label="Type"
                     value={budgetFormData.type}
-                    onChange={e => setBudgetFormData({ ...budgetFormData, type: e.target.value })}
+                    onChange={e => setBudgetFormData(prev => ({ ...prev, type: e.target.value }))}
                     className="pl-10"
                 >
                     <option value="expense">Expense</option>
@@ -212,7 +248,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 <Select
                     label="Category"
                     value={budgetFormData.categoryId}
-                    onChange={e => setBudgetFormData({ ...budgetFormData, categoryId: e.target.value })}
+                    onChange={e => setBudgetFormData(prev => ({ ...prev, categoryId: e.target.value }))}
                     className="pl-10"
                     required
                 >
@@ -225,7 +261,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                 <Select
                     label="Wallet"
                     value={budgetFormData.walletId}
-                    onChange={e => setBudgetFormData({ ...budgetFormData, walletId: e.target.value })}
+                    onChange={e => setBudgetFormData(prev => ({ ...prev, walletId: e.target.value }))}
                     className="pl-10"
                     required
                 >
@@ -240,7 +276,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         label="Start Date"
                         type="date"
                         value={budgetFormData.startDate}
-                        onChange={e => setBudgetFormData({ ...budgetFormData, startDate: e.target.value })}
+                        onChange={e => setBudgetFormData(prev => ({ ...prev, startDate: e.target.value }))}
                         className="pl-10"
                         required
                     />
@@ -248,7 +284,7 @@ const CreateBudgetModal = ({ isOpen, onClose, onCreateBudget, categories, wallet
                         label="End Date"
                         type="date"
                         value={budgetFormData.endDate}
-                        onChange={e => setBudgetFormData({ ...budgetFormData, endDate: e.target.value })}
+                        onChange={e => setBudgetFormData(prev => ({ ...prev, endDate: e.target.value }))}
                         className="pl-10"
                     />
                 </div>

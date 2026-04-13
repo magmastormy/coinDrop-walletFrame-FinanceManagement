@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, Wallet as WalletIcon, Shield, Loader } from 'lucide-react';
 import Button from '../ui/Button';
 import { Select } from '../ui/Select';
+import { useCurrencyFormatter } from '../../hooks/useCurrencyFormatter';
 
 const DeleteWalletDialog = ({
     isOpen,
@@ -14,6 +15,8 @@ const DeleteWalletDialog = ({
 }) => {
     const [selectedWalletId, setSelectedWalletId] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    
+    const formatCurrency = useCurrencyFormatter();
 
     useEffect(() => {
         if (isOpen && otherWallets.length > 0) {
@@ -35,12 +38,6 @@ const DeleteWalletDialog = ({
 
     const hasBalance = wallet?.balance > 0;
     const hasOtherWallets = otherWallets.length > 0;
-    const formatCurrency = (amount) => new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(amount);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

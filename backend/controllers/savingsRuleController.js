@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const mongoose = require('mongoose');
 const SavingsRule = require('../models/SavingsRule');
 const SavingsAccount = require('../models/SavingsAccount');
@@ -14,7 +16,7 @@ class SavingsRuleController {
             const rules = await SavingsRule.find({ userId });
             res.json(rules);
         } catch (error) {
-            console.error('Error fetching savings rules:', error);
+            logger.error('Error fetching savings rules:', error);
             res.status(500).json({ error: 'Failed to fetch savings rules' });
         }
     }
@@ -36,7 +38,7 @@ class SavingsRuleController {
             await newRule.save();
             res.status(201).json(newRule);
         } catch (error) {
-            console.error('Error creating savings rule:', error);
+            logger.error('Error creating savings rule:', error);
             res.status(400).json({ error: 'Failed to create savings rule' });
         }
     }
@@ -63,7 +65,7 @@ class SavingsRuleController {
             
             res.json(updatedRule);
         } catch (error) {
-            console.error('Error updating savings rule:', error);
+            logger.error('Error updating savings rule:', error);
             res.status(400).json({ error: 'Failed to update savings rule' });
         }
     }
@@ -86,7 +88,7 @@ class SavingsRuleController {
             
             res.json({ message: 'Savings rule deleted successfully' });
         } catch (error) {
-            console.error('Error deleting savings rule:', error);
+            logger.error('Error deleting savings rule:', error);
             res.status(400).json({ error: 'Failed to delete savings rule' });
         }
     }
@@ -102,7 +104,7 @@ class SavingsRuleController {
             const result = await executeRulesForTransaction(userId, transactionData);
             return res.json(result);
         } catch (error) {
-            console.error('Error executing savings rules:', error);
+            logger.error('Error executing savings rules:', error);
             return res.status(500).json({ error: 'Failed to execute savings rules' });
         }
     }
@@ -167,7 +169,7 @@ class SavingsRuleController {
                 details: executedRules 
             });
         } catch (error) {
-            console.error('Error executing all savings rules:', error);
+            logger.error('Error executing all savings rules:', error);
             res.status(500).json({ error: 'Failed to execute savings rules' });
         }
     }
@@ -197,7 +199,7 @@ class SavingsRuleController {
             
             res.json(stats);
         } catch (error) {
-            console.error('Error fetching rule statistics:', error);
+            logger.error('Error fetching rule statistics:', error);
             res.status(500).json({ error: 'Failed to fetch rule statistics' });
         }
     }
@@ -240,7 +242,7 @@ class SavingsRuleController {
             await autoTransferRule.save();
             res.status(201).json(autoTransferRule);
         } catch (error) {
-            console.error('Error setting up auto-transfer:', error);
+            logger.error('Error setting up auto-transfer:', error);
             res.status(500).json({ error: 'Failed to setup auto-transfer' });
         }
     }
@@ -279,7 +281,7 @@ class SavingsRuleController {
             await rule.save();
             res.json(rule);
         } catch (error) {
-            console.error('Error updating goal-based savings:', error);
+            logger.error('Error updating goal-based savings:', error);
             res.status(500).json({ error: 'Failed to update goal-based savings' });
         }
     }

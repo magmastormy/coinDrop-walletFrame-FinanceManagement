@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Target, DollarSign, Calendar } from 'lucide-react';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
+import FormContainer from '../ui/FormContainer';
+import useFormManager from '../../hooks/useFormManager';
 
 const NewGoalCard = ({ onCreate }) => {
-  const [formData, setFormData] = useState({
+  const { formData, updateField, resetForm } = useFormManager({
     name: '',
     targetAmount: '',
     deadline: ''
@@ -16,10 +18,11 @@ const NewGoalCard = ({ onCreate }) => {
       ...formData,
       targetAmount: Number(formData.targetAmount)
     });
+    resetForm();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-6">
+    <FormContainer onSubmit={handleSubmit} spacing="6" className="flex-1 flex flex-col">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
           <Target className="w-[20px] h-[20px]" strokeWidth={1.5} />
@@ -33,13 +36,8 @@ const NewGoalCard = ({ onCreate }) => {
           <Input
             placeholder="e.g., First Home, New Car, Europe Trip"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => updateField('name', e.target.value)}
             required
-            style={{
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-surface-2)',
-              color: 'var(--color-text-primary)',
-            }}
           />
         </div>
 
@@ -51,16 +49,11 @@ const NewGoalCard = ({ onCreate }) => {
               type="number"
               placeholder="0.00"
               value={formData.targetAmount}
-              onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
+              onChange={(e) => updateField('targetAmount', e.target.value)}
               required
               min="0"
               step="0.01"
               className="pl-9"
-              style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-surface-2)',
-                color: 'var(--color-text-primary)',
-              }}
             />
           </div>
         </div>
@@ -72,27 +65,22 @@ const NewGoalCard = ({ onCreate }) => {
             <Input
               type="date"
               value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              onChange={(e) => updateField('deadline', e.target.value)}
               className="pl-9"
-              style={{
-                border: '1px solid var(--color-border)',
-                background: 'var(--color-surface-2)',
-                color: 'var(--color-text-primary)',
-              }}
             />
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-        <Button variant="ghost" type="button">
+      <div className="flex justify-end gap-3 pt-4 border-t border-border">
+        <Button variant="ghost" type="button" onClick={resetForm}>
           Cancel
         </Button>
         <Button type="submit" disabled={!formData.name || !formData.targetAmount}>
           Create Goal
         </Button>
       </div>
-    </form>
+    </FormContainer>
   );
 };
 

@@ -9,8 +9,8 @@ const TransactionChart = ({ transactions }) => {
                 label: 'Transaction Amount',
                 data: transactions.map(t => t.amount),
                 fill: false,
-                backgroundColor: 'rgba(75,192,192,0.4)',
-                borderColor: 'rgba(75,192,192,1)',
+                backgroundColor: 'var(--color-primary-200)',
+                borderColor: 'var(--color-primary)',
             },
         ],
     };

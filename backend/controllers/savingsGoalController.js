@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const SavingsGoal = require('../models/SavingsGoal');
 const SavingsAccount = require('../models/SavingsAccount');
 const mongoose = require('mongoose');
@@ -17,7 +19,7 @@ class SavingsGoalController {
             const goals = await SavingsGoal.find({ userId: userId, isActive: true });
             res.json(goals);
         } catch (error) {
-            console.error('[SavingsGoalController - getUserSavingsGoals] Error:', error);
+            logger.error('[SavingsGoalController - getUserSavingsGoals] Error:', error);
             res.status(500).json({ error: 'Failed to fetch savings goals', details: error.message });
         }
     }
@@ -34,7 +36,7 @@ class SavingsGoalController {
             
             res.status(201).json(newGoal);
         } catch (error) {
-            console.error('[SavingsGoalController] Error creating savings goal:', error);
+            logger.error('[SavingsGoalController] Error creating savings goal:', error);
             res.status(400).json({ error: 'Failed to create savings goal' });
         }
     }
@@ -247,8 +249,8 @@ class SavingsGoalController {
             const userId = getAuthenticatedUserId(req);
             const numericAmount = Number(amount);
 
-            if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
-            if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
+            if (isDev) logger.debug("[savingsGoalController - contributeSavingsGoal] - sourceType: ", sourceType);
+            if (isDev) logger.debug("[savingsGoalController - contributeSavingsGoal] - sourceId: ", sourceId);
 
             if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
                 throw new Error('Amount must be a positive number');
@@ -262,7 +264,7 @@ class SavingsGoalController {
             // Find the source (wallet or savings account)
             let source;
             if (sourceType == "wallet") {
-                if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
+                if (isDev) logger.debug("[savingsGoalController - contributeSavingsGoal] source: ", sourceType);
                 // Use atomic operation to check and update balance
                 const sourceUpdate = await Wallet.findOneAndUpdate(
                     {
@@ -286,7 +288,7 @@ class SavingsGoalController {
                 
                 source = await Wallet.findById(sourceId).session(session);
             } else {
-                if (isDev) console.log("[savingsGoalController - contributeSavingsGoal] source is Savings");
+                if (isDev) logger.debug("[savingsGoalController - contributeSavingsGoal] source is Savings");
                 // Use atomic operation for savings account
                 const sourceUpdate = await SavingsAccount.findOneAndUpdate(
                     {
@@ -387,7 +389,7 @@ class SavingsGoalController {
                     try {
                         await session.abortTransaction();
                     } catch (abortError) {
-                        console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction: ${abortError.message}`);
+                        logger.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Error aborting transaction: ${abortError.message}`);
                     }
                 }
                 throw error; // Rethrow for retry mechanism
@@ -403,7 +405,7 @@ class SavingsGoalController {
             for (let attempt = 0; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
                 try {
                     if (attempt > 0) {
-                        if (isDev) console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Retry attempt ${attempt} of ${MAX_RETRY_ATTEMPTS}`);
+                        if (isDev) logger.debug(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Retry attempt ${attempt} of ${MAX_RETRY_ATTEMPTS}`);
                         // Add exponential backoff delay between retries
                         const delay = Math.pow(2, attempt) * 100; // 200ms, 400ms, 800ms
                         await new Promise(resolve => setTimeout(resolve, delay));
@@ -418,7 +420,7 @@ class SavingsGoalController {
                         error.errorLabels.includes('TransientTransactionError');
                     
                     if (isTransientError && attempt < MAX_RETRY_ATTEMPTS) {
-                        if (isDev) console.log(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Transaction failed with transient error, will retry:`, error.message);
+                        if (isDev) logger.debug(`[SavingsGoalController - contributeSavingsGoal][${operationId}] Transaction failed with transient error, will retry:`, error.message);
                         continue; // Try again
                     }
                     
@@ -427,7 +429,7 @@ class SavingsGoalController {
                 }
             }
         } catch (error) {
-            console.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] ${error.message}`);
+            logger.error(`[SavingsGoalController - contributeSavingsGoal][${operationId}] ${error.message}`);
             res.status(400).json({
                 success: false,
                 error: 'Contribution failed',
@@ -537,7 +539,7 @@ class SavingsGoalController {
                 totalRecommendations: recommendations.length
             });
         } catch (error) {
-            console.error('[SavingsGoalController - generateRecommendations] Error:', error);
+            logger.error('[SavingsGoalController - generateRecommendations] Error:', error);
             res.status(500).json({ error: 'Failed to generate recommendations', details: error.message });
         }
     }

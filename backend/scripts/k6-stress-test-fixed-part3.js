@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
         
         // Now create the transaction with more detailed descriptions
         const categories = ['Food', 'Transportation', 'Entertainment', 'Shopping', 'Utilities'];
@@ -66,7 +68,7 @@
               }
             }
           } catch (e) {
-            console.log(`Failed to parse categories response: ${e.message}`);
+            logger.debug(`Failed to parse categories response: ${e.message}`);
           }
         }
         
@@ -113,7 +115,7 @@
               const randomSuffix = Math.floor(Math.random() * 10000);
               const categoryName = `Entertainment_${timestamp}_${randomSuffix}`;
               
-              console.log(`Attempting to create category: ${categoryName}`);
+              logger.debug(`Attempting to create category: ${categoryName}`);
               
               const categoryPayload = JSON.stringify({
                 name: categoryName,
@@ -149,10 +151,10 @@
                     return categoryData.id;
                   }
                 } catch (e) {
-                  console.log(`Failed to parse category creation response: ${e.message}`);
+                  logger.debug(`Failed to parse category creation response: ${e.message}`);
                 }
               } else {
-                console.log(`Failed to create category. Status: ${createCategoryRes.status}, Response: ${createCategoryRes.body}`);
+                logger.debug(`Failed to create category. Status: ${createCategoryRes.status}, Response: ${createCategoryRes.body}`);
               }
               
               // If we get here, the request failed but wasn't rate limited
@@ -162,7 +164,7 @@
                 delay *= 2; // Exponential backoff
               }
             } catch (e) {
-              console.log(`Category creation exception: ${e.message}`);
+              logger.debug(`Category creation exception: ${e.message}`);
               retries--;
               if (retries > 0) {
                 sleep(delay);
@@ -179,9 +181,9 @@
           // Create category without using Promise
           categoryId = createCategory(token, userId);
           if (categoryId) {
-            console.log(`Successfully created category with ID: ${categoryId}`);
+            logger.debug(`Successfully created category with ID: ${categoryId}`);
           } else {
-            console.log('Failed to create category after multiple attempts');
+            logger.debug('Failed to create category after multiple attempts');
           }
         }
         
@@ -204,7 +206,7 @@
                 currency: 'USD'
               });
               
-              console.log(`Attempting to create wallet: ${uniqueWalletName}`);
+              logger.debug(`Attempting to create wallet: ${uniqueWalletName}`);
               
               const createWalletRes = http.post('http://localhost:5001/api/wallets', walletPayload, {
                 headers: {
@@ -234,10 +236,10 @@
                     return walletData.id;
                   }
                 } catch (e) {
-                  console.log(`Failed to parse wallet creation response: ${e.message}`);
+                  logger.debug(`Failed to parse wallet creation response: ${e.message}`);
                 }
               } else {
-                console.log(`Failed to create wallet. Status: ${createWalletRes.status}, Response: ${createWalletRes.body}`);
+                logger.debug(`Failed to create wallet. Status: ${createWalletRes.status}, Response: ${createWalletRes.body}`);
               }
               
               // If we get here, the request failed but wasn't rate limited
@@ -247,7 +249,7 @@
                 delay *= 2; // Exponential backoff
               }
             } catch (e) {
-              console.log(`Wallet creation exception: ${e.message}`);
+              logger.debug(`Wallet creation exception: ${e.message}`);
               retries--;
               if (retries > 0) {
                 sleep(delay);

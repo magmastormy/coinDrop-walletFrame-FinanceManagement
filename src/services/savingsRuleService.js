@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/savings-rules';
@@ -8,7 +10,7 @@ const savingsRuleService = {
             const response = await axiosInstance.get(`${API_URL}/user`);
             return Array.isArray(response) ? response : [];
         } catch (error) {
-            console.error('Savings Rule Service - Error fetching rules:', error);
+            logError('Savings Rule Service - Error fetching rules:', error);
             return [];
         }
     },
@@ -43,7 +45,7 @@ const savingsRuleService = {
             const response = await axiosInstance.get(`${API_URL}/stats`);
             return response || {};
         } catch (error) {
-            console.error('Savings Rule Service - Error fetching rule stats:', error);
+            logError('Savings Rule Service - Error fetching rule stats:', error);
             return {};
         }
     },

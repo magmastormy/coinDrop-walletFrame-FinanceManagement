@@ -3,70 +3,73 @@ const crypto = require('crypto');
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const { swaggerUiOptions } = require('./config/swagger');
 
-console.log('🔄 app.js: Loading...');
+const logger = require('./utils/logger');
+logger.debug('🔄 app.js: Loading...');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
-console.log('✅ app.js: Core dependencies loaded (express, cors, rate-limit)');
-const logger = require('./utils/logger');
-console.log('✅ app.js: Logger loaded');
+logger.debug('✅ app.js: Core dependencies loaded (express, cors, rate-limit)');
+logger.debug('✅ app.js: Logger loaded');
 
 const { sanitizationMiddleware } = require('./middleware/validationMiddleware');
-console.log('✅ app.js: Validation middleware loaded');
+logger.debug('✅ app.js: Validation middleware loaded');
 
 const auditMiddleware = require('./middleware/auditMiddleware');
-console.log('✅ app.js: Audit middleware loaded');
+logger.debug('✅ app.js: Audit middleware loaded');
 
-console.log('🔄 app.js: Loading routes...');
+logger.debug('🔄 app.js: Loading routes...');
 const receiptRoutes = require('./routes/receiptRoutes');
-console.log('✅ app.js: Receipt routes loaded');
+logger.debug('✅ app.js: Receipt routes loaded');
 const authRoutes = require('./routes/authRoutes');
-console.log('✅ app.js: Auth routes loaded');
+logger.debug('✅ app.js: Auth routes loaded');
 const transactionRoutes = require('./routes/transactionRoutes');
-console.log('✅ app.js: Transaction routes loaded');
+logger.debug('✅ app.js: Transaction routes loaded');
 const walletRoutes = require('./routes/walletRoutes');
-console.log('✅ app.js: Wallet routes loaded');
+logger.debug('✅ app.js: Wallet routes loaded');
 const budgetRoutes = require('./routes/budgetRoutes');
-console.log('✅ app.js: Budget routes loaded');
+logger.debug('✅ app.js: Budget routes loaded');
 const settingsRoutes = require('./routes/settingsRoutes');
-console.log('✅ app.js: Settings routes loaded');
+logger.debug('✅ app.js: Settings routes loaded');
 const profileRoutes = require('./routes/profileRoutes');
-console.log('✅ app.js: Profile routes loaded');
+logger.debug('✅ app.js: Profile routes loaded');
 const categoryRoutes = require('./routes/categoryRoutes');
-console.log('✅ app.js: Category routes loaded');
+logger.debug('✅ app.js: Category routes loaded');
 const educationRoutes = require('./routes/educationRoutes');
-console.log('✅ app.js: Education routes loaded');
+logger.debug('✅ app.js: Education routes loaded');
 const savingsAccountRoutes = require('./routes/savingsAccountRoutes');
-console.log('✅ app.js: Savings account routes loaded');
+logger.debug('✅ app.js: Savings account routes loaded');
 const savingsGoalRoutes = require('./routes/savingsGoalRoutes');
-console.log('✅ app.js: Savings goal routes loaded');
+logger.debug('✅ app.js: Savings goal routes loaded');
 const savingsRuleRoutes = require('./routes/savingsRuleRoutes');
-console.log('✅ app.js: Savings rule routes loaded');
+logger.debug('✅ app.js: Savings rule routes loaded');
 const zhipuaiRoutes = require('./routes/zhipuaiRoutes');
-console.log('✅ app.js: ZhipuAI routes loaded');
+logger.debug('✅ app.js: ZhipuAI routes loaded');
 const imageRoutes = require('./routes/imageRoutes');
-console.log('✅ app.js: Image routes loaded');
+logger.debug('✅ app.js: Image routes loaded');
 const reportRoutes = require('./routes/reportRoutes');
-console.log('✅ app.js: Report routes loaded');
+logger.debug('✅ app.js: Report routes loaded');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-console.log('✅ app.js: Analytics routes loaded');
+logger.debug('✅ app.js: Analytics routes loaded');
 const cryptoRoutes = require('./routes/cryptoRoutes');
-console.log('✅ app.js: Crypto routes loaded');
+logger.debug('✅ app.js: Crypto routes loaded');
 const adminRoutes = require('./routes/adminRoutes');
-console.log('✅ app.js: Admin routes loaded');
+logger.debug('✅ app.js: Admin routes loaded');
+const thirdPartyIntegrationRoutes = require('./routes/thirdPartyIntegrationRoutes');
+logger.debug('✅ app.js: Third-party integration routes loaded');
 
-console.log('🔄 app.js: Loading utilities...');
+logger.debug('🔄 app.js: Loading utilities...');
 const connectionPoolMonitor = require('./utils/connectionPoolMonitor');
-console.log('✅ app.js: Connection pool monitor loaded');
+logger.debug('✅ app.js: Connection pool monitor loaded');
 const metricsCollector = require('./utils/metricsCollector');
-console.log('✅ app.js: Metrics collector loaded');
+logger.debug('✅ app.js: Metrics collector loaded');
 
 const BatchUtil = require('./utils/batchUtils');
-console.log('✅ app.js: Batch utility loaded');
+logger.debug('✅ app.js: Batch utility loaded');
 
 const { ErrorHandler } = require('./utils/errorHandler');
-console.log('✅ app.js: Error handler loaded');
+logger.debug('✅ app.js: Error handler loaded');
 
 // Initialize connection pool monitoring
 if (process.env.NODE_ENV !== 'test') {
@@ -335,6 +338,7 @@ function createApp() {
     app.use('/api/analytics', analyticsRoutes);
     app.use('/api/crypto', cryptoRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/integrations', thirdPartyIntegrationRoutes);
 
     // Metrics endpoint for monitoring
     app.get('/api/metrics', (req, res) => {
@@ -400,18 +404,18 @@ app.use('/api/admin', adminRoutes);
         // Check Redis connection (if configured)
         if (process.env.REDIS_HOST) {
             try {
-                const redis = require('redis');
-                const client = redis.createClient({
-                    socket: { host: process.env.REDIS_HOST, port: parseInt(process.env.REDIS_PORT || '6379') }
-                });
-                await client.connect();
-                await client.ping();
-                await client.disconnect();
-                
-                healthStatus.checks.redis = {
-                    status: 'connected',
-                    host: process.env.REDIS_HOST
-                };
+                const redisClient = require('./config/redis');
+                if (redisClient.isReady()) {
+                    healthStatus.checks.redis = {
+                        status: 'connected',
+                        host: process.env.REDIS_HOST
+                    };
+                } else {
+                    healthStatus.checks.redis = {
+                        status: 'disconnected',
+                        host: process.env.REDIS_HOST
+                    };
+                }
             } catch (error) {
                 healthStatus.checks.redis = {
                     status: 'error',
@@ -453,8 +457,30 @@ app.use('/api/admin', adminRoutes);
     });
 
     // Swagger API documentation
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-    console.log('✅ app.js: Swagger API documentation endpoint added');
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+    logger.debug('✅ app.js: Swagger API documentation endpoint added at /api-docs');
+
+    // Serve swagger.json for external tools
+    app.get('/api-docs.json', (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(swaggerSpec);
+    });
+    logger.debug('✅ app.js: Swagger JSON endpoint added at /api-docs.json');
+
+    // API documentation link on root route
+    app.get('/', (req, res) => {
+        res.json({
+            success: true,
+            message: 'Welcome to CoinDrop API',
+            documentation: {
+                swagger_ui: '/api-docs',
+                openapi_spec: '/api-docs.json'
+            },
+            version: '1.0.0',
+            status: 'operational'
+        });
+    });
+    logger.debug('✅ app.js: Root route with API documentation links added');
 
     app.use((req, res, next) => {
         const error = ErrorHandler.notFound(`Cannot ${req.method} ${req.path}`);
@@ -472,12 +498,12 @@ const app = createApp();
 
 // Initialize batch utility
 new BatchUtil(app);
-console.log('✅ app.js: Batch utility initialized');
+logger.debug('✅ app.js: Batch utility initialized');
 
 // Initialize resource management service
 const resourceManagementService = require('./services/resourceManagementService');
 resourceManagementService.initialize();
-console.log('✅ app.js: Resource management service initialized');
+logger.debug('✅ app.js: Resource management service initialized');
 
 // Add resource management middleware
 app.use((req, res, next) => {
@@ -506,9 +532,7 @@ app.use((req, res, next) => {
         res.json(resourceStatus);
     });
 
-    console.log('✅ app.js: App created successfully');
+    logger.debug('✅ app.js: App created successfully');
 
 module.exports = app;
 module.exports.createApp = createApp;
-
-console.log('✅ app.js: Module exports configured');

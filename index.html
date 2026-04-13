@@ -27,6 +27,18 @@
     <meta name="theme-color" content="#667eea" />
     
     <title>CoinDrop - Smart Financial Management</title>
+    
+    <!-- Unified Logger Script -->
+    <script>
+        // Initialize unified logger for frontend
+        window.CoinDropLoggerConfig = {
+            level: 'info',
+            enableConsole: true,
+            enableRemote: false,
+            sanitizePII: true
+        };
+    </script>
+    <script src="/src/utils/unifiedLogger.js"></script>
   </head>
   <body>
     <div id="root"></div>

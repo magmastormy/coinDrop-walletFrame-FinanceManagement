@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
@@ -25,7 +27,7 @@ const TransactionStream = () => {
                 setTransactions(transactionsResponse?.transactions || []);
                 setCategories(categoriesResponse || []);
             } catch (error) {
-                console.error('Error fetching data:', error);
+                logError('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }

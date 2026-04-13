@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Education = require('../models/Education');
 const cloudinary = require('cloudinary').v2;
 const Image = require('../models/Image');
@@ -70,7 +72,7 @@ class EducationController {
                 data: educations
             });
         } catch (error) {
-            console.error('Error fetching education posts:', error);
+            logger.error('Error fetching education posts:', error);
             res.status(400).json({ error: error.message });
         }
     }
@@ -89,7 +91,7 @@ class EducationController {
                 data: educations
             });
         } catch (error) {
-            console.error('Error fetching user education posts:', error);
+            logger.error('Error fetching user education posts:', error);
             res.status(400).json({ error: error.message });
         }
     }
@@ -168,7 +170,7 @@ class EducationController {
             
             res.status(200).json({ message: 'Education post deleted successfully' });
         } catch (error) {
-            console.error('Error deleting education post:', error);
+            logger.error('Error deleting education post:', error);
             res.status(400).json({ error: error.message });
         }
     }

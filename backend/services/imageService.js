@@ -1,6 +1,8 @@
 const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
+const crypto = require('crypto');
+const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../utils/logger');
 
 class ImageService {
     static async uploadImage(file, imageType = 'education') {
@@ -32,7 +34,11 @@ class ImageService {
                 };
             }
         } catch (error) {
-            console.error('Error uploading image:', error);
+            logger.error('Error uploading image:', {
+                imageType,
+                error: error.message,
+                stack: error.stack
+            });
             throw error;
         }
     }
@@ -51,7 +57,12 @@ class ImageService {
             }
             return { success: true };
         } catch (error) {
-            console.error('Error deleting image:', error);
+            logger.error('Error deleting image:', {
+                imageId,
+                imageType,
+                error: error.message,
+                stack: error.stack
+            });
             throw error;
         }
     }

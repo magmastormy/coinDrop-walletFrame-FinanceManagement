@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -18,7 +20,7 @@ let envContent = '';
 try {
     envContent = fs.readFileSync(envPath, 'utf8');
 } catch (error) {
-    console.log('Creating new .env file');
+    logger.debug('Creating new .env file');
 }
 
 // Remove existing JWT_SECRET if present
@@ -33,5 +35,5 @@ const updatedContent = `${cleanedContent}\nJWT_SECRET=${jwtSecret}`.trim() + '\n
 // Write updated content
 fs.writeFileSync(envPath, updatedContent);
 
-console.log('🔐 New JWT Secret Generated and Saved to .env');
-console.log('🚨 IMPORTANT: Keep this secret confidential and do not share it!');
+logger.debug('🔐 New JWT Secret Generated and Saved to .env');
+logger.debug('🚨 IMPORTANT: Keep this secret confidential and do not share it!');

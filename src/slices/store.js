@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import walletReducer from './walletSlice';
@@ -11,6 +13,7 @@ import savingsAccountReducer from './savingsAccountSlice';
 import savingsGoalReducer from './savingsGoalSlice';
 import zhipuaiModelReducer from './zhipuaiModelSlice';
 import dataReducer from './userDataSlice';
+import adminReducer from './adminSlice';
 
 export const store = configureStore({
     reducer: {
@@ -25,13 +28,14 @@ export const store = configureStore({
         savingsAccount: savingsAccountReducer,
         savingsGoal: savingsGoalReducer,
         zhipuaiModel: zhipuaiModelReducer,
-        userData: dataReducer
+        userData: dataReducer,
+        admin: adminReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat((store) => (next) => (action) => {
-            //console.log('Store.js - Dispatching:', action);
+            //logInfo('Store.js - Dispatching:', action);
             const result = next(action);
-            //console.log('Store.js - Next State:', store.getState());
+            //logInfo('Store.js - Next State:', store.getState());
             return result;
         })
 });

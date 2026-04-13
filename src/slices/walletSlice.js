@@ -1,7 +1,9 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import walletService from '../services/walletService';
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = import.meta.env.DEV;
 
 // Add this thunk action
 export const fetchWallets = createAsyncThunk(
@@ -29,7 +31,7 @@ const walletSlice = createSlice({
     initialState,
     reducers: {
         setWallets: (state, action) => {
-            if (isDev) console.log('Wallet Slice - Setting wallets:', action.payload);
+            if (isDev) logInfo('Wallet Slice - Setting wallets:', action.payload);
             state.wallets = action.payload;
             state.loading = false;
         },

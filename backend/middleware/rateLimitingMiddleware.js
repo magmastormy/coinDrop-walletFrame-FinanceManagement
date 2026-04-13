@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const rateLimit = require('express-rate-limit');
 
 // Rate limiting for transaction endpoints
@@ -28,7 +30,7 @@ const antiFraudMiddleware = (req, res, next) => {
     
     if (amount && parseFloat(amount) > 10000) {
         // Log suspicious transaction
-        console.warn(`Suspicious transaction detected: $${amount} from user ${req.user?.userId || req.user?._id}`);
+        logger.warn(`Suspicious transaction detected: $${amount} from user ${req.user?.userId || req.user?._id}`);
         
         // Add a flag to the request for further processing
         req.suspiciousTransaction = true;

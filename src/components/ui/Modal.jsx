@@ -56,13 +56,13 @@ const Modal = ({
     const backdropStyle = (() => {
         switch (backdropVariant) {
             case 'dark':
-                return { background: 'rgba(0,0,0,0.70)' };
+                return { background: 'var(--color-overlay-dark)' };
             case 'light':
-                return { background: 'rgba(0,0,0,0.35)' };
+                return { background: 'var(--color-overlay-light)' };
             case 'gradient':
-                return { background: 'rgba(0,0,0,0.55)' };
+                return { background: 'var(--color-overlay-medium)' };
             default:
-                return { background: 'rgba(0,0,0,0.50)' };
+                return { background: 'var(--color-overlay-default)' };
         }
     })();
 
@@ -129,7 +129,7 @@ const Modal = ({
                                 border: '1px solid var(--color-border)',
                                 background: 'var(--color-surface-1)',
                             }}
-                            whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
+                            whileHover={{ boxShadow: "var(--shadow-lg)" }}
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby="modal-title"

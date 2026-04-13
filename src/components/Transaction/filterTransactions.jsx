@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React from 'react';
 
 const FilterTransactions = ({
@@ -5,20 +7,28 @@ const FilterTransactions = ({
     setFilters,
     wallets = [],
     savingsAccounts = [],
-    categories = [],
+    categories = []
 }) => {
+    const hasActiveFilters = Object.values(filters).some(value => 
+        value !== '' && value !== undefined && 
+        !(typeof value === 'object' && Object.values(value).every(v => v === null || v === ''))
+    );
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        
+        // Validate input length
+        if (name === 'searchQuery' && value && value.length > 100) {
+            logWarn('Search query too long, truncating to 100 characters');
+            return;
+        }
+        
         setFilters(prev => ({
             ...prev,
             [name]: value
         }));
     };
 
-    const hasActiveFilters = Object.values(filters).some(value => 
-        value !== '' && value !== undefined && value !== 'all' && 
-        !(typeof value === 'object' && Object.values(value).every(v => v === null || v === ''))
-    );
 
     return (
         <div className="flex flex-wrap gap-4">

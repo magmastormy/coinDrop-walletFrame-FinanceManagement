@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Budget = require('../models/Budget');
 const Transaction = require('../models/Transaction');
 const Category = require('../models/Category');
@@ -64,7 +66,7 @@ class BudgetController {
             const maxRecommendedBudget = wallet.balance * 10;
             if (numericAmount > maxRecommendedBudget && numericAmount > 1000) {
                 // Log warning but don't block - allow for future income planning
-                console.warn(`[BudgetController] Large budget created: ${numericAmount} vs wallet balance ${wallet.balance}`);
+                logger.warn(`[BudgetController] Large budget created: ${numericAmount} vs wallet balance ${wallet.balance}`);
             }
 
             const budgetData = {
@@ -349,7 +351,7 @@ class BudgetController {
                 chartData
             });
         } catch (error) {
-            console.error(`[BudgetController] Error in getBudgetStats: ${error.message}`);
+            logger.error(`[BudgetController] Error in getBudgetStats: ${error.message}`);
             res.status(500).json({
                 error: '[BudgetController] Failed to retrieve budget statistics',
                 details: error.message

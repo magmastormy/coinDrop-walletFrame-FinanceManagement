@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const mongoose = require('mongoose');
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
@@ -45,7 +47,7 @@ const users = [
 
 async function cleanDatabase() {
     try {
-        console.log('Cleaning existing database...');
+        logger.debug('Cleaning existing database...');
         await User.deleteMany({});
         await Budget.deleteMany({});
         await Transaction.deleteMany({});
@@ -56,16 +58,16 @@ async function cleanDatabase() {
         await SavingsGoal.deleteMany({});
         await SavingsRule.deleteMany({});
         await UserProfile.deleteMany({});
-        console.log('Database cleaned successfully!');
+        logger.debug('Database cleaned successfully!');
     } catch (error) {
-        console.error('Error cleaning database:', error);
+        logger.error('Error cleaning database:', error);
         process.exit(1);
     }
 }
 
 async function registerUsers() {
     try {
-        console.log('Starting user registration...');
+        logger.debug('Starting user registration...');
         
         for (const userData of users) {
             try {
@@ -80,23 +82,23 @@ async function registerUsers() {
                 const data = await response.json();
                 
                 if (response.ok) {
-                    console.log(`✅ Successfully registered ${userData.username}`);
-                    console.log('Response:', data);
+                    logger.debug(`✅ Successfully registered ${userData.username}`);
+                    logger.debug('Response:', data);
                 } else {
-                    console.error(`❌ Failed to register ${userData.username}:`, data);
+                    logger.error(`❌ Failed to register ${userData.username}:`, data);
                 }
             } catch (error) {
-                console.error(`❌ Failed to register ${userData.username}:`, error.message);
+                logger.error(`❌ Failed to register ${userData.username}:`, error.message);
             }
             
             // Add a small delay between registrations
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
-        console.log('User registration completed!');
+        logger.debug('User registration completed!');
         process.exit(0);
     } catch (error) {
-        console.error('Registration script error:', error);
+        logger.error('Registration script error:', error);
         process.exit(1);
     }
 }
@@ -105,11 +107,11 @@ async function registerUsers() {
 mongoose
     .connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/coinDrop')
     .then(async () => {
-        console.log('Connected to MongoDB...');
+        logger.debug('Connected to MongoDB...');
         await cleanDatabase();
         await registerUsers();
     })
     .catch(error => {
-        console.error('MongoDB connection error:', error);
+        logger.error('MongoDB connection error:', error);
         process.exit(1);
     });

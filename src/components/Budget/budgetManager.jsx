@@ -1,8 +1,10 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, Wallet, Loader2, Home, Utensils, ShoppingBag, TrendingUp, Plane, MoreVertical, Edit, Trash2, ArrowRight, Ticket, Heart, GraduationCap, Zap, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
-
+import ValidationUtils from '../../utils/validationUtils';
 import { setBudgets, setLoading, setError } from '../../slices/budgetSlice';
 import budgetService from '../../services/budgetService';
 import transactionService from '../../services/transactionService';
@@ -15,11 +17,12 @@ import BudgetGrid from './budgetGrid';
 import BudgetAnalytics from './budgetAnalytics';
 import BudgetPerformanceChart from './budgetPerformanceChart';
 import ReportSection from '../Common/ReportSection';
-import CategoryManager from '../Category/categoryManager';
+import CategoryManager from '../Category/CategoryManager';
 import Button from '../ui/Button';
 import Toggle from '../ui/Toggle';
 import Select from '../ui/Select';
 import PageHeader from '../Common/PageHeader';
+import LoadingState from '../ui/LoadingState';
 
 const BudgetManager = () => {
     const dispatch = useDispatch();
@@ -46,7 +49,7 @@ const BudgetManager = () => {
     const [categoryName, setCategoryName] = useState('');
 
     useEffect(() => {
-        if (user?.id) {
+        if (user && user.id) {
             fetchBudgets();
             fetchCategories();
             fetchWallets();
@@ -54,15 +57,17 @@ const BudgetManager = () => {
     }, [dispatch, user?.id]);
 
     const fetchCategories = async () => {
+        if (!user?.id) return;
         try {
             const fetchedCategories = await categoryService.getUserCategories(user.id);
             setCategories(fetchedCategories);
         } catch (err) {
-            console.error('[BudgetManager] Error fetching categories:', err);
+            logError('[BudgetManager] Error fetching categories:', err);
         }
     };
 
     const fetchBudgets = async () => {
+        if (!user?.id) return;
         dispatch(setLoading(true));
         try {
             const fetchedBudgets = await budgetService.getUserBudgets(user.id);
@@ -75,17 +80,18 @@ const BudgetManager = () => {
     };
 
     const fetchWallets = async () => {
+        if (!user?.id) return;
         try {
             const fetchedWallets = await walletService.getAllWallets(user.id);
             setWallets(fetchedWallets || []);
-        } catch (err) {
-            console.error('[BudgetManager] Error fetching wallets:', err);
+        } catch (error) {
+            logError('[BudgetManager] Error fetching wallets:', error);
         }
     };
 
     const handleBudgetSelect = async (budgetId) => {
         try {
-            const budget = budgets.find(b => b._id === budgetId);
+            const budget = (budgets || []).find(b => b?._id === budgetId);
             setSelectedBudget(budget);
             setIsLoading(true);
 
@@ -93,11 +99,9 @@ const BudgetManager = () => {
             const transactions = await transactionService.getBudgetTransactions(budgetId);
             setTransactions(transactions?.transactions || []);
         } catch (error) {
-            console.error(error);
+            logError('Error selecting budget:', error);
             setTransactions([]);
-            if (error?.response?.status !== 404) {
-                toast.error("Failed to load budget transactions");
-            }
+            toast.error("Failed to load budget transactions");
         } finally {
             setIsLoading(false);
         }
@@ -142,11 +146,25 @@ const BudgetManager = () => {
 
     const handleSaveCategory = async (e) => {
         e.preventDefault();
-        if (!categoryName.trim()) return;
+        
+        // Validate category name
+        const nameValidation = ValidationUtils.validateRequiredString(categoryName, 'Category name', 1, 50);
+        if (!nameValidation.isValid) {
+            dispatch(setError(nameValidation.error));
+            return;
+        }
 
         try {
             const categoryData = { name: categoryName.trim() };
-            await categoryService.updateCategory(editingCategory._id, categoryData);
+            await ValidationUtils.withTimeout(
+                ValidationUtils.withRetry(
+                    () => categoryService.updateCategory(editingCategory._id, categoryData),
+                    'updateCategory',
+                    3,
+                    1000
+                ),
+                30000
+            );
             fetchCategories();
             setCategoryName('');
             setEditingCategory(null);
@@ -165,11 +183,7 @@ const BudgetManager = () => {
     };
 
     if (loading && !budgets.length) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
+        return <LoadingState loading={loading} height="md" />;
     }
 
     // Calculate total budget utilization

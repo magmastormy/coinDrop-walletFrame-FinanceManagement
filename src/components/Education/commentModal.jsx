@@ -1,3 +1,5 @@
+import { useLogger } from './hooks/useLogger';
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -28,7 +30,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
             const data = await response.json();
             setComments(data);
         } catch (error) {
-            console.error('Error fetching comments:', error);
+            logError('Error fetching comments:', error);
         } finally {
             setLoading(false);
         }
@@ -44,7 +46,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
             setComment('');
             await fetchComments();
         } catch (error) {
-            console.error('Error submitting comment:', error);
+            logError('Error submitting comment:', error);
         } finally {
             setSubmitting(false);
         }
@@ -55,7 +57,7 @@ const CommentModal = ({ educationId, onClose, onSubmit, onDelete }) => {
             await onDelete(educationId, commentId);
             await fetchComments();
         } catch (error) {
-            console.error('Error deleting comment:', error);
+            logError('Error deleting comment:', error);
         }
     };
 

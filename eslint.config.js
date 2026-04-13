@@ -19,6 +19,21 @@ export default [
         sourceType: 'module',
       },
     },
+  },
+  {
+    files: ['**/*.test.{js,jsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+        ...globals.jest,
+      },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
     settings: { react: { version: '18.3' } },
     plugins: {
       react,
@@ -48,6 +63,7 @@ export default [
       'react-hooks/exhaustive-deps': 'off',
       'react/no-unescaped-entities': 'error',
       'react-refresh/only-export-components': 'off',
+      'react/display-name': 'off',
     },
   },
 ]

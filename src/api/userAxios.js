@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axios from 'axios';
 import { store } from '../slices/store';
 import { logout } from '../slices/authSlice';
@@ -15,7 +17,7 @@ const axiosInstance = axios.create({
 
 // Function to refresh the token
 const refreshToken = async () => {
-    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const storedRefreshToken = sessionStorage.getItem('refreshToken');
     if (!storedRefreshToken) throw new Error('No refresh token available');
 
     const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
@@ -49,13 +51,13 @@ axiosInstance.interceptors.request.use(
             return config;
         }
 
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
 
         // Add CSRF token for non-auth requests
-        const csrfToken = localStorage.getItem('csrfToken');
+        const csrfToken = sessionStorage.getItem('csrfToken');
         if (csrfToken) {
             config.headers['X-CSRF-Token'] = csrfToken;
         }
@@ -78,7 +80,7 @@ axiosInstance.interceptors.response.use(
 
         // Handle network errors
         if (!error.response) {
-            console.error('Network error:', error.message);
+            logError('Network error:', error.message);
             return Promise.reject(new Error('Network error. Please check your connection.'));
         }
 
@@ -102,17 +104,22 @@ axiosInstance.interceptors.response.use(
 
             try {
                 const tokenResponse = await refreshToken();
-                localStorage.setItem('token', tokenResponse.accessToken);
+                sessionStorage.setItem('token', tokenResponse.accessToken);
                 if (tokenResponse.refreshToken) {
-                    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
+                    sessionStorage.setItem('refreshToken', tokenResponse.refreshToken);
                 }
                 if (tokenResponse.csrfToken) {
-                    localStorage.setItem('csrfToken', tokenResponse.csrfToken);
+                    sessionStorage.setItem('csrfToken', tokenResponse.csrfToken);
                 }
                 
                 // Update headers
                 axiosInstance.defaults.headers.common.Authorization = `Bearer ${tokenResponse.accessToken}`;
                 originalRequest.headers.Authorization = `Bearer ${tokenResponse.accessToken}`;
+                
+                // Update CSRF token header if available
+                if (tokenResponse.csrfToken) {
+                    originalRequest.headers['X-CSRF-Token'] = tokenResponse.csrfToken;
+                }
 
                 processQueue(null, tokenResponse.accessToken);
                 return axiosInstance(originalRequest);
@@ -120,10 +127,10 @@ axiosInstance.interceptors.response.use(
                 processQueue(refreshError, null);
                 
                 // Clear tokens and redirect to login
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
-                localStorage.removeItem('csrfToken');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('refreshToken');
+                sessionStorage.removeItem('user');
+                sessionStorage.removeItem('csrfToken');
                 store.dispatch(logout());
                 window.location.href = '/login';
                 

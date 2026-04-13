@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 import ImageService from './imageService';
 
@@ -8,19 +10,44 @@ const uploadPendingImages = async pendingImages => {
         return [];
     }
 
-    const uploaded = await Promise.all(
+    const uploaded = await Promise.allSettled(
         pendingImages.map(async imageItem => {
-            const result = await ImageService.uploadImage(imageItem.file, 'education');
-            return {
-                tempId: imageItem.tempId,
-                preview: imageItem.preview,
-                imageId: result._id || result.publicId,
-                url: result.url
-            };
+            try {
+                const result = await ImageService.uploadImage(imageItem.file, 'education');
+                return {
+                    tempId: imageItem.tempId,
+                    preview: imageItem.preview,
+                    imageId: result._id || result.publicId,
+                    url: result.url,
+                    success: true
+                };
+            } catch (error) {
+                logError('Image upload failed:', error);
+                // Return failed item with error info
+                return {
+                    tempId: imageItem.tempId,
+                    preview: imageItem.preview,
+                    imageId: null,
+                    url: imageItem.preview,
+                    success: false,
+                    error: error.message
+                };
+            }
         })
     );
 
-    return uploaded;
+    // Filter successful uploads and log failures
+    const successful = uploaded.filter(item => item.success);
+    const failed = uploaded.filter(item => !item.success);
+
+    if (failed.length > 0) {
+        logError(`${failed.length} images failed to upload`);
+        failed.forEach(item => {
+            logError(`Failed to upload ${item.tempId}: ${item.error}`);
+        });
+    }
+
+    return successful;
 };
 
 const replaceTemporaryImageSources = (html = '', uploaded = []) => {
@@ -40,13 +67,23 @@ const replaceTemporaryImageSources = (html = '', uploaded = []) => {
 
 const educationService = {
     getEducations: async () => {
-        const response = await axiosInstance.get(API_URL);
-        return response || [];
+        try {
+            const response = await axiosInstance.get(API_URL);
+            return response || [];
+        } catch (error) {
+            logError('Failed to fetch educations:', error);
+            return [];
+        }
     },
 
     getUserEducations: async () => {
-        const response = await axiosInstance.get(`${API_URL}/user`);
-        return response || [];
+        try {
+            const response = await axiosInstance.get(`${API_URL}/user`);
+            return response || [];
+        } catch (error) {
+            logError('Failed to fetch user educations:', error);
+            return [];
+        }
     },
 
     createEducation: async postData => {

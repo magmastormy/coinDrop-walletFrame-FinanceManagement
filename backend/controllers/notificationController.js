@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { getAuthenticatedUserId } = require('../utils/authUser');
@@ -11,7 +13,7 @@ exports.getUserNotifications = async (req, res) => {
             .limit(50);
         res.json(notifications);
     } catch (err) {
-        console.error('Error getting notifications:', err);
+        logger.error('Error getting notifications:', err);
         res.status(500).json({ message: 'Failed to get notifications' });
     }
 };
@@ -32,7 +34,7 @@ exports.markAsRead = async (req, res) => {
         
         res.json({ success: true });
     } catch (err) {
-        console.error('Error marking notification as read:', err);
+        logger.error('Error marking notification as read:', err);
         res.status(500).json({ message: 'Failed to mark notification as read' });
     }
 };
@@ -52,7 +54,7 @@ exports.createNotification = async (userId, message, type = 'general') => {
         await notification.save();
         return notification;
     } catch (err) {
-        console.error('Error creating notification:', err);
+        logger.error('Error creating notification:', err);
         throw err;
     }
 };

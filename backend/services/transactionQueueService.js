@@ -8,104 +8,32 @@ const metricsCollector = require('../utils/metricsCollector');
 const cacheUtil = require('../utils/cacheUtil');
 const { circuitBreakers } = require('../utils/circuitBreaker');
 
+// Clear completed jobs to free up space
+const clearCompletedJobs = async () => {
+    if (!transactionQueue) {
+        return;
+    }
+
+    try {
+        await transactionQueue.clean(3600000); // Clean jobs older than 1 hour
+        logger.info('🧹 Cleared completed jobs from queue');
+    } catch (error) {
+        logger.error('Error clearing completed jobs:', error);
+        // Don't throw the error - just log it
+    }
+};
+
 // Conditionally load Bull and create queue if Redis is available
 let Bull;
 let transactionQueue;
 let currentConcurrency = 5;
+let redisConnectionAttempts = 0;
+const MAX_REDIS_ATTEMPTS = 5;
 
-if (process.env.NODE_ENV !== 'test') {
-    try {
-        Bull = require('bull');
-        // Create a transaction queue with enhanced configuration
-        transactionQueue = new Bull('transactionQueue', {
-            redis: {
-                host: process.env.REDIS_HOST || 'localhost',
-                port: process.env.REDIS_PORT || 6379,
-                password: process.env.REDIS_PASSWORD || '',
-                maxRetriesPerRequest: 3,
-                connectTimeout: 10000,
-                retryStrategy: (times) => {
-                    // Exponential backoff with max delay of 30 seconds
-                    return Math.min(1000 * Math.pow(2, times), 30000);
-                }
-            },
-            defaultJobOptions: {
-                attempts: 5,
-                backoff: {
-                    type: 'exponential',
-                    delay: 2000
-                },
-                removeOnComplete: { age: 86400 }, // Remove completed jobs after 24 hours
-                removeOnFail: { age: 604800 },    // Remove failed jobs after 7 days
-                timeout: 60000                    // 1 minute timeout per job
-            },
-            settings: {
-                lockDuration: 30000,              // 30 seconds lock on jobs
-                lockRenewTime: 15000,             // Renew lock every 15 seconds
-                maxStalledCount: 3,               // Max stalled jobs before failing
-                guardInterval: 5000,              // Check for stalled jobs every 5 seconds
-                drainDelay: 5000,                 // Delay after queue drain
-                maxLimit: 10000                   // Max jobs in queue
-            }
-        });
-
-        // Add event listeners for queue monitoring
-        transactionQueue.on('completed', (job, result) => {
-            logger.info(`✅ Transaction job ${job.id} completed: ${result.message}`);
-            metricsCollector.recordQueueEvent('completed', 'transactionQueue');
-        });
-
-        transactionQueue.on('failed', (job, error) => {
-            logger.error(`❌ Transaction job ${job.id} failed: ${error.message}`);
-            metricsCollector.recordQueueEvent('failed', 'transactionQueue');
-        });
-
-        transactionQueue.on('stalled', (job) => {
-            logger.warn(`⚠️ Transaction job ${job.id} stalled`);
-            metricsCollector.recordQueueEvent('stalled', 'transactionQueue');
-        });
-
-        transactionQueue.on('drained', () => {
-            logger.info('📊 Transaction queue drained');
-            metricsCollector.recordQueueEvent('drained', 'transactionQueue');
-        });
-
-        transactionQueue.on('error', (error) => {
-            logger.error(`🔥 Transaction queue error: ${error.message}`);
-            metricsCollector.recordQueueEvent('error', 'transactionQueue');
-        });
-
-        // Throttle concurrency based on system load
-        const updateConcurrency = () => {
-            let load = 0.5; // Default load value for Windows
-            if (typeof process.loadavg === 'function') {
-                load = process.loadavg()[0];
-            }
-            if (load > 4) {
-                currentConcurrency = Math.max(1, currentConcurrency - 1);
-            } else if (load < 1 && currentConcurrency < 10) {
-                currentConcurrency = currentConcurrency + 1;
-            }
-            // Update queue concurrency
-            if (transactionQueue) {
-                transactionQueue.process(currentConcurrency, processTransactionJob);
-                logger.info(`⚙️  Updated queue concurrency to ${currentConcurrency} based on system load: ${load}`);
-            }
-        };
-
-        // Update concurrency every minute
-        setInterval(updateConcurrency, 60000);
-
-        // Start processing with initial concurrency
-        transactionQueue.process(currentConcurrency, processTransactionJob);
-
-        // Set up periodic job cleanup
-        setInterval(clearCompletedJobs, 3600000); // Every hour
-    } catch (error) {
-        logger.warn(`Redis connection failed: ${error.message}. Queue functionality will be disabled.`);
-        transactionQueue = null;
-    }
-}
+// Disable Redis queue by default to avoid connection errors
+// We'll use direct processing instead
+logger.info('🔄 Transaction queue service initialized with Redis disabled');
+transactionQueue = null;
 
 // Process transaction jobs with concurrency
 async function processTransactionJob(job) {
@@ -360,21 +288,6 @@ const resumeQueue = async () => {
         metricsCollector.recordQueueEvent('resumed', 'transactionQueue');
     } catch (error) {
         logger.error(`Error resuming queue: ${error.message}`);
-        throw error;
-    }
-};
-
-// Clear completed jobs to free up space
-const clearCompletedJobs = async () => {
-    if (!transactionQueue) {
-        return;
-    }
-
-    try {
-        await transactionQueue.clean(3600000); // Clean jobs older than 1 hour
-        logger.info('🧹 Cleared completed jobs from queue');
-    } catch (error) {
-        logger.error(`Error clearing completed jobs: ${error.message}`);
         throw error;
     }
 };

@@ -1,124 +1,126 @@
+const logger = require('./utils/logger');
+
 // Wrap all requires in try-catch to identify failure point
 let dotenv, mongoose, connectDB, ensureUploadDirectories, initCloudinary, categoryInit, CategoryAIService, app, redisClient;
 
 try {
-    console.log('🔄 Loading dotenv...');
+    logger.debug('🔄 Loading dotenv...');
     dotenv = require('dotenv');
     dotenv.config();
-    console.log('✅ dotenv loaded');
+    logger.debug('✅ dotenv loaded');
 } catch (error) {
-    console.error('❌ Failed to load dotenv:', error.message);
+    logger.error('❌ Failed to load dotenv:', error.message);
     process.exit(1);
 }
 
 try {
-    console.log('🔄 Loading mongoose...');
+    logger.debug('🔄 Loading mongoose...');
     mongoose = require('mongoose');
-    console.log('✅ mongoose loaded');
+    logger.debug('✅ mongoose loaded');
 } catch (error) {
-    console.error('❌ Failed to load mongoose:', error.message);
+    logger.error('❌ Failed to load mongoose:', error.message);
     process.exit(1);
 }
 
 try {
-    console.log('🔄 Loading database config...');
+    logger.debug('🔄 Loading database config...');
     connectDB = require('./config/db');
-    console.log('✅ database config loaded');
+    logger.debug('✅ database config loaded');
 } catch (error) {
-    console.error('❌ Failed to load database config:', error.message);
+    logger.error('❌ Failed to load database config:', error.message);
     process.exit(1);
 }
 
 try {
-    console.log('🔄 Loading ensureUploadDirectories...');
+    logger.debug('🔄 Loading ensureUploadDirectories...');
     ensureUploadDirectories = require('./utils/ensureUploadDirs');
-    console.log('✅ ensureUploadDirectories loaded');
+    logger.debug('✅ ensureUploadDirectories loaded');
 } catch (error) {
-    console.error('❌ Failed to load ensureUploadDirectories:', error.message);
+    logger.error('❌ Failed to load ensureUploadDirectories:', error.message);
     process.exit(1);
 }
 
 try {
-    console.log('🔄 Loading cloudinary config...');
+    logger.debug('🔄 Loading cloudinary config...');
     initCloudinary = require('./config/cloudinary').initCloudinary;
-    console.log('✅ cloudinary config loaded');
+    logger.debug('✅ cloudinary config loaded');
 } catch (error) {
-    console.error('❌ Failed to load cloudinary config:', error.message);
+    logger.error('❌ Failed to load cloudinary config:', error.message);
     // Don't exit - Cloudinary is optional
 }
 
 try {
-    console.log('🔄 Loading category initialization...');
+    logger.debug('🔄 Loading category initialization...');
     categoryInit = require('./config/categoryInit');
-    console.log('✅ category initialization loaded');
+    logger.debug('✅ category initialization loaded');
 } catch (error) {
-    console.error('❌ Failed to load category initialization:', error.message);
+    logger.error('❌ Failed to load category initialization:', error.message);
     // Don't exit - categories can be initialized later
 }
 
 try {
-    console.log('🔄 Loading AI categorization service...');
+    logger.debug('🔄 Loading AI categorization service...');
     CategoryAIService = require('./ai/categoryAIService');
-    console.log('✅ AI categorization service loaded');
+    logger.debug('✅ AI categorization service loaded');
 } catch (error) {
-    console.error('❌ Failed to load AI categorization service:', error.message);
+    logger.error('❌ Failed to load AI categorization service:', error.message);
     // Don't exit - AI service is optional
 }
 
 try {
-    console.log('🔄 Loading Express app...');
+    logger.debug('🔄 Loading Express app...');
     app = require('./app');
-    console.log('✅ Express app loaded');
+    logger.debug('✅ Express app loaded');
 } catch (error) {
-    console.error('❌ Failed to load Express app:', error.message);
+    logger.error('❌ Failed to load Express app:', error.message);
     process.exit(1);
 }
 
 try {
-    console.log('🔄 Loading Redis client...');
+    logger.debug('🔄 Loading Redis client...');
     redisClient = require('./config/redis');
-    console.log('✅ Redis client loaded');
+    logger.debug('✅ Redis client loaded');
 } catch (error) {
-    console.error('❌ Failed to load Redis client:', error.message);
+    logger.error('❌ Failed to load Redis client:', error.message);
     // Don't exit - Redis is optional
 }
 
 // Initialize database first with proper error handling
-console.log('🔄 Starting backend initialization...');
-console.log('📍 Node version:', process.version);
-console.log('📍 Working directory:', process.cwd());
-console.log('📍 ENV PORT:', process.env.PORT);
+logger.debug('🔄 Starting backend initialization...');
+logger.debug('📍 Node version:', process.version);
+logger.debug('📍 Working directory:', process.cwd());
+logger.debug('📍 ENV PORT:', process.env.PORT);
 
 connectDB()
     .then(async () => {
-        console.log('✅ Database connected successfully');
+        logger.debug('✅ Database connected successfully');
         
         // Initialize Redis connection (non-blocking and optional)
         if (redisClient) {
             redisClient.connect()
-                .then(() => console.log('✅ Redis connection initialized'))
-                .catch(err => console.error('⚠️ Redis connection initialization failed:', err.message));
+                .then(() => logger.debug('✅ Redis connection initialized'))
+                .catch(err => logger.error('⚠️ Redis connection initialization failed:', err.message));
         }
         
         // Continue with other initializations
         // initCloudinary();
-        // console.log('✅ Cloudinary initialized');
+        // logger.debug('✅ Cloudinary initialized');
         
         // categoryInit();
-        // console.log('✅ Categories initialized');
+        // logger.debug('✅ Categories initialized');
         
-        console.log('✅ Express app loaded');
+        logger.debug('✅ Express app loaded');
         
         // Initialize AI categorization service (non-blocking and optional)
         setTimeout(() => {
             CategoryAIService.initialize()
-                .then(() => console.log('✅ AI Categorization Service initialized'))
-                .catch(err => console.error('⚠️ AI Categorization Service initialization failed:', err.message));
+                .then(() => logger.debug('✅ AI Categorization Service initialized'))
+                .catch(err => logger.error('⚠️ AI Categorization Service initialization failed:', err.message));
         }, 2000); // Delay to ensure server is fully started
         
         ensureUploadDirectories()
-            .then(() => console.log('✅ Upload directories ready'))
-            .catch(err => console.error('⚠️ Error setting up upload directories:', err.message));
+            .then(() => logger.debug('✅ Upload directories ready'))
+            .catch(err => logger.error('⚠️ Error setting up upload directories:', err.message));
         
         // Start the server
         const PORT = process.env.PORT || 5002;
@@ -129,9 +131,9 @@ connectDB()
         };
         
         const server = app.listen(PORT, () => {
-            console.log(`\n🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-            console.log(`⏱️ Server timeout: ${serverConfig.timeout}ms, Keep-alive: ${serverConfig.keepAliveTimeout}ms`);
-            console.log(`🌐 API Base URL: ${process.env.REACT_APP_API_BASE_URL}\n`);
+            logger.debug(`\n🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+            logger.debug(`⏱️ Server timeout: ${serverConfig.timeout}ms, Keep-alive: ${serverConfig.keepAliveTimeout}ms`);
+            logger.debug(`🌐 API Base URL: ${process.env.REACT_APP_API_BASE_URL}\n`);
         });
         
         server.timeout = serverConfig.timeout;
@@ -153,10 +155,10 @@ connectDB()
         
         // Graceful shutdown handler
         function gracefulShutdown(signal) {
-            console.log(`\n🛑 ${signal} signal received: initiating graceful shutdown`);
+            logger.debug(`\n🛑 ${signal} signal received: initiating graceful shutdown`);
         
             server.close(() => {
-                console.log('🔒 HTTP server closed, no longer accepting connections');
+                logger.debug('🔒 HTTP server closed, no longer accepting connections');
         
                 // Close Redis connection if it exists
                 const closeRedis = redisClient ? redisClient.disconnect() : Promise.resolve();
@@ -165,17 +167,17 @@ connectDB()
                 closeRedis
                     .then(() => mongoose.connection.close(false))
                     .then(() => {
-                        console.log('🔴 MongoDB connection closed');
+                        logger.debug('🔴 MongoDB connection closed');
                         process.exit(0);
                     })
                     .catch(err => {
-                        console.error('❌ Error during graceful shutdown:', err);
+                        logger.error('❌ Error during graceful shutdown:', err);
                         process.exit(1);
                     });
             });
         
             setTimeout(() => {
-                console.log('⚠️ Graceful shutdown timed out, forcing exit');
+                logger.debug('⚠️ Graceful shutdown timed out, forcing exit');
                 process.exit(1);
             }, 30000);
         
@@ -193,18 +195,18 @@ connectDB()
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
         process.on('uncaughtException', err => {
-            console.error('\n❌ Uncaught Exception:', err);
+            logger.error('\n❌ Uncaught Exception:', err);
             gracefulShutdown('uncaughtException');
         });
         process.on('unhandledRejection', (reason, promise) => {
-            console.error('\n❌ Unhandled Rejection at:', promise, 'reason:', reason);
+            logger.error('\n❌ Unhandled Rejection at:', promise, 'reason:', reason);
         });
         
         module.exports = app;
     })
     .catch(error => {
-        console.error('\n❌ FATAL ERROR: Failed to initialize backend');
-        console.error('Error:', error.message);
-        console.error('\n💡 Please check:\n   - MongoDB Atlas cluster status\n   - Network connectivity\n   - Firewall settings\n   - Database credentials in .env file\n');
+        logger.error('\n❌ FATAL ERROR: Failed to initialize backend');
+        logger.error('Error:', error.message);
+        logger.error('\n💡 Please check:\n   - MongoDB Atlas cluster status\n   - Network connectivity\n   - Firewall settings\n   - Database credentials in .env file\n');
         process.exit(1);
     });

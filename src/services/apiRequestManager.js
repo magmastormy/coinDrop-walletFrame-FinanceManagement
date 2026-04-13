@@ -8,11 +8,25 @@ export const makeRequest = async (key, requestFn) => {
         return pendingRequests.get(key);
     }
 
-    // Create new request
-    const promise = requestFn();
+    // Create new request with timestamp tracking and error boundary
+    let promise;
+    try {
+        promise = requestFn();
+    } catch (error) {
+        // Handle synchronous errors in requestFn
+        return Promise.reject(error);
+    }
+
+    const trackedPromise = {
+        promise,
+        createdAt: Date.now(),
+        then: promise.then.bind(promise),
+        catch: promise.catch.bind(promise),
+        finally: promise.finally.bind(promise)
+    };
     
-    // Store the promise
-    pendingRequests.set(key, promise);
+    // Store the tracked promise
+    pendingRequests.set(key, trackedPromise);
     
     // Clean up when request completes
     promise.finally(() => {
@@ -25,3 +39,18 @@ export const makeRequest = async (key, requestFn) => {
 export const clearPendingRequests = () => {
     pendingRequests.clear();
 };
+
+// Add cleanup mechanism for abandoned requests
+export const cleanupStaleRequests = (maxAge = 30000) => {
+    const now = Date.now();
+    for (const [key, trackedPromise] of pendingRequests.entries()) {
+        if (trackedPromise.createdAt && (now - trackedPromise.createdAt > maxAge)) {
+            pendingRequests.delete(key);
+        }
+    }
+};
+
+// Set up periodic cleanup
+if (typeof window !== 'undefined') {
+    setInterval(cleanupStaleRequests, 60000); // Cleanup every minute
+}

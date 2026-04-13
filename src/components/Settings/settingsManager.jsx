@@ -10,7 +10,7 @@ const SettingsManager = () => {
                     border: '1px solid var(--color-border)',
                     borderRadius: 'var(--radius-lg)',
                     background: 'var(--color-surface-1)',
-                    padding: '24px',
+                    padding: 'var(--spacing-lg)',
                 }}
             />
         </div>

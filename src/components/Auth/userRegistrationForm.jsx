@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { User, Mail, Lock, Phone, Eye, EyeOff, Loader } from 'lucide-react';
 import { registerUser } from '../../services/authService';
+import ValidationUtils from '../../utils/validationUtils';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import { SkeletonForm } from '../ui/LoadingSkeleton';
@@ -80,41 +81,45 @@ const UserRegistration = () => {
         return { score, strength, color };
     };
 
-    const validateField = (name, value) => {
+    const validateField = (fieldName, value) => {
         let error = '';
         
-        switch (name) {
+        switch (fieldName) {
             case 'firstName':
-                if (!value) {
-                    error = 'First name is required';
-                }
-                break;
             case 'lastName':
                 if (!value) {
-                    error = 'Last name is required';
+                    error = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+                } else if (value.length < 2) {
+                    error = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be at least 2 characters`;
                 }
                 break;
             case 'email':
-                if (!value) {
-                    error = 'Email is required';
-                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                    error = 'Please enter a valid email address';
+                const emailValidation = ValidationUtils.validateEmail(value);
+                if (!emailValidation.isValid) {
+                    error = emailValidation.error;
                 }
                 break;
             case 'username':
-                if (!value) {
-                    error = 'Username is required';
-                } else if (value.length < 3) {
-                    error = 'Username must be at least 3 characters';
+                const usernameValidation = ValidationUtils.validateRequiredString(value, 'Username', 3, 30);
+                if (!usernameValidation.isValid) {
+                    error = usernameValidation.error;
                 }
                 break;
             case 'password':
-                if (!value) {
-                    error = 'Password is required';
-                } else if (value.length < 8) {
-                    error = 'Password must be at least 8 characters';
-                } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$/.test(value)) {
-                    error = 'Password must include uppercase, lowercase, number, and special character';
+                const passwordValidation = ValidationUtils.validateRequiredString(value, 'Password', 8, 128);
+                if (!passwordValidation.isValid) {
+                    error = passwordValidation.error;
+                } else {
+                    // Additional password strength checks
+                    if (!/(?=.*[a-z])/.test(value)) {
+                        error = 'Password must include at least one lowercase letter';
+                    } else if (!/(?=.*[A-Z])/.test(value)) {
+                        error = 'Password must include at least one uppercase letter';
+                    } else if (!/(?=.*\d)/.test(value)) {
+                        error = 'Password must include at least one number';
+                    } else if (!/(?=.*[@$!%*?&_])/.test(value)) {
+                        error = 'Password must include at least one special character (@$!%*?&_)';
+                    }
                 }
                 break;
             case 'confirmPassword':
@@ -125,10 +130,9 @@ const UserRegistration = () => {
                 }
                 break;
             case 'phone':
-                if (!value) {
-                    error = 'Phone number is required';
-                } else if (!/^\d{10,15}$/.test(value.replace(/[^\d]/g, ''))) {
-                    error = 'Please enter a valid phone number';
+                const phoneValidation = ValidationUtils.validatePhone(value);
+                if (!phoneValidation.isValid) {
+                    error = phoneValidation.error;
                 }
                 break;
             default:

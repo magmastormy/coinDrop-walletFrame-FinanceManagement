@@ -5,6 +5,8 @@ class RedisClient {
     constructor() {
         this.client = null;
         this.isConnected = false;
+        this.connectionAttempts = 0;
+        this.MAX_ATTEMPTS = 5;
     }
 
     async connect() {
@@ -21,10 +23,16 @@ class RedisClient {
                     port: parseInt(redisPort),
                 },
                 ...(redisPassword && { password: redisPassword }),
-                retryStrategy: (times) => {
-                    // Exponential backoff with max delay
+                retryStrategy: (options) => {
+                    // Exponential backoff with max delay and max attempts
+                    const MAX_ATTEMPTS = 5;
+                    const times = options.attempt;
+                    if (times > MAX_ATTEMPTS) {
+                        logger.warn(`❌ Redis connection failed after ${MAX_ATTEMPTS} attempts. Disabling Redis.`);
+                        return null; // Stop reconnecting
+                    }
                     const delay = Math.min(1000 * Math.pow(2, times), 30000);
-                    logger.info(`⏳ Redis reconnect attempt ${times}, delay: ${delay}ms`);
+                    logger.debug(`⏳ Redis reconnect attempt ${times}/${MAX_ATTEMPTS}, delay: ${delay}ms`);
                     return delay;
                 },
             });
@@ -35,10 +43,21 @@ class RedisClient {
                 logger.info('🟢 Redis Connection Established 🔗');
             });
 
+            // Track last error timestamp to avoid log spam
+            let lastErrorTimestamp = 0;
+            const ERROR_LOG_THROTTLE = 5000; // 5 seconds
+
             this.client.on('error', (error) => {
-                this.isConnected = false;
-                logger.error('⚠️ Redis Connection Error:', error);
-            });
+            this.isConnected = false;
+            const now = Date.now();
+            // Throttle error logs to avoid spam
+            if (now - lastErrorTimestamp > ERROR_LOG_THROTTLE) {
+                lastErrorTimestamp = now;
+                console.log('Redis error event:', error);
+                console.log('Logger service name:', logger.defaultMeta.service);
+                logger.warn('⚠️ Redis Connection Error:', { error: error.message, code: error.code });
+            }
+        });
 
             this.client.on('end', () => {
                 this.isConnected = false;
@@ -46,7 +65,8 @@ class RedisClient {
             });
 
             this.client.on('reconnecting', () => {
-                logger.info('🔄 Redis Reconnecting...');
+                // Only log reconnect attempts at debug level to reduce noise
+                logger.debug('🔄 Redis Reconnecting...');
             });
 
             this.client.on('ready', () => {

@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const AuditLog = require('../models/AuditLog');
 
 /**
@@ -69,7 +71,7 @@ const auditMiddleware = async (req, res, next) => {
                 }
             });
         } catch (error) {
-            console.error('Audit logging error:', error);
+            logger.error('Audit logging error:', error);
             // Don't fail the request if audit logging fails
         }
     });

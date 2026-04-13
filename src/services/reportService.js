@@ -1,3 +1,5 @@
+import { useLogger } from '../hooks/useLogger.jsx';
+
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/reports'; //DO NOT CHANGE THIS
@@ -20,25 +22,25 @@ class ReportService {
 
     async downloadReport(reportId) {
         try {
-            console.log(`[ReportService - downloadReport] Downloading report: ${reportId}`);
+            logInfo(`[ReportService - downloadReport] Downloading report: ${reportId}`);
             const response = await axiosInstance.get(`${API_URL}/${reportId}/download`, {
                 responseType: 'blob'
             });
-            console.log('[ReportService - downloadReport] Response:', response);
+            logInfo('[ReportService - downloadReport] Response:', response);
             
             // Make sure we have a valid blob
             if (response instanceof Blob) {
-                console.log('[ReportService - downloadReport] Received blob:', response.size, response.type);
+                logInfo('[ReportService - downloadReport] Received blob:', response.size, response.type);
                 return response;
             } else {
                 // If not a blob, try to create one
-                console.warn('[ReportService - downloadReport] Response is not a Blob, attempting to create one');
+                logWarn('[ReportService - downloadReport] Response is not a Blob, attempting to create one');
                 return new Blob([response], { 
                     type: 'application/octet-stream' 
                 });
             }
         } catch (error) {
-            console.error('[ReportService - downloadReport] Error downloading report:', error);
+            logError('[ReportService - downloadReport] Error downloading report:', error);
             throw error;
         }
     }

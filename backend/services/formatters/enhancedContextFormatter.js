@@ -4,6 +4,7 @@
  * Extends the base context formatter with more detailed transaction information
  * and better handling of multi-part questions.
  */
+const logger = require('../../utils/logger');
 const { performance } = require('perf_hooks');
 const baseFormatter = require('./contextFormatter');
 
@@ -82,7 +83,7 @@ function formatEnhancedContext(ctx, type = 'full', questionAnalysis = null) {
     'If the user asks multiple questions, make sure to address each question separately and clearly.');
   
   const result = lines.join('\n');
-  console.log(`[enhancedContextFormatter] Built ${type} context in ${(performance.now() - t0).toFixed(1)}ms, length: ${result.length} chars`);
+  logger.debug(`[enhancedContextFormatter] Built ${type} context in ${(performance.now() - t0).toFixed(1)}ms, length: ${result.length} chars`);
   return result;
 }
 
@@ -327,7 +328,7 @@ function formatEnhancedTransactionsSection(ctx, lines, questionAnalysis) {
         const requestedNum = parseInt(numMatch[1], 10);
         if (!isNaN(requestedNum) && requestedNum > 0) {
           transactionLimit = Math.min(requestedNum, 20); // Cap at 20 to avoid overwhelming
-          console.log(`[enhancedContextFormatter] User requested ${transactionLimit} transactions`);
+          logger.debug(`[enhancedContextFormatter] User requested ${transactionLimit} transactions`);
         }
       }
     }

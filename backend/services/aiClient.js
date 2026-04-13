@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const { spawn } = require('child_process');
 const path = require('path');
 const { performance } = require('perf_hooks');
@@ -50,7 +52,7 @@ const circuitBreaker = {
     this.lastFailureTime = Date.now();
     
     if (this.failureCount >= this.failureThreshold && this.state === 'CLOSED') {
-      console.log(`[aiClient] Circuit breaker opened after ${this.failureCount} failures`);
+      logger.debug(`[aiClient] Circuit breaker opened after ${this.failureCount} failures`);
       this.state = 'OPEN';
     }
   },
@@ -58,7 +60,7 @@ const circuitBreaker = {
   // Record a success and potentially close the circuit
   recordSuccess() {
     if (this.state === 'HALF_OPEN') {
-      console.log('[aiClient] Circuit breaker closed after successful request');
+      logger.debug('[aiClient] Circuit breaker closed after successful request');
       this.state = 'CLOSED';
       this.failureCount = 0;
     }
@@ -69,7 +71,7 @@ const circuitBreaker = {
     if (this.state === 'OPEN') {
       // Check if it's time to try again
       if (Date.now() - this.lastFailureTime > this.resetTimeout) {
-        console.log('[aiClient] Circuit breaker transitioning to HALF_OPEN state');
+        logger.debug('[aiClient] Circuit breaker transitioning to HALF_OPEN state');
         this.state = 'HALF_OPEN';
         return false;
       }
@@ -87,7 +89,7 @@ async function initializePool() {
   if (isInitialized) return;
   isInitialized = true;
   
-  console.log('[aiClient] Initializing process pool');
+  logger.debug('[aiClient] Initializing process pool');
   
   // Create initial processes with staggered initialization to prevent resource contention
   for (let i = 0; i < MAX_POOL_SIZE; i++) {
@@ -96,9 +98,9 @@ async function initializePool() {
       await new Promise(resolve => setTimeout(resolve, i * 200));
       const proc = await createPythonProcess();
       processPool.push(proc);
-      console.log(`[aiClient] Pre-populated process ${processPool.length}/${MAX_POOL_SIZE}`);
+      logger.debug(`[aiClient] Pre-populated process ${processPool.length}/${MAX_POOL_SIZE}`);
     } catch (err) {
-      console.error(`[aiClient] Error pre-populating process pool: ${err.message}`);
+      logger.error(`[aiClient] Error pre-populating process pool: ${err.message}`);
     }
   }
   
@@ -110,8 +112,8 @@ async function initializePool() {
  * Health check and maintenance for the process pool
  */
 function healthCheck() {
-  console.log(`[aiClient] Health check - Pool size: ${processPool.length}/${MAX_POOL_SIZE}, Processing: ${processingCount}/${MAX_CONCURRENT_REQUESTS}, Queue: ${requestQueue.length}`);
-  console.log(`[aiClient] Metrics - Total: ${totalRequests}, Success: ${successfulRequests}, Failed: ${failedRequests}, Avg time: ${totalRequests > 0 ? (totalProcessingTime / totalRequests).toFixed(2) : 0}ms`);
+  logger.debug(`[aiClient] Health check - Pool size: ${processPool.length}/${MAX_POOL_SIZE}, Processing: ${processingCount}/${MAX_CONCURRENT_REQUESTS}, Queue: ${requestQueue.length}`);
+  logger.debug(`[aiClient] Metrics - Total: ${totalRequests}, Success: ${successfulRequests}, Failed: ${failedRequests}, Avg time: ${totalRequests > 0 ? (totalProcessingTime / totalRequests).toFixed(2) : 0}ms`);
 }
 
 // Track process metadata for TTL and memory monitoring
@@ -141,7 +143,7 @@ async function maintainProcessPool() {
       (metadata.memoryUsage && metadata.memoryUsage > PROCESS_MEMORY_LIMIT_MB);  // Memory limit exceeded
     
     if (shouldRefresh) {
-      console.log(`[aiClient] Refreshing process (age: ${(age/60000).toFixed(1)}min, requests: ${metadata.requestCount}, idle: ${(idleTime/60000).toFixed(1)}min, memory: ${metadata.memoryUsage || 'N/A'}MB)`);
+      logger.debug(`[aiClient] Refreshing process (age: ${(age/60000).toFixed(1)}min, requests: ${metadata.requestCount}, idle: ${(idleTime/60000).toFixed(1)}min, memory: ${metadata.memoryUsage || 'N/A'}MB)`);
       try {
         proc.kill('SIGTERM');
         processPool.splice(i, 1);
@@ -158,7 +160,7 @@ async function maintainProcessPool() {
           idleTime: 0
         });
       } catch (err) {
-        console.error(`[aiClient] Error refreshing process: ${err.message}`);
+        logger.error(`[aiClient] Error refreshing process: ${err.message}`);
       }
     }
   }
@@ -166,7 +168,7 @@ async function maintainProcessPool() {
   // Check if we need to add processes to the pool
   const neededProcesses = MAX_POOL_SIZE - processPool.length;
   if (neededProcesses > 0) {
-    console.log(`[aiClient] Adding ${neededProcesses} missing processes to pool`);
+    logger.debug(`[aiClient] Adding ${neededProcesses} missing processes to pool`);
     for (let i = 0; i < neededProcesses; i++) {
       try {
         // Stagger process creation
@@ -180,9 +182,9 @@ async function maintainProcessPool() {
           memoryUsage: 0,
           idleTime: 0
         });
-        console.log(`[aiClient] Added process to pool (${processPool.length}/${MAX_POOL_SIZE})`);
+        logger.debug(`[aiClient] Added process to pool (${processPool.length}/${MAX_POOL_SIZE})`);
       } catch (err) {
-        console.error(`[aiClient] Error adding process to pool: ${err.message}`);
+        logger.error(`[aiClient] Error adding process to pool: ${err.message}`);
       }
     }
   }
@@ -194,7 +196,7 @@ async function maintainProcessPool() {
     return metadata && (now - metadata.lastUsed) > 60000; // Idle for more than 1 minute
   }).length;
   
-  console.log(`[aiClient] Pool health - Active: ${activeProcesses}, Idle: ${idleProcesses}, Max: ${MAX_POOL_SIZE}`);
+  logger.debug(`[aiClient] Pool health - Active: ${activeProcesses}, Idle: ${idleProcesses}, Max: ${MAX_POOL_SIZE}`);
 }
 
 /**
@@ -216,12 +218,12 @@ async function getProcess() {
       metadata.lastUsed = Date.now();
       metadata.idleTime = 0;
     }
-    console.log(`[aiClient] Reusing Python process from pool (${processPool.length} remaining, requests: ${metadata?.requestCount || 0})`);
+    logger.debug(`[aiClient] Reusing Python process from pool (${processPool.length} remaining, requests: ${metadata?.requestCount || 0})`);
     return proc;
   }
   
   // Create a new process using the createPythonProcess function
-  console.log('[aiClient] Creating new Python process');
+  logger.debug('[aiClient] Creating new Python process');
   const proc = await createPythonProcess();
   
   // Initialize metadata for this process
@@ -249,20 +251,20 @@ function releaseProcess(proc) {
   if (metadata && metadata.requestCount > 0) {
     // Log memory info every 50 requests
     if (metadata.requestCount % 50 === 0) {
-      console.log(`[aiClient] Process stats - Requests: ${metadata.requestCount}, Age: ${((Date.now() - metadata.createdAt)/60000).toFixed(1)}min, Memory: ${metadata.memoryUsage || 'N/A'}MB`);
+      logger.debug(`[aiClient] Process stats - Requests: ${metadata.requestCount}, Age: ${((Date.now() - metadata.createdAt)/60000).toFixed(1)}min, Memory: ${metadata.memoryUsage || 'N/A'}MB`);
     }
   }
   
   if (processPool.length < MAX_POOL_SIZE) {
-    console.log(`[aiClient] Returning process to pool (${processPool.length + 1} total)`);
+    logger.debug(`[aiClient] Returning process to pool (${processPool.length + 1} total)`);
     processPool.push(proc);
   } else {
-    console.log('[aiClient] Pool full, destroying process');
+    logger.debug('[aiClient] Pool full, destroying process');
     processMetadata.delete(proc);
     try {
       proc.kill('SIGTERM');
     } catch (err) {
-      console.error(`[aiClient] Error killing process: ${err.message}`);
+      logger.error(`[aiClient] Error killing process: ${err.message}`);
     }
   }
 }
@@ -285,7 +287,7 @@ function queueRequest(messages, options) {
     };
     
     requestQueue.push(request);
-    console.log(`[aiClient] Request queued. Queue length: ${requestQueue.length}`);
+    logger.debug(`[aiClient] Request queued. Queue length: ${requestQueue.length}`);
     
     // Process the queue if we're not at max capacity
     processQueue();
@@ -307,7 +309,7 @@ async function processQueue() {
   processingCount++;
   
   // Log queue stats
-  console.log(`[aiClient] Processing request. Queue length: ${requestQueue.length}, Active: ${processingCount}/${MAX_CONCURRENT_REQUESTS}`);
+  logger.debug(`[aiClient] Processing request. Queue length: ${requestQueue.length}, Active: ${processingCount}/${MAX_CONCURRENT_REQUESTS}`);
   
   try {
     // Process the request
@@ -343,20 +345,20 @@ async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetri
   
   while (attempts <= maxRetries) {
     attempts++;
-    console.log(`[aiClient][${requestId}] Processing request, attempt ${attempts}/${maxRetries + 1}`);
+    logger.debug(`[aiClient][${requestId}] Processing request, attempt ${attempts}/${maxRetries + 1}`);
     
     try {
       // Get a process from the pool
       try {
         currentProc = await getProcess();
       } catch (err) {
-        console.error(`[aiClient][${requestId}] Failed to acquire process: ${err.message}`);
+        logger.error(`[aiClient][${requestId}] Failed to acquire process: ${err.message}`);
         
         // If this is the last attempt, throw the error
         if (attempts > maxRetries) throw err;
         
         // Otherwise wait and retry
-        console.log(`[aiClient][${requestId}] Retry attempt ${attempts}/${maxRetries} after error: ${err.message}`);
+        logger.debug(`[aiClient][${requestId}] Retry attempt ${attempts}/${maxRetries} after error: ${err.message}`);
         await new Promise(resolve => setTimeout(resolve, 2000));
         continue;
       }
@@ -367,7 +369,7 @@ async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetri
       const dynamicTimeout = Math.min(timeoutMs, Math.max(20000, messageSize / 50));
       const attemptTimeoutMs = attempts === 1 ? dynamicTimeout : Math.min(dynamicTimeout * 1.5, 30000); // Increased timeout for retries
       
-      console.log(`[aiClient][${requestId}] Using timeout of ${attemptTimeoutMs}ms for attempt ${attempts}/${maxRetries + 1} (message size: ${messageSize} bytes)`);
+      logger.debug(`[aiClient][${requestId}] Using timeout of ${attemptTimeoutMs}ms for attempt ${attempts}/${maxRetries + 1} (message size: ${messageSize} bytes)`);
       
       // Process the request
       const t0 = performance.now();
@@ -377,20 +379,20 @@ async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetri
       const processingTime = performance.now() - startTime;
       totalProcessingTime += processingTime;
       successfulRequests++;
-      console.log(`[aiClient][${requestId}] Request completed successfully in ${processingTime.toFixed(2)}ms`);
+      logger.debug(`[aiClient][${requestId}] Request completed successfully in ${processingTime.toFixed(2)}ms`);
       
       return result;
     } catch (err) {
       lastError = err;
-      console.error(`[aiClient][${requestId}] Error in attempt ${attempts}/${maxRetries + 1}: ${err.message}`);
+      logger.error(`[aiClient][${requestId}] Error in attempt ${attempts}/${maxRetries + 1}: ${err.message}`);
       
       // If we have a process and it failed, don't reuse it
       if (currentProc) {
         try {
-          console.log(`[aiClient][${requestId}] Killing failed process`);
+          logger.debug(`[aiClient][${requestId}] Killing failed process`);
           currentProc.kill('SIGKILL');
         } catch (killErr) {
-          console.error(`[aiClient][${requestId}] Error killing process: ${killErr.message}`);
+          logger.error(`[aiClient][${requestId}] Error killing process: ${killErr.message}`);
         }
       }
       
@@ -398,12 +400,12 @@ async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetri
       if (attempts > maxRetries) {
         // For timeout errors, try the fallback implementation as a last resort
         if (err.message && err.message.includes('timeout')) {
-          console.log(`[aiClient][${requestId}] All attempts timed out, using fallback implementation`);
+          logger.debug(`[aiClient][${requestId}] All attempts timed out, using fallback implementation`);
           try {
             // Use the original timeoutMs from the options, not the attempt-specific one
             return await fallbackSend(messages, { timeoutMs: timeoutMs }, requestId);
           } catch (fallbackErr) {
-            console.error(`[aiClient][${requestId}] Fallback also failed: ${fallbackErr.message}`);
+            logger.error(`[aiClient][${requestId}] Fallback also failed: ${fallbackErr.message}`);
             throw new Error(`AI service unavailable: ${fallbackErr.message}`);
           }
         }
@@ -412,7 +414,7 @@ async function processRequestWithRetries(messages, { timeoutMs = 30000, maxRetri
       
       // Wait before retrying (exponential backoff)
       const backoffMs = Math.min(1000 * Math.pow(2, attempts), 10000);
-      console.log(`[aiClient][${requestId}] Waiting ${backoffMs}ms before retrying...`);
+      logger.debug(`[aiClient][${requestId}] Waiting ${backoffMs}ms before retrying...`);
       await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
@@ -445,12 +447,12 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       
       isCompleted = true;
       const timeoutError = `AI client: timeout after ${timeoutMs}ms`;
-      console.error(`[aiClient][${requestId}] ${timeoutError}`);
+      logger.error(`[aiClient][${requestId}] ${timeoutError}`);
       
       try {
         proc.kill('SIGKILL'); // Force kill to ensure it terminates
       } catch (e) {
-        console.error(`[aiClient][${requestId}] Error killing process on timeout: ${e.message}`);
+        logger.error(`[aiClient][${requestId}] Error killing process on timeout: ${e.message}`);
       }
       
       reject(new Error(timeoutError));
@@ -461,18 +463,18 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       const inactiveTime = Date.now() - lastActivityTime;
       if (responseStarted && inactiveTime > 10000 && !isCompleted) {
         // If we've started receiving a response but nothing for 10 seconds, consider it stalled
-        console.warn(`[aiClient][${requestId}] Process appears stalled - no activity for ${inactiveTime}ms`);
+        logger.warn(`[aiClient][${requestId}] Process appears stalled - no activity for ${inactiveTime}ms`);
         
         if (inactiveTime > 20000) {
           // After 20 seconds of inactivity during response, force completion
-          console.error(`[aiClient][${requestId}] Forcing completion after ${inactiveTime}ms of inactivity`);
+          logger.error(`[aiClient][${requestId}] Forcing completion after ${inactiveTime}ms of inactivity`);
           isCompleted = true;
           clearInterval(activityWatchdog);
           clearTimeout(timer);
           
           if (result) {
             // If we have partial results, return them
-            console.log(`[aiClient][${requestId}] Returning partial results due to stalled process`);
+            logger.debug(`[aiClient][${requestId}] Returning partial results due to stalled process`);
             cleanup();
             releaseProcess(proc);
             resolve(result + "\n\n[Note: This response was truncated due to a timeout.]");
@@ -495,11 +497,11 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
       action: 'predict' // Explicit action for Python process
     });
     
-    console.log(`[aiClient] Sending payload of ${payload.length} bytes`);
+    logger.debug(`[aiClient] Sending payload of ${payload.length} bytes`);
     try {
       proc.stdin.write(payload + '\n');
     } catch (writeError) {
-      console.error(`[aiClient][${requestId}] Error writing to process stdin: ${writeError.message}`);
+      logger.error(`[aiClient][${requestId}] Error writing to process stdin: ${writeError.message}`);
       isCompleted = true;
       cleanup();
       reject(new Error(`Failed to send request to AI process: ${writeError.message}`));
@@ -536,7 +538,7 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
                   cleanup();
                   
                   const processingTime = performance.now() - t0;
-                  console.log(`[aiClient] Request completed in ${processingTime.toFixed(1)}ms`);
+                  logger.debug(`[aiClient] Request completed in ${processingTime.toFixed(1)}ms`);
                   
                   // Return the process to the pool
                   releaseProcess(proc);
@@ -549,7 +551,7 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
                   cleanup();
                   
                   const processingTime = performance.now() - t0;
-                  console.log(`[aiClient] Request completed in ${processingTime.toFixed(1)}ms`);
+                  logger.debug(`[aiClient] Request completed in ${processingTime.toFixed(1)}ms`);
                   
                   // Return the process to the pool
                   releaseProcess(proc);
@@ -574,14 +576,14 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
         }
       } catch (err) {
         // Ignore parsing errors for incomplete data
-        console.warn(`[aiClient] Error processing stdout: ${err.message}`);
+        logger.warn(`[aiClient] Error processing stdout: ${err.message}`);
       }
     };
     
     const errorHandler = (data) => {
       lastActivityTime = Date.now(); // Update activity timestamp
       stderr += data.toString();
-      console.error(`[aiClient] Error from Python process: ${data.toString().trim()}`);
+      logger.error(`[aiClient] Error from Python process: ${data.toString().trim()}`);
     };
     
     // Handle process exit during request
@@ -595,7 +597,7 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
     // Handle process error event
     const processErrorHandler = (err) => {
       if (!isCompleted) {
-        console.error(`[aiClient][${requestId}] Process error: ${err.message}`);
+        logger.error(`[aiClient][${requestId}] Process error: ${err.message}`);
         isCompleted = true;
         cleanup();
         reject(new Error(`AI client: process error: ${err.message}`));
@@ -627,7 +629,7 @@ async function processRequest(proc, messages, timeoutMs, t0, requestId) {
  */
 async function createPythonProcess() {
   return new Promise((resolve, reject) => {
-    console.log('[aiClient] Creating new Python process');
+    logger.debug('[aiClient] Creating new Python process');
     const scriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');
     const proc = spawn('python', [scriptPath, '--server-mode']);
     
@@ -639,11 +641,11 @@ async function createPythonProcess() {
     // Set up timeout
     const timer = setTimeout(() => {
       if (!initialized) {
-        console.error('[aiClient] Python process initialization timed out');
+        logger.error('[aiClient] Python process initialization timed out');
         try {
           proc.kill('SIGKILL');
         } catch (e) {
-          console.error(`[aiClient] Error killing process on timeout: ${e.message}`);
+          logger.error(`[aiClient] Error killing process on timeout: ${e.message}`);
         }
         reject(new Error(`Python process initialization timed out after ${timeoutMs}ms`));
       }
@@ -655,7 +657,7 @@ async function createPythonProcess() {
       stdout += output;
       if (output.includes('READY') && !initialized) {
         initialized = true;
-        console.log('[aiClient] Python process initialized successfully');
+        logger.debug('[aiClient] Python process initialized successfully');
         clearTimeout(timer);
         resolve(proc);
       }
@@ -666,7 +668,7 @@ async function createPythonProcess() {
       const errorOutput = data.toString();
       stderr += errorOutput;
       // Log stderr output but don't treat warnings as errors during initialization
-      console.log(`[aiClient] Python stderr: ${errorOutput.trim()}`);
+      logger.debug(`[aiClient] Python stderr: ${errorOutput.trim()}`);
     });
     
     // Handle process exit
@@ -694,7 +696,7 @@ async function createPythonProcess() {
  * @returns {Promise<string>} - AI response content.
  */
 async function fallbackSend(messages, { timeoutMs = 60000 } = {}, requestId = `fallback-${Date.now()}`) {
-  console.log(`[aiClient][${requestId}] Using fallback implementation with timeout ${timeoutMs}ms`);
+  logger.debug(`[aiClient][${requestId}] Using fallback implementation with timeout ${timeoutMs}ms`);
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(__dirname, '../../volcanicEngine/glm_api.py');
     const args = [scriptPath, JSON.stringify(messages)];
@@ -708,7 +710,7 @@ async function fallbackSend(messages, { timeoutMs = 60000 } = {}, requestId = `f
     });
     proc.stderr.on('data', (data) => {
       stderr += data.toString();
-      console.error(`AI client error: ${data.toString()}`);
+      logger.error(`AI client error: ${data.toString()}`);
     });
 
     const timer = setTimeout(() => {
@@ -751,7 +753,7 @@ async function fallbackSend(messages, { timeoutMs = 60000 } = {}, requestId = `f
 async function send(messages, { timeoutMs = 30000, maxRetries = 1, priority = false, bypassCircuitBreaker = false } = {}) {
   // Check circuit breaker first
   if (circuitBreaker.isOpen() && !bypassCircuitBreaker) {
-    console.log('[aiClient] Circuit breaker is open, fast-failing request');
+    logger.debug('[aiClient] Circuit breaker is open, fast-failing request');
     return Promise.reject(new Error('AI service is temporarily unavailable due to multiple failures. Please try again later.'));
   }
   
@@ -764,7 +766,7 @@ async function send(messages, { timeoutMs = 30000, maxRetries = 1, priority = fa
     
     // If content is very large, truncate it
     if (sanitizedContent.length > 4000) {
-      console.log(`[aiClient] Truncating large message from ${sanitizedContent.length} to 4000 chars`);
+      logger.debug(`[aiClient] Truncating large message from ${sanitizedContent.length} to 4000 chars`);
       sanitizedContent = sanitizedContent.substring(0, 4000) + '... [truncated]';
     }
     
@@ -776,18 +778,18 @@ async function send(messages, { timeoutMs = 30000, maxRetries = 1, priority = fa
   
   // If we're under high load, queue the request
   if (processingCount >= MAX_CONCURRENT_REQUESTS || requestQueue.length > 0) {
-    console.log(`[aiClient] System under load (${processingCount}/${MAX_CONCURRENT_REQUESTS} active, ${requestQueue.length} queued)`);
+    logger.debug(`[aiClient] System under load (${processingCount}/${MAX_CONCURRENT_REQUESTS} active, ${requestQueue.length} queued)`);
     
     // If queue is getting too long, start rejecting non-priority requests
     if (requestQueue.length > 10 && !priority) {
-      console.log('[aiClient] Queue too long, rejecting non-priority request');
+      logger.debug('[aiClient] Queue too long, rejecting non-priority request');
       return Promise.reject(new Error('AI service is currently under high load. Please try again later.'));
     }
     
     // If this is a priority request, add it to the front of the queue
     const options = { timeoutMs, maxRetries, bypassCircuitBreaker };
     if (priority) {
-      console.log('[aiClient] Priority request added to front of queue');
+      logger.debug('[aiClient] Priority request added to front of queue');
       return new Promise((resolve, reject) => {
         requestQueue.unshift({
           messages: simplifiedMessages,

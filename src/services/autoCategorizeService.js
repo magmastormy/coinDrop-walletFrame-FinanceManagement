@@ -1,3 +1,5 @@
+import { useLogger } from './hooks/useLogger';
+
 import axiosInstance from '../api/userAxios';
 
 class AutoCategorizeService {
@@ -11,7 +13,7 @@ class AutoCategorizeService {
             const response = await axiosInstance.get(`${this.baseURL}/patterns`);
             this.transactionPatterns = new Map(Object.entries(response || {}));
         } catch (error) {
-            console.error('Failed to initialize categorization patterns:', error);
+            logError('Failed to initialize categorization patterns:', error);
         }
     }
 
@@ -24,7 +26,7 @@ class AutoCategorizeService {
             });
             return response;
         } catch (error) {
-            console.error('Failed to get category suggestion:', error);
+            logError('Failed to get category suggestion:', error);
             return null;
         }
     }
@@ -33,7 +35,7 @@ class AutoCategorizeService {
         try {
             await axiosInstance.post(`${this.baseURL}/train`, { transactions });
         } catch (error) {
-            console.error('Failed to train categorization model:', error);
+            logError('Failed to train categorization model:', error);
         }
     }
 
@@ -44,7 +46,7 @@ class AutoCategorizeService {
             });
             return response;
         } catch (error) {
-            console.error('Failed to batch categorize transactions:', error);
+            logError('Failed to batch categorize transactions:', error);
             return [];
         }
     }

@@ -247,7 +247,11 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
               onClick={(e) => { e.stopPropagation(); setShowSaveDialog(true); }}
               disabled={savingsAmount <= 0}
             >
-      >
+              Save Surplus
+            </Button>
+
+        {showSaveDialog && (
+        <Modal isOpen={showSaveDialog} onClose={() => setShowSaveDialog(false)}>
         <div className="stack" style={{ gap: 'var(--space-3)' }}>
           <div style={{
             padding: 'var(--space-3)',
@@ -338,6 +342,10 @@ const BudgetCard = ({ budget, onEdit, onDelete, onSelect, isSelected, wallets })
           </div>
         </div>
       </Modal>
+        )}
+          </div>
+        </div>
+      </Card>
     </>
   );
 };

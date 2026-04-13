@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Save, AlertCircle, CheckCircle2, Repeat, Target, TrendingUp } from 'lucide-react';
@@ -39,7 +41,7 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
             setRules(goalRules);
         } catch (err) {
             setError('Failed to load savings rules');
-            console.error(err);
+            logError(err);
         } finally {
             setLoading(false);
         }
@@ -50,7 +52,7 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
             const userWallets = await walletService.getAllWallets();
             setWallets(userWallets || []);
         } catch (_) {
-            console.error('Failed to load wallets');
+            logError('Failed to load wallets');
         }
     };
 
@@ -88,7 +90,7 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
             } else {
                 setError('Failed to save rules: ' + (err.response?.data?.error || err.message || 'Unknown error'));
             }
-            console.error('Error saving rule:', err);
+            logError('Error saving rule:', err);
         } finally {
             setLoading(false);
         }
@@ -103,7 +105,7 @@ const AutomatedSavingsRules = ({ goalId, onRuleChange }) => {
             setTimeout(() => setSuccess(false), 3000);
         } catch (_) {
             setError('Failed to execute rules');
-            console.error('Error executing rules');
+            logError('Error executing rules');
         } finally {
             setLoading(false);
         }

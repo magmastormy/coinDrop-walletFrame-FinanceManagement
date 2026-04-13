@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const Category = require('../models/Category');
 const Transaction = require('../models/Transaction');
 const Budget = require('../models/Budget');
@@ -383,7 +385,7 @@ class CategoryController {
             
             res.json(patternMap);
         } catch (error) {
-            console.error('Error getting category patterns:', error);
+            logger.error('Error getting category patterns:', error);
             res.status(500).json({ 
                 error: 'Failed to retrieve category patterns',
                 details: error.message 
@@ -423,7 +425,7 @@ class CategoryController {
             // If no suggestions found
             res.json(null);
         } catch (error) {
-            console.error('Error suggesting category:', error);
+            logger.error('Error suggesting category:', error);
             res.status(500).json({ 
                 error: 'Failed to suggest category',
                 details: error.message 
@@ -454,7 +456,7 @@ class CategoryController {
             
             res.json(results);
         } catch (error) {
-            console.error('Error in batch category suggestion:', error);
+            logger.error('Error in batch category suggestion:', error);
             res.status(500).json({ 
                 error: 'Failed to suggest categories in batch',
                 details: error.message 
@@ -485,7 +487,7 @@ class CategoryController {
             
             res.json({ message: 'Batch learning completed successfully' });
         } catch (error) {
-            console.error('Error in batch learning:', error);
+            logger.error('Error in batch learning:', error);
             res.status(500).json({ 
                 error: 'Failed to learn from corrections in batch',
                 details: error.message 
@@ -524,7 +526,7 @@ class CategoryController {
             
             res.json({ message: 'Category model trained successfully' });
         } catch (error) {
-            console.error('Error training category model:', error);
+            logger.error('Error training category model:', error);
             res.status(500).json({ 
                 error: 'Failed to train category model',
                 details: error.message 

@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import LoadingSpinner from './components/LoadingSpinner';
 import MainLayout from './components/Layout/MainLayout';
+import AdminProtectedRoute from './components/Admin/AdminProtectedRoute';
 
 const LoginComponent = lazy(() => import('./components/Auth/UserLoginForm'));
 const RegisterComponent = lazy(() => import('./components/Auth/UserRegistrationForm'));
@@ -21,6 +22,17 @@ const SavingGoalComponent = lazy(() => import('./components/SavingsGoal/SavingsG
 const SavingAccountComponent = lazy(() => import('./components/Savings/SavingsAccountManager'));
 const ChatBotComponent = lazy(() => import('./components/Chatbot/ChatbotManager'));
 const UserManagementComponent = lazy(() => import('./components/UserManagement/UserManagement'));
+const AdminDashboardComponent = lazy(() => import('./components/Admin/AdminDashboard'));
+const AdminUserManagementComponent = lazy(() => import('./components/Admin/AdminUserManagement'));
+const AdminSystemConfigurationComponent = lazy(() => import('./components/Admin/AdminSystemConfiguration'));
+const AdminTransactionsAuditComponent = lazy(() => import('./components/Admin/AdminTransactionsAudit'));
+const AdminSecurityLogsComponent = lazy(() => import('./components/Admin/AdminSecurityLogs'));
+const AdminDisasterRecoveryComponent = lazy(() => import('./components/Admin/AdminDisasterRecovery'));
+const AdminAuditTrailComponent = lazy(() => import('./components/Admin/AdminAuditTrail'));
+const AdminAccessControlsComponent = lazy(() => import('./components/Admin/AdminAccessControls'));
+const AdminPerformanceComponent = lazy(() => import('./components/Admin/AdminPerformance'));
+const AdminThirdPartyIntegrationsComponent = lazy(() => import('./components/Admin/AdminThirdPartyIntegrations'));
+const IntegrationManagerComponent = lazy(() => import('./components/Integrations/IntegrationManager'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -145,10 +157,68 @@ const AppRoutes = () => {
                         </ProtectedRoute>
                     } />
 
+                    <Route path="/integrations" element={
+                        <ProtectedRoute>
+                            <IntegrationManagerComponent />
+                        </ProtectedRoute>
+                    } />
+
                     <Route path="/responsive-test" element={
                         <ProtectedRoute>
                             <ResponsiveTestComponent />
                         </ProtectedRoute>
+                    } />
+
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={
+                        <AdminProtectedRoute title="Admin Dashboard">
+                            <AdminDashboardComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/users" element={
+                        <AdminProtectedRoute title="User Management">
+                            <AdminUserManagementComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/transactions" element={
+                        <AdminProtectedRoute title="Transactions Audit">
+                            <AdminTransactionsAuditComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/settings" element={
+                        <AdminProtectedRoute title="Platform Configuration">
+                            <AdminSystemConfigurationComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/security" element={
+                        <AdminProtectedRoute title="Security Logs">
+                            <AdminSecurityLogsComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/disaster-recovery" element={
+                        <AdminProtectedRoute title="Disaster Recovery">
+                            <AdminDisasterRecoveryComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/audit-trail" element={
+                        <AdminProtectedRoute title="Audit Trail">
+                            <AdminAuditTrailComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/access-controls" element={
+                        <AdminProtectedRoute title="Access Controls">
+                            <AdminAccessControlsComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/performance" element={
+                        <AdminProtectedRoute title="Performance">
+                            <AdminPerformanceComponent />
+                        </AdminProtectedRoute>
+                    } />
+                    <Route path="/admin/integrations" element={
+                        <AdminProtectedRoute title="Third-Party Integrations">
+                            <AdminThirdPartyIntegrationsComponent />
+                        </AdminProtectedRoute>
                     } />
 
                     {/* Redirect old profile and settings routes to new user-management */}

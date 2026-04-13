@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
@@ -682,10 +684,10 @@ const seedDatabase = async () => {
             await Transaction.insertMany(transactions);
         }
 
-        console.log('Database seeded successfully!');
+        logger.debug('Database seeded successfully!');
         process.exit(0);
     } catch (error) {
-        console.error('Error seeding database:', error);
+        logger.error('Error seeding database:', error);
         process.exit(1);
     }
 };
@@ -697,10 +699,10 @@ mongoose
         useUnifiedTopology: true
     })
     .then(() => {
-        console.log('MongoDB Atlas connected...');
+        logger.debug('MongoDB Atlas connected...');
         seedDatabase();
     })
     .catch(err => {
-        console.error('MongoDB Atlas connection error:', err);
+        logger.error('MongoDB Atlas connection error:', err);
         process.exit(1);
     });

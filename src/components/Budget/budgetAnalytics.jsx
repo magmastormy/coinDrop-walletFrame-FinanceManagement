@@ -1,3 +1,5 @@
+import { useLogger } from '../../hooks/useLogger.jsx';
+
 import React from 'react';
 import BudgetTransactionList from './budgetTransactionList';
 import BudgetChart from './budgetCharts';
@@ -5,13 +7,20 @@ import BudgetPerformanceChart from './budgetPerformanceChart';
 import Card from '../ui/Card';
 
 const BudgetAnalytics = ({ budget, transactions, filter, onFilterChange }) => {
-  if (!budget) {
+  // Validate inputs
+  if (!budget || typeof budget !== 'object') {
     return (
       <div className="text-center p-8 text-muted-foreground">
-        Select a budget to view analytics
+        Invalid budget data provided
       </div>
     );
   }
+
+  if (!Array.isArray(transactions)) {
+    logWarn('BudgetAnalytics: transactions is not an array, using empty array');
+    transactions = [];
+  }
+
   return (
     <div className="space-y-6">
       <BudgetTransactionList
