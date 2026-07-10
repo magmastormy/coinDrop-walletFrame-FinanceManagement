@@ -20,7 +20,18 @@ const consoleFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
     winston.format.printf(({ timestamp, level, message, correlationId, ...metadata }) => {
         const correlationPart = correlationId ? `[${correlationId}] ` : '';
-        const metadataPart = Object.keys(metadata).length ? ` ${JSON.stringify(metadata)}` : '';
+        // If metadata is not a plain object (e.g. a string was passed as
+        // extra data), avoid iterating its keys (which yields {"0":"C",...}).
+        let metadataPart = '';
+        if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+            const keys = Object.keys(metadata).filter(k => typeof metadata[k] !== 'undefined');
+            if (keys.length > 0) {
+                try { metadataPart = ` ${JSON.stringify(metadata)}`; }
+                catch (_) { metadataPart = ` [metadata non-serializable]`; }
+            }
+        } else if (metadata !== undefined && metadata !== null) {
+            metadataPart = ` ${String(metadata)}`;
+        }
         return `${timestamp} ${level}: ${correlationPart}${message}${metadataPart}`;
     })
 );

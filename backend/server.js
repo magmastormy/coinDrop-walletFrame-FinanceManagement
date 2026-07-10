@@ -1,3 +1,9 @@
+// Always run relative to this file so `node backend/server.js` and
+// `cd backend && node server.js` both work. Without this, relative
+// requires like `./routes/...` and `./config/swagger` resolve against
+// whatever CWD the caller was in (on Render: the project root).
+process.chdir(__dirname);
+
 const logger = require('./utils/logger');
 
 // Wrap all requires in try-catch to identify failure point

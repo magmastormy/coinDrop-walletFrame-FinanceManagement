@@ -1,10 +1,21 @@
 const logger = require('../utils/logger');
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-    apiKey: process.env.NVIDIA_API_KEY,
-    baseURL: 'https://integrate.api.nvidia.com/v1',
-});
+// Defer construction so a missing NVIDIA_API_KEY doesn't crash the app
+// at boot. Consumers call getClient() to obtain the instance.
+let _openai;
+function getClient() {
+    if (!_openai) {
+        if (!process.env.NVIDIA_API_KEY) {
+            throw new Error('[aiClient] NVIDIA_API_KEY is not set — cannot create client.');
+        }
+        _openai = new OpenAI({
+            apiKey: process.env.NVIDIA_API_KEY,
+            baseURL: 'https://integrate.api.nvidia.com/v1',
+        });
+    }
+    return _openai;
+}
 
 const MODEL = 'meta/llama-3.3-70b-instruct';
 
@@ -77,7 +88,7 @@ async function send(messages, { timeoutMs = 30000 } = {}) {
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const completion = await openai.chat.completions.create({
+        const completion = await getClient().chat.completions.create({
             model: MODEL,
             messages: sanitizedMessages,
             temperature: 0.2,

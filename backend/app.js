@@ -1,3 +1,7 @@
+// Anchor require resolution to this file's directory so relative paths
+// work regardless of where the process was started.
+process.chdir(__dirname);
+
 require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
