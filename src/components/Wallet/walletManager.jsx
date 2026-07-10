@@ -1,4 +1,5 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError, logInfo } from '../../utils/logger';
+import { toast } from 'react-toastify';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -264,7 +265,7 @@ const WalletManager = () => {
                 </header>
             )}
 
-            <main className="p-8 max-w-7xl mx-auto space-y-12">
+            <main className="p-6 md:p-8 space-y-6 md:space-y-8">
                 {!selectedWallet ? (
                     <>
                         {/* Hero Section: Total Balance */}
@@ -275,7 +276,7 @@ const WalletManager = () => {
                                 </p>
                                 <div className="flex items-baseline gap-4">
                                     <h2 className="text-6xl font-extrabold font-headline tracking-tight text-on-surface">
-                                        {formatCurrencyHook(totalBalance)}
+                                        {formatCurrency(totalBalance)}
                                     </h2>
                                     {!searchQuery && (
                                         <span className="bg-secondary/10 text-secondary text-sm px-3 py-1 rounded-full font-semibold flex items-center gap-1">
@@ -335,7 +336,7 @@ const WalletManager = () => {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-display font-bold text-on-surface">{selectedWallet.name}</h2>
-                                <p className="text-on-tertiary-container text-sm">{formatCurrencyHook(selectedWallet.balance)}</p>
+                                <p className="text-on-tertiary-container text-sm">{formatCurrency(selectedWallet.balance)}</p>
                             </div>
                         </div>
 

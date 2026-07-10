@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logError, logInfo } from '../utils/logger';
 
 /**
  * Error reporting service for centralized error tracking and monitoring

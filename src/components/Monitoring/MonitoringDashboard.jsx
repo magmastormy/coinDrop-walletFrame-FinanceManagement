@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logError, logInfo } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import PerformanceMonitor from '../utils/performanceMonitor';

@@ -1,5 +1,3 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const savingsGoalSlice = createSlice({
@@ -13,7 +11,6 @@ const savingsGoalSlice = createSlice({
     },
     reducers: {
         setSavingsGoals: (state, action) => {
-            logInfo("Savings Goal Slice - setSavingsGoals - action.payload: ", action.payload);
             state.goals = action.payload;
             state.loading = false;
         },

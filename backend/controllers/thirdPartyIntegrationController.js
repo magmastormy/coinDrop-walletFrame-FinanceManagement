@@ -10,7 +10,7 @@ const {
   ConflictError,
   DatabaseError,
   InternalServerError,
-  ForbiddenError
+  AuthorizationError
 } = require('../utils/errorClasses');
 
 // Logger
@@ -368,7 +368,7 @@ const thirdPartyIntegrationController = {
             errorMessage: 'IP not in whitelist',
             metadata: { reason: 'IP_BLOCKED', clientIP }
           });
-          throw new ForbiddenError('Access denied: IP not in whitelist');
+          throw new AuthorizationError('Access denied: IP not in whitelist');
         }
       }
 

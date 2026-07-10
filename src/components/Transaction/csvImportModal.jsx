@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError, logWarn } from '../../utils/logger';
 
 import React, { useState } from 'react';
 import { Loader2, X, Upload, CheckCircle, AlertCircle } from 'lucide-react';

@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logWarn } from '../../utils/logger';
 
 import React from 'react';
 import BudgetTransactionList from './budgetTransactionList';

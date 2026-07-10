@@ -17,6 +17,7 @@
   --card-pad-lg: 20px;
   
   /* Optimized sidebar */
+  --sidebar-width: 256px;
   --sidebar-width-compact: 200px;
   --sidebar-width-tablet-compact: 180px;
   

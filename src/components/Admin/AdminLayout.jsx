@@ -8,7 +8,7 @@ const AdminLayout = ({ children, title }) => {
       <AdminSidebar />
       <main className="ml-72 flex-1 relative min-h-screen">
         <AdminTopBar title={title} />
-        <div className="p-8">
+        <div className="p-6 md:p-8">
           {children}
         </div>
       </main>

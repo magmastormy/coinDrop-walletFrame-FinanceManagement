@@ -1,6 +1,5 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axiosInstance from '../api/userAxios';
+import { logError } from '../utils/logger';
 
 const API_URL = '/savings-rules';
 

@@ -572,11 +572,11 @@ exports.getProactiveInsights = async (req, res, next) => {
         // Check for budget overruns
         if (ctx.budgets && ctx.budgets.length > 0) {
             ctx.budgets.forEach(budget => {
-                if (budget.spent && budget.limit && budget.spent > budget.limit * 0.8) {
+                if (budget.spent && budget.amount && budget.spent > budget.amount * 0.8) {
                     insights.push({
                         type: 'alert',
                         title: 'Budget Warning',
-                        message: `You've spent ${(budget.spent / budget.limit * 100).toFixed(0)}% of your ${budget.name} budget`,
+                        message: `You've spent ${(budget.spent / budget.amount * 100).toFixed(0)}% of your ${budget.name} budget`,
                         priority: 'medium'
                     });
                 }

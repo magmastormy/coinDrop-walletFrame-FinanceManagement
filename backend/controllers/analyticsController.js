@@ -1,12 +1,13 @@
 const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
 const mongoose = require('mongoose');
+const { getAuthenticatedUserId } = require('../utils/authUser');
 
 class AnalyticsController {
     // Get financial overview
     static async getFinancialOverview(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
 
             // Optimized: Single query with aggregation
             const [walletData, expenseData] = await Promise.all([
@@ -107,7 +108,7 @@ class AnalyticsController {
     // Get spending trends
     static async getSpendingTrends(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
             const { timeRange = 'month' } = req.query;
 
             let startDate = new Date();
@@ -164,7 +165,7 @@ class AnalyticsController {
     // Get category breakdown
     static async getCategoryBreakdown(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
             const { timeRange = 'month' } = req.query;
 
             let startDate = new Date();
@@ -220,7 +221,7 @@ class AnalyticsController {
     // Get savings progress
     static async getSavingsProgress(req, res) {
         try {
-            const userId = req.user._id;
+            const userId = getAuthenticatedUserId(req);
             const months = 6; // Last 6 months
 
             let startDate = new Date();

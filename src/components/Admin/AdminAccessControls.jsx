@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,7 +70,7 @@ const AdminAccessControls = () => {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

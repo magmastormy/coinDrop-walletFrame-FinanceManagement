@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logError } from '../utils/logger';
 
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';

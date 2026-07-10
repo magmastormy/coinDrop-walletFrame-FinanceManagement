@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logError } from '../../../utils/logger';
 
 // src/components/Education/userEducation/listUserEducationPost.jsx
 import UserEducationCard from './userEducationPostCard';

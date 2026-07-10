@@ -1,8 +1,8 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/images'; 
+const logError = console.error;
+const logInfo = console.log;
 
 const imageService = {
     uploadImage: async (file, imageType = 'education') => {

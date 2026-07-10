@@ -27,7 +27,16 @@ router.get('/savings-progress', AnalyticsController.getSavingsProgress);
 // Legacy routes
 router.get('/merchant-analytics', async (req, res) => {
     try {
-        const analytics = await Transaction.getMerchantAnalytics(req.user._id);
+        const analytics = await Transaction.aggregate([
+            { $match: { userId: req.user._id } },
+            { $group: {
+                _id: '$description',
+                totalSpent: { $sum: '$amount' },
+                count: { $sum: 1 }
+            }},
+            { $sort: { totalSpent: -1 } },
+            { $limit: 20 }
+        ]);
         res.json({ analytics });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -66,7 +75,7 @@ router.get('/savings-recommendations', async (req, res) => {
                 type: 'expense'
             }},
             { $group: {
-                _id: '$category',
+                _id: '$categoryId',
                 totalSpent: { $sum: '$amount' },
                 averageAmount: { $avg: '$amount' },
                 frequency: { $sum: 1 }
@@ -108,8 +117,8 @@ router.get('/financial-health', async (req, res) => {
             .reduce((sum, t) => sum + t.amount, 0);
 
         const savingsRate = income > 0 ? ((income - expenses) / income) * 100 : 0;
-        const expenseCategories = new Set(transactions.map(t => t.category)).size;
-        const recurringExpenses = transactions.filter(t => t.recurringTransactionId).length;
+        const expenseCategories = new Set(transactions.map(t => t.categoryId)).size;
+        const recurringExpenses = transactions.filter(t => t.isRecurring).length;
 
         const healthScore = Math.min(100, Math.max(0,
             savingsRate * 0.4 +
@@ -140,23 +149,12 @@ router.get('/financial-health', async (req, res) => {
 
 router.get('/community-comparison', async (req, res) => {
     try {
-        const userProfile = await UserProfile.findOne({ user: req.user._id });
-        
         const communityMetrics = await Transaction.aggregate([
-            { $lookup: {
-                from: 'userprofiles',
-                localField: 'userId',
-                foreignField: 'user',
-                as: 'profile'
-            }},
-            { $unwind: '$profile' },
-            { $match: {
-                'profile.financialProfile.riskTolerance': userProfile.financialProfile.riskTolerance
-            }},
+            { $match: { userId: req.user._id } },
             { $group: {
                 _id: '$type',
                 averageAmount: { $avg: '$amount' },
-                totalUsers: { $addToSet: '$userId' }
+                totalTransactions: { $sum: 1 }
             }}
         ]);
 

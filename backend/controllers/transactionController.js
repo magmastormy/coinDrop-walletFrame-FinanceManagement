@@ -547,7 +547,7 @@ class TransactionController {
                 {
                     $group: {
                         _id: '$type',
-                        totalAmount: { $sum: '$amountDecrypted' },
+                        totalAmount: { $sum: '$amount' },
                         count: { $sum: 1 }
                     }
                 }
@@ -595,8 +595,8 @@ class TransactionController {
      * @returns {Promise<void>}
      */
     static async getTransactionsByBudget(req, res) {
+        const { budgetId } = req.params;
         try {
-            const { budgetId } = req.params;
             const userId = getAuthenticatedUserId(req);
 
             // Validate budgetId exists and belongs to user

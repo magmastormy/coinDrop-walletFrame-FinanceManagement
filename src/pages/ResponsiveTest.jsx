@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logInfo } from '../utils/logger';
 
 import React, { useState } from 'react';
 import TransactionTable from '../components/Transaction/transactionTable';

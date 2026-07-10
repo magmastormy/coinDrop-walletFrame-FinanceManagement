@@ -77,8 +77,9 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Record system metrics periodically
+let metricsInterval;
 if (process.env.NODE_ENV !== 'test') {
-    setInterval(() => {
+    metricsInterval = setInterval(() => {
         metricsCollector.recordSystemMetrics();
     }, 10000); // Every 10 seconds
 }
@@ -275,6 +276,28 @@ function createApp() {
     app.use(express.urlencoded({ limit: '2mb', extended: true }));
     app.use(sanitizationMiddleware);
     app.use(auditMiddleware);
+
+    // Resource management middleware - must be before routes
+    try {
+        const resourceManagementService = require('./services/resourceManagementService');
+        resourceManagementService.initialize();
+        app.use((req, res, next) => {
+            if (!resourceManagementService.canAcceptNewConnection()) {
+                return res.status(503).json({
+                    error: 'Service Unavailable',
+                    message: 'Server is currently at capacity. Please try again later.'
+                });
+            }
+            resourceManagementService.incrementConnectionCount();
+            res.on('finish', () => {
+                resourceManagementService.decrementConnectionCount();
+            });
+            next();
+        });
+        logger.debug('✅ app.js: Resource management middleware added');
+    } catch (e) {
+        logger.debug('⚠️ app.js: Resource management service not available, skipping');
+    }
 
     app.use((req, res, next) => {
         const startedAt = Date.now();
@@ -500,39 +523,14 @@ const app = createApp();
 new BatchUtil(app);
 logger.debug('✅ app.js: Batch utility initialized');
 
-// Initialize resource management service
-const resourceManagementService = require('./services/resourceManagementService');
-resourceManagementService.initialize();
-logger.debug('✅ app.js: Resource management service initialized');
-
-// Add resource management middleware
-app.use((req, res, next) => {
-    // Check if we can accept new connections
-    if (!resourceManagementService.canAcceptNewConnection()) {
-        return res.status(503).json({
-            error: 'Service Unavailable',
-            message: 'Server is currently at capacity. Please try again later.'
-        });
-    }
-    
-    // Increment connection count
-    resourceManagementService.incrementConnectionCount();
-    
-    // Decrement connection count when response is finished
-    res.on('finish', () => {
-        resourceManagementService.decrementConnectionCount();
-    });
-    
-    next();
+// Resource status endpoint
+app.get('/api/health/resources', (req, res) => {
+    const resourceManagementService = require('./services/resourceManagementService');
+    const resourceStatus = resourceManagementService.getResourceStatus();
+    res.json(resourceStatus);
 });
 
-// Resource status endpoint
-    app.get('/api/health/resources', (req, res) => {
-        const resourceStatus = resourceManagementService.getResourceStatus();
-        res.json(resourceStatus);
-    });
-
-    logger.debug('✅ app.js: App created successfully');
+logger.debug('✅ app.js: App created successfully');
 
 module.exports = app;
 module.exports.createApp = createApp;

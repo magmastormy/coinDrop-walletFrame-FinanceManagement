@@ -83,7 +83,7 @@ const AdminSystemConfiguration = () => {
   }
 
   return (
-    <div className="p-8 space-y-12 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8">
       {/* System Health Stats */}
       {health && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

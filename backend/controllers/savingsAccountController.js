@@ -42,7 +42,7 @@ class SavingsAccountController {
 
     static async transferToSavings(req, res) {
         try {
-            const { amount, walletId } = req.body;
+            const { amount, walletId, accountId } = req.body;
             const userId = getAuthenticatedUserId(req);
             const numericAmount = Number(amount);
 
@@ -55,7 +55,10 @@ class SavingsAccountController {
             }
 
             const wallet = await Wallet.findOne({ _id: walletId, userId: userId, isActive: true });
-            const savingsAccount = await SavingsAccount.findOne({ userId: userId, isActive: true });
+            const savingsAccountQuery = accountId 
+                ? { _id: accountId, userId: userId, isActive: true }
+                : { userId: userId, isActive: true };
+            const savingsAccount = await SavingsAccount.findOne(savingsAccountQuery);
 
             if (!wallet) {
                 return res.status(404).json({ error: 'Wallet not found' });

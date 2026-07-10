@@ -46,7 +46,7 @@ const savingsAccountSlice = createSlice({
             state.loading = false;
         },
         clearSavingsAccount: (state) => {
-            state.account = null;
+            state.account = [];
             state.transactions = [];
             state.automaticSettings = null;
             state.error = null;

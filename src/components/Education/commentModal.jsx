@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logError } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -73,10 +73,10 @@
      align-items: center;
    }
    
-   .sidebar {
-     width: 280px;
-     flex-shrink: 0;
-   }
+.sidebar {
+  width: 256px;
+  flex-shrink: 0;
+}
    
    .main-content {
      flex: 1;

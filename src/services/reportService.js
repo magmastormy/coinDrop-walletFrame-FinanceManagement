@@ -1,8 +1,7 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/reports'; //DO NOT CHANGE THIS
+const logError = console.error;
 
 class ReportService {
     async getReportTypes() {

@@ -1,5 +1,3 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import walletReducer from './walletSlice';

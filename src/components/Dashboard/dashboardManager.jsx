@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -114,14 +114,13 @@ const DashboardManager = () => {
                     <Select 
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value)}
-                        options={[
-                            { value: 'week', label: 'This Week' },
-                            { value: 'month', label: 'This Month' },
-                            { value: 'quarter', label: 'This Quarter' },
-                            { value: 'year', label: 'This Year' },
-                            { value: 'custom', label: 'Custom Range' }
-                        ]}
-                    />
+                    >
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="quarter">This Quarter</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </Select>
                     <Toggle
                         label="Compare"
                         checked={compareMode}
@@ -131,17 +130,16 @@ const DashboardManager = () => {
                         <Select
                             value={compareRange}
                             onChange={(e) => setCompareRange(e.target.value)}
-                            options={[
-                                { value: 'previous_period', label: 'Previous Period' },
-                                { value: 'year_ago', label: 'Year Ago' },
-                                { value: 'custom', label: 'Custom Comparison' }
-                            ]}
-                        />
+                        >
+                            <option value="previous_period">Previous Period</option>
+                            <option value="year_ago">Year Ago</option>
+                            <option value="custom">Custom Comparison</option>
+                        </Select>
                     )}
                 </div>
             </PageHeader>
 
-            <div className="p-8 space-y-8">
+            <div className="p-6 md:p-8 space-y-6 md:space-y-8">
                 {/* Hero Stats Bento Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <DashboardStats 

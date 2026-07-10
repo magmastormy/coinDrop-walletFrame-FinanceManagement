@@ -149,7 +149,7 @@ budgetSchema.statics.updateBudgetSpent = async function(budgetId) {
         const Category = mongoose.model('Category');
         const category = await Category.findById(budget.category);
         if (category) {
-            const subcategories = await category.getAllSubcategories();
+            const subcategories = await category.getAllDescendants();
             categoryQuery.push(...subcategories.map(sub => sub._id));
         }
     }
@@ -158,7 +158,7 @@ budgetSchema.statics.updateBudgetSpent = async function(budgetId) {
         {
             $match: {
                 budgetId: budget._id,
-                category: { $in: categoryQuery },
+                categoryId: { $in: categoryQuery },
                 affectsBudget: true,
                 date: { 
                     $gte: budget.startDate,

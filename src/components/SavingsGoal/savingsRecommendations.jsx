@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useEffect } from 'react';
 import savingsGoalService from '../../services/savingsGoalService';

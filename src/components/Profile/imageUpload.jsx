@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';

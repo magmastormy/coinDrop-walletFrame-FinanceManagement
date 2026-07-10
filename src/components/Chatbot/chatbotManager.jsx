@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logInfo } from '../../utils/logger';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/authContext';
@@ -228,7 +228,7 @@ const ChatbotManager = () => {
     }, [contextSuggestions]);
 
     return (
-        <div className="flex h-full -m-8 overflow-hidden bg-surface">
+        <div className="flex h-full overflow-hidden bg-surface">
             {/* Main Chat Canvas */}
             <main className="flex-1 flex overflow-hidden relative">
                 <ChatContainer

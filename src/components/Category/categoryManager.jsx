@@ -144,7 +144,7 @@ const CategoryManager = () => {
 
     return (
         <motion.div
-            className="space-y-8 pb-8"
+            className="p-6 md:p-8 space-y-6 md:space-y-8"
             style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

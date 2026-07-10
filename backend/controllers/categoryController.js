@@ -101,7 +101,7 @@ class CategoryController {
                 return res.status(404).json({ error: 'Category not found' });
             }
             
-            const subcategories = await category.getAllSubcategories();
+            const subcategories = await category.getAllDescendants();
             res.json(subcategories);
         } catch (error) {
             res.status(500).json({
@@ -218,14 +218,19 @@ class CategoryController {
         try {
             const userId = getAuthenticatedUserId(req);
             const { startDate, endDate } = req.query;
-            const transactions = await Transaction.getTransactionsByCategory(
-                req.params.id,
-                {
-                    startDate: startDate ? new Date(startDate) : undefined,
-                    endDate: endDate ? new Date(endDate) : undefined,
-                    userId
-                }
-            );
+            const query = {
+                $or: [
+                    { categoryId: req.params.id },
+                    { category: req.params.id }
+                ],
+                userId
+            };
+            if (startDate || endDate) {
+                query.date = {};
+                if (startDate) query.date.$gte = new Date(startDate);
+                if (endDate) query.date.$lte = new Date(endDate);
+            }
+            const transactions = await Transaction.find(query).sort({ date: -1 });
             res.json(transactions);
         } catch (error) {
             res.status(500).json({
@@ -249,7 +254,7 @@ class CategoryController {
                 return res.status(404).json({ error: 'Category not found' });
             }
 
-            const subcategories = await category.getAllSubcategories();
+            const subcategories = await category.getAllDescendants();
             const categoryIds = [category._id, ...subcategories.map(sub => sub._id)];
 
             const stats = await Transaction.aggregate([
@@ -587,11 +592,16 @@ class CategoryController {
                 }
 
                 // Prevent circular references
-                if (await category.wouldCreateCircularReference(updates.parentId)) {
-                    return res.status(400).json({
-                        error: 'Invalid parent category',
-                        details: 'This would create a circular reference in the category hierarchy'
-                    });
+                let currentParentId = updates.parentId;
+                while (currentParentId) {
+                    if (currentParentId.toString() === id) {
+                        return res.status(400).json({
+                            error: 'Invalid parent category',
+                            details: 'This would create a circular reference in the category hierarchy'
+                        });
+                    }
+                    const parent = await Category.findById(currentParentId).select('parentId');
+                    currentParentId = parent?.parentId;
                 }
             }
 

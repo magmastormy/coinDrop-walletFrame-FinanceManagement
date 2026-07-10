@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logError } from '../utils/logger';
 
 import axiosInstance from '../api/userAxios';
 import ImageService from './imageService';

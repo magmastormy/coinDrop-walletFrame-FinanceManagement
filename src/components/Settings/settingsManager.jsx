@@ -3,7 +3,7 @@ import PageHeader from '../Common/PageHeader';
 
 const SettingsManager = () => {
     return (
-        <div className="space-y-8 pb-8">
+        <div className="p-6 md:p-8 space-y-6 md:space-y-8">
             <PageHeader title="Settings" />
             <div
                 style={{

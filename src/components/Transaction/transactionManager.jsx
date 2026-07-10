@@ -1,4 +1,5 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
+import { toast } from 'react-toastify';
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -188,7 +189,7 @@ const TransactionManager = () => {
     }
 
     return (
-        <div className="p-10 space-y-12 max-w-7xl mx-auto w-full font-body">
+        <div className="p-6 md:p-8 space-y-6 md:space-y-8 w-full font-body">
             {/* Summary Stats: Editorial Cards */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Total Income Card */}

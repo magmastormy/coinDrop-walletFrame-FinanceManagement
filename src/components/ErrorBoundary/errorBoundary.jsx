@@ -1,8 +1,8 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
-
 import React from 'react';
 
 const isDev = import.meta.env.DEV;
+
+const logger = typeof window !== 'undefined' && window.CoinDropLogger ? window.CoinDropLogger : console;
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -24,7 +24,7 @@ class ErrorBoundary extends React.Component {
             errorInfo: errorInfo
         });
         // Log error to your error tracking service
-        logError('Error caught by boundary:', error, errorInfo);
+        logger.error('Error caught by boundary:', error, errorInfo);
     }
 
     render() {

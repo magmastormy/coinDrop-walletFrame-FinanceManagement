@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/authContext';
@@ -147,8 +147,8 @@ const SavingsGoalManager = () => {
     }
 
     return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="space-y-8 pb-8">
-            <div className="flex justify-between items-center w-full px-8 h-16 sticky top-0 bg-[#131b2e] z-40">
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="p-6 md:p-8 space-y-6 md:space-y-8">
+            <div className="flex justify-between items-center w-full h-16 sticky top-0 bg-[#131b2e] z-40">
                 <div className="flex items-center gap-8">
                     <h1 className="text-xl font-bold text-white tracking-tighter">Savings Goals</h1>
                     <nav className="hidden lg:flex items-center gap-6">
@@ -413,13 +413,12 @@ const SavingsGoalManager = () => {
                             <Select
                                 value={projectionPeriod}
                                 onChange={(e) => setProjectionPeriod(Number(e.target.value))}
-                                options={[
-                                    { value: 1, label: '1 Month' },
-                                    { value: 3, label: '3 Months' },
-                                    { value: 6, label: '6 Months' },
-                                    { value: 12, label: '1 Year' }
-                                ]}
-                            />
+                            >
+                                <option value={1}>1 Month</option>
+                                <option value={3}>3 Months</option>
+                                <option value={6}>6 Months</option>
+                                <option value={12}>1 Year</option>
+                            </Select>
                         </div>
                         <SavingsProgressChart
                             goals={goals}

@@ -688,8 +688,9 @@ class AuthController {
         try {
             const refreshToken = req.body.refreshToken || 
                 (req.headers.authorization && req.headers.authorization.split(' ')[1]);
-            if (refreshToken && req.user?.userId) {
-                const user = await User.findById(req.user.userId);
+            const userId = req.authUserId || req.user?._id;
+            if (refreshToken && userId) {
+                const user = await User.findById(userId);
                 if (user) {
                     AuthController.revokeRefreshToken(user, refreshToken);
                     await user.save({ validateBeforeSave: false });
@@ -700,7 +701,7 @@ class AuthController {
             logger.error('Logout error', {
                 error: error.message,
                 stack: error.stack,
-                userId: req.user?.userId
+                userId: req.authUserId || req.user?._id
             });
             const serverError = ErrorHandler.createError('Could not process logout', 500);
             return res.status(serverError.statusCode).json({
@@ -734,7 +735,7 @@ class AuthController {
             };
 
             const user = await User.findByIdAndUpdate(
-                req.user.userId,
+                req.authUserId || req.user?._id,
                 { $set: updates },
                 { new: true }
             ).select('-password');
@@ -775,7 +776,7 @@ class AuthController {
         try {
             const { currentPassword, newPassword } = req.body;
 
-            const user = await User.findById(req.user.userId).select('+password');
+            const user = await User.findById(req.authUserId || req.user?._id).select('+password');
             if (!user) {
                 return res.status(404).json({ 
                     error: 'Not found',
@@ -809,7 +810,7 @@ class AuthController {
             logger.error('Password change error', {
                 error: error.message,
                 stack: error.stack,
-                userId: req.user?.userId
+                userId: req.authUserId || req.user?._id
             });
             const serverError = ErrorHandler.createError('Could not change password', 500);
             return res.status(serverError.statusCode).json({
@@ -827,8 +828,9 @@ class AuthController {
      */
     static async logoutAll(req, res) {
         try {
-            if (req.user?.userId) {
-                const user = await User.findById(req.user.userId);
+            const userId = req.authUserId || req.user?._id;
+            if (userId) {
+                const user = await User.findById(userId);
                 if (user) {
                     user.tokens = [];
                     await user.save({ validateBeforeSave: false });
@@ -841,7 +843,7 @@ class AuthController {
             logger.error('Logout all error', {
                 error: error.message,
                 stack: error.stack,
-                userId: req.user?.userId
+                userId: req.authUserId || req.user?._id
             });
             const serverError = ErrorHandler.createError('Could not process logout from all devices', 500);
             return res.status(serverError.statusCode).json({
@@ -944,7 +946,7 @@ class AuthController {
             const user = await User.findOne({
                 resetPasswordToken: hashedToken,
                 resetPasswordExpire: { $gt: new Date() } // Token not expired
-            });
+            }).select('+resetPasswordToken +resetPasswordExpire');
 
             if (!user) {
                 return res.status(400).json({
@@ -994,7 +996,8 @@ class AuthController {
      */
     static async deleteAccount(req, res) {
         try {
-            const user = await User.findByIdAndDelete(req.user.userId);
+            const userId = req.authUserId || req.user?._id;
+            const user = await User.findByIdAndDelete(userId);
             if (!user) {
                 return res.status(404).json({
                     error: 'Not found',
@@ -1008,7 +1011,7 @@ class AuthController {
             logger.error('Delete account error', {
                 error: error.message,
                 stack: error.stack,
-                userId: req.user?.userId
+                userId: req.authUserId || req.user?._id
             });
             const serverError = ErrorHandler.createError('Could not delete account', 500);
             return res.status(serverError.statusCode).json({

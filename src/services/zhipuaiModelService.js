@@ -1,9 +1,9 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axiosInstance from '../api/userAxios';
 
 const API_URL = '/zhipuai';
 const isDev = import.meta.env.DEV;
+const logError = console.error;
+const logInfo = console.log;
 
 /**
  * ZhipuAI Model Service

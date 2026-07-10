@@ -62,6 +62,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'default-avatar.png'
     },
+    phone: {
+        type: String,
+        select: false
+    },
     isVerified: {
         type: Boolean,
         default: false
@@ -100,6 +104,14 @@ const UserSchema = new mongoose.Schema({
     },
     lockUntil: {
         type: Date
+    },
+    resetPasswordToken: {
+        type: String,
+        select: false
+    },
+    resetPasswordExpire: {
+        type: Date,
+        select: false
     }
 }, {
     timestamps: true,
@@ -139,11 +151,12 @@ UserSchema.pre('save', async function(next) {
 
 // Method to generate authentication token
 UserSchema.methods.generateAuthToken = function() {
+    const jti = crypto.randomUUID();
     const token = jwt.sign(
         { 
             userId: this._id, 
             role: this.role,
-            jti: crypto.randomUUID() 
+            jti
         }, 
         process.env.JWT_SECRET, 
         { 
@@ -154,7 +167,7 @@ UserSchema.methods.generateAuthToken = function() {
     // Add token to user's tokens array
     this.tokens = this.tokens.concat({ 
         token, 
-        jti: crypto.randomUUID(),
+        jti,
         createdAt: new Date()
     });
     return token;

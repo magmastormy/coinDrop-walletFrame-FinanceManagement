@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -294,7 +294,7 @@ const BudgetManager = () => {
     }));
 
     return (
-        <div className="space-y-8 pb-8">
+        <div className="p-6 md:p-8 space-y-6 md:space-y-8">
             {/* Editorial Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12">
                 <div>

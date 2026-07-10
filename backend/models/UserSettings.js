@@ -45,6 +45,24 @@ const UserSettingsSchema = new mongoose.Schema({
             default: 'USD'
         }
     },
+    security: {
+        twoFactorAuth: {
+            type: Boolean,
+            default: false
+        },
+        biometricLogin: {
+            type: Boolean,
+            default: false
+        },
+        transactionPinEnabled: {
+            type: Boolean,
+            default: false
+        },
+        transactionPin: {
+            type: String,
+            select: false
+        }
+    },
 });
 
 // Create default settings for new user

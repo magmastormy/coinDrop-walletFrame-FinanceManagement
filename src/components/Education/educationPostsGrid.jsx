@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logWarn } from '../../utils/logger';
 
 import React from 'react';
 import EducationCard from './educationCard';

@@ -495,14 +495,21 @@ class BudgetController {
 
                 // Create new budget for next period
                 const newBudget = new Budget({
-                    ...budget.toObject(),
-                    _id: new mongoose.Types.ObjectId(),
+                    userId: budget.userId,
+                    name: budget.name,
+                    amount: budget.amount,
+                    type: budget.type,
+                    period: budget.period,
                     startDate: nextStartDate,
                     endDate: nextEndDate,
+                    walletId: budget.walletId,
+                    category: budget.category,
+                    includeSubcategories: budget.includeSubcategories,
+                    automation: budget.automation,
+                    rollover: budget.rollover,
                     spent: 0,
                     committed: 0,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+                    isActive: true
                 });
 
                 await newBudget.save();

@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Repeat, Target, TrendingUp, Brain, Calendar, PiggyBank } from 'lucide-react';
@@ -390,7 +390,7 @@ const SavingsAccountManager = () => {
     }
 
     return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="space-y-8 pb-8">
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }} className="p-6 md:p-8 space-y-6 md:space-y-8">
             <PageHeader
                 title="Savings"
                 actions={(

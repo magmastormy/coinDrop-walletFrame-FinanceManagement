@@ -1,5 +1,3 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import walletService from '../services/walletService';
 
@@ -31,7 +29,6 @@ const walletSlice = createSlice({
     initialState,
     reducers: {
         setWallets: (state, action) => {
-            if (isDev) logInfo('Wallet Slice - Setting wallets:', action.payload);
             state.wallets = action.payload;
             state.loading = false;
         },

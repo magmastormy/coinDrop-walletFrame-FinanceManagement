@@ -1,4 +1,4 @@
-import { useLogger } from '../../hooks/useLogger.jsx';
+import { logError } from '../../utils/logger';
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';

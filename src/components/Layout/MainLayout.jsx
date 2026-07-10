@@ -28,7 +28,7 @@ const MainLayout = ({ children, className }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    marginLeft: !isMobile && isSidebarOpen ? '240px' : 0,
+                    marginLeft: !isMobile && isSidebarOpen ? '256px' : 0,
                     transition: 'margin-left 0.3s ease'
                 }}
             >
@@ -39,9 +39,9 @@ const MainLayout = ({ children, className }) => {
                 )}
 
                 {/* Top Navigation Bar */}
-                <header className="flex justify-between items-center px-8 w-full sticky top-0 z-40 bg-[#0b1326] h-16">
+                <header className="flex justify-between items-center px-6 md:px-8 w-full sticky top-0 z-40 bg-[#0b1326] h-16 shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="bg-[#131b2e] rounded-xl flex items-center px-4 py-2 gap-3 w-80">
+                        <div className="bg-[#131b2e] rounded-xl flex items-center px-4 py-2 gap-3 w-64 md:w-80">
                             <Search className="text-on-tertiary-container" size={18} />
                             <input 
                                 className="bg-transparent border-none focus:ring-0 text-sm w-full text-on-surface" 
@@ -50,12 +50,12 @@ const MainLayout = ({ children, className }) => {
                             />
                         </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4 md:gap-6">
                         <button className="relative text-[#b6c4ff] hover:bg-[#222a3d] p-2 rounded-full transition-colors duration-200">
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></span>
                         </button>
-                        <button className="text-[#b6c4ff] hover:bg-[#222a3d] p-2 rounded-full transition-colors duration-200">
+                        <button className="text-[#b6c4ff] hover:bg-[#222a3d] p-2 rounded-full transition-colors duration-200 hidden sm:block">
                             <Settings size={20} />
                         </button>
                         <div className="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
@@ -64,12 +64,14 @@ const MainLayout = ({ children, className }) => {
                                 className="w-8 h-8 rounded-full object-cover" 
                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg2DCxtBRnZNiFHXKQ5j-8q5y5xbq1y723YRVlFdnbADrCxgIx8WuaNK7vXpCBXqt2TJWU9MSjRfDNSLLsPyYAerb1_OsbIT7FQA1enSEK8majsp5CWspuiGhaPhuQhnanHB56WWbfg5cqUdvvnBwD_mlid059xsXsMgDnxQGNivswZBbEvOq_zn9Q4GhNTVXWTIcuDiCiZL3nIeheXNUlkAGi0XAR6eY97gftmyABVwjVhyCwikjMdbDhVFK6_vAtrHK7PEcQx6aI"
                             />
-                            <span className="text-sm font-medium text-on-surface">{user?.name || 'User'}</span>
+                            <span className="text-sm font-medium text-on-surface hidden md:inline">
+                                {user?.firstName || user?.name || 'User'}
+                            </span>
                         </div>
                     </div>
                 </header>
 
-                <div style={{ padding: '32px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                     {children}
                 </div>
             </main>

@@ -50,6 +50,7 @@
     "natural": "^8.0.1",
     "node-mocks-http": "^1.17.2",
     "nodemon": "^3.1.9",
+    "openai": "^4.104.0",
     "pdfkit": "^0.16.0",
     "pdfkit-table": "^0.1.99",
     "react-markdown": "^10.1.0",

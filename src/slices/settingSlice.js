@@ -18,7 +18,7 @@ const settingsSlice = createSlice({
             state.error = action.payload;
         },
         clearSettings: (state) => {
-            state.settings = null;
+            state.settings = [];
             state.loading = false;
             state.error = null;
         }

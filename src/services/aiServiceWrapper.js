@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logInfo } from '../utils/logger';
 
 import zhipuaiModelService from './zhipuaiModelService';
 import aiResponseCache from '../utils/aiResponseCache';

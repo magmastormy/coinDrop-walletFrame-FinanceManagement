@@ -69,7 +69,7 @@ export const ThemeProvider = ({ children }) => {
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', 
-        isDarkMode ? theme.background.primary : theme.background.primary
+        isDarkMode ? '#1a1a2e' : '#ffffff'
       );
     }
 

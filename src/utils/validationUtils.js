@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logWarn } from './logger';
 
 /**
  * Validation utilities for consistent input validation across the application
@@ -245,18 +245,17 @@ export const ValidationUtils = {
      * Wraps API call with timeout protection
      */
     withTimeout: async (apiCall, timeoutMs = 30000) => {
-        const timeoutPromise = ValidationUtils.createTimeoutPromise(timeoutMs);
+        let timeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Request timed out')), timeoutMs);
+        });
         
         try {
             return await Promise.race([apiCall, timeoutPromise]);
         } catch (error) {
-            // Clear timeout if it exists
-            if (reject.timeoutId) {
-                clearTimeout(reject.timeoutId);
-            }
-            
+            clearTimeout(timeoutId);
             if (error.message === 'Request timed out') {
-                throw new Error(`${timeoutMessage.replace('Request timed out', 'Operation')} after ${timeoutMs/1000} seconds`);
+                throw new Error(`Operation timed out after ${timeoutMs / 1000} seconds`);
             }
             throw error;
         }

@@ -307,10 +307,9 @@ class WalletController {
                         userId,
                         amount: remainingBalance,
                         type: 'transfer',
-                        category: accountClosureCategory._id,
+                        categoryId: accountClosureCategory._id,
                         description: `Transferred from deleted wallet: ${wallet.name}`,
                         walletId: targetWallet._id,
-                        fromWalletId: id,
                         date: new Date(),
                     });
                     
@@ -584,10 +583,7 @@ class WalletController {
             // Find budgets that use this wallet
             const budgets = await Budget.find({
                 userId,
-                $or: [
-                    { walletId: id },
-                    { sourceWalletId: id }
-                ]
+                walletId: id
             }).populate('category', 'name');
             
             res.json({

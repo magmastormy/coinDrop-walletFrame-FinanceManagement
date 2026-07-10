@@ -1,4 +1,4 @@
-import { useLogger } from '../hooks/useLogger.jsx';
+import { logWarn } from '../utils/logger';
 
 import axiosInstance from '../api/userAxios';
 import { makeRequest } from './apiRequestManager';

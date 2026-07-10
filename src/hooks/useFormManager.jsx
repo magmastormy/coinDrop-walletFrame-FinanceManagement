@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useFormManager = (initialState) => {
   const [formData, setFormData] = useState(initialState);
+  const initialStateRef = useRef(initialState);
+  initialStateRef.current = initialState;
 
   const updateField = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -12,8 +14,8 @@ export const useFormManager = (initialState) => {
   }, []);
 
   const resetForm = useCallback(() => {
-    setFormData(initialState);
-  }, [initialState]);
+    setFormData(initialStateRef.current);
+  }, []);
 
   return {
     formData,

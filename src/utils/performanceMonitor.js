@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+import { logInfo, logError, logWarn } from './logger';
 
 /**
  * Performance monitoring utilities for tracking API response times and component performance

@@ -1,10 +1,9 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axios from 'axios';
 import { store } from '../slices/store';
 import { logout } from '../slices/authSlice';
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || '/api';
+const logError = console.error;
 
 // Create axios instance with timeout configuration
 const axiosInstance = axios.create({

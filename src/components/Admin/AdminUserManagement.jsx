@@ -179,7 +179,7 @@ const AdminUserManagement = () => {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="flex flex-wrap items-center gap-4">
           <div className="space-y-1.5">

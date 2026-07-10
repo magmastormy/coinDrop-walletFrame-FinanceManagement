@@ -1,7 +1,6 @@
-import { useLogger } from '../hooks/useLogger.jsx';
-
 import axiosInstance from '../api/userAxios';
 const API_URL = '/categories';
+const logError = console.error;
 
 export const getUserCategories = async () => {
     try {

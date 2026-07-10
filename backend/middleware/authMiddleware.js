@@ -147,8 +147,8 @@ const authMiddleware = async (req, res, next) => {
             throw new AuthenticationError('Invalid token payload');
         }
 
-        // Check if token has been revoked
-        if (tokenJti) {
+        // Check if token has been revoked (only for refresh tokens - access tokens aren't stored in tokens array)
+        if (tokenJti && decoded.type === 'refresh') {
             const revoked = await isTokenRevoked(userId, tokenJti);
             if (revoked) {
                 logger.warnWithMetadata('Authentication failed: Token has been revoked', {
@@ -289,8 +289,8 @@ const optionalTokenMiddleware = async (req, res, next) => {
             return next();
         }
 
-        // Check if token has been revoked
-        if (tokenJti) {
+        // Check if token has been revoked (only for refresh tokens)
+        if (tokenJti && decoded.type === 'refresh') {
             const revoked = await isTokenRevoked(userId, tokenJti);
             if (revoked) {
                 logger.debugWithMetadata('Optional auth: Token revoked, continuing as anonymous', {

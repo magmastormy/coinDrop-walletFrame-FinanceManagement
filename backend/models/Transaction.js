@@ -12,8 +12,8 @@ const transactionSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Transaction type is required'],
         enum: {
-            values: ['income', 'expense'],
-            message: 'Transaction type must be either income or expense'
+            values: ['income', 'expense', 'transfer'],
+            message: 'Transaction type must be either income, expense, or transfer'
         },
         index: true
     },
@@ -36,6 +36,19 @@ const transactionSchema = new mongoose.Schema({
     walletId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Wallet'
+    },
+    budgetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Budget',
+        index: true
+    },
+    affectsBudget: {
+        type: Boolean,
+        default: true
+    },
+    savingsGoalId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'SavingsGoal'
     },
     description: {
         type: String,

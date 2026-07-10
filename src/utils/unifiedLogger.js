@@ -1,4 +1,4 @@
-import { useLogger } from './hooks/useLogger';
+// UnifiedLogger - no React hook imports needed here
 
 /**
  * Unified Logger System
@@ -120,7 +120,7 @@ class UnifiedLogger {
                     info: 'color: #10b981;',
                     debug: 'color: #6b7280;'
                 };
-                logInfo(`%c${message}`, styles[logEntry.level] || styles.info);
+                console.log(`%c${message}`, styles[logEntry.level] || styles.info);
             } else {
                 // Node.js console
                 console[level.toLowerCase()](message);
@@ -149,7 +149,7 @@ class UnifiedLogger {
                 
                 localStorage.setItem('coindrop_logs', JSON.stringify(logs));
             } catch (error) {
-                logWarn('Failed to write to localStorage:', error);
+                console.warn('Failed to write to localStorage:', error);
             }
         };
     }
@@ -179,7 +179,7 @@ class UnifiedLogger {
                 
                 fs.appendFileSync(logFile, logLine);
             } catch (error) {
-                logError('Failed to write to log file:', error);
+                console.error('Failed to write to log file:', error);
             }
         };
     }
@@ -210,9 +210,8 @@ class UnifiedLogger {
 
         // Flush on page unload (browser)
         if (this.isBrowser) {
-            window.addEventListener('beforeunload', () => {
-                this.flushLogs();
-            });
+            this._beforeUnloadHandler = () => this.flushLogs();
+            window.addEventListener('beforeunload', this._beforeUnloadHandler);
         }
 
         // Flush on process exit (server)
@@ -269,7 +268,7 @@ class UnifiedLogger {
         } catch (error) {
             // Put failed logs back to buffer for retry
             this.logBuffer.unshift(...logsToSend);
-            logError('Failed to flush logs:', error);
+            console.error('Failed to flush logs:', error);
             
             // Fallback to local storage if available
             if (this.isBrowser) {
@@ -415,6 +414,8 @@ class UnifiedLogger {
      */
     child(context = {}) {
         const childLogger = new UnifiedLogger(this.config);
+        childLogger.transports = this.transports;
+        childLogger.logBuffer = this.logBuffer;
         childLogger.correlationId = this.correlationId;
         childLogger.userId = this.userId;
         childLogger.sessionId = this.sessionId;
@@ -498,6 +499,10 @@ class UnifiedLogger {
         if (this.flushTimer) {
             clearInterval(this.flushTimer);
             this.flushTimer = null;
+        }
+        
+        if (this.isBrowser && this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
         }
         
         // Flush any remaining logs

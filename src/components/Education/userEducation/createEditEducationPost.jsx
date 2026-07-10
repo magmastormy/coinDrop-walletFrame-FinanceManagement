@@ -1,4 +1,4 @@
-import { useLogger } from '../../../hooks/useLogger.jsx';
+import { logError, logInfo } from '../../../utils/logger';
 
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';

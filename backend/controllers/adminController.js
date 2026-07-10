@@ -77,7 +77,7 @@ const adminController = {
                 {
                     $group: {
                         _id: null,
-                        total: { $sum: '$amountDecrypted' }
+                        total: { $sum: '$amount' }
                     }
                 }
             ]);
@@ -182,7 +182,7 @@ const adminController = {
                             }
                         },
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { _id: 1 } }
@@ -879,7 +879,7 @@ const adminController = {
                     $group: {
                         _id: '$type',
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { _id: 1 } }
@@ -892,7 +892,7 @@ const adminController = {
                     $group: {
                         _id: '$category',
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { totalAmount: -1 } },
@@ -928,7 +928,7 @@ const adminController = {
                             }
                         },
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { _id: 1 } }
@@ -1152,7 +1152,7 @@ const adminController = {
                     $group: {
                         _id: null,
                         total: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 }
             ]);
@@ -1247,7 +1247,7 @@ const adminController = {
                             $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
                         },
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { _id: 1 } }
@@ -1260,7 +1260,7 @@ const adminController = {
                     $group: {
                         _id: '$userId',
                         count: { $sum: 1 },
-                        totalAmount: { $sum: '$amountDecrypted' }
+                        totalAmount: { $sum: '$amount' }
                     }
                 },
                 { $sort: { count: -1 } },
