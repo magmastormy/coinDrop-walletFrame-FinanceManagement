@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "node scripts/check-import-case.mjs && vite build",
+    "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
     "lint": "eslint src",
     "check:import-case": "node scripts/check-import-case.mjs",
-    "preview": "vite preview",
+    "preview": "node scripts/preview.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
