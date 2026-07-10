@@ -130,8 +130,9 @@ docker-compose.override.yml
 jest.config.js
 jest.setup.js
 venv/
-scripts/
-check-import-case.mjs
+# (keep build scripts — they are part of the deploy pipeline)
+# scripts/
+# check-import-case.mjs
 data/
 tests/
 *TEMP%/
