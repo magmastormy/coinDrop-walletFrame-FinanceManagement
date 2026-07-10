@@ -10,7 +10,7 @@ import ValidationUtils from '../../utils/validationUtils';
 import { setWallets, setLoading, setError, updateWallet } from '../../slices/walletSlice';
 import WalletList from './walletList';
 import WalletBudgetList from './walletBudgetList';
-import TransactionTable from '../Transaction/transactionTable';
+import TransactionTable from '../Transaction/TransactionTable';
 import WalletChart from './walletCharts';
 import CreateTransactionModal from '../Transaction/createTransactionModal';
 import CreateNewWallet from './newWallet';

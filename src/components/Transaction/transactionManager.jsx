@@ -13,7 +13,7 @@ import categoryService from '../../services/categoryService';
 import budgetService from '../../services/budgetService';
 import CreateTransactionModal from './createTransactionModal';
 import CsvImportModal from './csvImportModal';
-import TransactionTable from './transactionTable';
+import TransactionTable from './TransactionTable';
 import FilterTransactions from './filterTransactions';
 import LoadingState from '../ui/LoadingState';
 

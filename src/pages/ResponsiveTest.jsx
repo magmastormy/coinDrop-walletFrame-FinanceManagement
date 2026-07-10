@@ -1,7 +1,7 @@
 import { logInfo } from '../utils/logger';
 
 import React, { useState } from 'react';
-import TransactionTable from '../components/Transaction/transactionTable';
+import TransactionTable from '../components/Transaction/TransactionTable';
 import SavingsAccountTransactionTable from '../components/Savings/savingsAccountTransactionTable';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import Modal from '../components/ui/Modal';

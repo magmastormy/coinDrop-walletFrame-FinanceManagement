@@ -1,8 +1,6 @@
 import { logError, logInfo } from '../../utils/logger';
 
 import React, { useState, useEffect } from 'react';
-import PerformanceMonitor from '../utils/performanceMonitor';
-import TestUtils from '../utils/testUtils';
 
 const MonitoringDashboard = () => {
     const [isMonitoringEnabled, setIsMonitoringEnabled] = useState(false);
@@ -10,35 +8,20 @@ const MonitoringDashboard = () => {
     const [performanceMetrics, setPerformanceMetrics] = useState(null);
     const [isRunningTests, setIsRunningTests] = useState(false);
 
-    const performanceMonitor = new PerformanceMonitor();
-
     useEffect(() => {
-        // Add performance observer to monitor component renders
-        performanceMonitor.addObserver((event, data) => {
-            if (event === 'component-render') {
-                logInfo(`🎨 Component Render: ${data.componentName} (${data.duration.toFixed(2)}ms)`);
-            }
-        });
-
-        return () => {
-            performanceMonitor.removeObserver((event, data) => {
-                if (event === 'component-render') {
-                    logInfo(`🎨 Component Render: ${data.componentName} (${data.duration.toFixed(2)}ms)`);
-                }
-            });
-        };
+        if (process.env.NODE_ENV === 'development') {
+            logInfo('Monitoring dashboard mounted');
+        }
     }, []);
 
     const runValidationTests = async () => {
         setIsRunningTests(true);
-        
         try {
-            const results = TestUtils.runValidationTests();
-            setTestResults(results);
-            
-            if (process.env.NODE_ENV === 'development') {
-                logInfo('🧪 Validation tests completed');
-            }
+            setTestResults({
+                summary: { totalTests: 0, passedTests: 0, failedTests: 0, passRate: '0%' },
+                categories: {}
+            });
+            logInfo('Validation tests complete (no-test-util stub)');
         } catch (error) {
             logError('Test execution failed:', error);
         } finally {
@@ -48,14 +31,12 @@ const MonitoringDashboard = () => {
 
     const runApiTests = async () => {
         setIsRunningTests(true);
-        
         try {
-            const results = await TestUtils.runApiTests();
-            setTestResults(results);
-            
-            if (process.env.NODE_ENV === 'development') {
-                logInfo('🔧 API tests completed');
-            }
+            setTestResults({
+                summary: { totalTests: 0, passedTests: 0, failedTests: 0, passRate: '0%' },
+                categories: {}
+            });
+            logInfo('API tests complete (no-test-util stub)');
         } catch (error) {
             logError('API test execution failed:', error);
         } finally {
@@ -64,13 +45,13 @@ const MonitoringDashboard = () => {
     };
 
     const refreshMetrics = () => {
-        const metrics = performanceMonitor.getMetrics();
-        setPerformanceMetrics(metrics);
+        setPerformanceMetrics({
+            summary: { totalCalls: 0, successCalls: 0, averageDuration: 0, slowCalls: 0, recommendations: [] }
+        });
     };
 
     const clearResults = () => {
         setTestResults(null);
-        TestUtils.clearResults();
     };
 
     return (

@@ -114,7 +114,7 @@ start*.js
 jest*
 *.test.jsx
 *.pyc
-
+*.exe
 # Documentation files (keep README.md)
 *.md
 !README.md
