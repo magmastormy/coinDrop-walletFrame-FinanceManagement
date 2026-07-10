@@ -17,15 +17,12 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['recharts'],
-      treeshake: 'recommended',
       output: {
         manualChunks: {
           react: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material'],
           charts: ['chart.js'],
           vendors: ['axios', 'react-redux'],
-          fonts: ["@fortawesome/fontawesome-svg-core", "@fortawesome/free-regular-svg-icons", "@fortawesome/free-solid-svg-icons", "@fortawesome/react-fontawesome"]
+          fonts: ["@fortawesome/fontawesome-svg-core", "@fortawesome/free-solid-svg-icons", "@fortawesome/react-fontawesome"]
         }
       },
     },
@@ -36,11 +33,7 @@ export default defineConfig({
     cssCodeSplit: false
   },
   optimizeDeps: {
-    include: [
-      '@mui/material/styles',
-      '@mui/material/useTheme',
-      '@mui/material/useMediaQuery'
-    ]
+    include: []
   },
   define: {
     'process.env': {
