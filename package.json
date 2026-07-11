@@ -27,6 +27,7 @@
     "chart.js": "^4.4.7",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dayjs": "^1.11.21",
     "dompurify": "^3.2.3",
     "framer-motion": "^11.14.4",
     "lucide-react": "^0.554.0",
