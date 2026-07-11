@@ -2,6 +2,7 @@ import { logError } from '../utils/logger';
 
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useUser } from '@clerk/react';
 import budgetService from '../services/budgetService';
 import transactionService from '../services/transactionService';
 import walletService from '../services/walletService';
@@ -10,7 +11,7 @@ import DataContext from '../contexts/DataContext';
 
 const DataManager = ({ children }) => {
     const dispatch = useDispatch();
-    const { user } = useSelector(state => state.auth);
+    const { user } = useUser();
     const { budgets, transactions } = useSelector(state => state.userData);
     const [wallets, setWalletsState] = useState([]);
 

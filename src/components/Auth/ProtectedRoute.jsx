@@ -1,18 +1,17 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import {useAuth} from '../../contexts/authContext';
+import { useAuth } from '@clerk/react';
 import LoadingSpinner from '../../assets/loadingSpinner';
 
-const ProtectedRoute = ({children}) => {
-    const {isAuthenticated, loading} = useAuth();
+const ProtectedRoute = ({ children }) => {
+    const { isLoaded, isSignedIn } = useAuth();
 
-    if (loading) return <LoadingSpinner/>;
+    if (!isLoaded) return <LoadingSpinner />;
 
-    if (!isAuthenticated){
-        return <Navigate to="/login" replace/>;
+    if (!isSignedIn) {
+        return <Navigate to="/login" replace />;
     }
 
-    return children || <Outlet/>;
+    return children || <Outlet />;
 };
 
 export default ProtectedRoute;
-

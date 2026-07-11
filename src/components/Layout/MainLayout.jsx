@@ -2,11 +2,11 @@ import Sidebar from '../Sidebar/SideBar';
 import SidebarToggle from '../Sidebar/SidebarToggle';
 import { useSidebar } from '../Sidebar/SidebarContext';
 import { Search, Bell, Settings } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useUser, UserButton } from '@clerk/react';
 
 const MainLayout = ({ children, className }) => {
     const { isMobile, isSidebarOpen } = useSidebar();
-    const { user } = useSelector(state => state.auth);
+    const { user } = useUser();
 
     return (
         <div
@@ -59,13 +59,9 @@ const MainLayout = ({ children, className }) => {
                             <Settings size={20} />
                         </button>
                         <div className="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
-                            <img 
-                                alt="User profile avatar" 
-                                className="w-8 h-8 rounded-full object-cover" 
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg2DCxtBRnZNiFHXKQ5j-8q5y5xbq1y723YRVlFdnbADrCxgIx8WuaNK7vXpCBXqt2TJWU9MSjRfDNSLLsPyYAerb1_OsbIT7FQA1enSEK8majsp5CWspuiGhaPhuQhnanHB56WWbfg5cqUdvvnBwD_mlid059xsXsMgDnxQGNivswZBbEvOq_zn9Q4GhNTVXWTIcuDiCiZL3nIeheXNUlkAGi0XAR6eY97gftmyABVwjVhyCwikjMdbDhVFK6_vAtrHK7PEcQx6aI"
-                            />
+                            <UserButton afterSignOutUrl="/" />
                             <span className="text-sm font-medium text-on-surface hidden md:inline">
-                                {user?.firstName || user?.name || 'User'}
+                                {user?.fullName || user?.firstName || 'User'}
                             </span>
                         </div>
                     </div>

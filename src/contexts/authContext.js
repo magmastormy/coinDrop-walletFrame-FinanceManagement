@@ -1,21 +1,22 @@
-import { useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout as logoutAction } from '../slices/authSlice';
+/**
+ * Compatibility shim: re-exports a useAuth hook backed by Clerk so that
+ * existing components importing from this file keep working unchanged.
+ */
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/react';
+import { useSelector } from 'react-redux';
 
 export const useAuth = () => {
-  const dispatch = useDispatch();
-  const { user, isAuthenticated, loading, token } = useSelector((state) => state.auth);
+    const { isLoaded, isSignedIn } = useClerkAuth();
+    const { signOut } = useClerk();
+    // Pull the Redux-mirrored user (kept in sync by useClerkAuthSync)
+    const { user } = useSelector((state) => state.auth);
 
-  return useMemo(
-    () => ({
-      user,
-      isAuthenticated,
-      loading,
-      token,
-      logout: () => dispatch(logoutAction())
-    }),
-    [dispatch, isAuthenticated, loading, token, user]
-  );
+    return {
+        user,
+        isAuthenticated: isSignedIn ?? false,
+        loading: !isLoaded,
+        logout: () => signOut(),
+    };
 };
 
 export default useAuth;
