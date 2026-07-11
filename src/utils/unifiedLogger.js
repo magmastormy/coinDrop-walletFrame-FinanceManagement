@@ -82,7 +82,8 @@ class UnifiedLogger {
      * Generate unique session ID
      */
     generateSessionId() {
-        if (this.isBrowser) {
+        const isBrowser = typeof window !== 'undefined';
+        if (isBrowser) {
             // Browser: use sessionStorage or generate new
             let sessionId = sessionStorage.getItem('coindrop_session_id');
             if (!sessionId) {
@@ -91,8 +92,10 @@ class UnifiedLogger {
             }
             return sessionId;
         } else {
-            // Server: use crypto
-            return require('crypto').randomBytes(16).toString('hex');
+            // Server: use Web Crypto API (available in Node 19+ and all modern browsers)
+            const bytes = new Uint8Array(16);
+            crypto.getRandomValues(bytes);
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
     }
 
@@ -158,26 +161,25 @@ class UnifiedLogger {
      * Create file transport (server only)
      */
     createFileTransport() {
+        // File transport is not available in browser/ESM environments
         if (this.isBrowser || !this.config.enableFile) return null;
 
-        const fs = require('fs');
-        const path = require('path');
-        const logsDir = path.join(process.cwd(), 'logs');
-
-        // Ensure logs directory exists
-        if (!fs.existsSync(logsDir)) {
-            fs.mkdirSync(logsDir, { recursive: true });
+        // Gracefully skip if fs/path are not available (e.g. Vite/ESM browser bundle)
+        try {
+            // Dynamic import guard: only attempt in true Node.js environments
+            if (typeof process === 'undefined' || !process.versions?.node) return null;
+        } catch {
+            return null;
         }
 
         return (logEntry) => {
             try {
-                const logFile = path.join(logsDir, `${logEntry.level}.log`);
                 const logLine = JSON.stringify({
                     ...logEntry,
                     timestamp: new Date(logEntry.timestamp).toISOString()
                 }) + '\n';
-                
-                fs.appendFileSync(logFile, logLine);
+                // Use console as fallback since fs is not safe to require in ESM
+                console.debug('[FileTransport]', logLine);
             } catch (error) {
                 console.error('Failed to write to log file:', error);
             }
