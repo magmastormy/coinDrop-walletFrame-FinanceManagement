@@ -1,6 +1,6 @@
 import { logError } from '../../utils/logger';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -17,20 +17,15 @@ import {
     Plus
 } from 'lucide-react';
 import { useSidebar } from './SidebarContext';
-import { useAuth } from '../../contexts/authContext';
-import { logout } from '../../services/authService';
+import { useClerk, useUser } from '@clerk/react';
 import { cn } from '../../lib/utils';
 
 const Sidebar = () => {
     const { isSidebarOpen, isMobile, closeSidebar } = useSidebar();
-    const { user } = useAuth();
+    const { signOut } = useClerk();
+    const { isSignedIn } = useUser();
     const location = useLocation();
     const navigate = useNavigate();
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        setIsVisible(!!user);
-    }, [user]);
 
     useEffect(() => {
         if (isMobile) {
@@ -40,7 +35,7 @@ const Sidebar = () => {
 
     const handleLogout = async () => {
         try {
-            await logout();
+            await signOut();
         } catch (error) {
             logError('Logout failed:', error);
         } finally {
@@ -59,7 +54,7 @@ const Sidebar = () => {
         }
     };
 
-    if (!isVisible) {
+    if (!isSignedIn) {
         return null;
     }
 
@@ -208,4 +203,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

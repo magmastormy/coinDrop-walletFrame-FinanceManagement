@@ -1,18 +1,23 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuth, useUser } from '@clerk/react';
 import PropTypes from 'prop-types';
 import AdminLayout from './AdminLayout';
+import LoadingSpinner from '../../assets/loadingSpinner';
 
 const AdminProtectedRoute = ({ children, title }) => {
-  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const location = useLocation();
 
-  if (!isAuthenticated) {
+  if (!isLoaded) return <LoadingSpinner />;
+
+  if (!isSignedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user?.role !== 'admin') {
+  // Admin role is stored in Clerk publicMetadata as { role: 'admin' }
+  if (user?.publicMetadata?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useAuth } from '@clerk/react';
 import { lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -8,7 +8,6 @@ import AdminProtectedRoute from './components/Admin/AdminProtectedRoute';
 
 const LoginComponent = lazy(() => import('./components/Auth/UserLoginForm'));
 const RegisterComponent = lazy(() => import('./components/Auth/UserRegistrationForm'));
-const ForgotPasswordComponent = lazy(() => import('./components/Auth/ForgotPassword'));
 const DashboardComponent = lazy(() => import('./components/Dashboard/DashboardManager'));
 const WalletComponent = lazy(() => import('./components/Wallet/WalletManager'));
 const BudgetComponent = lazy(() => import('./components/Budget/BudgetManager'));
@@ -36,10 +35,12 @@ const IntegrationManagerComponent = lazy(() => import('./components/Integrations
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated } = useSelector(state => state.auth);
+    const { isLoaded, isSignedIn } = useAuth();
     const location = useLocation();
 
-    if (!isAuthenticated) {
+    if (!isLoaded) return <LoadingSpinner />;
+
+    if (!isSignedIn) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
@@ -48,10 +49,12 @@ const ProtectedRoute = ({ children }) => {
 
 // Public Route Component - redirects to dashboard if already authenticated
 const PublicRoute = ({ children }) => {
-    const { isAuthenticated } = useSelector(state => state.auth);
+    const { isLoaded, isSignedIn } = useAuth();
     const location = useLocation();
 
-    if (isAuthenticated) {
+    if (!isLoaded) return <LoadingSpinner />;
+
+    if (isSignedIn) {
         if (location.pathname === '/') {
             return children;
         }
@@ -82,17 +85,6 @@ const AppRoutes = () => {
                     <Route path="/register" element={
                         <PublicRoute>
                             <RegisterComponent />
-                        </PublicRoute>
-                    } />
-
-                    <Route path="/forgot-password" element={
-                        <PublicRoute>
-                            <ForgotPasswordComponent />
-                        </PublicRoute>
-                    } />
-                    <Route path="/reset-password" element={
-                        <PublicRoute>
-                            <ForgotPasswordComponent />
                         </PublicRoute>
                     } />
 

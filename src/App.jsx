@@ -10,8 +10,15 @@ import { SidebarProvider } from './components/Sidebar/SidebarContext';
 import ErrorBoundary from './components/ErrorBoundary/errorBoundary';
 import { LoggerProvider } from './hooks/useLogger';
 import CommandPalette from './components/Common/CommandPalette';
+import useClerkAuthSync from './hooks/useClerkAuthSync';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Inner component so it can access Redux (inside Provider) and Clerk (inside ClerkProvider in main.jsx)
+const ClerkReduxBridge = () => {
+    useClerkAuthSync();
+    return null;
+};
 
 const AppLayout = () => {
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -58,6 +65,7 @@ const AppLayout = () => {
 function App() {
   return (
     <Provider store={store}>
+      <ClerkReduxBridge />
       <ThemeProvider>
         <SidebarProvider>
           <LoggerProvider>
