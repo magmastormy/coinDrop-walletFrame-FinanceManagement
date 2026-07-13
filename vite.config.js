@@ -16,15 +16,23 @@ export default defineConfig({
     }
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          charts: ['chart.js'],
-          vendors: ['axios', 'react-redux'],
-          fonts: ["@fortawesome/fontawesome-svg-core", "@fortawesome/free-solid-svg-icons", "@fortawesome/react-fontawesome"]
+        manualChunks(id) {
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react'
+          }
+          if (id.includes('chart.js')) {
+            return 'charts'
+          }
+          if (id.includes('axios') || id.includes('react-redux')) {
+            return 'vendors'
+          }
+          if (id.includes('@fortawesome')) {
+            return 'fonts'
+          }
         }
-      },
+      }
     },
     chunkSizeWarningLimit: 500,
     minify: 'terser',
