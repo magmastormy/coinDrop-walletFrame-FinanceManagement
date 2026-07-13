@@ -42,12 +42,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: []
-  },
-  define: {
-    'process.env': {
-      VITE_API_URL: process.env.VITE_API_URL,
-      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
-      NODE_ENV: process.env.NODE_ENV
-    }
   }
 })

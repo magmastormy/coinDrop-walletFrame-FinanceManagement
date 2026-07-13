@@ -2,7 +2,7 @@ import axios from 'axios';
 import { store } from '../slices/store';
 import { logout } from '../slices/authSlice';
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const logError = console.error;
 
 // Create axios instance with timeout configuration

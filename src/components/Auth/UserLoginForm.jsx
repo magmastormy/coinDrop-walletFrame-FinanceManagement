@@ -41,6 +41,7 @@ const UserLogin = () => {
                     routing="path"
                     path="/login"
                     signUpUrl="/register"
+                    redirectUrl="/dashboard"
                     fallbackRedirectUrl="/dashboard"
                 />
             </div>

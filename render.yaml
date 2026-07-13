@@ -6,25 +6,40 @@ services:
     buildCommand: cd backend && npm install
     startCommand: cd backend && node server.js
     envVars:
+      # === BACKEND ENVIRONMENT VARIABLES (Render) ===
       - key: NODE_ENV
         value: production
-      - key: NVIDIA_API_KEY
-        sync: false
+      # Database
       - key: MONGODB_URI
         sync: false
+      # JWT Auth
       - key: JWT_SECRET
-        sync: false
-      - key: ENCRYPTION_KEY
-        sync: false
-      - key: CORS_ORIGIN
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
+      # Encryption
+      - key: ENCRYPTION_KEY
+        sync: false
+      # CORS - comma-separated list of allowed frontend origins
+      - key: CORS_ORIGIN
+        value: https://coindrop.onrender.com,https://*.vercel.app,http://localhost:5173
+      # Logging
       - key: LOG_LEVEL
         value: info
+      # Cloudinary (image uploads)
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      # NVIDIA API (AI features)
+      - key: NVIDIA_API_KEY
+        sync: false
+      # Redis (OPTIONAL - only set if you have a Redis service)
+      # - key: REDIS_HOST
+      #   sync: false
+      # - key: REDIS_PORT
+      #   value: 6379
+      # - key: REDIS_PASSWORD
+      #   sync: false

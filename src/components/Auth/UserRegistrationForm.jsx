@@ -41,6 +41,7 @@ const UserRegistration = () => {
                     routing="path"
                     path="/register"
                     signInUrl="/login"
+                    redirectUrl="/dashboard"
                     fallbackRedirectUrl="/dashboard"
                 />
             </div>
