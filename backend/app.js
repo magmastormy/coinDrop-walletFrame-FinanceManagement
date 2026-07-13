@@ -10,82 +10,46 @@ const swaggerSpec = require('./config/swagger');
 const { swaggerUiOptions } = require('./config/swagger');
 
 const logger = require('./utils/logger');
-logger.debug('🔄 app.js: Loading...');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
-logger.debug('✅ app.js: Core dependencies loaded (express, cors, rate-limit)');
-logger.debug('✅ app.js: Logger loaded');
-
 const { sanitizationMiddleware } = require('./middleware/validationMiddleware');
-logger.debug('✅ app.js: Validation middleware loaded');
-
 const auditMiddleware = require('./middleware/auditMiddleware');
-logger.debug('✅ app.js: Audit middleware loaded');
 
-logger.debug('🔄 app.js: Loading routes...');
 const receiptRoutes = require('./routes/receiptRoutes');
-logger.debug('✅ app.js: Receipt routes loaded');
 const authRoutes = require('./routes/authRoutes');
-logger.debug('✅ app.js: Auth routes loaded');
 const transactionRoutes = require('./routes/transactionRoutes');
-logger.debug('✅ app.js: Transaction routes loaded');
 const walletRoutes = require('./routes/walletRoutes');
-logger.debug('✅ app.js: Wallet routes loaded');
 const budgetRoutes = require('./routes/budgetRoutes');
-logger.debug('✅ app.js: Budget routes loaded');
 const settingsRoutes = require('./routes/settingsRoutes');
-logger.debug('✅ app.js: Settings routes loaded');
 const profileRoutes = require('./routes/profileRoutes');
-logger.debug('✅ app.js: Profile routes loaded');
 const categoryRoutes = require('./routes/categoryRoutes');
-logger.debug('✅ app.js: Category routes loaded');
 const educationRoutes = require('./routes/educationRoutes');
-logger.debug('✅ app.js: Education routes loaded');
 const savingsAccountRoutes = require('./routes/savingsAccountRoutes');
-logger.debug('✅ app.js: Savings account routes loaded');
 const savingsGoalRoutes = require('./routes/savingsGoalRoutes');
-logger.debug('✅ app.js: Savings goal routes loaded');
 const savingsRuleRoutes = require('./routes/savingsRuleRoutes');
-logger.debug('✅ app.js: Savings rule routes loaded');
 const zhipuaiRoutes = require('./routes/zhipuaiRoutes');
-logger.debug('✅ app.js: ZhipuAI routes loaded');
 const imageRoutes = require('./routes/imageRoutes');
-logger.debug('✅ app.js: Image routes loaded');
 const reportRoutes = require('./routes/reportRoutes');
-logger.debug('✅ app.js: Report routes loaded');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-logger.debug('✅ app.js: Analytics routes loaded');
 const cryptoRoutes = require('./routes/cryptoRoutes');
-logger.debug('✅ app.js: Crypto routes loaded');
 const adminRoutes = require('./routes/adminRoutes');
-logger.debug('✅ app.js: Admin routes loaded');
 const thirdPartyIntegrationRoutes = require('./routes/thirdPartyIntegrationRoutes');
-logger.debug('✅ app.js: Third-party integration routes loaded');
 
-logger.debug('🔄 app.js: Loading utilities...');
 const connectionPoolMonitor = require('./utils/connectionPoolMonitor');
-logger.debug('✅ app.js: Connection pool monitor loaded');
 const metricsCollector = require('./utils/metricsCollector');
-logger.debug('✅ app.js: Metrics collector loaded');
-
 const BatchUtil = require('./utils/batchUtils');
-logger.debug('✅ app.js: Batch utility loaded');
-
 const { ErrorHandler } = require('./utils/errorHandler');
-logger.debug('✅ app.js: Error handler loaded');
 
-// Initialize connection pool monitoring
 if (process.env.NODE_ENV !== 'test') {
-    connectionPoolMonitor.start(5000); // Monitor every 5 seconds
+    connectionPoolMonitor.start(5000);
 }
 
-// Record system metrics periodically
 let metricsInterval;
 if (process.env.NODE_ENV !== 'test') {
     metricsInterval = setInterval(() => {
         metricsCollector.recordSystemMetrics();
-    }, 10000); // Every 10 seconds
+    }, 10000);
 }
 
 const parseAllowedOrigins = () => {
@@ -150,7 +114,6 @@ function createApp() {
         credentials: true
     }));
 
-    // HTTPS enforcement in production
     app.use((req, res, next) => {
         if (process.env.NODE_ENV === 'production' && req.protocol === 'http') {
             return res.redirect(`https://${req.get('host')}${req.url}`);
@@ -158,38 +121,17 @@ function createApp() {
         next();
     });
 
-    // Security headers
     app.use((req, res, next) => {
-        // HTTP Strict Transport Security
         res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-        
-        // Content Security Policy
         res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self';");
-        
-        // X-Content-Type-Options
         res.setHeader('X-Content-Type-Options', 'nosniff');
-        
-        // X-Frame-Options
         res.setHeader('X-Frame-Options', 'DENY');
-        
-        // X-XSS-Protection
         res.setHeader('X-XSS-Protection', '1; mode=block');
-        
-        // Referrer Policy
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        
-        // Permissions Policy
         res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), accelerometer=(), gyroscope=()');
-        
-        // Cross-Origin-Embedder-Policy
         res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-        
-        // Cross-Origin-Opener-Policy
         res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-        
-        // Cross-Origin-Resource-Policy
         res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-        
         next();
     });
 
@@ -219,11 +161,9 @@ function createApp() {
         skip: () => process.env.NODE_ENV === 'test'
     });
 
-    // PER-USER RATE LIMITING - Prevents single user from monopolizing AI
-    // Only applies to authenticated users; unauthenticated requests fall back to IP-based limiting
     const perUserLimiter = rateLimit({
-        windowMs: 60 * 1000, // 1 minute sliding window
-        max: 5, // 5 requests per user per minute
+        windowMs: 60 * 1000,
+        max: 5,
         standardHeaders: true,
         legacyHeaders: false,
         keyGenerator: (req) => {
@@ -251,10 +191,9 @@ function createApp() {
         }
     });
 
-    // Stricter rate limits for financial operations
     const financialLimiter = rateLimit({
-        windowMs: 60 * 1000, // 1 minute
-        max: 10, // 10 transactions per minute
+        windowMs: 60 * 1000,
+        max: 10,
         standardHeaders: true,
         legacyHeaders: false,
         message: {
@@ -267,9 +206,7 @@ function createApp() {
 
     app.use(apiLimiter);
     app.use('/api/zhipuai', aiLimiter);
-    // Apply per-user limits to prevent abuse
     app.use('/api/zhipuai/send', perUserLimiter);
-    // Apply stricter limits to financial endpoints
     app.use('/api/wallets/transfer', financialLimiter);
     app.use('/api/transactions', financialLimiter);
     app.use('/api/saving-accounts/deposit', financialLimiter);
@@ -281,7 +218,6 @@ function createApp() {
     app.use(sanitizationMiddleware);
     app.use(auditMiddleware);
 
-    // Resource management middleware - must be before routes
     try {
         const resourceManagementService = require('./services/resourceManagementService');
         resourceManagementService.initialize();
@@ -298,9 +234,8 @@ function createApp() {
             });
             next();
         });
-        logger.debug('✅ app.js: Resource management middleware added');
     } catch (e) {
-        logger.debug('⚠️ app.js: Resource management service not available, skipping');
+        logger.warn('Resource management service not available, skipping');
     }
 
     app.use((req, res, next) => {
@@ -322,13 +257,10 @@ function createApp() {
                 entry.securityEvent = 'authz_denied';
             }
             
-            // Use structured logger instead of console.log
             if (entry.level === 'error') {
                 logger.error('Request failed', entry);
             } else if (entry.level === 'warn') {
                 logger.warn('Security event', entry);
-            } else {
-                logger.info('Request completed', entry);
             }
         });
 
@@ -364,27 +296,23 @@ function createApp() {
     app.use('/api/reports', reportRoutes);
     app.use('/api/analytics', analyticsRoutes);
     app.use('/api/crypto', cryptoRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/integrations', thirdPartyIntegrationRoutes);
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/integrations', thirdPartyIntegrationRoutes);
 
-    // Metrics endpoint for monitoring
     app.get('/api/metrics', (req, res) => {
         const metrics = metricsCollector.getMetrics();
         res.type('application/json').json(metrics);
     });
 
-    // Prometheus format metrics endpoint
     app.get('/api/metrics/prometheus', (req, res) => {
         res.type('text/plain').send(metricsCollector.exportPrometheus());
     });
 
-    // Connection pool health endpoint
     app.get('/api/health/connection-pool', (req, res) => {
         const poolMetrics = connectionPoolMonitor.getMetrics();
         res.json(poolMetrics);
     });
 
-    // Queue monitoring endpoint
     app.get('/api/health/queue', async (req, res) => {
         try {
             const { getQueueStats } = require('./services/transactionQueueService');
@@ -395,7 +323,6 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
         }
     });
 
-    // COMPREHENSIVE HEALTH CHECK ENDPOINT
     app.get('/api/health', async (req, res) => {
         const mongoose = require('mongoose');
         const os = require('os');
@@ -410,7 +337,6 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
         
         let hasCriticalFailure = false;
         
-        // Check MongoDB connection
         try {
             const dbState = mongoose.connection.readyState;
             healthStatus.checks.mongodb = {
@@ -428,7 +354,6 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
             hasCriticalFailure = true;
         }
         
-        // Check Redis connection (if configured)
         if (process.env.REDIS_HOST) {
             try {
                 const redisClient = require('./config/redis');
@@ -448,11 +373,9 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
                     status: 'error',
                     error: error.message
                 };
-                // Redis is not critical for basic operation
             }
         }
         
-        // System metrics
         healthStatus.system = {
             memory: {
                 used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
@@ -469,7 +392,6 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
             }
         };
         
-        // Determine overall status
         if (hasCriticalFailure) {
             healthStatus.status = 'unhealthy';
             res.status(503);
@@ -483,18 +405,13 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
         res.json(healthStatus);
     });
 
-    // Swagger API documentation
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
-    logger.debug('✅ app.js: Swagger API documentation endpoint added at /api-docs');
 
-    // Serve swagger.json for external tools
     app.get('/api-docs.json', (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.send(swaggerSpec);
     });
-    logger.debug('✅ app.js: Swagger JSON endpoint added at /api-docs.json');
 
-    // API documentation link on root route
     app.get('/', (req, res) => {
         res.json({
             success: true,
@@ -507,7 +424,6 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
             status: 'operational'
         });
     });
-    logger.debug('✅ app.js: Root route with API documentation links added');
 
     app.use((req, res, next) => {
         const error = ErrorHandler.notFound(`Cannot ${req.method} ${req.path}`);
@@ -523,18 +439,13 @@ app.use('/api/integrations', thirdPartyIntegrationRoutes);
 
 const app = createApp();
 
-// Initialize batch utility
 new BatchUtil(app);
-logger.debug('✅ app.js: Batch utility initialized');
 
-// Resource status endpoint
 app.get('/api/health/resources', (req, res) => {
     const resourceManagementService = require('./services/resourceManagementService');
     const resourceStatus = resourceManagementService.getResourceStatus();
     res.json(resourceStatus);
 });
-
-logger.debug('✅ app.js: App created successfully');
 
 module.exports = app;
 module.exports.createApp = createApp;

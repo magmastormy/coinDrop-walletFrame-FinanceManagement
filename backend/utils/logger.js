@@ -77,16 +77,21 @@ const logger = winston.createLogger({
             tailable: true
         }),
         
-        // CloudWatch transport for production
-        ...(process.env.NODE_ENV === 'production' ? [
-            new (require('winston-cloudwatch'))({
-                logGroupName: '/ecs/coindrop',
-                logStreamName: 'application-logs',
-                awsRegion: 'us-east-1',
-                jsonMessage: true,
-                retentionInDays: 14
-            })
-        ] : [])
+        // CloudWatch transport for production (only if AWS credentials are available)
+        ...(process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION ? (() => {
+            try {
+                const CloudWatchTransport = require('winston-cloudwatch');
+                return new CloudWatchTransport({
+                    logGroupName: '/ecs/coindrop',
+                    logStreamName: 'application-logs',
+                    awsRegion: process.env.AWS_REGION || 'us-east-1',
+                    jsonMessage: true,
+                    retentionInDays: 14
+                });
+            } catch (e) {
+                return null;
+            }
+        })() : [])
     ],
     exceptionHandlers: [
         new winston.transports.File({
@@ -94,15 +99,20 @@ const logger = winston.createLogger({
             maxsize: 5242880, // 5MB
             maxFiles: 5,
         }),
-        ...(process.env.NODE_ENV === 'production' ? [
-            new (require('winston-cloudwatch'))({
-                logGroupName: '/ecs/coindrop',
-                logStreamName: 'exceptions',
-                awsRegion: 'us-east-1',
-                jsonMessage: true,
-                retentionInDays: 14
-            })
-        ] : [])
+        ...(process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION ? (() => {
+            try {
+                const CloudWatchTransport = require('winston-cloudwatch');
+                return new CloudWatchTransport({
+                    logGroupName: '/ecs/coindrop',
+                    logStreamName: 'exceptions',
+                    awsRegion: process.env.AWS_REGION || 'us-east-1',
+                    jsonMessage: true,
+                    retentionInDays: 14
+                });
+            } catch (e) {
+                return null;
+            }
+        })() : [])
     ],
     rejectionHandlers: [
         new winston.transports.File({
@@ -110,15 +120,20 @@ const logger = winston.createLogger({
             maxsize: 5242880, // 5MB
             maxFiles: 5,
         }),
-        ...(process.env.NODE_ENV === 'production' ? [
-            new (require('winston-cloudwatch'))({
-                logGroupName: '/ecs/coindrop',
-                logStreamName: 'rejections',
-                awsRegion: 'us-east-1',
-                jsonMessage: true,
-                retentionInDays: 14
-            })
-        ] : [])
+        ...(process.env.NODE_ENV === 'production' && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION ? (() => {
+            try {
+                const CloudWatchTransport = require('winston-cloudwatch');
+                return new CloudWatchTransport({
+                    logGroupName: '/ecs/coindrop',
+                    logStreamName: 'rejections',
+                    awsRegion: process.env.AWS_REGION || 'us-east-1',
+                    jsonMessage: true,
+                    retentionInDays: 14
+                });
+            } catch (e) {
+                return null;
+            }
+        })() : [])
     ]
 });
 
