@@ -3,7 +3,7 @@
 // loop honest with what the deployment target runs.
 import { createServer } from 'node:http';
 import { readFileSync, statSync, existsSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 
@@ -29,9 +29,30 @@ const MIME = {
     '.map': 'application/json; charset=utf-8',
 };
 
+/**
+ * Safely resolves a relative path against the root directory.
+ * Returns absolute path if within root, null otherwise.
+ * Uses path.sep for cross-platform compatibility.
+ */
 function safe(rel) {
-    const abs = resolve(root, rel.replace(/^\/+/, ''));
-    if (!abs.startsWith(root + '/') && abs !== root) return null;
+    // Normalize the relative path
+    const normalized = rel.replace(/^\/+/, '').replace(/\.\.+/g, '');
+    
+    // Resolve absolute path
+    const abs = resolve(root, normalized);
+    
+    // Ensure the resolved path is within root
+    // Use path.relative to check - if it starts with '..' or is absolute, it's outside
+    const relative = resolve(root, abs);
+    if (relative.startsWith('..') || relative.startsWith(sep) || relative.startsWith('/')) {
+        return null;
+    }
+    
+    // Additional check: abs must start with root
+    if (!abs.startsWith(root + sep) && abs !== root) {
+        return null;
+    }
+    
     return abs;
 }
 

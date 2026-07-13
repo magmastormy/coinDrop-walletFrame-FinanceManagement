@@ -11,6 +11,8 @@ const { body } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const AuthController = require('../controllers/authController');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { validationMiddleware, sanitizationMiddleware } = require('../middleware/validationMiddleware');
+const { fieldFilters } = require('../middleware/fieldFilterMiddleware');
 
 // RATE LIMITING - Stricter limits for authentication endpoints
 const authLimiter = rateLimit({
@@ -138,6 +140,9 @@ const resetPasswordValidation = [
     })
 ];
 
+// Apply sanitization middleware to all routes
+router.use(sanitizationMiddleware);
+
 /**
  * @swagger
  * /api/auth/register:
@@ -183,7 +188,7 @@ const resetPasswordValidation = [
  *       409: 
  *         description: User already exists
  */
-router.post('/register', registerLimiter, registerValidation, AuthController.register);
+router.post('/register', registerLimiter, registerValidation, validationMiddleware, AuthController.register);
 /**
  * @swagger
  * /api/auth/login:
@@ -212,7 +217,7 @@ router.post('/register', registerLimiter, registerValidation, AuthController.reg
  *       401: 
  *         description: Invalid credentials
  */
-router.post('/login', authLimiter, loginValidation, AuthController.login);
+router.post('/login', authLimiter, loginValidation, validationMiddleware, AuthController.login);
 /**
  * @swagger
  * /api/auth/refresh-token:
@@ -237,7 +242,7 @@ router.post('/login', authLimiter, loginValidation, AuthController.login);
  *       401: 
  *         description: Invalid refresh token
  */
-router.post('/refresh-token', refreshTokenValidation, AuthController.refreshToken);
+router.post('/refresh-token', refreshTokenValidation, validationMiddleware, AuthController.refreshToken);
 
 /**
  * @swagger
@@ -384,7 +389,7 @@ router.post('/change-password', authMiddleware, passwordChangeValidation, AuthCo
  *       404: 
  *         description: User not found
  */
-router.post('/forgot-password', forgotPasswordValidation, AuthController.forgotPassword);
+router.post('/forgot-password', forgotPasswordValidation, validationMiddleware, AuthController.forgotPassword);
 /**
  * @swagger
  * /api/auth/reset-password:
@@ -416,6 +421,6 @@ router.post('/forgot-password', forgotPasswordValidation, AuthController.forgotP
  *       401: 
  *         description: Invalid or expired token
  */
-router.post('/reset-password', resetPasswordValidation, AuthController.resetPassword);
+router.post('/reset-password', resetPasswordValidation, validationMiddleware, AuthController.resetPassword);
 
 module.exports = router;

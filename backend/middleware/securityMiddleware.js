@@ -767,34 +767,33 @@ const securityHeaders = (req, res, next) => {
 // ============================================
 
 /**
- * Detect SQL injection patterns
+ * Detect SQL injection patterns - simplified to avoid ReDoS
  * @param {string} value - Value to check
  * @returns {boolean} True if SQL injection detected
  */
 const detectSqlInjection = (value) => {
+    if (typeof value !== 'string') return false;
+    
     const sqlPatterns = [
-        /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,
-        /((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))/i,
-        /\w*((\%27)|(\'))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/i,
-        /((\%27)|(\'))union/i,
-        /exec(\s|\+)+(s|x)p\w+/i,
-        /UNION\s+SELECT/i,
-        /INSERT\s+INTO/i,
-        /DELETE\s+FROM/i,
-        /DROP\s+TABLE/i
+        /('|%27|%22|--|;|%3B)/i,
+        /(union|select|insert|delete|update|drop|alter|create|exec|execute)\s/i,
+        /(or|and)\s+\d+\s*=\s*\d+/i
     ];
 
     return sqlPatterns.some(pattern => pattern.test(value));
 };
 
 /**
- * Detect XSS patterns
+ * Detect XSS patterns - simplified to avoid ReDoS
  * @param {string} value - Value to check
  * @returns {boolean} True if XSS detected
  */
 const detectXss = (value) => {
+    if (typeof value !== 'string') return false;
+    
+    // Simple, non-backtracking patterns only
     const xssPatterns = [
-        /<script[^>]*>[\s\S]*?<\/script>/i,
+        /<script/i,
         /javascript:/i,
         /on\w+\s*=/i,
         /<iframe/i,

@@ -15,9 +15,30 @@ class ErrorReportingService {
     }
 
     /**
-     * Report error to centralized logging service
+     * Generate a cryptographically secure session ID
      */
-    reportError(errorData) {
+    generateSessionId() {
+        // Use crypto.randomUUID if available, fallback to secure random
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return 'session_' + crypto.randomUUID();
+        }
+        // Fallback for older environments
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        return 'session_' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    /**
+     * Get or create session ID for error tracking
+     */
+    getSessionId() {
+        let sessionId = sessionStorage.getItem('errorSessionId');
+        if (!sessionId) {
+            sessionId = this.generateSessionId();
+            sessionStorage.setItem('errorSessionId', sessionId);
+        }
+        return sessionId;
+    }
         const errorReport = {
             ...errorData,
             timestamp: new Date().toISOString(),

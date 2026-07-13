@@ -1,8 +1,21 @@
 const logger = require('../utils/logger');
 
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
+
+// Secure random helper using crypto module (cryptographically secure)
+const secureRandom = {
+    // Returns a random integer in [0, max)
+    int: (max) => crypto.randomInt(max),
+    // Returns a random element from an array
+    choice: (arr) => arr[crypto.randomInt(arr.length)],
+    // Returns a random boolean
+    bool: () => crypto.randomInt(2) === 1,
+    // Returns a random float in [0, 1)
+    float: () => crypto.randomInt(0x100000000) / 0x100000000,
+};
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Budget = require('../models/Budget');
@@ -476,17 +489,17 @@ const generateTransactions = (userId, categoryIds, budgetIds, walletId, savingsA
 
     // Generate 40 transactions per user
     for (let i = 0; i < 40; i++) {
-        const type = types[Math.floor(Math.random() * types.length)];
-        const categoryIndex = Math.floor(Math.random() * categoryIds.length);
-        const budgetIndex = Math.floor(Math.random() * budgetIds.length);
+        const type = secureRandom.choice(types);
+        const categoryIndex = secureRandom.int(categoryIds.length);
+        const budgetIndex = secureRandom.int(budgetIds.length);
 
         transactions.push({
             userId,
             type,
-            amount: Math.floor(Math.random() * 1000) + 100,
+            amount: secureRandom.int(900) + 100,
             category: categoryIds[categoryIndex],
-            description: descriptions[Math.floor(Math.random() * descriptions.length)],
-            date: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
+            description: secureRandom.choice(descriptions),
+            date: new Date(Date.now() - secureRandom.int(30) * 24 * 60 * 60 * 1000),
             budgetId: budgetIds[budgetIndex],
             walletId,
             savingsAccountId,
@@ -520,8 +533,8 @@ const generateEducationContent = () => {
     ];
 
     return {
-        title: titles[Math.floor(Math.random() * titles.length)],
-        details: details[Math.floor(Math.random() * details.length)],
+        title: secureRandom.choice(titles),
+        details: secureRandom.choice(details),
         contentType: 'markdown',
         likes: [],
         comments: []
@@ -533,21 +546,21 @@ const generateSavingsGoals = (userId) => {
         {
             name: 'Dream Home Down Payment',
             targetAmount: 50000,
-            currentAmount: Math.floor(Math.random() * 25000),
+            currentAmount: secureRandom.int(25000),
             deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             description: 'Saving for a down payment on my dream home'
         },
         {
             name: 'World Tour Fund',
             targetAmount: 15000,
-            currentAmount: Math.floor(Math.random() * 7500),
+            currentAmount: secureRandom.int(7500),
             deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
             description: 'Saving for a 3-month world tour'
         },
         {
             name: 'New Car Fund',
             targetAmount: 30000,
-            currentAmount: Math.floor(Math.random() * 15000),
+            currentAmount: secureRandom.int(15000),
             deadline: new Date(Date.now() + 240 * 24 * 60 * 60 * 1000),
             description: 'Saving for a new electric vehicle'
         }
@@ -563,10 +576,10 @@ const generateSavingsRules = (userId, goalIds) => {
     return goalIds.map(goalId => ({
         userId,
         goalId,
-        saveBudgetUnderflow: Math.random() > 0.5,
-        savePercentage: Math.floor(Math.random() * 30) + 5,
-        roundUpTransactions: Math.random() > 0.5,
-        savingsPriority: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
+        saveBudgetUnderflow: secureRandom.bool(),
+        savePercentage: secureRandom.int(30) + 5,
+        roundUpTransactions: secureRandom.bool(),
+        savingsPriority: secureRandom.choice(['low', 'medium', 'high']),
         lastExecuted: new Date()
     }));
 };

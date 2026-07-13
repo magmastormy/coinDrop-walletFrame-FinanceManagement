@@ -550,6 +550,13 @@ class CategoryController {
             const { id } = req.params;
             const userId = getAuthenticatedUserId(req);
 
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: 'Invalid category ID format'
+                });
+            }
+
             const category = await Category.findOne({ _id: id, userId });
             if (!category) {
                 return res.status(404).json({
@@ -631,6 +638,13 @@ class CategoryController {
         try {
             const { id } = req.params;
             const userId = getAuthenticatedUserId(req);
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: 'Invalid category ID format'
+                });
+            }
 
             const category = await Category.findOne({ _id: id, userId });
             if (!category) {

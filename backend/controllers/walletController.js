@@ -393,6 +393,18 @@ class WalletController {
             const { fromWalletId, toWalletId, amount } = req.body;
             const userId = getAuthenticatedUserId(req);
             
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(fromWalletId) || !mongoose.Types.ObjectId.isValid(toWalletId)) {
+                if (session) {
+                    await session.abortTransaction();
+                    session.endSession();
+                }
+                return res.status(400).json({
+                    error: 'Invalid wallet ID format',
+                    details: 'fromWalletId and toWalletId must be valid MongoDB ObjectIds'
+                });
+            }
+            
             if (!fromWalletId || !toWalletId || !amount) {
                 if (session) {
                     await session.abortTransaction();

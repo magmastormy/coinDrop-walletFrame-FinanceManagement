@@ -9,6 +9,9 @@ const ReportController = require('../controllers/reportController');
 const { readFileToBuffer } = require('../utils/fileUtils');
 const PDFDocument = require('pdfkit');
 const { getAuthenticatedUserId } = require('../utils/authUser');
+const { validationMiddleware, sanitizationMiddleware } = require('../middleware/validationMiddleware');
+const { body, param, query } = require('express-validator');
+const { fieldFilters } = require('../middleware/fieldFilterMiddleware');
 
 const getGlobalReportData = async (userId) => {
   // Implementation to get global report data
@@ -20,10 +23,27 @@ const getAccountReportData = async (accountId) => {
   return { accountId, global: false };
 };
 
+// Validation rules
+const generateReportValidation = [
+    body('type').notEmpty().withMessage('Report type is required').isIn(['financial-summary', 'budget-analysis', 'savings-report']),
+    body('format').notEmpty().withMessage('Format is required').isIn(['PDF', 'EXCEL']),
+    body('startDate').optional().isISO8601(),
+    body('endDate').optional().isISO8601()
+];
+
+const queryValidation = [
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('type').optional().isString(),
+    query('status').optional().isString(),
+    query('sortBy').optional().isString(),
+    query('sortOrder').optional().isIn(['asc', 'desc'])
+];
+
 /**
  * Get available report types
  */
-router.get('/types', async (req, res) => {
+router.get('/types', sanitizationMiddleware, async (req, res) => {
   try {
     const reportTypes = [
       { 
@@ -52,7 +72,7 @@ router.get('/types', async (req, res) => {
 /**
  * Generate a new report
  */
-router.post('/generate', authMiddleware, async (req, res) => {
+router.post('/generate', authMiddleware, sanitizationMiddleware, fieldFilters.reportCreate, generateReportValidation, validationMiddleware, async (req, res) => {
   try {
     await ReportController.generateReport(req, res);
   } catch (error) {
@@ -64,7 +84,7 @@ router.post('/generate', authMiddleware, async (req, res) => {
 /**
  * Get report status
  */
-router.get('/:reportId/status', authMiddleware, async (req, res) => {
+router.get('/:reportId/status', authMiddleware, sanitizationMiddleware, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     const report = await Report.findOne({ _id: req.params.reportId, userId });
@@ -80,7 +100,7 @@ router.get('/:reportId/status', authMiddleware, async (req, res) => {
 /**
  * Download a report
  */
-router.get('/:reportId/download', authMiddleware, async (req, res) => {
+router.get('/:reportId/download', authMiddleware, sanitizationMiddleware, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     const report = await Report.findOne({ _id: req.params.reportId, userId });
@@ -118,7 +138,7 @@ router.get('/:reportId/download', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/simple-pdf', authMiddleware, async (req, res) => {
+router.get('/simple-pdf', authMiddleware, sanitizationMiddleware, async (req, res) => {
   res.status(410).json({
     error: 'Deprecated route',
     message: 'simple-pdf test route is disabled in secured environments'

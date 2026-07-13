@@ -460,6 +460,13 @@ class TransactionController {
             const { id } = req.params;
             const userId = getAuthenticatedUserId(req);
 
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: 'Invalid transaction ID format'
+                });
+            }
+
             // Ensure transaction belongs to the user
             const transaction = await Transaction.findOneAndUpdate(
                 { 
@@ -503,6 +510,13 @@ class TransactionController {
         try {
             const { id } = req.params;
             const userId = getAuthenticatedUserId(req);
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: 'Invalid transaction ID format'
+                });
+            }
 
             const transaction = await Transaction.findOneAndDelete({
                 _id: id,

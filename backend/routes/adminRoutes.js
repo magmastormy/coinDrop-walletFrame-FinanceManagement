@@ -5,6 +5,8 @@ const adminController = require('../controllers/adminController');
 const rateLimit = require('express-rate-limit');
 const { body, param, query, validationResult } = require('express-validator');
 const { ValidationError } = require('../utils/errorClasses');
+const { validationMiddleware, sanitizationMiddleware } = require('../middleware/validationMiddleware');
+const { fieldFilters } = require('../middleware/fieldFilterMiddleware');
 
 const router = express.Router();
 
@@ -269,6 +271,7 @@ router.get(
     '/dashboard/overview',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     adminController.getDashboardOverview
 );
@@ -282,6 +285,7 @@ router.get(
     '/dashboard/statistics',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     adminController.getDashboardStatistics
 );
@@ -300,7 +304,8 @@ router.get(
     '/users',
     authMiddleware,
     isAdmin,
-    adminRateLimiter,
+    sanitizationMiddleware,
+    fieldFilters.adminUserQuery,
     validatePagination,
     handleValidationErrors,
     adminController.listUsers
@@ -315,6 +320,7 @@ router.get(
     '/users/:id',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     validateUserId,
     handleValidationErrors,
@@ -330,6 +336,8 @@ router.post(
     '/users',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
+    fieldFilters.adminUserCreate,
     strictRateLimiter,
     validateUserCreation,
     handleValidationErrors,
@@ -345,6 +353,8 @@ router.put(
     '/users/:id',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
+    fieldFilters.adminUserUpdate,
     strictRateLimiter,
     validateUserId,
     validateUserUpdate,
@@ -361,6 +371,7 @@ router.delete(
     '/users/:id',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     strictRateLimiter,
     validateUserId,
     handleValidationErrors,
@@ -381,6 +392,8 @@ router.get(
     '/transactions',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
+    fieldFilters.transactionQuery,
     adminRateLimiter,
     validateTransactionQuery,
     handleValidationErrors,
@@ -396,6 +409,7 @@ router.get(
     '/transactions/:id',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     validateTransactionId,
     handleValidationErrors,
@@ -411,6 +425,7 @@ router.get(
     '/transactions/statistics',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     validateDateRange,
     handleValidationErrors,
@@ -431,6 +446,7 @@ router.get(
     '/system/health',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     adminController.getSystemHealth
 );
@@ -444,6 +460,7 @@ router.get(
     '/system/metrics',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     adminController.getSystemMetrics
 );
@@ -462,6 +479,7 @@ router.get(
     '/reports/summary',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     validateDateRange,
     handleValidationErrors,
@@ -477,6 +495,7 @@ router.get(
     '/reports/detailed',
     authMiddleware,
     isAdmin,
+    sanitizationMiddleware,
     adminRateLimiter,
     validateDateRange,
     handleValidationErrors,

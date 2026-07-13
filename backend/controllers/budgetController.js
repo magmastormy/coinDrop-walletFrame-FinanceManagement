@@ -155,6 +155,20 @@ class BudgetController {
             const walletId = req.body.walletId;
             const amount = req.body.amount;
 
+            // Validate ObjectId for categoryId
+            if (categoryId && !mongoose.Types.ObjectId.isValid(categoryId)) {
+                return res.status(400).json({
+                    error: '[BudgetController] Invalid category ID format'
+                });
+            }
+
+            // Validate ObjectId for walletId
+            if (walletId && !mongoose.Types.ObjectId.isValid(walletId)) {
+                return res.status(400).json({
+                    error: '[BudgetController] Invalid wallet ID format'
+                });
+            }
+
             if (categoryId) {
                 // Validate new category if provided
                 const category = await Category.findOne({

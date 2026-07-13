@@ -3,7 +3,8 @@ const router = express.Router();
 const { body } = require('express-validator');
 const EducationController = require('../controllers/educationController');
 const { authMiddleware } = require('../middleware/authMiddleware');
-const { validationMiddleware } = require('../middleware/validationMiddleware');
+const { validationMiddleware, sanitizationMiddleware } = require('../middleware/validationMiddleware');
+const { fieldFilters } = require('../middleware/fieldFilterMiddleware');
 const multer = require('multer');
 
 const storage = multer.diskStorage({
@@ -42,12 +43,13 @@ const educationValidation = [
 
 // Protect all education routes
 router.use(authMiddleware);
+router.use(sanitizationMiddleware);
 
-router.post('/', educationValidation, validationMiddleware, EducationController.createEducation);
-router.get('/', EducationController.getEducations);
-router.get('/user', EducationController.getUserEducations);
+router.post('/', fieldFilters.savingsGoalCreate, educationValidation, validationMiddleware, EducationController.createEducation);
+router.get('/', fieldFilters.savingsGoalQuery, EducationController.getEducations);
+router.get('/user', fieldFilters.savingsGoalQuery, EducationController.getUserEducations);
 router.get('/:id', EducationController.getEducationById);
-router.put('/:id', educationValidation, validationMiddleware, EducationController.updateEducation);
+router.put('/:id', fieldFilters.savingsGoalUpdate, educationValidation, validationMiddleware, EducationController.updateEducation);
 router.delete('/:id', EducationController.deleteEducation);
 router.post('/:id/like', EducationController.likeEducation);
 router.post('/:id/comments', body('text').isLength({ min: 1, max: 500 }).withMessage('Comment must be between 1 and 500 characters'), validationMiddleware, EducationController.addComment);

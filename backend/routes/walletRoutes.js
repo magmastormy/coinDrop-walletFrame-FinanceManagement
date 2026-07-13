@@ -3,6 +3,7 @@ const router = express.Router();
 const { body } = require('express-validator');
 const WalletController = require('../controllers/walletController');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { validationMiddleware, sanitizationMiddleware } = require('../middleware/validationMiddleware');
 
 // Wallet Validation Middleware
 const walletCreationValidation = [
@@ -22,28 +23,35 @@ const walletCreationValidation = [
 
 // Protect all wallet routes
 router.use(authMiddleware);
+router.use(sanitizationMiddleware);
 
 // Wallet Routes
 router.post('/', 
+    sanitizationMiddleware, 
     walletCreationValidation, 
+    validationMiddleware, 
     WalletController.createWallet
 );
-router.get('/', WalletController.getUserWallets);
-router.get('/:id/budgets', WalletController.getWalletBudgets);
+router.get('/', sanitizationMiddleware, WalletController.getUserWallets);
+router.get('/:id/budgets', sanitizationMiddleware, WalletController.getWalletBudgets);
 router.put('/:id', 
+    sanitizationMiddleware, 
     walletCreationValidation, 
+    validationMiddleware, 
     WalletController.updateWallet
 );
-router.delete('/:id', WalletController.deleteWallet);
-router.get('/stats', WalletController.getWalletStats);
+router.delete('/:id', sanitizationMiddleware, WalletController.deleteWallet);
+router.get('/stats', sanitizationMiddleware, WalletController.getWalletStats);
 
 // Balance Transfer Route
 router.post('/transfer', 
+    sanitizationMiddleware,
     [
         body('fromWalletId').notEmpty().withMessage('Source wallet ID is required'),
         body('toWalletId').notEmpty().withMessage('Destination wallet ID is required'),
         body('amount').isFloat({ min: 0.01 }).withMessage('Transfer amount must be a positive number')
     ],
+    validationMiddleware,
     WalletController.transferBalance
 );
 
