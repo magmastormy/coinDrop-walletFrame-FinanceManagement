@@ -69,6 +69,14 @@ const isOriginAllowed = (origin, allowedOrigins) => {
         if (allowed === origin) {
             return true;
         }
+        
+        if (allowed.includes('*')) {
+            const pattern = allowed.replace(/\*/g, '.*');
+            const regex = new RegExp(`^${pattern}$`);
+            if (regex.test(origin)) {
+                return true;
+            }
+        }
     }
     
     if (process.env.NODE_ENV !== 'production' && DEV_PORT_RANGE_REGEX.test(origin)) {
@@ -423,6 +431,10 @@ function createApp() {
             version: '1.0.0',
             status: 'operational'
         });
+    });
+
+    app.get('/favicon.ico', (req, res) => {
+        res.status(204).end();
     });
 
     app.use((req, res, next) => {
