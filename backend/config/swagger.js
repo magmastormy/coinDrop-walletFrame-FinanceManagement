@@ -10,9 +10,9 @@
 const swaggerJSDoc = require('swagger-jsdoc');
 
 // Import documentation components
-const { schemas } = require('../docs/schemas');
-const { responses } = require('../docs/responses');
-const { adminApiPaths } = require('../docs/admin-api-docs');
+const { schemas } = require('../swagger-docs/schemas');
+const { responses } = require('../swagger-docs/responses');
+const { adminApiPaths } = require('../swagger-docs/admin-api-docs');
 
 /**
  * OpenAPI 3.0.0 Specification Definition
