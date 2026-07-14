@@ -9,6 +9,13 @@ services:
       # === BACKEND ENVIRONMENT VARIABLES (Render) ===
       - key: NODE_ENV
         value: production
+      # Clerk Auth
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_AUTHORIZED_PARTIES
+        value: https://coindrop.onrender.com,https://*.vercel.app,http://localhost:5173
       # Database
       - key: MONGODB_URI
         sync: false

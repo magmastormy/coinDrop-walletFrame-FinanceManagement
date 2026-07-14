@@ -1,11 +1,15 @@
 /**
  * Authentication Middleware
  * Handles user authentication, authorization, and security checks
+ * 
+ * Hybrid middleware: tries Clerk first (for frontend users), falls back to JWT
+ * for API-only clients. Delegates to clerkAuthMiddleware for Clerk token handling.
  */
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { AuthenticationError, RateLimitError } = require('../utils/errorClasses');
+const { clerkAuthMiddleware, hasClerkConfig } = require('./clerkAuthMiddleware');
 
 // In-memory store for suspicious IPs (in production, use Redis)
 const suspiciousIps = new Map();
@@ -101,7 +105,6 @@ const authMiddleware = async (req, res, next) => {
     const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
 
     try {
-        // Extract token from Authorization header
         const token = extractToken(req);
 
         if (!token) {
@@ -114,11 +117,14 @@ const authMiddleware = async (req, res, next) => {
             throw new AuthenticationError('No token provided');
         }
 
-        // Verify JWT token
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
         } catch (jwtError) {
+            if (hasClerkConfig() && jwtError.name === 'JsonWebTokenError') {
+                return await clerkAuthMiddleware(req, res, next);
+            }
+
             logger.warnWithMetadata('Authentication failed: JWT verification error', {
                 requestId,
                 clientIp,

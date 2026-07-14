@@ -21,6 +21,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@clerk/express": "^2.1.40",
     "@fast-csv/format": "^5.0.7",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.18.1",

@@ -8,6 +8,12 @@ const validator = require('validator');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 const UserSchema = new mongoose.Schema({
+    clerkId: {
+        type: String,
+        unique: true,
+        sparse: true,
+        default: null
+    },
     username: {
         type: String,
         required: [true, 'Username is required'],
@@ -23,7 +29,6 @@ const UserSchema = new mongoose.Schema({
         trim: true,
         validate: {
             validator: function(email) {
-                // Email format validation using regex
                 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 return emailRegex.test(email);
             },
@@ -32,16 +37,16 @@ const UserSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
+        required: [function() { return !this.clerkId; }, 'Password is required for non-Clerk users'],
         minlength: [8, 'Password must be at least 8 characters long'],
         validate: {
             validator: function(password) {
-                // Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character
+                if (!password) return true;
                 return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
             },
             message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
         },
-        select: false // Prevents password from being returned in queries
+        select: false
     },
     firstName: {
         type: String,

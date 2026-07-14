@@ -1,5 +1,5 @@
 function getAuthenticatedUserId(req) {
-    const userId = req?.user?._id || req?.user?.userId;
+    const userId = req?.user?._id || req?.user?.userId || req?.authUserId;
     if (!userId) {
         const error = new Error('Authentication required');
         error.status = 401;
