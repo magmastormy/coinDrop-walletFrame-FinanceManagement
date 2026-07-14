@@ -6,7 +6,7 @@
  * Normalizes Clerk's auth data to match the existing req.user / req.authUserId pattern
  * so all controllers continue to work without modification.
  */
-const { ClerkExpressRequireAuth, clerkClient } = require('@clerk/express');
+const { requireAuth, clerkClient } = require('@clerk/express');
 const logger = require('../utils/logger');
 const User = require('../models/User');
 
@@ -19,7 +19,7 @@ const clerkAuthMiddleware = async (req, res, next) => {
         return next();
     }
 
-    const clerkMiddleware = ClerkExpressRequireAuth({
+    const clerkMiddleware = requireAuth({
         authorizedParties: process.env.CLERK_AUTHORIZED_PARTIES?.split(',')?.map(p => p.trim()).filter(Boolean),
     });
 

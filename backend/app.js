@@ -35,6 +35,7 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const cryptoRoutes = require('./routes/cryptoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const thirdPartyIntegrationRoutes = require('./routes/thirdPartyIntegrationRoutes');
+const clerkSyncRoutes = require('./routes/clerkSyncRoutes');
 
 const connectionPoolMonitor = require('./utils/connectionPoolMonitor');
 const metricsCollector = require('./utils/metricsCollector');
@@ -288,6 +289,7 @@ function createApp() {
     });
 
     app.use('/api/receipts', receiptRoutes);
+    app.use('/api/clerk', clerkSyncRoutes);
     app.use('/api/auth', authRoutes);
     app.use('/api/transactions', transactionRoutes);
     app.use('/api/wallets', walletRoutes);

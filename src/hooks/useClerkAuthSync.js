@@ -6,22 +6,24 @@
  * Clerk is the source of truth. Redux is kept as a read-only mirror.
  *
  * This hook also wires Clerk's getToken() into the axios instance so every
- * API call carries a real Clerk session JWT — not a fake placeholder token
- * that the backend would reject with 401.
+ * API call carries a real Clerk session JWT.
+ *
+ * Additionally, it syncs the Clerk user to the backend MongoDB database
+ * on first sign-in so the user exists in our local database.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useUser, useAuth } from '@clerk/react';
 import { useDispatch } from 'react-redux';
 import { setUser, logout } from '../slices/authSlice';
 import { setClerkTokenGetter } from '../api/userAxios';
+import axiosInstance from '../api/userAxios';
 
 const useClerkAuthSync = () => {
     const { isLoaded, isSignedIn, getToken } = useAuth();
     const { user } = useUser();
     const dispatch = useDispatch();
+    const [synced, setSynced] = useState(false);
 
-    // Wire Clerk's getToken into the axios instance so every API call
-    // carries a real Clerk session JWT instead of a stale/fake token.
     useEffect(() => {
         setClerkTokenGetter(async () => {
             if (!isSignedIn) return null;
@@ -30,12 +32,24 @@ const useClerkAuthSync = () => {
     }, [isSignedIn, getToken]);
 
     useEffect(() => {
+        if (!isLoaded || !isSignedIn || !user || synced) return;
+
+        const syncUser = async () => {
+            try {
+                await axiosInstance.post('/clerk/sync-user');
+                setSynced(true);
+            } catch (error) {
+                console.error('Failed to sync Clerk user:', error);
+            }
+        };
+
+        syncUser();
+    }, [isLoaded, isSignedIn, user, synced]);
+
+    useEffect(() => {
         if (!isLoaded) return;
 
         if (isSignedIn && user) {
-            // Use setUser (not loginSuccess) so we don't write a fake token
-            // to sessionStorage. The axios interceptor gets the real Clerk
-            // token via getToken() above.
             dispatch(setUser({
                 id: user.id,
                 firstName: user.firstName ?? '',
@@ -48,6 +62,7 @@ const useClerkAuthSync = () => {
             }));
         } else if (isLoaded && !isSignedIn) {
             dispatch(logout());
+            setSynced(false);
         }
     }, [isLoaded, isSignedIn, user, dispatch]);
 };
